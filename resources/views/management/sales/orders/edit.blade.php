@@ -41,6 +41,15 @@
             <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong> or <strong>Contract Status</strong>. Other fields are locked and cannot be modified.
         </div>
     @endif
+    @if(strtolower($sale_order->am_approval_status ?? '') === 'reverted' || strtolower($sale_order->so_approval_stage ?? '') === 'reverted')
+        <div class="alert alert-warning px-3 py-2 mt-2" style="background-color: #fff3cd; border-color: #ffeeba; color: #856404;">
+            <i class="fa fa-undo"></i> <strong>Sale Order Reverted:</strong> This Sale Order has been reverted for modification. Please make your updates and save to resubmit for Stage 1 approval.
+            @php $latestRevertLog = $sale_order->approvalLogs()->where('action', 'reverted')->latest()->first(); @endphp
+            @if($latestRevertLog && !empty($latestRevertLog->comments))
+                <div class="mt-1 small"><strong>Revert Remarks:</strong> {{ $latestRevertLog->comments }} (by {{ $latestRevertLog->user->name ?? 'Authority' }})</div>
+            @endif
+        </div>
+    @endif
     @if($sale_order->hasPendingDeliveryDateAmendment())
         @php $pendingAmendment = $sale_order->getPendingDeliveryDateAmendment(); @endphp
         <div class="alert alert-info px-3 py-2 mt-2">

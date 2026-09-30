@@ -69,16 +69,32 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-2">
+                                            {{-- <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Bag:</label>
+                                                    <label>Bag Type:</label>
                                                     <select name="bag_type_id[]" id="bag_type_id" multiple
                                                         class="form-control selectWithoutAjax">
-                                                        <option value="">Select Bag</option>
+                                                        <option value="">Select Bag Type</option>
                                                         @foreach ($bagTypes as $bagType)
                                                             <option value="{{ $bagType->id }}"
                                                                 {{ is_array(request('bag_type_id')) && in_array($bagType->id, request('bag_type_id')) ? 'selected' : '' }}>
                                                                 {{ $bagType->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Packing:</label>
+                                                    <select name="bag_packing_id[]" id="bag_packing_id" multiple
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Packing</option>
+                                                        @foreach ($bagPackings as $packing)
+                                                            <option value="{{ $packing->id }}"
+                                                                {{ is_array(request('bag_packing_id')) && in_array($packing->id, request('bag_packing_id')) ? 'selected' : '' }}>
+                                                                {{ $packing->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -115,7 +131,7 @@
                                                         @endforeach
                                                     </select>
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -123,13 +139,16 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0" id="exportableTable">
-                                    <thead>
+                                <table class="table table-bordered m-0" id="exportableTable">
+                                    <thead class="thead-light">
                                         <tr>
-                                            <th style="width: 80px;">#</th>
-                                            <th>Bag</th>
-                                            <th class="text-center" style="width: 180px;">Total Tickets</th>
-                                            <th class="text-right" style="width: 250px;">Filled Bags</th>
+                                            <th style="width: 60px;" class="text-center">#</th>
+                                            <th style="width: 220px;">Bag Type</th>
+                                            <th>Packing</th>
+                                            <th class="text-center" style="width: 140px;">Total Tickets</th>
+                                            <th class="text-right" style="width: 160px;">Filled Bags</th>
+                                            {{-- <th class="text-right" style="width: 160px;">Total Bags</th> --}}
+                                            {{-- <th class="text-right" style="width: 200px;">Total Net Weight (kg)</th> --}}
                                         </tr>
                                     </thead>
                                 </table>

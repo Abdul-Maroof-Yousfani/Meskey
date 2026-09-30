@@ -1,5 +1,6 @@
 @php
-    $innerSample = request('inner_sample', '1');
+    $maxInitialQC = $maxInitialQC ?? ($tickets->map(fn($t) => $t->arrivalSamplingRequests->where('sampling_type', 'initial')->count())->max() ?: 1);
+    $maxInnerQC = $maxInnerQC ?? ($tickets->map(fn($t) => $t->arrivalSamplingRequests->where('sampling_type', 'inner')->count())->max() ?: 0);
 @endphp
 <x-sticky-table :items="$tickets" :leftSticky="1" :rightSticky="1" :emptyMessage="'No records found'" :pagination="false">
     @slot('head')
@@ -9,52 +10,35 @@
         <th>Loading Date</th>
         <th>Total Inner Samples</th>
         <th>Total Resamples</th>
-        <th>Party Ref. No</th>
-        <th>Yield</th>
-        <th>1st QC Time</th>
-        <th>1st QC By</th>
-        <th>1st Tabaar Decision Time</th>
-        <th>1st Tabaar Decision By</th>
+        {{-- <th>Party Ref. No</th>
+        <th>Yield</th> --}}
+
+        {{-- Dynamic Initial QC & Tabaar Decision Columns --}}
+        @for ($i = 1; $i <= $maxInitialQC; $i++)
+            <th>{{ getOrdinalSuffix($i) }} QC Time</th>
+            <th>{{ getOrdinalSuffix($i) }} QC By</th>
+            <th>{{ getOrdinalSuffix($i) }} Tabaar Decision Time</th>
+            <th>{{ getOrdinalSuffix($i) }} Tabaar Decision By</th>
+        @endfor
+
         <th>Location Time</th>
         <th>Location By</th>
         <th>1st Weight Time</th>
         <th>1st Weight By</th>
         
-        @if (in_array($innerSample, ['1', '1st', 'all']))
-            <th>1st Inner QC Sample Request Time</th>
-            <th>1st Inner QC Sample Request By</th>
-            <th>1st Inner QC Sample Time</th>
-            <th>1st Inner QC Sample By</th>
-        @endif
+        {{-- Dynamic Inner QC Sample Request & Sample Columns --}}
+        @for ($j = 1; $j <= $maxInnerQC; $j++)
+            <th>{{ getOrdinalSuffix($j) }} Inner QC Sample Request Time</th>
+            <th>{{ getOrdinalSuffix($j) }} Inner QC Sample Request By</th>
+            <th>{{ getOrdinalSuffix($j) }} Inner QC Sample Time</th>
+            <th>{{ getOrdinalSuffix($j) }} Inner QC Sample By</th>
+        @endfor
 
-        @if (in_array($innerSample, ['2', '2nd', 'all']))
-            <th>2nd Inner QC Sample Request Time</th>
-            <th>2nd Inner QC Sample Request By</th>
-            <th>2nd Inner QC Sample Time</th>
-            <th>2nd Inner QC Sample By</th>
-        @endif
-
-        @if (in_array($innerSample, ['3', '3rd', 'all']))
-            <th>3rd Inner QC Sample Request Time</th>
-            <th>3rd Inner QC Sample Request By</th>
-            <th>3rd Inner QC Sample Time</th>
-            <th>3rd Inner QC Sample By</th>
-        @endif
-
-        @if (in_array($innerSample, ['2', '2nd', 'all']))
-            <th>2nd Tabaar Decision Time</th>
-            <th>2nd Tabaar Decision By</th>
-        @endif
-
-        @if (in_array($innerSample, ['3', '3rd', 'all']))
-            <th>3rd Tabaar Decision Time</th>
-            <th>3rd Tabaar Decision By</th>
-        @endif
-
-        @if (in_array($innerSample, ['4', '4th', 'all']))
-            <th>4th Tabaar Decision Time</th>
-            <th>4th Tabaar Decision By</th>
-        @endif
+        {{-- Dynamic Inner Tabaar Decisions --}}
+        @for ($j = 1; $j <= $maxInnerQC; $j++)
+            <th>{{ getOrdinalSuffix($j + $maxInitialQC) }} Tabaar Decision Time</th>
+            <th>{{ getOrdinalSuffix($j + $maxInitialQC) }} Tabaar Decision By</th>
+        @endfor
 
         <th>Full Reject Time</th>
         <th>Full Reject By</th>
@@ -85,79 +69,42 @@
     @slot('body')
         @foreach ($tickets as $row)
             @php
-                $initialQC = $row->initialSampling ?? $row->arrivalSamplingRequests->where('sampling_type', 'initial')->first();
+                $initialSamplings = $row->arrivalSamplingRequests->where('sampling_type', 'initial')->values();
                 $innerSamplings = $row->arrivalSamplingRequests->where('sampling_type', 'inner')->values();
-                $firstInner = $innerSamplings->get(0);
-                $secondInner = $innerSamplings->get(1);
-                $thirdInner = $innerSamplings->get(2);
-
                 $resamplesCount = $row->arrivalSamplingRequests->where('is_re_sampling', 'yes')->count();
-                $partyRefNo = $initialQC?->party_ref_no ?? ($row->bilty_no ?? '');
-                $yield = $row->purchaseOrder?->yield ?? ($row->yield ?? '');
+                $firstInit = $initialSamplings->first();
 
-                // 1st Tabaar Decision
+                // 1st Tabaar Decision (used for full reject calculation)
                 $firstTabaarTime = '';
                 $firstTabaarBy = '';
-                if ($row->decision_making_time) {
+                if ($row->decision_making_time && $initialSamplings->count() <= 1) {
                     $firstTabaarTime = formatDateTime($row->decision_making_time);
                     $firstTabaarBy = $row->decisionBy?->name ?? '';
-                } elseif ($initialQC && in_array($initialQC->approved_status, ['approved', 'rejected'])) {
-                    $firstTabaarTime = formatDateTime($initialQC->updated_at);
-                    $firstTabaarBy = $initialQC->approvedByUser?->name ?? ($row->decisionBy?->name ?? '');
+                } elseif ($firstInit && in_array($firstInit->approved_status, ['approved', 'rejected', 'resampling'])) {
+                    $firstTabaarTime = ($firstInit->id === $row->lastInitialSampling?->id && $row->decision_making_time)
+                        ? formatDateTime($row->decision_making_time)
+                        : formatDateTime($firstInit->updated_at);
+                    $firstTabaarBy = $firstInit->approvedByUser?->name ?? ($row->decisionBy?->name ?? '');
+                } elseif ($row->decision_making_time) {
+                    $firstTabaarTime = formatDateTime($row->decision_making_time);
+                    $firstTabaarBy = $row->decisionBy?->name ?? '';
                 }
 
-                // 1st Inner QC sample time
-                $firstInnerSampleTime = '';
-                if ($firstInner && $firstInner->takenByUser) {
-                    $firstInnerSampleTime = formatDateTime($firstInner->updated_at);
-                }
-
-                // 2nd Inner QC sample time
-                $secondInnerSampleTime = '';
-                if ($secondInner && $secondInner->takenByUser) {
-                    $secondInnerSampleTime = formatDateTime($secondInner->updated_at);
-                }
-
-                // 3rd Inner QC sample time
-                $thirdInnerSampleTime = '';
-                if ($thirdInner && $thirdInner->takenByUser) {
-                    $thirdInnerSampleTime = formatDateTime($thirdInner->updated_at);
-                }
-
-                // 2nd Tabaar Decision
+                // Second Tabaar Decision (from 1st inner sample, used for half reject calculation)
+                $firstInner = $innerSamplings->first();
                 $secondTabaarTime = '';
                 $secondTabaarBy = '';
-                if ($firstInner && in_array($firstInner->approved_status, ['approved', 'rejected'])) {
+                if ($firstInner && in_array($firstInner->approved_status, ['approved', 'rejected', 'resampling'])) {
                     $secondTabaarTime = formatDateTime($firstInner->updated_at);
                     $secondTabaarBy = $firstInner->approvedByUser?->name ?? '';
-                }
-
-                // 3rd Tabaar Decision
-                $thirdTabaarTime = '';
-                $thirdTabaarBy = '';
-                if ($secondInner && in_array($secondInner->approved_status, ['approved', 'rejected'])) {
-                    $thirdTabaarTime = formatDateTime($secondInner->updated_at);
-                    $thirdTabaarBy = $secondInner->approvedByUser?->name ?? '';
-                }
-
-                // 4th Tabaar Decision
-                $fourthTabaarTime = '';
-                $fourthTabaarBy = '';
-                if ($thirdInner && in_array($thirdInner->approved_status, ['approved', 'rejected'])) {
-                    $fourthTabaarTime = formatDateTime($thirdInner->updated_at);
-                    $fourthTabaarBy = $thirdInner->approvedByUser?->name ?? '';
                 }
 
                 // Rejections
                 $isFullReject = ($row->first_qc_status == 'rejected' || $row->status == 'Reject Full');
                 $isHalfReject = ($row->approvals?->bag_packing_approval == 'Half Approved' || ($row->approvals?->total_rejection > 0) || $row->document_approval_status == 'half_approved' || $row->status == 'Reject Half');
 
-                $fullRejectTime = '';
-                $fullRejectBy = '';
-                if ($isFullReject) {
-                    $fullRejectTime = $firstTabaarTime;
-                    $fullRejectBy = $firstTabaarBy;
-                }
+                $fullRejectTime = $isFullReject ? $firstTabaarTime : '';
+                $fullRejectBy = $isFullReject ? $firstTabaarBy : '';
 
                 $halfRejectTime = '';
                 $halfRejectBy = '';
@@ -211,52 +158,72 @@
                 <td>{{ formatDate($row->loading_date) }}</td>
                 <td>{{ $innerSamplings->count() }}</td>
                 <td>{{ $resamplesCount }}</td>
-                <td>{{ $partyRefNo }}</td>
-                <td>{{ $yield }}</td>
-                <td>{{ formatDateTime($initialQC?->created_at) }}</td>
-                <td>{{ $initialQC?->takenByUser?->name ?? '' }}</td>
-                <td>{{ $firstTabaarTime }}</td>
-                <td>{{ $firstTabaarBy }}</td>
+                {{-- <td>{{ $partyRefNo }}</td>
+                <td>{{ $yield }}</td> --}}
+
+                {{-- Dynamic Initial QC & Tabaar Decision Data --}}
+                @for ($i = 0; $i < $maxInitialQC; $i++)
+                    @php
+                        $initItem = $initialSamplings->get($i);
+                        $qcTime = $initItem ? formatDateTime($initItem->created_at) : '';
+                        $qcBy = $initItem ? ($initItem->takenByUser?->name ?? '') : '';
+                        $tabaarTime = '';
+                        $tabaarBy = '';
+                        if ($initItem) {
+                            if ($i === 0 && $row->decision_making_time && $initialSamplings->count() <= 1) {
+                                $tabaarTime = formatDateTime($row->decision_making_time);
+                                $tabaarBy = $row->decisionBy?->name ?? ($initItem->approvedByUser?->name ?? '');
+                            } elseif (in_array($initItem->approved_status, ['approved', 'rejected', 'resampling'])) {
+                                $tabaarTime = ($initItem->id === $row->lastInitialSampling?->id && $row->decision_making_time)
+                                    ? formatDateTime($row->decision_making_time)
+                                    : formatDateTime($initItem->updated_at);
+                                $tabaarBy = $initItem->approvedByUser?->name ?? ($row->decisionBy?->name ?? '');
+                            } elseif ($i === 0 && $row->decision_making_time) {
+                                $tabaarTime = formatDateTime($row->decision_making_time);
+                                $tabaarBy = $row->decisionBy?->name ?? '';
+                            }
+                        }
+                    @endphp
+                    <td>{{ $qcTime }}</td>
+                    <td>{{ $qcBy }}</td>
+                    <td>{{ $tabaarTime }}</td>
+                    <td>{{ $tabaarBy }}</td>
+                @endfor
+
                 <td>{{ formatDateTime($row->unloadingLocation?->created_at) }}</td>
                 <td>{{ $row->unloadingLocation?->createdBy?->name ?? '' }}</td>
                 <td>{{ formatDateTime($row->firstWeighbridge?->created_at) }}</td>
                 <td>{{ $row->firstWeighbridge?->createdBy?->name ?? '' }}</td>
 
-                @if (in_array($innerSample, ['1', '1st', 'all']))
-                    <td>{{ formatDateTime($firstInner?->created_at) }}</td>
-                    <td>{{ $firstInner?->doneByUser?->name ?? ($firstInner?->creator?->name ?? '') }}</td>
-                    <td>{{ $firstInnerSampleTime }}</td>
-                    <td>{{ $firstInner?->takenByUser?->name ?? '' }}</td>
-                @endif
+                {{-- Dynamic Inner QC Sample Request & Sample Data --}}
+                @for ($j = 0; $j < $maxInnerQC; $j++)
+                    @php
+                        $innerItem = $innerSamplings->get($j);
+                        $innerReqTime = $innerItem ? formatDateTime($innerItem->created_at) : '';
+                        $innerReqBy = $innerItem ? ($innerItem->doneByUser?->name ?? ($innerItem->creator?->name ?? '')) : '';
+                        $innerSampleTime = ($innerItem && ($innerItem->sample_taken_by || $innerItem->takenByUser)) ? formatDateTime($innerItem->updated_at) : '';
+                        $innerSampleBy = $innerItem ? ($innerItem->takenByUser?->name ?? '') : '';
+                    @endphp
+                    <td>{{ $innerReqTime }}</td>
+                    <td>{{ $innerReqBy }}</td>
+                    <td>{{ $innerSampleTime }}</td>
+                    <td>{{ $innerSampleBy }}</td>
+                @endfor
 
-                @if (in_array($innerSample, ['2', '2nd', 'all']))
-                    <td>{{ formatDateTime($secondInner?->created_at) }}</td>
-                    <td>{{ $secondInner?->doneByUser?->name ?? '' }}</td>
-                    <td>{{ $secondInnerSampleTime }}</td>
-                    <td>{{ $secondInner?->takenByUser?->name ?? '' }}</td>
-                @endif
-
-                @if (in_array($innerSample, ['3', '3rd', 'all']))
-                    <td>{{ formatDateTime($thirdInner?->created_at) }}</td>
-                    <td>{{ $thirdInner?->doneByUser?->name ?? '' }}</td>
-                    <td>{{ $thirdInnerSampleTime }}</td>
-                    <td>{{ $thirdInner?->takenByUser?->name ?? '' }}</td>
-                @endif
-
-                @if (in_array($innerSample, ['2', '2nd', 'all']))
-                    <td>{{ $secondTabaarTime }}</td>
-                    <td>{{ $secondTabaarBy }}</td>
-                @endif
-
-                @if (in_array($innerSample, ['3', '3rd', 'all']))
-                    <td>{{ $thirdTabaarTime }}</td>
-                    <td>{{ $thirdTabaarBy }}</td>
-                @endif
-
-                @if (in_array($innerSample, ['4', '4th', 'all']))
-                    <td>{{ $fourthTabaarTime }}</td>
-                    <td>{{ $fourthTabaarBy }}</td>
-                @endif
+                {{-- Dynamic Inner Tabaar Decisions Data --}}
+                @for ($j = 0; $j < $maxInnerQC; $j++)
+                    @php
+                        $innerItem = $innerSamplings->get($j);
+                        $innerTabaarTime = '';
+                        $innerTabaarBy = '';
+                        if ($innerItem && in_array($innerItem->approved_status, ['approved', 'rejected', 'resampling'])) {
+                            $innerTabaarTime = formatDateTime($innerItem->updated_at);
+                            $innerTabaarBy = $innerItem->approvedByUser?->name ?? '';
+                        }
+                    @endphp
+                    <td>{{ $innerTabaarTime }}</td>
+                    <td>{{ $innerTabaarBy }}</td>
+                @endfor
 
                 <td>{{ $fullRejectTime }}</td>
                 <td>{{ $fullRejectBy }}</td>

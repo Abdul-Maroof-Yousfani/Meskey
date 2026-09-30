@@ -51,6 +51,22 @@
             </div>
             <span class="badge badge-warning text-dark px-2 py-1 text-uppercase">Reverted</span>
         </div>
+    @elseif(strtolower($sale_order->so_approval_stage ?? '') === 'headoffice_pending')
+        <div class="alert alert-info px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px; background-color: #e8f4f8; border-color: #bee5eb; color: #0c5460;">
+            <div>
+                <i class="fa fa-shield me-2"></i>
+                <strong>Stage 1 Approved:</strong> This Sale Order has been approved at Stage 1 and is currently awaiting final approval from <strong>Head Office</strong>.
+            </div>
+            <span class="badge badge-info px-2 py-1 text-uppercase" style="background-color: #17a2b8;">Pending Head Office</span>
+        </div>
+    @elseif(strtolower($sale_order->so_approval_stage ?? '') === 'stage_1_pending')
+        <div class="alert alert-warning px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px; background-color: #fff8e1; border-color: #ffe082; color: #856404;">
+            <div>
+                <i class="fa fa-clock-o me-2"></i>
+                <strong>Stage 1 Pending:</strong> Awaiting approval from Branch / Parent authority before forwarding to Head Office.
+            </div>
+            <span class="badge badge-warning text-dark px-2 py-1 text-uppercase">Stage 1 Pending</span>
+        </div>
     @endif
     @if($sale_order->hasPendingDeliveryDateAmendment())
         @php $pendingAmendment = $sale_order->getPendingDeliveryDateAmendment(); @endphp

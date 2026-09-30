@@ -18,6 +18,38 @@ class ProductSlabTypeController extends Controller
     }
 
     /**
+     * Display a listing of product slab types for general items to reorder.
+     */
+    public function orderIndex()
+    {
+        $slab_types = ProductSlabType::ordered()
+            ->get();
+
+        return view('management.master.product_slab_type.order', compact('slab_types'));
+    }
+
+    /**
+     * Update order of product slab types.
+     */
+    public function updateOrder(Request $request)
+    {
+        $request->validate([
+            'orders' => 'required|array',
+            'orders.*.id' => 'required|exists:product_slab_types,id',
+            'orders.*.order_by' => 'required|integer',
+        ]);
+
+        foreach ($request->orders as $item) {
+            ProductSlabType::where('id', $item['id'])->update(['order_by' => $item['order_by']]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product slab types reordered successfully.',
+        ]);
+    }
+
+    /**
      * Get list of categories.
      */
     public function getList(Request $request)
@@ -29,8 +61,7 @@ class ProductSlabTypeController extends Controller
             });
         })
             ->where('company_id', $request->company_id)
-
-            ->latest()
+            ->ordered()
             ->paginate(request('per_page', 25));
 
         return view('management.master.product_slab_type.getList', compact('product_slab_types'));

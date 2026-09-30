@@ -15,6 +15,8 @@ class ReceivingRequestController extends Controller
      */
     public function index()
     {
+        abort_if(!canAccess('receiving-request-list') && !auth()->user()->can('receiving-request-list'), 403);
+
         $deliveryChallans = ReceivingRequest::whereHas('deliveryChallan', function ($q) {
                 $q->where('sauda_type', 'pohanch');
             })
@@ -29,6 +31,8 @@ class ReceivingRequestController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('receiving-request-list') && !auth()->user()->can('receiving-request-list'), 403);
+
         $perPage = $request->get('per_page', 25);
 
         $receivingRequests = ReceivingRequest::with(['deliveryChallan.customer', 'deliveryChallan.delivery_order', 'items.product'])
@@ -79,6 +83,8 @@ class ReceivingRequestController extends Controller
      */
     public function edit(int $id)
     {
+        abort_if(!canAccess('receiving-request-create') && !auth()->user()->can('receiving-request-create'), 403);
+
         $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product', 'weighbridges'])->findOrFail($id);
         
         $transporters = \App\Models\Master\Transporter::all();
@@ -91,6 +97,8 @@ class ReceivingRequestController extends Controller
      */
     public function update(Request $request, int $id)
     {
+        abort_if(!canAccess('receiving-request-create') && !auth()->user()->can('receiving-request-create'), 403);
+
         DB::beginTransaction();
         try {
             $receivingRequest = ReceivingRequest::findOrFail($id);
@@ -203,6 +211,8 @@ class ReceivingRequestController extends Controller
      */
     public function view(int $id)
     {
+        abort_if(!canAccess('receiving-request-list') && !auth()->user()->can('receiving-request-list'), 403);
+
         $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product', 'weighbridges'])->findOrFail($id);
         
         $transporters = \App\Models\Master\Transporter::all();
@@ -210,4 +220,3 @@ class ReceivingRequestController extends Controller
         return view('management.sales.receiving-request.view', compact('receivingRequest', 'transporters', 'labours'));
     }
 }
-

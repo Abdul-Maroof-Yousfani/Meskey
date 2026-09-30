@@ -17,7 +17,7 @@ class TruckDetailGateReportController extends Controller
     {
         $commodities = Product::all();
         $millers = Miller::all();
-        $product_slab_types = ProductSlabType::get();
+        $product_slab_types = ProductSlabType::getForArrivalReport();
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
             return $q->whereIn('id', getUserCurrentCompanyLocations());
@@ -32,11 +32,6 @@ class TruckDetailGateReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::when($request->filled('commodity_id'), function ($q) use ($request) {
-            return $q->whereHas('slabs', function ($query) use ($request) {
-                $query->whereIn('product_id', (array) $request->commodity_id);
-            });
-        })->get();
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
@@ -129,7 +124,19 @@ class TruckDetailGateReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
-        // dd($arrival_compulsory_qc_params->pluck('name')->toArray());
+
+        $commodityIds = $tickets->pluck('qc_product')
+            ->merge($tickets->pluck('product_id'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($commodityIds) && $request->filled('commodity_id')) {
+            $commodityIds = (array) $request->commodity_id;
+        }
+
+        $product_slab_types = ProductSlabType::getForCommodities($commodityIds);
 
         return view('management.reports.arrival.truck-detail-gate.getTruckDetail', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }

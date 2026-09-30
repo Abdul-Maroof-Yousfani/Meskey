@@ -1,5 +1,6 @@
 <?php 
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Sales\DeliveryChallanController;
 use App\Http\Controllers\Sales\DeliveryOrderController;
 use App\Http\Controllers\Sales\FirstWeighBridgeController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Sales\LogisticsBillController;
 use App\Http\Controllers\Sales\SecondWeighBridgeController;
 use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
+use App\Http\Controllers\Sales\PreSaleInspectionController;
 use App\Http\Controllers\Sales\SalesInquiryController;
 use App\Http\Controllers\Sales\SalesInvoiceController;
 use App\Http\Controllers\Sales\SalesReturnController;
@@ -15,6 +17,12 @@ use App\Http\Controllers\Sales\PaymentIntimationController;
 
 
 Route::name("sales.")->group(function () {
+    Route::resource("pre-sale-inspection", PreSaleInspectionController::class);
+    Route::post("get-pre-sale-inspection", [PreSaleInspectionController::class, "getList"])->name("get.pre-sale-inspection.list");
+    Route::get("pre-sale-inspection/{pre_sale_inspection}/view", [PreSaleInspectionController::class, "view"])->name("pre-sale-inspection.view");
+    Route::get("/get/pre-sale-inspection-number", [PreSaleInspectionController::class, "getNumber"])->name("get.pre-sale-inspection-number");
+    Route::get("/get/pre-sale-inspection-data/{id}", [PreSaleInspectionController::class, "getInspectionData"])->name("get.pre-sale-inspection-data");
+
     Route::resource("sales-inquiry", SalesInquiryController::class);
     Route::post("get-sales-inquiry", [SalesInquiryController::class, "getList"])->name("get.sales-inquiry.list");
     Route::get("sales-inquiry/{sales_inquiry}/view", [SalesInquiryController::class, "view"])->name("sales-inquiry.view");

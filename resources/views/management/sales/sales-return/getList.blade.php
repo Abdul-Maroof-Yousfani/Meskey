@@ -78,11 +78,13 @@
 
                                     <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                         <div class="btn-group" role="group">
-
+                                            @canAccess('sales-return-list')
                                             <a 
                                                class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-return.view', ['id' => $group['id']]) }}','View Sale Return', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
+                                            @endcanAccess
+                                            @canAccess('sales-return-create')
                                             @if(auth()->user()->id == $group['created_by_id'])
                                                 @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                                 <button 
@@ -98,6 +100,7 @@
                                             </button>
                                             @endif
                                             @endif
+                                            @endcanAccess
                                         </div>
                                     </td>
                                 @endif

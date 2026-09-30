@@ -45,9 +45,36 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
+                                                    <label>Date Filter:</label>
+                                                    <select name="date_filter" id="date_filter"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="last_7_days"
+                                                            {{ request('date_filter', 'last_7_days') == 'last_7_days' ? 'selected' : '' }}>
+                                                            Last 7 days
+                                                        </option>
+                                                        <option value="last_30_days"
+                                                            {{ request('date_filter') == 'last_30_days' ? 'selected' : '' }}>
+                                                            Last 30 day
+                                                        </option>
+                                                        <option value="today"
+                                                            {{ request('date_filter') == 'today' ? 'selected' : '' }}>
+                                                            Today
+                                                        </option>
+                                                        <option value="custom"
+                                                            {{ request('date_filter') == 'custom' ? 'selected' : '' }}>
+                                                            Custom
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-2" id="daterange_wrapper"
+                                                style="{{ request('date_filter') == 'custom' ? '' : 'display: none;' }}">
+                                                <div class="form-group mb-0">
                                                     <label>Date Range:</label>
-                                                    <input type="text" name="daterange" class="form-control"
-                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                                    <input type="text" name="daterange" id="daterange" class="form-control"
+                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}"
+                                                        {{ request('date_filter') == 'custom' ? '' : 'disabled' }} />
                                                 </div>
                                             </div>
 
@@ -67,7 +94,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-2">
+                                            {{-- <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Miller:</label>
                                                     <select name="miller_id" id="miller_id"
@@ -97,7 +124,7 @@
                                                         @endforeach
                                                     </select>
                                                 </div>
-                                            </div>
+                                            </div> --}}
 
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
@@ -130,8 +157,10 @@
                                     <thead>
                                         <tr>
                                             <th>Date</th>
+                                            <th>Commodity</th>
                                             <th>Truck Arrived</th>
                                             <th>Total Unloaded</th>
+                                            <th>Full Approved</th>
                                             <th>Half Rejected</th>
                                             <th>Full rejected</th>
                                             <th>In Process</th>
@@ -152,6 +181,18 @@
             filterationCommon(
                 `{{ route('reports.arrival.get.truck-summary') }}`
             );
+            $('.selectWithoutAjax').select2();
+
+            $('#date_filter').on('change', function() {
+                var selected = $(this).val();
+                if (selected === 'custom') {
+                    $('#daterange').prop('disabled', false);
+                    $('#daterange_wrapper').slideDown(200);
+                } else {
+                    $('#daterange').prop('disabled', true);
+                    $('#daterange_wrapper').slideUp(200);
+                }
+            });
         });
     </script>
 @endsection

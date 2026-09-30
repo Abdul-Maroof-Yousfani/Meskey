@@ -40,6 +40,24 @@
                 <div class="col-12">
                     <h6 class="header-heading-sepration">General Information</h6>
                 </div>
+                <div class="col-md-12 mb-2">
+                    <div class="form-group">
+                        <label class="form-label">Pre Sale Inspection: <small class="text-muted">(Optional)</small></label>
+                        <select name="pre_sale_inspection_id" id="pre_sale_inspection_id" class="form-control select2">
+                            <option value="">Select Pre Sale Inspection</option>
+                            @foreach ($preSaleInspections ?? [] as $psi)
+                                @php
+                                    $itemNames = $psi->items && $psi->items->count() > 0 
+                                        ? $psi->items->map(fn($pi) => ($pi->item?->name ?? 'N/A').' ('.number_format($pi->weight, 2).'kg)')->implode(', ')
+                                        : ($psi->item?->name ?? 'No Item');
+                                @endphp
+                                <option value="{{ $psi->id }}">
+                                    #{{ $psi->inspection_no }} - {{ $psi->party_name }} ({{ $itemNames }}){{ $psi->reference ? ' [Ref: '.$psi->reference.']' : '' }} - {{ $psi->date ? $psi->date->format('d M Y') : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Inquiry Number: <span class="text-danger">*</span></label>

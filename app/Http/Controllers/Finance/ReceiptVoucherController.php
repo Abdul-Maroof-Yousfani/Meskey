@@ -24,6 +24,11 @@ class ReceiptVoucherController extends Controller
 {
     public function index()
     {
+        abort_if(
+            !canAccess('receipt-voucher-list') && !auth()->user()->can('receipt-voucher-list') &&
+            !canAccess('direct-receipt-voucher-list') && !auth()->user()->can('direct-receipt-voucher-list'),
+            403
+        );
         return view('management.finance.receipt_voucher.index');
     }
 
@@ -39,6 +44,7 @@ class ReceiptVoucherController extends Controller
 
     public function direct_receipt_voucher(DirectReceiptVoucherRequest $request)
     {
+        abort_if(!canAccess('direct-receipt-voucher-create') && !auth()->user()->can('direct-receipt-voucher-create'), 403);
         DB::beginTransaction();
         try {
             $receipt_voucher = ReceiptVoucher::create([
@@ -151,7 +157,19 @@ class ReceiptVoucherController extends Controller
 
     public function getList(Request $request)
     {
+        $canNormal = canAccess('receipt-voucher-list') || auth()->user()->can('receipt-voucher-list');
+        $canDirect = canAccess('direct-receipt-voucher-list') || auth()->user()->can('direct-receipt-voucher-list');
+        abort_if(!$canNormal && !$canDirect, 403);
+
         $receiptVouchers = ReceiptVoucher::with(['account', 'customer', 'items', 'bankDetails.account'])
+            ->when(!$canDirect && $canNormal, function ($q) {
+                $q->where(function($sq) {
+                    $sq->where('is_direct', 0)->orWhereNull('is_direct');
+                });
+            })
+            ->when(!$canNormal && $canDirect, function ($q) {
+                $q->where('is_direct', 1);
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -174,6 +192,7 @@ class ReceiptVoucherController extends Controller
 
     public function create()
     {
+        abort_if(!canAccess('receipt-voucher-create') && !auth()->user()->can('receipt-voucher-create'), 403);
         $customers = Customer::select('id', 'name')->get();
 
         $saleOrders = SalesOrder::with('customer')
@@ -198,6 +217,7 @@ class ReceiptVoucherController extends Controller
 
     public function edit($id)
     {
+        abort_if(!canAccess('receipt-voucher-create') && !auth()->user()->can('receipt-voucher-create'), 403);
         $receiptVoucher = ReceiptVoucher::with(['items', 'advances', 'account', 'customer', 'bankDetails'])->findOrFail($id);
 
         $customers = Customer::select('id', 'name')->get();
@@ -335,6 +355,7 @@ class ReceiptVoucherController extends Controller
 
     public function edit_direct($id)
     {
+        abort_if(!canAccess('direct-receipt-voucher-create') && !auth()->user()->can('direct-receipt-voucher-create'), 403);
         $receiptVoucher = ReceiptVoucher::with('items')->findOrFail($id);
         $accounts = Account::all();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
@@ -343,6 +364,7 @@ class ReceiptVoucherController extends Controller
 
     public function update_direct(Request $request, $id)
     {
+        abort_if(!canAccess('direct-receipt-voucher-create') && !auth()->user()->can('direct-receipt-voucher-create'), 403);
         $receiptVoucher = ReceiptVoucher::findOrFail($id);
 
         if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {
@@ -352,8 +374,6 @@ class ReceiptVoucherController extends Controller
             ], 422);
         }
 
-        // TODO: Create a validation request class if needed, similar to ReceiptVoucherRequest
-        // For now, assuming basic validation
         $request->validate([
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
             'rv_date' => 'required|date',
@@ -499,6 +519,7 @@ class ReceiptVoucherController extends Controller
 
     public function store(ReceiptVoucherRequest $request)
     {
+        abort_if(!canAccess('receipt-voucher-create') && !auth()->user()->can('receipt-voucher-create'), 403);
         $payload = $request->validated();
         $items = collect($payload['items'] ?? [])
             ->filter(function ($item) {
@@ -688,6 +709,7 @@ class ReceiptVoucherController extends Controller
 
     public function directReceiptVoucher(Request $request)
     {
+        abort_if(!canAccess('direct-receipt-voucher-create') && !auth()->user()->can('direct-receipt-voucher-create'), 403);
         $accounts = Account::all();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
         return view("management.finance.receipt_voucher.directReceiptVoucher", compact("taxes", "accounts"));
@@ -823,6 +845,12 @@ class ReceiptVoucherController extends Controller
     {
         $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items.account', 'advances.customer', 'bankDetails.account'])->findOrFail($id);
 
+        if ($receiptVoucher->is_direct) {
+            abort_if(!canAccess('direct-receipt-voucher-list') && !auth()->user()->can('direct-receipt-voucher-list'), 403);
+        } else {
+            abort_if(!canAccess('receipt-voucher-list') && !auth()->user()->can('receipt-voucher-list'), 403);
+        }
+
         // resolve items
         $standardItems = $receiptVoucher->items->map(function ($item) {
             $docNo = '';
@@ -877,6 +905,7 @@ class ReceiptVoucherController extends Controller
 
     public function update(Request $request, $id)
     {
+        abort_if(!canAccess('receipt-voucher-create') && !auth()->user()->can('receipt-voucher-create'), 403);
         $receiptVoucher = ReceiptVoucher::findOrFail($id);
 
         if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {
@@ -1088,6 +1117,12 @@ class ReceiptVoucherController extends Controller
         $receiptVoucher = ReceiptVoucher::find($id);
         if (!$receiptVoucher) {
             return response()->json(['error' => 'Receipt Voucher not found', 'message' => 'Receipt Voucher not found'], 404);
+        }
+
+        if ($receiptVoucher->is_direct) {
+            abort_if(!canAccess('direct-receipt-voucher-create') && !auth()->user()->can('direct-receipt-voucher-create'), 403);
+        } else {
+            abort_if(!canAccess('receipt-voucher-create') && !auth()->user()->can('receipt-voucher-create'), 403);
         }
 
         if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {

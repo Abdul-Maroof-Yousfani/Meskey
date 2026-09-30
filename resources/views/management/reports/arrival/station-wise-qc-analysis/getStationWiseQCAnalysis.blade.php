@@ -7,7 +7,7 @@
     <th>Total Trucks</th>
     <th>KG Received</th>
     @foreach ($product_slab_types as $slab)
-        <th>{{ $slab->name }}</th>
+        <th>{{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
     @endforeach
     @endslot
 
@@ -36,13 +36,14 @@
             @foreach ($product_slab_types as $slab)
                 @php
                     $val = $row['slab_averages'][$slab->id] ?? 0;
-                    $slabSymbol = $slab->qc_symbol ?? '';
+                    // $slabSymbol = $slab->qc_symbol ?? '';
+                    // $val > 0 ? (floor($val) == $val ? (int) $val : number_format($val, 3)) . $slabSymbol : 0
                     if ($val > 0) {
                         $slabTotals[$slab->id][] = $val;
                     }
                 @endphp
                 <td>
-                    {{ $val > 0 ? (floor($val) == $val ? (int) $val : number_format($val, 3)) . $slabSymbol : 0 }}
+                    {{ $val > 0 ? (floor($val) == $val ? (int) $val : number_format($val, 3)) : 0 }}
                 </td>
             @endforeach
         </tr>
@@ -56,10 +57,11 @@
             @foreach ($product_slab_types as $slab)
                 @php
                     $overallAvg = $overallSlabAverages[$slab->id] ?? 0;
-                    $slabSymbol = $slab->qc_symbol ?? '';
+                    // $slabSymbol = $slab->qc_symbol ?? '';
+                    // $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int) $overallAvg : number_format($overallAvg, 3)) . $slabSymbol : 0
                 @endphp
                 <td>
-                    <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int) $overallAvg : number_format($overallAvg, 3)) . $slabSymbol : 0 }}</strong>
+                    <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int) $overallAvg : number_format($overallAvg, 3)) : 0 }}</strong>
                 </td>
             @endforeach
         </tr>

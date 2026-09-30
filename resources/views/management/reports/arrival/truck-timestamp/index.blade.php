@@ -27,7 +27,7 @@
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row justify-content-nd text">
-                                            <div class="col-md-2">
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id[]" id="cmpany_location" {{ count($locations) == 1 ? 'disabled' : 'multiple' }} class="form-control selectWithoutAjax">
@@ -41,7 +41,7 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
@@ -49,7 +49,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-2">
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>Arrival Ticket No:</label>
                                                     <input type="text" class="form-control" name="arrival_ticket_no"
@@ -57,22 +57,11 @@
                                                         value="{{ request('arrival_ticket_no', '') }}">
                                                 </div>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>GRN No:</label>
                                                     <input type="text" class="form-control" name="grn_no"
                                                         placeholder="GRN No" value="{{ request('grn_no', '') }}">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <div class="form-group mb-0">
-                                                    <label>Inner Sample:</label>
-                                                    <select name="inner_sample" id="inner_sample" class="form-control selectWithoutAjax">
-                                                        <option value="1" {{ request('inner_sample', '1') == '1' ? 'selected' : '' }}>1st</option>
-                                                        <option value="2" {{ request('inner_sample') == '2' ? 'selected' : '' }}>2nd</option>
-                                                        <option value="3" {{ request('inner_sample') == '3' ? 'selected' : '' }}>3rd</option>
-                                                        <option value="all" {{ request('inner_sample') == 'all' ? 'selected' : '' }}>All</option>
-                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -155,15 +144,13 @@
 
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
-                                        <tr>
+                                        {{-- <tr>
                                             <th>Ticket #</th>
                                             <th>Gate Entry Time</th>
                                             <th>Entry By</th>
                                             <th>Loading Date</th>
                                             <th>Total Inner Samples</th>
                                             <th>Total Resamples</th>
-                                            <th>Party Ref. No</th>
-                                            <th>Yield</th>
                                             <th>Location Time</th>
                                             <th>Location By</th>
                                             <th>1st QC Time</th>
@@ -212,7 +199,7 @@
                                             <th>Loading Weight</th>
                                             <th>Arrival Slip</th>
                                             <th>View Complete Details</th>
-                                        </tr>
+                                        </tr> --}}
                                     </thead>
                                 </table>
                             </div>

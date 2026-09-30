@@ -13,7 +13,7 @@
         <th>Commodity</th>
 
         @foreach ($product_slab_types as $slab)
-            <th>{{ $slab->name }}</th>
+            <th>{{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
         @endforeach
 
         @foreach ($arrival_compulsory_qc_params as $compulsory_param)

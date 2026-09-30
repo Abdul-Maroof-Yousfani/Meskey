@@ -14,12 +14,16 @@
         <th>Loading Date</th>
 
         @foreach ($product_slab_types as $slab)
-            <th>Avg. {{ $slab->name }} </th>
+            <th>Avg. {{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
         @endforeach
 
 
         <th>No of Bags (Loaded)</th>
+        <th>Loading 1st Weight</th>
+        <th>Loading 2nd Weight</th>
         <th>Loaded Weight (KG)</th>
+        <th>Arrival 1st Weight</th>
+        <th>Arrival 2nd Weight</th>
         <th>Arrived Net Weight (KG)</th>
         <th>Truck #</th>
         <th>QC Remarks</th>
@@ -121,20 +125,25 @@
                 @foreach ($product_slab_types as $slab)
                     @php
                         $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
-                        $slabSymbol = $slab->qc_symbol ?? '';
+                        // $slabSymbol = $slab->qc_symbol ?? '';
                     @endphp
 
                     <!-- INITIAL Column -->
                     <td>
                         @if ($initialValue != 0)
-                            {{ $initialValue }}{{ $slabSymbol }}
+                            {{ $initialValue }}
+                            {{-- {{ $slabSymbol }} --}}
                         @else
                             0
                         @endif
                     </td>
                 @endforeach
                 <td>{{ $row->bags }}</td>
+                <td>{{ $row->first_weight ?: 0 }}</td>
+                <td>{{ $row->second_weight ?: 0 }}</td>
                 <td>{{ $row->net_weight }}</td>
+                <td>{{ $row->firstWeighbridge?->weight ?: 0 }}</td>
+                <td>{{ $row->secondWeighbridge?->weight ?: 0 }}</td>
                 <td>{{ $row->arrived_net_weight }}</td>
                 <td>{{ $row->truck_no }}</td>
                 <td>{{ $initialRequest->remark ?? '' }}</td>

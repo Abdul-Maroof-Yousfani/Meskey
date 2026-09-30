@@ -38,10 +38,12 @@
                         {{ $firstWeighbridge->created_at->format('d-m-Y H:i') }}
                     </td>
                     <td>
+                        @canAccess('sales-first-weighbridge')
                         <a onclick="openModal(this,'{{ route('sales.first-weighbridge.edit', $firstWeighbridge->id) }}','View First Weighbridge', true)"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
+                        @endcanAccess
                     </td>
                 </tr>
             @endforeach

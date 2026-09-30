@@ -10,11 +10,13 @@
                     <h2 class="page-title">Sales Return</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                    @canAccess('sales-return-create')
                     <button
                         onclick="openModal(this,'{{ route('sales.sales-return.create') }}','Create Sale Return',false,'100%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Sales Return
                     </button>
+                    @endcanAccess
                 </div>
             </div>
             <div class="row">

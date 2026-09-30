@@ -53,16 +53,20 @@
                 </td>
                 <td>
                     <div class="btn-group" role="group">
-                        @if($request->am_approval_status !== "approved")
-                            <button class="btn btn-sm btn-primary"
-                                onclick="openModal(this, '{{ route('sales.receiving-request.edit', $request->id) }}', 'Edit Receiving Request', false, '80%')">
-                                <i class="fa fa-edit"></i> Edit
+                        @canAccess('receiving-request-list')
+                            <button class="btn btn-sm btn-info"
+                                onclick="openModal(this, '{{ route('sales.receiving-request.view', $request->id) }}', 'View Receiving Request', false, '80%')">
+                                <i class="fa fa-eye"></i> View
                             </button>
-                        @endif
-                        <button class="btn btn-sm btn-info"
-                            onclick="openModal(this, '{{ route('sales.receiving-request.view', $request->id) }}', 'View Receiving Request', false, '80%')">
-                            <i class="fa fa-eye"></i> View
-                        </button>
+                        @endcanAccess
+                        @canAccess('receiving-request-create')
+                            @if($request->am_approval_status !== "approved")
+                                <button class="btn btn-sm btn-primary"
+                                    onclick="openModal(this, '{{ route('sales.receiving-request.edit', $request->id) }}', 'Edit Receiving Request', false, '80%')">
+                                    <i class="fa fa-edit"></i> Edit
+                                </button>
+                            @endif
+                        @endcanAccess
                     </div>
                 </td>
             </tr>

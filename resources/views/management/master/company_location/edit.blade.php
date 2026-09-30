@@ -63,6 +63,11 @@
                 </div>
             </div>
         </div>
+
+        @include('management.master.company_location.partials.production_phases_table', [
+            'company_location' => $company_location,
+            'production_phases' => $production_phases ?? null
+        ])
     </div>
     <div class="row bottom-button-bar">
         <div class="col-12">

@@ -48,6 +48,14 @@
                 <div class="col-12">
                     <h6 class="header-heading-sepration">General Information</h6>
                 </div>
+                @if($sales_inquiry->preSaleInspection)
+                    <div class="col-md-12 mb-2">
+                        <div class="alert alert-info py-2 px-3 mb-2">
+                            <i class="ft-link mr-1"></i> <strong>Linked Pre Sale Inspection:</strong>
+                            #{{ $sales_inquiry->preSaleInspection->inspection_no }} &mdash; {{ $sales_inquiry->preSaleInspection->party_name }} ({{ $sales_inquiry->preSaleInspection->date ? $sales_inquiry->preSaleInspection->date->format('d M Y') : '' }})
+                        </div>
+                    </div>
+                @endif
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Inquiry Number:</label>

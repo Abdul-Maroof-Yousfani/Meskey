@@ -19,11 +19,25 @@ class LoadingSlipController extends Controller
         $this->middleware('auth');
     }
 
+    private function getUserArrivalLocations()
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return [];
+        }
+        $locations = getUserCurrentCompanyArrivalLocations();
+        if (empty($locations) && $authUser->arrival_location_id) {
+            $locations = [$authUser->arrival_location_id];
+        }
+        return $locations ?? [];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
         return view('management.sales.loading-slip.index');
     }
 
@@ -32,6 +46,11 @@ class LoadingSlipController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $LoadingSlips = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -39,6 +58,11 @@ class LoadingSlipController extends Controller
             'logs',
             'createdBy'
         ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -61,11 +85,19 @@ class LoadingSlipController extends Controller
      */
     public function create()
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         // Get available tickets that have accepted Sales QC and no loading slip
         $availableTickets = LoadingProgramItem::whereHas('salesQc', function ($query) {
             $query->where('status', 'accept')
                 ->orWhere("am_approval_status", "approved");
         })
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereIn('arrival_location_id', $locations);
+            })
             ->whereDoesntHaveClosedSaleOrder()
             ->whereDoesntHave('loadingSlip')
             ->with([
@@ -83,6 +115,11 @@ class LoadingSlipController extends Controller
      */
     public function store(Request $request)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'customer' => 'required|string|max:255',
@@ -106,7 +143,15 @@ class LoadingSlipController extends Controller
         }
 
         $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
-        if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+        if (!$ticketItem) {
+            return response()->json(['errors' => ['loading_program_item_id' => ['Ticket not found.']]], 422);
+        }
+        if (!$isSuperAdmin && !in_array($ticketItem->arrival_location_id, $locations)) {
+            return response()->json([
+                'errors' => ['loading_program_item_id' => ['You are not authorized to create a Loading Slip for this location.']]
+            ], 422);
+        }
+        if ($ticketItem->hasClosedSaleOrder()) {
             return response()->json(['errors' => ['loading_program_item_id' => ['The Sale Order linked to this ticket has been closed. Operations are locked.']]], 422);
         }
 
@@ -181,6 +226,11 @@ class LoadingSlipController extends Controller
      */
     public function show(string $id)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $loadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -192,7 +242,13 @@ class LoadingSlipController extends Controller
             'loadingProgramItem.saleOrders.customer',
             'loadingProgramItem.saleOrders.sales_order_data.item',
             'createdBy'
-        ])->findOrFail($id);
+        ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
 
         return view('management.sales.loading-slip.show', compact('loadingSlip'));
     }
@@ -202,6 +258,11 @@ class LoadingSlipController extends Controller
      */
     public function edit(string $id)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $loadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -215,7 +276,13 @@ class LoadingSlipController extends Controller
             'loadingProgramItem.dispatchQc',
             'createdBy',
             'logs'
-        ])->findOrFail($id);
+        ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
 
         // Check if there's a rejected dispatch QC
         $rejectedDispatchQc = null;
@@ -233,6 +300,11 @@ class LoadingSlipController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $validator = Validator::make($request->all(), [
             'customer' => 'required|string|max:255',
             'commodity' => 'required|string|max:255',
@@ -253,7 +325,13 @@ class LoadingSlipController extends Controller
         }
 
 
-        $loadingSlip = LoadingSlip::with('loadingProgramItem.dispatchQc')->findOrFail($id);
+        $loadingSlip = LoadingSlip::with('loadingProgramItem.dispatchQc')
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
 
         if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->hasClosedSaleOrder()) {
             return response()->json(['error' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.'], 422);
@@ -333,8 +411,17 @@ class LoadingSlipController extends Controller
      */
     public function destroy(string $id)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         try {
-            $loadingSlip = LoadingSlip::findOrFail($id);
+            $loadingSlip = LoadingSlip::when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })->findOrFail($id);
             $loadingSlip->loadingProgramItem->dispatchQcs()->delete();
             $loadingSlip->delete();
 
@@ -349,6 +436,11 @@ class LoadingSlipController extends Controller
      */
     public function getTicketRelatedData(Request $request)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $LoadingProgramItem = LoadingProgramItem::with([
             'loadingProgram.deliveryOrder.customer',
             'loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -362,7 +454,11 @@ class LoadingSlipController extends Controller
             'saleOrders.sales_order_data.item',
             'arrivalLocation',
             'subArrivalLocation'
-        ])->findOrFail($request->loading_program_item_id);
+        ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereIn('arrival_location_id', $locations);
+            })
+            ->findOrFail($request->loading_program_item_id);
 
         $orders = [];
 
@@ -501,6 +597,11 @@ class LoadingSlipController extends Controller
 
     public function print(string $id)
     {
+        abort_if(!canAccess('loading-slip') && !auth()->user()->can('loading-slip'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $loadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -512,7 +613,13 @@ class LoadingSlipController extends Controller
             'loadingProgramItem.saleOrders.customer',
             'loadingProgramItem.saleOrders.sales_order_data.item',
             'createdBy'
-        ])->findOrFail($id);
+        ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
 
         return view('management.sales.loading-slip.print', compact('loadingSlip'));
     }

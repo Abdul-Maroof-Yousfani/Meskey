@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\ProductionPhase;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\CompanyLocationRequest;
 
@@ -45,7 +46,8 @@ class CompanyLocationController extends Controller
     public function create()
     {
         $cities = City::all(); 
-        return view('management.master.company_location.create', compact('cities'));
+        $production_phases = ProductionPhase::active()->get();
+        return view('management.master.company_location.create', compact('cities', 'production_phases'));
     }
 
     /**
@@ -57,6 +59,8 @@ class CompanyLocationController extends Controller
         $data = $request->all();
 
         $data['truck_no_format'] = ($request->truck_no_format ?? 'off') == 'on' ? 1 : 0;
+        $data['production_phases'] = $this->formatProductionPhases($request);
+
         $arrival_locations = CompanyLocation::create($data);
 
         return response()->json(['success' => 'Company Location created successfully.', 'data' => $arrival_locations], 201);
@@ -69,7 +73,8 @@ class CompanyLocationController extends Controller
     {
         $cities = City::all(); 
         $company_location = CompanyLocation::findOrFail($id);
-        return view('management.master.company_location.edit', compact('company_location', 'cities'));
+        $production_phases = ProductionPhase::active()->get();
+        return view('management.master.company_location.edit', compact('company_location', 'cities', 'production_phases'));
     }
 
     /**
@@ -81,9 +86,23 @@ class CompanyLocationController extends Controller
         $data = $request->all();
 
         $data['truck_no_format'] = ($request->truck_no_format ?? 'off') == 'on' ? 1 : 0;
+        $data['production_phases'] = $this->formatProductionPhases($request);
 
         $company_location->update($data);
         return response()->json(['success' => 'Company Location updated successfully.', 'data' => $company_location], 200);
+    }
+
+    /**
+     * Normalize and format production phase IDs from request
+     */
+    protected function formatProductionPhases(Request $request): array
+    {
+        $inputPhases = $request->input('production_phases', []);
+        if (!is_array($inputPhases)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map('intval', $inputPhases))));
     }
 
     /**

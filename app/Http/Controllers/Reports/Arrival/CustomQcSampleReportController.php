@@ -19,7 +19,7 @@ class CustomQcSampleReportController extends Controller
         $commodities = Product::all();
         $suppliers = Supplier::all();
         $stations = Station::all();
-        $product_slab_types = ProductSlabType::get();
+        $product_slab_types = ProductSlabType::getForArrivalReport(null, null, 'purchase');
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
             return $q->whereIn('id', getUserCurrentCompanyLocations());
@@ -40,11 +40,6 @@ class CustomQcSampleReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::when($request->filled('commodity_id'), function ($q) use ($request) {
-            return $q->whereHas('slabs', function ($query) use ($request) {
-                $query->whereIn('product_id', (array) $request->commodity_id);
-            });
-        })->get();
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
 
         $tickets = PurchaseTicket::select('purchase_tickets.*')
@@ -116,6 +111,21 @@ class CustomQcSampleReportController extends Controller
             })
             ->orderBy('purchase_tickets.created_at', 'desc')
             ->get();
+
+        $commodityIds = [];
+        foreach ($tickets as $t) {
+            if ($t->qc_product) $commodityIds[] = $t->qc_product;
+            if ($t->product_id) $commodityIds[] = $t->product_id;
+            if ($t->purchaseOrder?->qc_product) $commodityIds[] = $t->purchaseOrder->qc_product;
+            if ($t->purchaseOrder?->product_id) $commodityIds[] = $t->purchaseOrder->product_id;
+        }
+        $commodityIds = array_values(array_unique(array_filter($commodityIds)));
+
+        if (empty($commodityIds) && $request->filled('commodity_id')) {
+            $commodityIds = (array) $request->commodity_id;
+        }
+
+        $product_slab_types = ProductSlabType::getForCommodities($commodityIds);
 
         return view('management.reports.arrival.custom-qc-sample.getCustomQcSample', compact(
             'tickets',

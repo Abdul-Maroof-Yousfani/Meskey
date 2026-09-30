@@ -19,11 +19,26 @@ class SalesQcController extends Controller
         // $this->middleware('check.company:sales-sales-qc', ['only' => ['edit']]);
     }
 
+    private function getUserArrivalLocations()
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return [];
+        }
+        $locations = getUserCurrentCompanyArrivalLocations();
+        if (empty($locations) && $authUser->arrival_location_id) {
+            $locations = [$authUser->arrival_location_id];
+        }
+        return $locations ?? [];
+    }
+
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
         return view('management.sales.sales-qc.index');
     }
 
@@ -32,11 +47,20 @@ class SalesQcController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $SalesQcs = SalesQc::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'createdBy'
         ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -58,8 +82,15 @@ class SalesQcController extends Controller
      */
     public function create()
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         // Get tickets that have first weighbridge created
         $Tickets = LoadingProgramItem::whereHas('firstWeighbridge')
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereIn('arrival_location_id', $locations);
+            })
             ->whereDoesntHaveClosedSaleOrder()
             ->whereDoesntHave('salesQc')
             ->with([
@@ -77,6 +108,10 @@ class SalesQcController extends Controller
      */
     public function store(Request $request)
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'customer' => 'required|string',
@@ -97,6 +132,14 @@ class SalesQcController extends Controller
         }
 
         $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if (!$ticketItem) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'Ticket not found.']], 422);
+        }
+        if (!$isSuperAdmin && !in_array($ticketItem->arrival_location_id, $locations)) {
+            return response()->json([
+                'errors' => ['loading_program_item_id' => 'You are not authorized to perform Sales QC for this location.']
+            ], 422);
+        }
         if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
             return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
@@ -189,6 +232,10 @@ class SalesQcController extends Controller
      */
     public function show(string $id)
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $SalesQc = SalesQc::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -202,7 +249,12 @@ class SalesQcController extends Controller
             'loadingProgramItem.saleOrders.customer',
             'loadingProgramItem.saleOrders.sales_order_data.item',
             'attachments'
-        ])->findOrFail($id);
+        ])->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
 
         return view('management.sales.sales-qc.show', compact('SalesQc'));
     }
@@ -212,6 +264,10 @@ class SalesQcController extends Controller
      */
     public function edit(string $id)
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $SalesQc = SalesQc::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -229,9 +285,17 @@ class SalesQcController extends Controller
             'loadingProgramItem.arrivalLocation',
             'loadingProgramItem.subArrivalLocation',
             'attachments'
-        ])->findOrFail($id);
+        ])->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
 
         $Tickets = LoadingProgramItem::whereHas('firstWeighbridge')
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereIn('arrival_location_id', $locations);
+            })
             ->with([
                 'loadingProgram.deliveryOrder.customer',
                 'loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -248,6 +312,10 @@ class SalesQcController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'customer' => 'nullable|string',
@@ -268,6 +336,12 @@ class SalesQcController extends Controller
         }
 
         $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if (!$ticketItem) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'Ticket not found.']], 422);
+        }
+        if (!$isSuperAdmin && !in_array($ticketItem->arrival_location_id, $locations)) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'You are not authorized for this location.']], 422);
+        }
         if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
             return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
@@ -280,7 +354,11 @@ class SalesQcController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a Sales QC.']], 422);
         }
 
-        $salesQc = SalesQc::findOrFail($id);
+        $salesQc = SalesQc::when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                $q->whereIn('arrival_location_id', $locations);
+            });
+        })->findOrFail($id);
 
         // Get ticket data to auto-populate fields
         $LoadingProgramItem = LoadingProgramItem::with([
@@ -371,8 +449,16 @@ class SalesQcController extends Controller
      */
     public function destroy(string $id)
     {
+        abort_if(!canAccess('sales-qc') && !auth()->user()->can('sales-qc'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         try {
-            $salesQc = SalesQc::findOrFail($id);
+            $salesQc = SalesQc::when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                $q->whereIn('arrival_location_id', $locations);
+            });
+        })->findOrFail($id);
 
             // Delete attachments
             foreach ($salesQc->attachments as $attachment) {
@@ -401,6 +487,9 @@ class SalesQcController extends Controller
      */
     public function getTicketRelatedData(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $LoadingProgramItem = LoadingProgramItem::with([
             'loadingProgram.deliveryOrder.customer',
             'loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -414,7 +503,10 @@ class SalesQcController extends Controller
             'saleOrders.sales_order_data.item',
             'arrivalLocation',
             'subArrivalLocation'
-        ])->findOrFail($request->loading_program_item_id);
+        ])->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereIn('arrival_location_id', $locations);
+            })
+            ->findOrFail($request->loading_program_item_id);
 
         $orders = [];
 

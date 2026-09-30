@@ -25,6 +25,12 @@
                                 style="background-color: #e3f2fd;">
                                 <div class="p-2">
                                     #{{ $group['inquiry_no'] }}
+                                    @if(isset($group['pre_sale_inspection']) && $group['pre_sale_inspection'])
+                                        <br>
+                                        <span class="badge badge-info mt-1" style="font-size: 10px;" title="Pre Sale Inspection: {{ $group['pre_sale_inspection']->inspection_no }}">
+                                            <i class="ft-search"></i> #{{ $group['pre_sale_inspection']->inspection_no }}
+                                        </span>
+                                    @endif
                                     <br>
                                     <small class="text-muted">
                                         {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}

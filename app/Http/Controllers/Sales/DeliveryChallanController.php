@@ -24,14 +24,86 @@ use App\Models\Master\Vendor;
 
 class DeliveryChallanController extends Controller
 {
+    private function getUserArrivalLocations()
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return [];
+        }
+        $locations = getUserCurrentCompanyArrivalLocations();
+        if (empty($locations) && $authUser->arrival_location_id) {
+            $locations = [$authUser->arrival_location_id];
+        }
+        return $locations ?? [];
+    }
+
+    private function canUserAccessDeliveryChallan(DeliveryChallan $delivery_challan): bool
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return false;
+        }
+        if ($authUser->user_type === 'super-admin') {
+            return true;
+        }
+
+        $userLocations = $this->getUserArrivalLocations();
+        if (empty($userLocations)) {
+            return false;
+        }
+
+        $dcArrivals = !empty($delivery_challan->arrival_id)
+            ? array_map('trim', explode(',', (string)$delivery_challan->arrival_id))
+            : [];
+
+        $ticketArrivals = $delivery_challan->delivery_challan_data
+            ->pluck('loadingProgramItem.arrival_location_id')
+            ->filter()
+            ->map(fn($id) => (string)$id)
+            ->unique()
+            ->toArray();
+
+        $allDcLocations = array_unique(array_merge($dcArrivals, $ticketArrivals));
+
+        if (empty($allDcLocations)) {
+            return true;
+        }
+
+        return !empty(array_intersect($allDcLocations, array_map('strval', $userLocations)));
+    }
+
     public function index() {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
+        $dcQuery = DeliveryChallan::query();
+        if (!$isSuperAdmin) {
+            $dcQuery->where(function($q) use ($locations) {
+                foreach ($locations as $locId) {
+                    $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+                }
+                $q->orWhereHas('delivery_challan_data.loadingProgramItem', function($sq) use ($locations) {
+                    $sq->whereIn('arrival_location_id', $locations);
+                });
+            });
+        }
+
         // Only get customers that have delivery challan records
-        $customerIds = DeliveryChallan::distinct()->pluck('customer_id')->filter();
+        $customerIds = (clone $dcQuery)->distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
 
         // Only get items that have delivery challan data records attached to an existing DC
-        $itemIds = \App\Models\Sales\DeliveryChallanData::whereIn('delivery_challan_id', function($query) {
-                $query->select('id')->from('delivery_challans');
+        $itemIds = \App\Models\Sales\DeliveryChallanData::whereIn('delivery_challan_id', function($query) use ($isSuperAdmin, $locations) {
+                $q = $query->select('id')->from('delivery_challans');
+                if (!$isSuperAdmin) {
+                    $q->where(function($sq) use ($locations) {
+                        foreach ($locations as $locId) {
+                            $sq->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+                        }
+                    });
+                }
             })
             ->distinct()
             ->pluck('item_id')
@@ -40,8 +112,15 @@ class DeliveryChallanController extends Controller
 
         // Only get delivery orders that are linked to existing delivery challans
         $doIds = DB::table('delivery_challan_delivery_order')
-            ->whereIn('delivery_challan_id', function($query) {
-                $query->select('id')->from('delivery_challans');
+            ->whereIn('delivery_challan_id', function($query) use ($isSuperAdmin, $locations) {
+                $q = $query->select('id')->from('delivery_challans');
+                if (!$isSuperAdmin) {
+                    $q->where(function($sq) use ($locations) {
+                        foreach ($locations as $locId) {
+                            $sq->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+                        }
+                    });
+                }
             })
             ->distinct()
             ->pluck('delivery_order_id')
@@ -52,6 +131,11 @@ class DeliveryChallanController extends Controller
     }
 
     public function create() {
+        abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();
@@ -63,6 +147,9 @@ class DeliveryChallanController extends Controller
             ->join('loading_program_items', 'loading_programs.id', '=', 'loading_program_items.loading_program_id')
             ->join('loading_slips', 'loading_program_items.id', '=', 'loading_slips.loading_program_item_id')
             ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
+            ->when(!$isSuperAdmin, function($q) use ($locations) {
+                $q->whereIn('loading_program_items.arrival_location_id', $locations);
+            })
             ->distinct()
             ->get();
         $labours = Vendor::all();
@@ -72,6 +159,11 @@ class DeliveryChallanController extends Controller
     }
 
     public function store(DeliveryChallanRequest $request) {
+        abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         DB::beginTransaction();
         $do_id = $request->delivery_order_id;
 
@@ -87,13 +179,37 @@ class DeliveryChallanController extends Controller
         if (is_array($request->ticket_id)) {
             foreach ($request->ticket_id as $tId) {
                 if ($tId) {
-                    $ticketItem = LoadingProgramItem::find($tId);
+                    $ticketItem = LoadingProgramItem::with('loadingSlip.secondWeighbridge')->find($tId);
                     if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
                         return response()->json([
                             'error' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.',
                             'message' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.'
                         ], 422);
                     }
+                    if (!$isSuperAdmin && $ticketItem && !in_array($ticketItem->arrival_location_id, $locations)) {
+                        return response()->json([
+                            'error' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not belong to your assigned arrival location.',
+                            'message' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not belong to your assigned arrival location.'
+                        ], 422);
+                    }
+                    if (!$ticketItem || !$ticketItem->loadingSlip || !$ticketItem->loadingSlip->secondWeighbridge) {
+                        return response()->json([
+                            'error' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not have a completed Second Weighbridge.',
+                            'message' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not have a completed Second Weighbridge.'
+                        ], 422);
+                    }
+                }
+            }
+        }
+
+        if (!$isSuperAdmin && $request->arrival_location_csv) {
+            $reqArrivalIds = array_filter(explode(',', $request->arrival_location_csv));
+            foreach ($reqArrivalIds as $arrId) {
+                if (!in_array(trim($arrId), $locations)) {
+                    return response()->json([
+                        'error' => 'You are not authorized to create a Delivery Challan for this factory location.',
+                        'message' => 'You are not authorized to create a Delivery Challan for this factory location.'
+                    ], 422);
                 }
             }
         }
@@ -329,6 +445,14 @@ class DeliveryChallanController extends Controller
     }
 
     public function destroy(DeliveryChallan $delivery_challan) {
+        abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        if (!$this->canUserAccessDeliveryChallan($delivery_challan)) {
+            return response()->json([
+                'error' => 'You are not authorized to delete Delivery Challan for this location.',
+                'message' => 'You are not authorized to delete Delivery Challan for this location.'
+            ], 422);
+        }
+
         if(in_array(strtolower($delivery_challan->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "Delivery Challan has been {$delivery_challan->am_approval_status} and cannot be deleted.",
@@ -342,6 +466,17 @@ class DeliveryChallanController extends Controller
     }
 
     public function update(DeliveryChallanRequest $request, DeliveryChallan $delivery_challan) {
+        abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
+        if (!$this->canUserAccessDeliveryChallan($delivery_challan)) {
+            return response()->json([
+                'error' => 'You are not authorized to update Delivery Challan for this location.',
+                'message' => 'You are not authorized to update Delivery Challan for this location.'
+            ], 422);
+        }
 
         DB::beginTransaction();
         $do_id = $request->delivery_order_id;
@@ -360,19 +495,40 @@ class DeliveryChallanController extends Controller
         if (is_array($request->ticket_id)) {
             foreach ($request->ticket_id as $tId) {
                 if ($tId) {
-                    $ticketItem = LoadingProgramItem::find($tId);
+                    $ticketItem = LoadingProgramItem::with('loadingSlip.secondWeighbridge')->find($tId);
                     if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
                         return response()->json([
                             'error' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.',
                             'message' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.'
                         ], 422);
                     }
+                    if (!$isSuperAdmin && $ticketItem && !in_array($ticketItem->arrival_location_id, $locations)) {
+                        return response()->json([
+                            'error' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not belong to your assigned arrival location.',
+                            'message' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not belong to your assigned arrival location.'
+                        ], 422);
+                    }
+                    if (!$ticketItem || !$ticketItem->loadingSlip || !$ticketItem->loadingSlip->secondWeighbridge) {
+                        return response()->json([
+                            'error' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not have a completed Second Weighbridge.',
+                            'message' => 'Ticket ' . ($ticketItem->transaction_number ?? $tId) . ' does not have a completed Second Weighbridge.'
+                        ], 422);
+                    }
                 }
             }
         }
-        // if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
-        //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
-        // }
+
+        if (!$isSuperAdmin && $request->arrival_location_csv) {
+            $reqArrivalIds = array_filter(explode(',', $request->arrival_location_csv));
+            foreach ($reqArrivalIds as $arrId) {
+                if (!in_array(trim($arrId), $locations)) {
+                    return response()->json([
+                        'error' => 'You are not authorized to update a Delivery Challan for this factory location.',
+                        'message' => 'You are not authorized to update a Delivery Challan for this factory location.'
+                    ], 422);
+                }
+            }
+        }
 
         if(in_array(strtolower($delivery_challan->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
@@ -606,6 +762,8 @@ class DeliveryChallanController extends Controller
     }
 
     public function edit(DeliveryChallan $delivery_challan) {
+        abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        abort_if(!$this->canUserAccessDeliveryChallan($delivery_challan), 403);
         $delivery_challan->load("delivery_order.delivery_order_data", "delivery_challan_data");
         $customers = Customer::all();
         $delivery_orders = $delivery_challan->delivery_order;
@@ -656,6 +814,8 @@ class DeliveryChallanController extends Controller
     }
 
     public function view(DeliveryChallan $delivery_challan) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list'), 403);
+        abort_if(!$this->canUserAccessDeliveryChallan($delivery_challan), 403);
         $delivery_challan->load("delivery_order.delivery_order_data");
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
@@ -690,10 +850,25 @@ class DeliveryChallanController extends Controller
     }
 
     public function getList(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
         $delivery_challans = DeliveryChallan::with(['delivery_order', 'delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->where(function ($q) use ($locations) {
+                    foreach ($locations as $locId) {
+                        $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+                    }
+                    $q->orWhereHas('delivery_challan_data.loadingProgramItem', function ($sq) use ($locations) {
+                        $sq->whereIn('arrival_location_id', $locations);
+                    });
+                });
+            })
             // Filter by DO No
             ->when($request->filled('do_id_for_filter') && $request->do_id_for_filter != 'all', function ($q) use ($request) {
                 $q->whereHas('delivery_order', function ($sq) use ($request) {
@@ -810,6 +985,7 @@ class DeliveryChallanController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
@@ -843,6 +1019,11 @@ class DeliveryChallanController extends Controller
     }
 
     public function get_delivery_orders(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $customer_id = $request->customer_id;
 
         if (!$customer_id) {
@@ -861,11 +1042,14 @@ class DeliveryChallanController extends Controller
                     });
                 }
             })
-            ->whereHas('loadingPrograms.loadingProgramItems', function($query) {
+            ->whereHas('loadingPrograms.loadingProgramItems', function($query) use ($isSuperAdmin, $locations) {
                 // Ticket must have a loading slip with second weighbridge
                 $query->whereHas('loadingSlip.secondWeighbridge')
                     // AND ticket must NOT be used in any delivery challan
-                    ->whereDoesntHave('delivery_challan_data');
+                    ->whereDoesntHave('delivery_challan_data')
+                    ->when(!$isSuperAdmin, function ($q) use ($locations) {
+                        $q->whereIn('arrival_location_id', $locations);
+                    });
             })
             ->get();
 
@@ -903,6 +1087,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function getItems(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $delivery_order_ids = $request->delivery_order_ids;
         $delivery_orders = DeliveryOrder::with("delivery_order_data")->whereIn("id", $delivery_order_ids)->get();
         $items = Product::select("id", "name")->get();
@@ -920,17 +1105,31 @@ class DeliveryChallanController extends Controller
 
 
     public function getItemsByTickets(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $ticket_id = $request->ticket_id;
         $loading_programs = LoadingProgramItem::with([
             "loadingProgram.deliveryOrder.delivery_order_data",
             "loadingSlip.secondWeighbridge"
-        ])->where("id", $ticket_id)->get();
+        ])
+        ->when(!$isSuperAdmin, function ($q) use ($locations) {
+            $q->whereIn('arrival_location_id', $locations);
+        })
+        ->where("id", $ticket_id)->get();
         $items = Product::select("id", "name")->get();
 
         return view("management.sales.delivery-challan.getItem", compact("loading_programs", "items"));
     }
 
     public function getTickets(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $delivery_order_ids = $request->delivery_order_ids;
         $delivery_challan_id = $request->delivery_challan_id; // For edit mode - include tickets from this DC
 
@@ -948,6 +1147,9 @@ class DeliveryChallanController extends Controller
             ->whereHas("dispatchQc")
             ->whereHas('loadingProgram', function($q) use ($delivery_order_ids) {
                 $q->whereIn('delivery_order_id', $delivery_order_ids);
+            })
+            ->when(!$isSuperAdmin, function ($q) use ($locations) {
+                $q->whereIn('arrival_location_id', $locations);
             });
 
         // Exclude tickets that are already used in other delivery challans (but include tickets from current DC being edited)
@@ -990,6 +1192,11 @@ class DeliveryChallanController extends Controller
      * Get tickets with accepted Dispatch QC for initial selection in Delivery Challan
      */
     public function getTicketsWithDispatchQc(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $delivery_challan_id = $request->delivery_challan_id;
 
         $query = LoadingProgramItem::with([
@@ -1002,7 +1209,10 @@ class DeliveryChallanController extends Controller
                 'loadingSlip.secondWeighbridge'
             ])
             ->whereDoesntHaveClosedSaleOrder()
-            ->whereHas("loadingSlip.secondWeighbridge");
+            ->whereHas("loadingSlip.secondWeighbridge")
+            ->when(!$isSuperAdmin, function ($q) use ($locations) {
+                $q->whereIn('arrival_location_id', $locations);
+            });
 
         if ($delivery_challan_id) {
             $query->where(function($q) use ($delivery_challan_id) {
@@ -1032,6 +1242,11 @@ class DeliveryChallanController extends Controller
      * Get ticket data for auto-filling Delivery Challan form
      */
     public function getTicketDataForDC(Request $request) {
+        abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $ticket_id = $request->ticket_id;
 
         if (!$ticket_id) {
@@ -1050,6 +1265,10 @@ class DeliveryChallanController extends Controller
             'loadingSlip.secondWeighbridge',
             'transporter'
         ])->findOrFail($ticket_id);
+
+        if (!$isSuperAdmin && !in_array($ticket->arrival_location_id, $locations)) {
+            return response()->json(['error' => 'Unauthorized location for this ticket.'], 403);
+        }
 
         if ($ticket->hasClosedSaleOrder()) {
             return response()->json([

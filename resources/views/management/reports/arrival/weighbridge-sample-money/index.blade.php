@@ -50,15 +50,6 @@
                                                         value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
-
-                                            <div class="col-md-2">
-                                                <div class="form-group mb-0">
-                                                    <label>Arrival Ticket No:</label>
-                                                    <input type="text" class="form-control" name="arrival_ticket_no"
-                                                        placeholder="Arrival Ticket No"
-                                                        value="{{ request('arrival_ticket_no', '') }}">
-                                                </div>
-                                            </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Truck Type:</label>
@@ -76,6 +67,25 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
+                                                    <label>Status:</label>
+                                                    <select name="status" id="status"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="all" {{ request('status', 'all') == 'all' ? 'selected' : '' }}>All</option>
+                                                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            {{-- <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Arrival Ticket No:</label>
+                                                    <input type="text" class="form-control" name="arrival_ticket_no"
+                                                        placeholder="Arrival Ticket No"
+                                                        value="{{ request('arrival_ticket_no', '') }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
                                                     <label>Truck No:</label>
                                                     <input type="text" class="form-control" name="truck_no"
                                                         placeholder="Truck No" value="{{ request('truck_no', '') }}">
@@ -88,9 +98,7 @@
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="row justify-content-nd text mt-2">
                                             <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
@@ -138,7 +146,7 @@
                                                         <option value="">Sauda Type Name</option>
                                                     </select>
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -160,6 +168,7 @@
                                             <th>Entry Time</th>
                                             <th>Entry By</th>
                                             <th>Truck Type</th>
+                                            <th>Truck No</th>
                                             <th>First Weight</th>
                                             <th>Second Weight</th>
                                             <th>Weighbridge Amount</th>
@@ -182,6 +191,8 @@
 @section('script')
     <script>
         $(document).ready(function() {
+            $('.selectWithoutAjax').select2();
+
             filterationCommon(
                 `{{ route('reports.arrival.get.weighbridge-sample-money') }}`
             );

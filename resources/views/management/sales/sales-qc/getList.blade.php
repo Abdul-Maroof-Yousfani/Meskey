@@ -57,10 +57,12 @@
                                 <i class="ft-trash-2"></i>
                             </a> --}}
                         @endif
+                        @canAccess('sales-qc')
                         <a onclick="openModal(this,'{{ route('sales.sales-qc.show', $salesQc->id) }}','View Sales QC', true)"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
+                        @endcanAccess
 
                     </td>
                 </tr>

@@ -103,12 +103,20 @@ class TruckTimestampReportController extends Controller
                         ->whereDate('arrival_tickets.created_at', '<=', $endDate);
                 }
             })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
 
-        return view('management.reports.arrival.truck-timestamp.getTruckTimestamp', compact('tickets'));
+        $maxInitialQC = $tickets->map(function ($t) {
+            return $t->arrivalSamplingRequests->where('sampling_type', 'initial')->count();
+        })->max() ?: 1;
+
+        $maxInnerQC = $tickets->map(function ($t) {
+            return $t->arrivalSamplingRequests->where('sampling_type', 'inner')->count();
+        })->max() ?: 0;
+
+        return view('management.reports.arrival.truck-timestamp.getTruckTimestamp', compact('tickets', 'maxInitialQC', 'maxInnerQC'));
     }
 }

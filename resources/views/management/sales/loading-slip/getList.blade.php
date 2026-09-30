@@ -71,6 +71,7 @@
                         {{ $loadingSlip->created_at->format('d-m-Y H:i') }}
                     </td>
                     <td>
+                        @canAccess('loading-slip')
                         @if($isActionAllowed)
                             <a onclick="openModal(this,'{{ route('sales.loading-slip.edit', $loadingSlip->id) }}','Edit Loading Slip', false)"
                                 class="warning p-1 text-center mr-2 position-relative">
@@ -89,7 +90,7 @@
                             class="primary p-1 text-center mr-2 position-relative" title="Print">
                             <i class="ft-printer font-medium-3"></i>
                         </a>
-
+                        @endcanAccess
                     </td>
                 </tr>
             @endforeach

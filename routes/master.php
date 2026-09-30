@@ -22,6 +22,7 @@ use App\Http\Controllers\Master\{
     LocationTypeController,
     ArrivalSubLocationController,
     PlantController,
+    ProductionRecipeController,
     ProductionMachineController,
     TruckTypeController,
     StationController,
@@ -46,7 +47,8 @@ use App\Http\Controllers\Master\{
     RequestByController,
     TransporterController,
     VariableController,
-    MillingRateController
+    MillingRateController,
+    PermissionController
 };
 
 
@@ -111,6 +113,8 @@ Route::post('/get-broker', [BrokerController::class, 'getList'])->name('get.brok
 Route::resource('transporter', TransporterController::class);
 Route::post('/get-transporter', [TransporterController::class, 'getList'])->name('get.transporter');
 
+Route::get('/product-slab-type-order', [ProductSlabTypeController::class, 'orderIndex'])->name('product-slab-type.order.index');
+Route::post('/product-slab-type-order/update', [ProductSlabTypeController::class, 'updateOrder'])->name('product-slab-type.order.update');
 Route::resource('product-slab-type', ProductSlabTypeController::class);
 Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getList'])->name('get.product-slab-type');
 
@@ -141,6 +145,9 @@ Route::post('/get-arrival-sub-location', [ArrivalSubLocationController::class, '
 
 Route::resource('plant', PlantController::class);
 Route::post('/get-plant', [PlantController::class, 'getList'])->name('get.plant');
+
+Route::resource('production-recipe', ProductionRecipeController::class);
+Route::post('/get-production-recipe', [ProductionRecipeController::class, 'getList'])->name('get.production-recipe');
 
 Route::resource('production-machine', ProductionMachineController::class);
 Route::post('/get-production-machine', [ProductionMachineController::class, 'getList'])->name('get.production-machine');
@@ -212,3 +219,8 @@ Route::resource('milling-rate', MillingRateController::class)->except(['destroy'
 Route::post('/get-milling-rates', [MillingRateController::class, 'getList'])->name('get.milling-rates');
 Route::get('/milling-rate/get-sub-locations/{locationId}', [MillingRateController::class, 'getSubLocations'])->name('milling-rate.get-sub-locations');
 Route::get('/milling-rate/get-plants/{subLocationId}', [MillingRateController::class, 'getPlants'])->name('milling-rate.get-plants');
+
+// permissions
+Route::resource('permission', PermissionController::class);
+Route::resource('permissions', PermissionController::class);
+Route::post('/get-permissions', [PermissionController::class, 'getList'])->name('get.permissions');

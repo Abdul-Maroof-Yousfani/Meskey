@@ -96,6 +96,7 @@
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                             <div class="btn-group" role="group">
 
+                                @canAccess('sales-delivery-challan-list')
                                 <a class="btn btn-sm btn-info"
                                     onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '60%')"
                                     title="View" style="margin-right: 10px;">
@@ -113,7 +114,9 @@
                                         @endif
                                     @endforeach
                                 @endif
+                                @endcanAccess
 
+                                @canAccess('sales-delivery-challan-create')
                                 @if(auth()->user()->id == $group['created_by_id'])
                                     @if($group['status'] === 'pending' || $group['status'] === 'reverted')
 
@@ -132,6 +135,7 @@
                                         </button>
                                     @endif
                                 @endif
+                                @endcanAccess
                             </div>
                         </td>
                     @endif

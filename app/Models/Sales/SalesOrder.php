@@ -7,7 +7,7 @@ use App\Models\Master\PayType;
 use App\Models\Procurement\Store\FactoryLocation;
 use App\Models\Procurement\Store\Location;
 use App\Models\Procurement\Store\SectionLocation;
-use App\Traits\HasApproval;
+use App\Traits\HasApprovalSalesOrder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class SalesOrder extends Model
 {
     use HasFactory;
-    use HasApproval {
+    use HasApprovalSalesOrder {
         onApprovalComplete as traitOnApprovalComplete;
         onApprovalRejected as traitOnApprovalRejected;
         onApprovalReverted as traitOnApprovalReverted;
@@ -49,7 +49,8 @@ class SalesOrder extends Model
         "seller_commission_per_kg",
         "receipt_voucher_item_ids",
         "payment_on_kaanta",
-        "is_bardana"
+        "is_bardana",
+        "so_approval_stage"
     ];
 
     protected $casts = [
@@ -130,6 +131,15 @@ class SalesOrder extends Model
     protected static function booted()
     {
         static::updating(function ($salesOrder) {
+            $originalStage = strtolower($salesOrder->getOriginal('so_approval_stage') ?? '');
+            $isDirtyNotApproval = collect($salesOrder->getDirty())->keys()->reject(function ($key) {
+                return in_array($key, ['am_approval_status', 'so_approval_stage', 'am_change_made', 'updated_at']);
+            })->isNotEmpty();
+
+            if ($originalStage === 'headoffice_pending' && $isDirtyNotApproval) {
+                throw new \Exception("Sale Order has been approved at Stage 1 and is pending Head Office approval. It cannot be edited unless reverted by Head Office.");
+            }
+
             $originalStatus = strtolower($salesOrder->getOriginal('am_approval_status') ?? '');
             $newStatus = strtolower($salesOrder->am_approval_status ?? '');
             if ($salesOrder->isDirty('am_approval_status')) {

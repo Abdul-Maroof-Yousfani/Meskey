@@ -55,10 +55,21 @@
                         @endif
                     </td>
                     <td>
-                        <a onclick="openModal(this, '{{ route('receipt-voucher.show', $voucher->id) }}', 'View Receipt Voucher', false, '80%')"
-                            class="info p-1 text-center mr-2 position-relative" title="View">
-                            <i class="ft-eye font-medium-3"></i>
-                        </a>
+                        @if($voucher->is_direct)
+                            @canAccess('direct-receipt-voucher-list')
+                            <a onclick="openModal(this, '{{ route('receipt-voucher.show', $voucher->id) }}', 'View Receipt Voucher', false, '80%')"
+                                class="info p-1 text-center mr-2 position-relative" title="View">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                            @endcanAccess
+                        @else
+                            @canAccess('receipt-voucher-list')
+                            <a onclick="openModal(this, '{{ route('receipt-voucher.show', $voucher->id) }}', 'View Receipt Voucher', false, '80%')"
+                                class="info p-1 text-center mr-2 position-relative" title="View">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                            @endcanAccess
+                        @endif
                         @php
                             $editRoute = $voucher->is_direct
                                 ? route('direct.receipt-voucher.edit', $voucher->id)
@@ -69,9 +80,19 @@
                         @endphp
 
                         @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
-                            <a class="info p-1 text-center mr-2 position-relative" href="{{ $editRoute }}" title="Edit">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                            @if($voucher->is_direct)
+                                @canAccess('direct-receipt-voucher-create')
+                                <a class="info p-1 text-center mr-2 position-relative" href="{{ $editRoute }}" title="Edit">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                @endcanAccess
+                            @else
+                                @canAccess('receipt-voucher-create')
+                                <a class="info p-1 text-center mr-2 position-relative" href="{{ $editRoute }}" title="Edit">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                @endcanAccess
+                            @endif
                         @endif
 
                     </td>

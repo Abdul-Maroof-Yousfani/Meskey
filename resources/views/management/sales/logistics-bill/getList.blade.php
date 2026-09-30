@@ -61,6 +61,7 @@
                 </td>
                 <td>
                     <div class="btn-group" role="group">
+                        @canAccess('logistics')
                         <button class="btn btn-sm btn-primary"
                             onclick="openModal(this, '{{ route('sales.logistics-bill.edit', $bill->id) }}', 'Edit Logistics Bill', false, '80%')">
                             <i class="fa fa-edit"></i> Edit
@@ -69,6 +70,7 @@
                             onclick="openModal(this, '{{ route('sales.logistics-bill.view', $bill->id) }}', 'View Logistics Bill', false, '80%')">
                             <i class="fa fa-eye"></i> View
                         </button>
+                        @endcanAccess
                     </div>
                 </td>
             </tr>

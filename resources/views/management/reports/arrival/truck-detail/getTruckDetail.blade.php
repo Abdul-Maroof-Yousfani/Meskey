@@ -17,7 +17,7 @@
         <th>Truck #</th>
         <th>Amanat</th>
         @foreach ($product_slab_types as $slab)
-            <th>Avg. {{ $slab->name }} </th>
+            <th>Avg. {{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
         @endforeach
         {{-- <th>Avg. Broken</th>
         <th>Avg. Moisture</th>
@@ -151,13 +151,14 @@
                 @foreach ($product_slab_types as $slab)
                     @php
                         $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
-                        $slabSymbol = $slab->qc_symbol ?? '';
+                        // $slabSymbol = $slab->qc_symbol ?? '';
                     @endphp
 
                     <!-- INITIAL Column -->
                     <td>
                         @if($initialValue != 0)
-                            {{ $initialValue }}{{ $slabSymbol }}
+                            {{ $initialValue }}
+                            {{-- {{ $slabSymbol }} --}}
                         @else
                             0
                         @endif
