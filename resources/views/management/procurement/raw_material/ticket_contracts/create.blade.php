@@ -966,7 +966,7 @@
                         });
 
                         $.ajax({
-                            url: "{{ route('raw-material.ticket-contracts.park-arrival') }}",
+                            url: "{{ route('raw-material.ticket-contracts.park-arrival', $arrivalTicket->id) }}",
                             type: "POST",
                             data: {
                                 _token: "{{ csrf_token() }}",

@@ -256,7 +256,7 @@ class TicketContractController extends Controller
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'GRN Number not found' ], 404);
+                return response()->json(['success' => false, 'message' => 'GRN Number not found'], 404);
             }
 
             if ($type == 'pohanch') {
@@ -870,6 +870,11 @@ class TicketContractController extends Controller
 
     public function parkArrival(Request $request)
     {
+
+        $arrivalTicket = ArrivalTicket::find($request->id);
+        $arrivalTicket->arrival_purchase_order_id = null;
+        $arrivalTicket->save();
+
         return response()->json([
             'success' => true,
             'message' => 'Arrival parked successfully!',
