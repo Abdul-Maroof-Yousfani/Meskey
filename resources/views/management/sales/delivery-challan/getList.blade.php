@@ -4,13 +4,14 @@
     <thead class="bg-light">
         <tr>
             <th width="10%">Do No</th>
-            <th width="15%">Customer</th>
-            <th width="13%">Factory</th>
-            <th width="22%">Item Description</th>
-            <th width="10%" class="text-right">Qty</th>
+            <th width="13%">Customer</th>
+            <th width="11%">Factory</th>
+            <th width="18%">Item Description</th>
+            <th width="9%" class="text-right">Qty</th>
+            <th width="10%">Truck No</th>
             <!-- <th width="10%" class="text-right">Rate</th> -->
             <!-- <th width="10%" class="text-right">Amount</th> -->
-            <th width="10%" class="text-center">Date</th>
+            <th width="9%" class="text-center">Date</th>
             <th width="8%">Status</th>
             <th width="12%">Action</th>
         </tr>
@@ -53,6 +54,16 @@
                     <td class="text-right align-middle">
                         {{ round($itemRow['item_data']->qty) }}
                         <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
+                    </td>
+
+                    <td class="align-middle">
+                        @if(!empty($itemRow['item_data']->truck_no))
+                            <span class="badge badge-light border font-weight-bold" style="font-size: 0.85em; letter-spacing: 0.5px;">
+                                {{ $itemRow['item_data']->truck_no }}
+                            </span>
+                        @else
+                            <span class="text-muted">--</span>
+                        @endif
                     </td>
 
                     <!-- <td class="text-right align-middle">
@@ -144,7 +155,7 @@
             @endforeach
         @empty
             <tr>
-                <td colspan="8" class="text-center py-5">
+                <td colspan="9" class="text-center py-5">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

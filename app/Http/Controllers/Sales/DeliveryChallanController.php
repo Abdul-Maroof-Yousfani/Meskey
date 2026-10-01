@@ -908,6 +908,13 @@ class DeliveryChallanController extends Controller
                         });
                 });
             })
+            // Filter by Truck No
+            ->when($request->filled('truck_no_for_filter'), function ($q) use ($request) {
+                $truckNo = '%' . strtolower(trim($request->truck_no_for_filter)) . '%';
+                $q->whereHas('delivery_challan_data', function ($sq) use ($truckNo) {
+                    $sq->whereRaw('LOWER(truck_no) LIKE ?', [$truckNo]);
+                });
+            })
             ->latest()
             ->paginate($perPage);
 
@@ -955,8 +962,10 @@ class DeliveryChallanController extends Controller
             $itemRows = [];
             foreach ($items as $itemData) {
                 $itemRows[] = [
-                    'item_data' => $itemData,
+                    'item_data'      => $itemData,
+                    'item'           => $itemData->item ?? (object)['unitOfMeasure' => null],
                     'accepted_qc_id' => $itemData->loadingProgramItem->acceptedDispatchQc->id ?? null,
+                    'truck_no'       => $itemData->truck_no ?? null,
                 ];
             }
 
