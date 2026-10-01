@@ -146,6 +146,11 @@ class ApprovalController extends Controller
                     'success' => 'Stage 1 approved successfully. Forwarded to Head Office for final approval.'
                 ]);
             }
+            if ($record instanceof \App\Models\Sales\SalesInquiry && $record->si_approval_stage === 'headoffice_pending') {
+                return response()->json([
+                    'success' => 'Stage 1 approved successfully. Forwarded to Head Office for final approval.'
+                ]);
+            }
             return response()->json([
                 'success' => 'Approved successfully'
             ]);

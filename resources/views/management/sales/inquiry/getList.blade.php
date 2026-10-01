@@ -77,35 +77,66 @@
 
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                 @php
-                                    $status = $group['status'];
-                                    $badge = match (strtolower($status)) {
-                                        'approved' => 'badge-success',
-                                        'rejected' => 'badge-danger',
-                                        'pending' => 'badge-warning',
-                                        default => 'badge-secondary',
-                                    };
+                                    $status = strtolower($group['status'] ?? 'pending');
+                                    $stage = strtolower($group['si_approval_stage'] ?? 'stage_1_pending');
                                 @endphp
-                                <span class="badge {{ $badge }} px-3 py-2">
-                                    {{ ucfirst($status) }}
-                                </span>
+
+                                @if($status === 'approved')
+                                    <span class="badge badge-success px-3 py-2">
+                                        Approved
+                                    </span>
+                                @elseif($status === 'rejected' || $stage === 'rejected')
+                                    <span class="badge badge-danger px-3 py-2">
+                                        Rejected
+                                    </span>
+                                @elseif($status === 'reverted' || $stage === 'reverted')
+                                    <span class="badge badge-secondary px-3 py-2" style="background-color: #6c757d;">
+                                        Reverted
+                                    </span>
+                                @elseif($stage === 'headoffice_pending')
+                                    <span class="badge badge-info px-3 py-2" style="background-color: #17a2b8;" title="Stage 1 Approved - Awaiting Head Office Final Approval">
+                                        Pending HO
+                                    </span>
+                                @else
+                                    <span class="badge badge-warning px-3 py-2" title="Awaiting Stage 1 (Branch / Parent) Approval">
+                                        Pending (Stage 1)
+                                    </span>
+                                @endif
                             </td>
 
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
+                                @php
+                                    $canEdit = (auth()->user()->id == $group['created_by_id']) 
+                                        || (auth()->user()->user_type == 'admin') 
+                                        || (method_exists(auth()->user(), 'hasAnyRole') && auth()->user()->hasAnyRole(['Admin', 'Super Admin', 'admin', 'super-admin']));
+                                    $isLockedPendingHO = ($stage === 'headoffice_pending');
+                                @endphp
                                 <div class="btn-group" role="group">
+                                    @canAccess('sales-inquiry-list')
                                     <a class="btn btn-sm btn-info"
                                         onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '90%')"
                                         title="View" style="margin-right: 10px;">
                                         <i class="ft-eye"></i>
                                     </a>
+                                    @endcanAccess
+
+                                    @canAccess('sales-inquiry-create')
+                                    @if ($canEdit && !$isLockedPendingHO && $status !== 'approved' && $status !== 'rejected')
+                                        <button
+                                            onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '90%')"
+                                            class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                                            <i class="ft-edit"></i>
+                                        </button>
+                                    @elseif ($canEdit && $isLockedPendingHO)
+                                        <button type="button" class="btn btn-sm btn-secondary"
+                                            onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '90%')"
+                                            title="Stage 1 Approved. Locked pending Head Office approval." style="margin-right: 10px; opacity: 0.7;">
+                                            <i class="ft-lock"></i>
+                                        </button>
+                                    @endif
+
                                     @if (auth()->user()->id == $group['created_by_id'])
-                                        @if ($group['status'] == 'pending' || $group['status'] == 'reverted')
-
-                                            <button
-                                                onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '90%')"
-                                                class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
-                                                <i class="ft-edit"></i>
-                                            </button>
-
+                                        @if (($status === 'pending' && $stage === 'stage_1_pending') || $status === 'reverted' || $stage === 'reverted')
                                             <button
                                                 onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')"
                                                 type="button" class="btn btn-sm btn-danger" title="Delete">
@@ -113,6 +144,7 @@
                                             </button>
                                         @endif
                                     @endif
+                                    @endcanAccess
                                 </div>
                             </td>
                         @endif
@@ -153,39 +185,74 @@
 
                     <td class="text-center align-middle">
                         @php
-                            $status = $group['status'];
-                            $badge = match (strtolower($status)) {
-                                'approved' => 'badge-success',
-                                'rejected' => 'badge-danger',
-                                'pending' => 'badge-warning',
-                                default => 'badge-secondary',
-                            };
+                            $status = strtolower($group['status'] ?? 'pending');
+                            $stage = strtolower($group['si_approval_stage'] ?? 'stage_1_pending');
                         @endphp
-                        <span class="badge {{ $badge }} px-3 py-2">
-                            {{ ucfirst($status) }}
-                        </span>
+
+                        @if($status === 'approved')
+                            <span class="badge badge-success px-3 py-2">
+                                Approved
+                            </span>
+                        @elseif($status === 'rejected' || $stage === 'rejected')
+                            <span class="badge badge-danger px-3 py-2">
+                                Rejected
+                            </span>
+                        @elseif($status === 'reverted' || $stage === 'reverted')
+                            <span class="badge badge-secondary px-3 py-2" style="background-color: #6c757d;">
+                                Reverted
+                            </span>
+                        @elseif($stage === 'headoffice_pending')
+                            <span class="badge badge-info px-3 py-2" style="background-color: #17a2b8;" title="Stage 1 Approved - Awaiting Head Office Final Approval">
+                                Pending HO
+                            </span>
+                        @else
+                            <span class="badge badge-warning px-3 py-2" title="Awaiting Stage 1 (Branch / Parent) Approval">
+                                Pending (Stage 1)
+                            </span>
+                        @endif
                     </td>
 
                     <td class="text-center align-middle">
+                        @php
+                            $canEdit = (auth()->user()->id == $group['created_by_id']) 
+                                || (auth()->user()->user_type == 'admin') 
+                                || (method_exists(auth()->user(), 'hasAnyRole') && auth()->user()->hasAnyRole(['Admin', 'Super Admin', 'admin', 'super-admin']));
+                            $isLockedPendingHO = ($stage === 'headoffice_pending');
+                        @endphp
                         <div class="btn-group" role="group">
+                            @canAccess('sales-inquiry-list')
                             <a class="btn btn-sm btn-info"
-                                onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '100%')"
+                                onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '90%')"
                                 title="View" style="margin-right: 10px;">
                                 <i class="ft-eye"></i>
                             </a>
-                            @if (auth()->user()->id == $group['created_by_id'])
+                            @endcanAccess
+
+                            @canAccess('sales-inquiry-create')
+                            @if ($canEdit && !$isLockedPendingHO && $status !== 'approved' && $status !== 'rejected')
                                 <button
-                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '100%')"
+                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '90%')"
                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                     <i class="ft-edit"></i>
                                 </button>
-
-                                <button
-                                    onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')"
-                                    type="button" class="btn btn-sm btn-danger" title="Delete">
-                                    <i class="ft-trash-2"></i>
+                            @elseif ($canEdit && $isLockedPendingHO)
+                                <button type="button" class="btn btn-sm btn-secondary"
+                                    onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '90%')"
+                                    title="Stage 1 Approved. Locked pending Head Office approval." style="margin-right: 10px; opacity: 0.7;">
+                                    <i class="ft-lock"></i>
                                 </button>
                             @endif
+
+                            @if (auth()->user()->id == $group['created_by_id'])
+                                @if (($status === 'pending' && $stage === 'stage_1_pending') || $status === 'reverted' || $stage === 'reverted')
+                                    <button
+                                        onclick="deletemodal('{{ route('sales.sales-inquiry.destroy', ['sales_inquiry' => $group['id']]) }}', '{{ route('sales.get.sales-inquiry.list') }}')"
+                                        type="button" class="btn btn-sm btn-danger" title="Delete">
+                                        <i class="ft-trash-2"></i>
+                                    </button>
+                                @endif
+                            @endif
+                            @endcanAccess
                         </div>
                     </td>
                 </tr>

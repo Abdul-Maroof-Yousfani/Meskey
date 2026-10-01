@@ -7,18 +7,27 @@ use App\Models\Procurement\Store\Location;
 use App\Models\Procurement\Store\SectionLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\HasApproval;
-use App\Traits\PreventsUpdateWhenApproved;
+use App\Traits\HasApprovalSalesInquiry;
 
 class SalesInquiry extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory, HasApprovalSalesInquiry;
+
     protected $table = "sales_inquiries";
     protected $guarded = ["id", "created_at", "updated_at"];
 
     protected static function booted()
     {
         static::updating(function ($model) {
+            $originalStage = strtolower($model->getOriginal('si_approval_stage') ?? '');
+            $isDirtyNotApproval = collect($model->getDirty())->keys()->reject(function ($key) {
+                return in_array($key, ['am_approval_status', 'si_approval_stage', 'am_change_made', 'updated_at']);
+            })->isNotEmpty();
+
+            if ($originalStage === 'headoffice_pending' && $isDirtyNotApproval) {
+                throw new \Exception("Sales Inquiry has been approved at Stage 1 and is pending Head Office approval. It cannot be edited unless reverted by Head Office.");
+            }
+
             $originalStatus = strtolower($model->getOriginal('am_approval_status') ?? '');
             $newStatus = strtolower($model->am_approval_status ?? '');
             if ($model->isDirty('am_approval_status')) {
@@ -38,29 +47,38 @@ class SalesInquiry extends Model
             }
         });
     }
-    
+
     public function sales_inquiry_data()
     {
         return $this->hasMany(SalesInquiryData::class, "inquiry_id", "id");
     }
 
-    public function locations() {
+    public function locations()
+    {
         return $this->morphMany(Location::class, 'locationable');
     }
 
-    public function factories() {
+    public function factories()
+    {
         return $this->morphMany(FactoryLocation::class, 'factoryable');
     }
 
-    public function sections() {
+    public function sections()
+    {
         return $this->morphMany(SectionLocation::class, 'sectionable');
     }
 
-    public function sale_order() {
+    public function sale_order()
+    {
         return $this->hasOne(SalesOrder::class, "inquiry_id", "id");
     }
 
     public function preSaleInspection() {
         return $this->belongsTo(PreSaleInspection::class, "pre_sale_inspection_id");
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 }

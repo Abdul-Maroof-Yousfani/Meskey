@@ -9,6 +9,7 @@
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">Sales Inquiry </h2>
                 </div>
+                @canAccess('sales-inquiry-create')
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
                         onclick="openModal(this,'{{ route('sales.sales-inquiry.create') }}','Create Sales Inquiry',false,'90%')"
@@ -16,6 +17,7 @@
                         Create Sales Inquiry
                     </button>
                 </div>
+                @endcanAccess
             </div>
             <div class="row">
                 <div class="col-12">
@@ -63,7 +65,9 @@
                                         <label for="status" class="form-label">Status</label>
                                         <select name="status" id="status" class="form-control select2">
                                             <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Status</option>
-                                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending (All)</option>
+                                            <option value="stage_1_pending" {{ request('status') == 'stage_1_pending' ? 'selected' : '' }}>Pending (Stage 1)</option>
+                                            <option value="headoffice_pending" {{ request('status') == 'headoffice_pending' ? 'selected' : '' }}>Pending HO</option>
                                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                                             <option value="reverted" {{ request('status') == 'reverted' ? 'selected' : '' }}>Reverted</option>
