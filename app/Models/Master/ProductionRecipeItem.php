@@ -19,9 +19,7 @@ class ProductionRecipeItem extends Model
     protected $fillable = [
         'company_id',
         'production_recipe_id',
-        'key',
-        'slug',
-        'type',
+        'production_attribute_id',
         'value',
         'created_by',
         'updated_by',
@@ -41,45 +39,11 @@ class ProductionRecipeItem extends Model
                     $model->company_id = Auth::user()->current_company_id ?? Auth::user()->company_id ?? null;
                 }
             }
-
-            // Auto-generate unique slug on create
-            if (empty($model->slug)) {
-                $baseText = !empty($model->key) ? $model->key : 'param';
-                $baseSlug = Str::slug($baseText, '_');
-                if (empty($baseSlug)) {
-                    $baseSlug = 'param';
-                }
-
-                $slug = $baseSlug;
-                $count = 1;
-                while (static::withTrashed()->where('slug', $slug)->exists()) {
-                    $slug = "{$baseSlug}_{$count}";
-                    $count++;
-                }
-                $model->slug = $slug;
-            }
         });
 
         static::updating(function ($model) {
             if (Auth::check()) {
                 $model->updated_by = auth()->user()->id ?? null;
-            }
-
-            // If slug became empty, re-generate uniquely
-            if (empty($model->slug)) {
-                $baseText = !empty($model->key) ? $model->key : 'param';
-                $baseSlug = Str::slug($baseText, '_');
-                if (empty($baseSlug)) {
-                    $baseSlug = 'param';
-                }
-
-                $slug = $baseSlug;
-                $count = 1;
-                while (static::withTrashed()->where('slug', $slug)->where('id', '!=', $model->id)->exists()) {
-                    $slug = "{$baseSlug}_{$count}";
-                    $count++;
-                }
-                $model->slug = $slug;
             }
         });
 
@@ -97,6 +61,38 @@ class ProductionRecipeItem extends Model
     public function recipe()
     {
         return $this->belongsTo(ProductionRecipe::class, 'production_recipe_id');
+    }
+
+    /**
+     * Relationship with Production Attribute
+     */
+    public function attribute()
+    {
+        return $this->belongsTo(\App\Models\ProdctionAttribute::class, 'production_attribute_id');
+    }
+
+    /**
+     * Accessor for attribute key
+     */
+    public function getKeyAttribute()
+    {
+        return $this->attribute->key ?? null;
+    }
+
+    /**
+     * Accessor for attribute type
+     */
+    public function getTypeAttribute()
+    {
+        return $this->attribute->type ?? 'text';
+    }
+
+    /**
+     * Accessor for attribute slug
+     */
+    public function getSlugAttribute()
+    {
+        return $this->attribute->slug ?? null;
     }
 
     /**

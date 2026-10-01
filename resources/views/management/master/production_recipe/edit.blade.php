@@ -55,17 +55,50 @@
             </div>
         </div>
 
-        <!-- Dynamic Parameters & Items (Key, Type, Value, Slug) -->
+        <!-- Dynamic Parameters from Production Attributes (Multi-Select) -->
         <div class="col-12 mt-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="card border mb-2 shadow-none" style="background-color: #f8f9fa; border-radius: 6px;">
+                <div class="card-body p-2">
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold text-dark mb-1">
+                            <i class="ft-sliders mr-1 text-primary"></i> Select Parameters / Attributes:
+                        </label>
+                        @php
+                            $selectedAttrIds = $production_recipe->items->pluck('production_attribute_id')->filter()->toArray();
+                        @endphp
+                        <select class="form-control select2" id="attribute_select" multiple="multiple" style="width: 100%;" data-placeholder="-- Select Parameters (Multi-Select) --">
+                            @foreach ($attributes as $attr)
+                                <option value="{{ $attr->id }}"
+                                    data-id="{{ $attr->id }}"
+                                    data-key="{{ $attr->key }}"
+                                    data-type="{{ $attr->type }}"
+                                    data-slug="{{ $attr->slug }}"
+                                    {{ in_array($attr->id, $selectedAttrIds) ? 'selected' : '' }}>
+                                    {{ $attr->key }} ({{ ucfirst($attr->type) }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted d-block mt-1">
+                            <i class="ft-info mr-1"></i>Select attributes from the list above. Each selected attribute will automatically be added to the bottom list.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-1 mt-2">
                 <div>
-                    <h6 class="mb-0">
-                        <i class="ft-sliders mr-1"></i>Recipe Parameters & Items
+                    <h6 class="mb-0 font-weight-bold">
+                        <i class="ft-list mr-1 text-primary"></i>Recipe Parameters List
                     </h6>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-param-row">
-                    <i class="ft-plus mr-1"></i>Add Parameter
-                </button>
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger mr-1" id="btn-clear-all-params" style="{{ count($production_recipe->items) > 0 ? '' : 'display: none;' }}">
+                        <i class="ft-trash-2 mr-1"></i>Clear All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-param-row">
+                        <i class="ft-plus mr-1"></i>Add Custom Parameter
+                    </button>
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -74,7 +107,7 @@
                         <tr>
                             <th style="width: 35%;">Parameter Key <span class="text-danger">*</span></th>
                             <th style="width: 25%;">Type</th>
-                            <th style="width: 30%;">Parameter Value</th>
+                            <th style="width: 30%;">Parameter Value <span class="text-danger">*</span></th>
                             <th style="width: 10%;">Action</th>
                         </tr>
                     </thead>
@@ -83,16 +116,17 @@
                             $items = $production_recipe->items;
                         @endphp
                         @forelse ($items as $idx => $item)
-                            <tr class="param-row" data-index="{{ $idx }}">
+                            <tr class="param-row" data-index="{{ $idx }}" data-attribute-id="{{ $item->production_attribute_id ?? '' }}">
                                 <td>
                                     @if (!empty($item->id))
                                         <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item->id }}">
                                     @endif
-                                    <input type="text" name="items[{{ $idx }}][key]" class="form-control form-control-sm text-monospace"
-                                        placeholder="e.g. soaking_temperature" value="{{ $item->key ?? '' }}" required>
+                                    <input type="hidden" name="items[{{ $idx }}][production_attribute_id]" value="{{ $item->production_attribute_id ?? '' }}">
+                                    <input type="text" name="items[{{ $idx }}][key]" class="form-control form-control-sm text-monospace bg-light font-weight-bold"
+                                        value="{{ $item->key ?? '' }}" readonly required>
                                 </td>
                                 <td>
-                                    <select name="items[{{ $idx }}][type]" class="form-control form-control-sm">
+                                    <select name="items[{{ $idx }}][type]" class="form-control form-control-sm bg-light" style="pointer-events: none;">
                                         <option value="text" {{ ($item->type ?? 'text') == 'text' ? 'selected' : '' }}>Text</option>
                                         <option value="number" {{ ($item->type ?? '') == 'number' ? 'selected' : '' }}>Number</option>
                                         <option value="percentage" {{ ($item->type ?? '') == 'percentage' ? 'selected' : '' }}>Percentage (%)</option>
@@ -102,39 +136,19 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="items[{{ $idx }}][value]" class="form-control form-control-sm"
-                                        placeholder="e.g. 65 °C" value="{{ $item->value ?? '' }}">
+                                    <input type="text" name="items[{{ $idx }}][value]" class="form-control form-control-sm param-value-input"
+                                        placeholder="Enter parameter value" value="{{ $item->value ?? '' }}" required>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-param-row" title="Delete">
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-param-row" data-id="{{ $item->production_attribute_id ?? '' }}" title="Delete">
                                         <i class="ft-trash font-medium-2"></i>
                                     </button>
                                 </td>
                             </tr>
                         @empty
-                            <tr class="param-row" data-index="0">
-                                <td>
-                                    <input type="text" name="items[0][key]" class="form-control form-control-sm text-monospace"
-                                        placeholder="e.g. soaking_temperature" value="" required>
-                                </td>
-                                <td>
-                                    <select name="items[0][type]" class="form-control form-control-sm">
-                                        <option value="text" selected>Text</option>
-                                        <option value="number">Number</option>
-                                        <option value="percentage">Percentage (%)</option>
-                                        <option value="temperature">Temperature (°C)</option>
-                                        <option value="time">Time / Duration</option>
-                                        <option value="boolean">Boolean</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" name="items[0][value]" class="form-control form-control-sm"
-                                        placeholder="e.g. 65 °C" value="">
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-param-row" title="Delete">
-                                        <i class="ft-trash font-medium-2"></i>
-                                    </button>
+                            <tr id="no-params-row">
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="ft-alert-circle mr-1"></i> No attributes selected yet. Select attributes from the dropdown above to add them to this recipe.
                                 </td>
                             </tr>
                         @endforelse
@@ -153,11 +167,109 @@
 
 <script>
     $(document).ready(function () {
-        $('.select2').select2();
+        $('.select2').select2({
+            width: '100%'
+        });
 
-        let paramIndex = {{ count($items) > 0 ? count($items) : 1 }};
+        let paramIndex = {{ count($items) > 0 ? count($items) : 0 }};
 
+        function getPlaceholderForType(type) {
+            switch (type) {
+                case 'temperature':
+                    return 'e.g. 65 °C';
+                case 'time':
+                    return 'e.g. 4 Hours or 20 Mins';
+                case 'percentage':
+                    return 'e.g. 15%';
+                case 'number':
+                    return 'e.g. 100';
+                case 'boolean':
+                    return 'e.g. Yes / No or True / False';
+                default:
+                    return 'Enter parameter value';
+            }
+        }
+
+        function updateTableState() {
+            const rowCount = $('#recipe-params-tbody tr.param-row').length;
+            if (rowCount === 0) {
+                if ($('#no-params-row').length === 0) {
+                    $('#recipe-params-tbody').html(`
+                        <tr id="no-params-row">
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="ft-alert-circle mr-1"></i> No attributes selected yet. Select attributes from the dropdown above to add them to this recipe.
+                            </td>
+                        </tr>
+                    `);
+                }
+                $('#btn-clear-all-params').hide();
+            } else {
+                $('#no-params-row').remove();
+                $('#btn-clear-all-params').show();
+            }
+        }
+
+        function addAttributeRow(attrId, key, type, value = '') {
+            $('#no-params-row').remove();
+            const placeholder = getPlaceholderForType(type);
+
+            const rowHtml = `
+                <tr class="param-row" data-index="${paramIndex}" data-attribute-id="${attrId}">
+                    <td>
+                        <input type="hidden" name="items[${paramIndex}][production_attribute_id]" value="${attrId}">
+                        <input type="text" name="items[${paramIndex}][key]" class="form-control form-control-sm text-monospace bg-light font-weight-bold"
+                            value="${key}" readonly required>
+                    </td>
+                    <td>
+                        <select name="items[${paramIndex}][type]" class="form-control form-control-sm bg-light" style="pointer-events: none;">
+                            <option value="text" ${type === 'text' ? 'selected' : ''}>Text</option>
+                            <option value="number" ${type === 'number' ? 'selected' : ''}>Number</option>
+                            <option value="percentage" ${type === 'percentage' ? 'selected' : ''}>Percentage (%)</option>
+                            <option value="temperature" ${type === 'temperature' ? 'selected' : ''}>Temperature (°C)</option>
+                            <option value="time" ${type === 'time' ? 'selected' : ''}>Time / Duration</option>
+                            <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>Boolean</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="items[${paramIndex}][value]" class="form-control form-control-sm param-value-input"
+                            placeholder="${placeholder}" value="${value}" required>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-param-row" data-id="${attrId}" title="Remove">
+                            <i class="ft-trash font-medium-2"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            $('#recipe-params-tbody').append(rowHtml);
+            paramIndex++;
+            updateTableState();
+        }
+
+        // On selecting an attribute from multi-select
+        $('#attribute_select').on('select2:select', function (e) {
+            const attrId = e.params.data.id;
+            const $option = $(e.params.data.element);
+            const key = $option.data('key') || e.params.data.text;
+            const type = $option.data('type') || 'text';
+
+            if ($('#recipe-params-tbody tr[data-attribute-id="' + attrId + '"]').length === 0) {
+                addAttributeRow(attrId, key, type);
+                $('#recipe-params-tbody tr[data-attribute-id="' + attrId + '"] .param-value-input').focus();
+            }
+        });
+
+        // On unselecting an attribute from multi-select
+        $('#attribute_select').on('select2:unselect', function (e) {
+            const attrId = e.params.data.id;
+            $('#recipe-params-tbody tr[data-attribute-id="' + attrId + '"]').remove();
+            updateTableState();
+        });
+
+        // Add custom row manually if clicked
         $('#btn-add-param-row').off('click').on('click', function () {
+            $('#no-params-row').remove();
             const rowHtml = `
                 <tr class="param-row" data-index="${paramIndex}">
                     <td>
@@ -166,7 +278,7 @@
                     </td>
                     <td>
                         <select name="items[${paramIndex}][type]" class="form-control form-control-sm">
-                            <option value="text" selected>Text</option>
+                            <option value="text">Text</option>
                             <option value="number">Number</option>
                             <option value="percentage">Percentage (%)</option>
                             <option value="temperature">Temperature (°C)</option>
@@ -176,7 +288,7 @@
                     </td>
                     <td>
                         <input type="text" name="items[${paramIndex}][value]" class="form-control form-control-sm"
-                            placeholder="e.g. value">
+                            placeholder="Enter parameter value" required>
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-param-row" title="Delete">
@@ -187,10 +299,30 @@
             `;
             $('#recipe-params-tbody').append(rowHtml);
             paramIndex++;
+            updateTableState();
         });
 
+        // Remove row when trash button is clicked
         $(document).on('click', '.btn-remove-param-row', function () {
-            $(this).closest('tr').remove();
+            const $row = $(this).closest('tr');
+            const attrId = $row.data('attribute-id');
+            $row.remove();
+
+            if (attrId) {
+                let currentVals = $('#attribute_select').val() || [];
+                currentVals = currentVals.filter(v => String(v) !== String(attrId));
+                $('#attribute_select').val(currentVals).trigger('change.select2');
+            }
+            updateTableState();
         });
+
+        // Clear all parameters
+        $('#btn-clear-all-params').on('click', function () {
+            $('#attribute_select').val(null).trigger('change.select2');
+            $('#recipe-params-tbody tr.param-row').remove();
+            updateTableState();
+        });
+
+        updateTableState();
     });
 </script>
