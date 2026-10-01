@@ -32,14 +32,14 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Inspection Number: <span class="text-danger">*</span></label>
+                        <label class="form-label">Dekh Number: <span class="text-danger">*</span></label>
                         <input type="text" name="inspection_no" id="inspection_no" class="form-control font-weight-bold"
                             value="{{ $pre_sale_inspection->inspection_no }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Inspection Date: <span class="text-danger">*</span></label>
+                        <label class="form-label">Dekh Date: <span class="text-danger">*</span></label>
                         <input type="date" name="date" id="inspection_date"
                             class="form-control" value="{{ $pre_sale_inspection->date ? $pre_sale_inspection->date->format('Y-m-d') : date('Y-m-d') }}">
                     </div>
@@ -90,7 +90,7 @@
                                     <th style="width: 28%;">Item (Product) <span class="text-danger">*</span></th>
                                     <th style="width: 25%;">Factory</th>
                                     <th style="width: 25%;">Section</th>
-                                    <th style="width: 14%;">Weight (kg) <span class="text-danger">*</span></th>
+                                    <th style="width: 14%;">Weight sample in (kg) <span class="text-danger">*</span></th>
                                     <th style="width: 8%;" class="text-center">Action</th>
                                 </tr>
                             </thead>
