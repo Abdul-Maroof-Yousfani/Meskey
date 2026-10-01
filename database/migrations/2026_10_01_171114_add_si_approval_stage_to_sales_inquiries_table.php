@@ -18,26 +18,10 @@ return new class extends Migration
         }
 
         $salesParent = \Spatie\Permission\Models\Permission::where('name', 'sales')->first();
-        $localSalesParent = \Spatie\Permission\Models\Permission::where('name', 'local-sales')->first();
 
         \Spatie\Permission\Models\Permission::firstOrCreate(
             ['name' => 'headoffice-sale-inquiry-approval', 'guard_name' => 'web'],
             ['parent_id' => $salesParent?->id]
-        );
-
-        $siPerm = \Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'sales-inquiry', 'guard_name' => 'web'],
-            ['parent_id' => $localSalesParent?->id]
-        );
-
-        \Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'sales-inquiry-list', 'guard_name' => 'web'],
-            ['parent_id' => $siPerm->id]
-        );
-
-        \Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'sales-inquiry-create', 'guard_name' => 'web'],
-            ['parent_id' => $siPerm->id]
         );
     }
 
@@ -53,10 +37,7 @@ return new class extends Migration
         }
 
         \Spatie\Permission\Models\Permission::whereIn('name', [
-            'headoffice-sale-inquiry-approval',
-            'sales-inquiry',
-            'sales-inquiry-list',
-            'sales-inquiry-create'
+            'headoffice-sale-inquiry-approval'
         ])->delete();
     }
 };
