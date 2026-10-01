@@ -628,7 +628,7 @@
                             href="{{ route('sales.pre-sale-inspection.index') }}"
                             onclick="loadPageContent('{{ route('sales.pre-sale-inspection.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Pre Sale Inspection (Dekh)</span>
+                            <span data-i18n="Task Board">Pre Sale Dekh</span>
                         </a>
                     </li>
                     @endcanAccess

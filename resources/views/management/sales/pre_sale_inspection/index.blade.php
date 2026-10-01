@@ -1,19 +1,19 @@
 @extends('management.layouts.master')
 @section('title')
-    Pre Sale Inspection
+    Pre Sale Dekh
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Pre Sale Inspection</h2>
+                    <h2 class="page-title">Pre Sale Dekh</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button
-                        onclick="openModal(this,'{{ route('sales.pre-sale-inspection.create') }}','Create Pre Sale Inspection',false,'80%')"
+                        onclick="openModal(this,'{{ route('sales.pre-sale-inspection.create') }}','Create Pre Sale Dekh',false,'80%')"
                         type="button" class="btn btn-primary position-relative">
-                        Create Pre Sale Inspection
+                        Create Pre Sale Dekh
                     </button>
                 </div>
             </div>
@@ -26,7 +26,7 @@
                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                 <div class="row mx-0">
                                     <div class="px-1 text-left" style="width: 18%;">
-                                        <label for="inspection_no" class="form-label">Inspection No</label>
+                                        <label for="inspection_no" class="form-label">Dekh No</label>
                                         <input type="text" class="form-control" placeholder="Inspection No" name="inspection_no"
                                             value="{{ request('inspection_no', '') }}">
                                     </div>
@@ -72,7 +72,7 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th>Inspection #</th>
+                                            <th>Dekh #</th>
                                             <th>Date</th>
                                             <th>Location</th>
                                             <th>Party Name & Contact</th>
