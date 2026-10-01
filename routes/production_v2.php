@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Production\V2\JobOrderV2Controller;
+use App\Http\Controllers\Production\v2\JobOrderV2Controller;
 use Illuminate\Support\Facades\Route;
 
 Route::name('production.')->prefix('v2')->group(function () {
