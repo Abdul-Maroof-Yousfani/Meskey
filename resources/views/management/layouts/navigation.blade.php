@@ -442,12 +442,19 @@
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Production</span></a>
                 <ul class="dropdown-menu">
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('production.job-orders.index') }}"
+                            onclick="loadPageContent('{{ route('production.job-orders.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Job Order V2"><strong>Job Order (V2)</strong></span>
+                        </a>
+                    </li>
                     @canAccess('production-job-order')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('job-orders.index') }}"
                             onclick="loadPageContent('{{ route('job-orders.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Job Order</span>
+                            <span data-i18n="Task Board">Job Order (Legacy)</span>
                         </a>
                     </li>
                     @endcanAccess
