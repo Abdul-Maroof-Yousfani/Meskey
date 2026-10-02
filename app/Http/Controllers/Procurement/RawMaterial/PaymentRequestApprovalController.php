@@ -829,7 +829,7 @@ class PaymentRequestApprovalController extends Controller
                         $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
                     }
                 } else {
-                    $freightPaymentRequestgrossAmount = 0;
+                    $freightPaymentRequestgrossAmount = null;
                 }
                 if ($samplingRequest) {
                     $rmPoSlabs = collect();
