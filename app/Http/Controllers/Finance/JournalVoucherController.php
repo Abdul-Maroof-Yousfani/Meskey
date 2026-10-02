@@ -225,7 +225,11 @@ class JournalVoucherController extends Controller
                         'type' => 'grn',
                         'remaining_amount' => $remaining
                     ];
-                });
+                })
+                ->filter(function ($grn) {
+                    return ($grn['remaining_amount'] ?? 0) > 0.01;
+                })
+                ->values();
 
             return [
                 'table_name' => 'suppliers',
