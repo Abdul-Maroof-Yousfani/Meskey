@@ -132,6 +132,11 @@
                                             </div>
                                            
                                         </div>
+                                        <div class="mt-2">
+                                            <div class="form-group mb-0">
+                                                <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
+                                            </div>
+                                        </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -242,27 +247,49 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
-            filterationCommon(
+
+        $(document).ready(function () {
+
+            const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.truck-detail-gate') }}`
-            )
-
-            initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
-
-            initializeDynamicDependentSelect2(
-                '#company_location',
-                '#supplier_id_f',
-                'company_locations',
-                'name',
-                'id',
-                'suppliers',
-                'company_location_ids',
-                'name',
-                true,
-                false,
-                true,
-                true,
             );
+
+            const fetchSuppliers =
+                initializeDynamicDependentSelect2_withbutton(
+                    '#company_location',
+                    '#supplier_id_f',
+                    'company_locations',
+                    'name',
+                    'id',
+                    'suppliers',
+                    'company_location_ids',
+                    'name',
+                    true,
+                    false,
+                    true,
+                    true
+                );
+
+            initializeDynamicSelect2_withbutton(
+                '#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true
+            );
+
+
+            $('#filterForm').on('submit', function (e) {
+
+                e.preventDefault();
+
+                // =====================================
+                // ONLY BUTTON CLICK
+                // =====================================
+
+                // Filter/data request
+                runFilter();
+
+                // Dependent supplier request
+                fetchSuppliers();
+            });
+            runFilter();
         });
     </script>
 @endsection

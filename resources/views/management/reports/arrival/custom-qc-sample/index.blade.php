@@ -105,7 +105,11 @@
                                                 </div>
                                             </div>
                                         </div>
-
+                                        <div class="mt-2">
+                                            <div class="form-group mb-0">
+                                                <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
+                                            </div>
+                                        </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -150,10 +154,25 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
-            filterationCommon(
+
+          $(document).ready(function () {
+
+            const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.custom-qc-sample') }}`
             );
+
+
+            $('#filterForm').on('submit', function (e) {
+
+                e.preventDefault();
+                // Filter/data request
+                runFilter();
+            });
+            runFilter();
         });
+
+
+
+        
     </script>
 @endsection

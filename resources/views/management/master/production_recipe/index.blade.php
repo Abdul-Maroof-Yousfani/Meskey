@@ -34,6 +34,11 @@
                                                     placeholder="Search recipe or commodity..." name="search"
                                                     value="{{ request('search', '') }}">
                                             </div>
+                                            <div class="mt-2">
+                                                <div class="form-group mb-0">
+                                                    <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -66,7 +71,13 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('get.production-recipe') }}`);
+            
+            const runFilter = filterationCommon_withbtn(`{{ route('get.production-recipe') }}`);
+             $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runFilter();
+            });
+            runFilter();
         });
     </script>
 @endsection

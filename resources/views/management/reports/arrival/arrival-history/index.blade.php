@@ -148,13 +148,13 @@
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
                                             </div>
+
                                         </div>
                                         <div class="mt-2">
                                             <div class="form-group mb-0">
                                                 <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
                                             </div>
                                         </div>
-
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -223,8 +223,8 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
 
+        $(document).ready(function () {
             const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.arrival-history') }}`
             );
@@ -246,14 +246,7 @@
                 );
 
             initializeDynamicSelect2_withbutton(
-                '#sauda_type',
-                'sauda_types',
-                'name',
-                'id',
-                true,
-                false,
-                true,
-                true
+                '#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true
             );
 
 
@@ -261,9 +254,6 @@
 
                 e.preventDefault();
 
-                // =====================================
-                // ONLY BUTTON CLICK
-                // =====================================
 
                 // Filter/data request
                 runFilter();

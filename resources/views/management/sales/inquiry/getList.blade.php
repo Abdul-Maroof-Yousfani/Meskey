@@ -27,7 +27,7 @@
                                     #{{ $group['inquiry_no'] }}
                                     @if(isset($group['pre_sale_inspection']) && $group['pre_sale_inspection'])
                                         <br>
-                                        <span class="badge badge-info mt-1" style="font-size: 10px;" title="Pre Sale Inspection: {{ $group['pre_sale_inspection']->inspection_no }}">
+                                        <span class="badge badge-info mt-1" style="font-size: 10px;" title="Pre Sale Dekh: {{ $group['pre_sale_inspection']->inspection_no }}">
                                             <i class="ft-search"></i> #{{ $group['pre_sale_inspection']->inspection_no }}
                                         </span>
                                     @endif

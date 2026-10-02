@@ -142,6 +142,11 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="mt-2">
+                                            <div class="form-group mb-0">
+                                                <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
+                                            </div>
+                                        </div>
 
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -177,13 +182,23 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
-            filterationCommon(
+
+
+
+        $(document).ready(function () {
+
+            const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.truck-summary') }}`
             );
-            $('.selectWithoutAjax').select2();
 
-            $('#date_filter').on('change', function() {
+
+            $('#filterForm').on('submit', function (e) {
+
+                e.preventDefault();
+
+                $('.selectWithoutAjax').select2();
+
+            
                 var selected = $(this).val();
                 if (selected === 'custom') {
                     $('#daterange').prop('disabled', false);
@@ -192,7 +207,15 @@
                     $('#daterange').prop('disabled', true);
                     $('#daterange_wrapper').slideUp(200);
                 }
+                
+
+                // Filter/data request
+                runFilter();
             });
+            runFilter();
         });
+
+
+       
     </script>
 @endsection
