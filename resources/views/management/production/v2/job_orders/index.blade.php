@@ -75,6 +75,7 @@
                                             <th>Date</th>
                                             <th>Location</th>
                                             <th>Phases</th>
+                                            <th>Current Stage</th>
                                             <th>Export Order</th>
                                             <th>Ref No</th>
                                             <th>Status</th>

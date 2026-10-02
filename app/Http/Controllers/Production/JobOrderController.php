@@ -151,8 +151,8 @@ class JobOrderController extends Controller
                 return ($totalMt - $consumedMt) > 0;
             });
             
-        $products = Product::where('status', 1)->get();
-        $bagProducts = Product::where('status', 1)->where('product_type', 'general_items')
+        $products = Product::where('status', 'active')->get();
+        $bagProducts = Product::where('status', 'active')->where('product_type', 'general_items')
             ->with('category')
             ->whereHas('category', function ($query) {
                 $query->whereIn(strtolower('name'), ['bag', 'bags']);

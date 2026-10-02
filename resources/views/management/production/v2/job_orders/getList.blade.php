@@ -1,14 +1,15 @@
 <table class="table table-hover m-0">
     <thead class="thead-light">
         <tr>
-            <th width="15%">Job Order #</th>
+            <th width="14%">Job Order #</th>
             <th width="10%">Date</th>
-            <th width="14%">Location</th>
-            <th width="20%">Phases</th>
+            <th width="12%">Location</th>
+            <th width="16%">Phases</th>
+            <th width="12%">Current Stage</th>
             <th width="12%">Export Order</th>
-            <th width="10%">Ref No</th>
-            <th width="9%">Status</th>
-            <th width="10%">Actions</th>
+            <th width="8%">Ref No</th>
+            <th width="8%">Status</th>
+            <th width="8%">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -45,6 +46,15 @@
                         @endif
                     </td>
                     <td>
+                        @if($jo->current_stage)
+                            <span class="badge badge-info font-weight-bold" style="font-size: 0.85rem;">
+                                Stage {{ $jo->current_stage }}
+                            </span>
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
+                    </td>
+                    <td>
                         @if($jo->exportOrder)
                             {{ $jo->exportOrder->voucher_no ?? ('#' . $jo->export_order_id) }}
                         @else
@@ -78,7 +88,7 @@
             @endforeach
         @else
             <tr>
-                <td colspan="8" class="text-center py-4">
+                <td colspan="9" class="text-center py-4">
                     <div class="empty-state">
                         <i class="ft-briefcase ft-3x text-muted mb-3"></i>
                         <h5 class="text-muted">No Job Orders Found</h5>
