@@ -662,6 +662,7 @@ class PaymentRequestController extends Controller
                 'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
                 'rerate_on_access_weight_kg' => $request->rerate_on_access_weight_kg ?? 0,
                 'rerate_on_access_weight_rate' => $request->rerate_on_access_weight_rate ?? 0,
+                'other_adjustment_amount' => $request->other_adjustment_amount ?? 0,
                 'rerate_on_access_weight_amount' => $request->rerate_on_access_weight_amount ?? 0,
                 'request_type' => 'payment',
                 'module_type' => 'purchase_order',
@@ -786,7 +787,7 @@ class PaymentRequestController extends Controller
 
             $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
                 $query->where('ticket_id', $ticket->id);
-            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
+            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'other_adjustment_amount')
                 ->latest()
                 ->first();
         }
