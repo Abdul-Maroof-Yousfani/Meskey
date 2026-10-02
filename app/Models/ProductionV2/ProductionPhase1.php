@@ -24,6 +24,7 @@ class ProductionPhase1 extends Model
         'cycle_start_time',
         'cycle_end_time',
         'moisture_level',
+        'parameters',
         'status',
         'remarks',
         'created_by',
@@ -35,6 +36,7 @@ class ProductionPhase1 extends Model
         'temperature' => 'decimal:2',
         'cycle_start_time' => 'datetime',
         'cycle_end_time' => 'datetime',
+        'parameters' => 'array',
     ];
 
     protected static function boot()
@@ -79,5 +81,10 @@ class ProductionPhase1 extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function parameters()
+    {
+        return $this->hasMany(ProductionJobOrderPhaseParameter::class, 'job_order_id', 'job_order_id')->where('phase_id', 1);
     }
 }
