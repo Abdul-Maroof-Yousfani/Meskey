@@ -662,6 +662,7 @@ class PaymentRequestController extends Controller
                 'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
                 'rerate_on_access_weight_kg' => $request->rerate_on_access_weight_kg ?? 0,
                 'rerate_on_access_weight_rate' => $request->rerate_on_access_weight_rate ?? 0,
+                'other_adjustment_amount' => $request->other_adjustment_amount ?? 0,
                 'rerate_on_access_weight_amount' => $request->rerate_on_access_weight_amount ?? 0,
                 'request_type' => 'payment',
                 'module_type' => 'purchase_order',
