@@ -1,9 +1,27 @@
-<form action="{{ route('job-orders.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
-    @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.job_orders') }}" />
-
-        <!-- Basic Information -->
+@extends('management.layouts.master')
+@section('title')
+    Create Job Order
+@endsection
+@section('content')
+<div class="container-fluid">
+    <div class="row">
         <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Create Job Order</h4>
+                    <a href="{{ route('job-orders.index') }}" onclick="loadPageContent('{{ route('job-orders.index') }}')" class="btn btn-sm btn-secondary">
+                        <i class="ft-arrow-left mr-1"></i>Back to List
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('job-orders.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+                        @csrf
+                        <input type="hidden" id="url" value="{{ route('job-orders.index') }}" />
+                        <input type="hidden" id="listRefresh" value="{{ route('get.job_orders') }}" />
+
+                        <div class="row form-mar">
+                            <!-- Basic Information -->
+                            <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
                 <!-- Row 1: Export Order | Job Order No | Job Order Date -->
@@ -468,14 +486,18 @@
         </div>
     </div>
 
-
-    <div class="row bottom-button-bar">
-        <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save Job Order</button>
+                        <div class="row mt-3">
+                            <div class="col-12 text-right">
+                                <a href="{{ route('job-orders.index') }}" onclick="loadPageContent('{{ route('job-orders.index') }}')" class="btn btn-danger mr-1">Cancel</a>
+                                <button type="submit" class="btn btn-primary submitbutton">Save Job Order</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
-</form>
+</div>
 
 <!-- Hidden Template for Container Protection & Packing Materials -->
 <div class="container-protection-item-template d-none">
@@ -629,7 +651,9 @@
         </tr>
     </tbody>
 </table>
+@endsection
 
+@section('script')
 <script>
     $(document).ready(function () {
         // Remove all existing event handlers to prevent multiple bindings when modal is loaded multiple times
@@ -1473,3 +1497,4 @@
         }
     });
 </script>
+@endsection

@@ -10,10 +10,10 @@
                     <h2 class="page-title">Job Orders</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('job-orders.create') }}','Add Job Order',false,'99%')" type="button"
+                    <a href="{{ route('job-orders.create') }}" onclick="loadPageContent('{{ route('job-orders.create') }}')"
                         class="btn btn-primary position-relative">
-                        Create Job Order
-                    </button>
+                        <i class="ft-plus mr-1"></i>Create Job Order
+                    </a>
                 </div>
             </div>
             <div class="row">

@@ -1,7 +1,7 @@
 <table class="table table-hover m-0">
     <thead class="bg-light">
         <tr>
-            <th width="14%">Inspection #</th>
+            <th width="14%">Dekh #</th>
             <th width="10%">Date</th>
             <th width="12%">Location</th>
             <th width="18%">Party Name & Contact</th>
@@ -78,12 +78,12 @@
                 <td class="text-center align-middle">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-info"
-                            onclick="openModal(this,'{{ route('sales.pre-sale-inspection.view', $row->id) }}','View Pre Sale Inspection', false, '80%')"
+                            onclick="openModal(this,'{{ route('sales.pre-sale-inspection.view', $row->id) }}','View Pre Sale Dekh', false, '80%')"
                             title="View" style="margin-right: 5px;">
                             <i class="ft-eye"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-warning"
-                            onclick="openModal(this,'{{ route('sales.pre-sale-inspection.edit', $row->id) }}','Edit Pre Sale Inspection', false, '80%')"
+                            onclick="openModal(this,'{{ route('sales.pre-sale-inspection.edit', $row->id) }}','Edit Pre Sale Dekh', false, '80%')"
                             title="Edit" style="margin-right: 5px;">
                             <i class="ft-edit"></i>
                         </button>
@@ -98,7 +98,7 @@
         @empty
             <tr>
                 <td colspan="6" class="text-center py-4 text-muted">
-                    No Pre Sale Inspection records found.
+                    No Pre Sale Dekh records found.
                 </td>
             </tr>
         @endforelse

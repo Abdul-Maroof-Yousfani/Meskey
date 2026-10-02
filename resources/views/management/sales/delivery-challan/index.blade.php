@@ -27,7 +27,7 @@
                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                 <div class="row mx-0">
-                                    <div class="px-1 text-left" style="width: 14%;">
+                                    <div class="px-1 text-left" style="width: 13%;">
                                         <label for="do_id_for_filter" class="form-label">DO No</label>
                                         <select name="do_id_for_filter" id="do_id_for_filter" class="form-control select2">
                                             <option value="all">All DO</option>
@@ -38,7 +38,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 16%;">
+                                    <div class="px-1 text-left" style="width: 14%;">
                                         <label for="customer_id_for_filter" class="form-label">Customer</label>
                                         <select name="customer_id_for_filter" id="customer_id_for_filter" class="form-control select2">
                                             <option value="all">All Customers</option>
@@ -49,7 +49,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 14%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="item_id_for_filter" class="form-label">Item</label>
                                         <select name="item_id_for_filter" id="item_id_for_filter" class="form-control select2">
                                             <option value="all">All Items</option>
@@ -60,13 +60,13 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 15%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="date_range_for_filter" class="form-label">Date</label>
                                         <input type="text" class="form-control" name="date_range_for_filter" id="date_range_for_filter"
                                             placeholder="Select Date Range"
                                             value="{{ request('date_range_for_filter', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 15%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="status_for_filter" class="form-label">Status</label>
                                         <select name="status_for_filter" id="status_for_filter" class="form-control select2">
                                             <option value="all" {{ request('status_for_filter') == 'all' ? 'selected' : '' }}>All Status</option>
@@ -76,7 +76,13 @@
                                             <option value="reverted" {{ request('status_for_filter') == 'reverted' ? 'selected' : '' }}>Reverted</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 26%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
+                                        <label for="truck_no_for_filter" class="form-label">Truck No</label>
+                                        <input type="text" class="form-control" id="truck_no_for_filter"
+                                            placeholder="e.g. ABC-123" name="truck_no_for_filter"
+                                            value="{{ request('truck_no_for_filter', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 25%;">
                                         <label for="search_for_filter" class="form-label">Search</label>
                                         <input type="text" class="form-control" id="search_for_filter"
                                             placeholder="Search" name="search_for_filter"
@@ -93,8 +99,9 @@
                                         <tr>
                                             <th class="col-3">SO NO</th>
                                             {{-- <th class="col-2">Location</th> --}}
-                                            <th class="col-4">Customer</th>
+                                            <th class="col-3">Customer</th>
                                             <th class="col-2 text-right">Qty</th>
+                                            <th class="col-1">Truck No</th>
                                             {{-- <th class="col-1 text-right">Approved Qty</th> --}}
                                             <th class="col-1">Contract Type</th>
                                             <th class="col-1">Status</th>
@@ -138,6 +145,14 @@
             // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
             $(document).on('ajaxSuccess', function() {
                 $('#do_id_for_filter, #customer_id_for_filter, #item_id_for_filter, #status_for_filter').select2();
+            });
+
+            // Auto-trigger filter on truck no input
+            $('#truck_no_for_filter').on('input', function() {
+                clearTimeout(window._truckFilterTimer);
+                window._truckFilterTimer = setTimeout(function() {
+                    $('#search_for_filter').trigger('keyup');
+                }, 400);
             });
         });
     </script>

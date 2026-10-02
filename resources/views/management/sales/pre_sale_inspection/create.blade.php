@@ -29,13 +29,13 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Inspection Number: <span class="text-danger">*</span></label>
-                        <input type="text" name="inspection_no" id="inspection_no" class="form-control font-weight-bold" readonly>
+                        <label class="form-label">Dekh Number: <span class="text-danger">*</span></label>
+                        <input type="text" name="inspection_no" id="inspection_no" class="form-control font-weight-bold" placeholder="Select Location" readonly>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Inspection Date: <span class="text-danger">*</span></label>
+                        <label class="form-label">Dekh Date: <span class="text-danger">*</span></label>
                         <input type="date" name="date" id="inspection_date" onchange="getInspectionNumber()"
                             class="form-control" value="{{ date('Y-m-d') }}">
                     </div>
@@ -83,7 +83,7 @@
                                     <th style="width: 28%;">Item (Product) <span class="text-danger">*</span></th>
                                     <th style="width: 25%;">Factory</th>
                                     <th style="width: 25%;">Section</th>
-                                    <th style="width: 14%;">Weight (kg) <span class="text-danger">*</span></th>
+                                    <th style="width: 14%;">Weight sample in (kg) <span class="text-danger">*</span></th>
                                     <th style="width: 8%;" class="text-center">Action</th>
                                 </tr>
                             </thead>
@@ -136,7 +136,7 @@
                 </div>
                 <div class="col-12">
                     <div class="form-group">
-                        <textarea name="remarks" id="remarks" class="form-control" rows="3" placeholder="Enter inspection remarks or notes..."></textarea>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3" placeholder="Enter Dekh remarks or notes..."></textarea>
                     </div>
                 </div>
             </div>
@@ -248,6 +248,7 @@
         window.populateRowSections = populateRowSections;
 
         $('#psi_location_id').on('change', function () {
+            getInspectionNumber();
             $('#psiItemsBody tr.psi-item-row').each(function () {
                 populateRowFactories($(this));
             });
@@ -258,7 +259,11 @@
             populateRowSections($row);
         });
 
-        getInspectionNumber();
+        if ($('#psi_location_id').val()) {
+            getInspectionNumber();
+        } else if ($('#psi_location_id option').length == 2) {
+            $('#psi_location_id').val($('#psi_location_id option:nth-child(2)').val()).trigger('change');
+        }
     });
 
     function addPsiItemRow() {
@@ -302,11 +307,21 @@
     });
 
     function getInspectionNumber(callback = null) {
+        const locationId = $("#psi_location_id").val();
+        if (!locationId) {
+            $("#inspection_no").val('');
+            if (typeof callback === 'function') {
+                callback(null);
+            }
+            return;
+        }
+
         $.ajax({
             url: "{{ route('sales.get.pre-sale-inspection-number') }}",
             method: "GET",
             data: {
-                inspection_date: $("#inspection_date").val()
+                inspection_date: $("#inspection_date").val(),
+                location_id: locationId
             },
             dataType: "json",
             success: function (res) {
@@ -345,7 +360,7 @@
 
     // Auto-refresh inspection number when the tab or window regains focus
     $(window).on('focus', function () {
-        if ($('#inspection_no').length) {
+        if ($('#inspection_no').length && $('#psi_location_id').val()) {
             getInspectionNumber();
         }
     });

@@ -26,11 +26,11 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="info-label">Inspection Number:</div>
+                        <div class="info-label">Dekh Number:</div>
                         <div class="info-value font-weight-bold text-primary">#{{ $pre_sale_inspection->inspection_no }}</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="info-label">Inspection Date:</div>
+                        <div class="info-label">Dekh Date:</div>
                         <div class="info-value">{{ $pre_sale_inspection->date ? $pre_sale_inspection->date->format('d M Y') : 'N/A' }}</div>
                     </div>
                 </div>
@@ -63,7 +63,7 @@
                                         <th style="width: 30%;">Item (Product)</th>
                                         <th style="width: 25%;">Factory</th>
                                         <th style="width: 25%;">Section</th>
-                                        <th class="text-right" style="width: 15%;">Weight (kg)</th>
+                                        <th class="text-right" style="width: 15%;">Weight sample in (kg)</th>
                                     </tr>
                                 </thead>
                                 <tbody>

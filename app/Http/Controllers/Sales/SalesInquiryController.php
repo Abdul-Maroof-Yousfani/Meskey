@@ -91,7 +91,13 @@ class SalesInquiryController extends Controller
             })
             // Filter by Status
             ->when($request->filled('status') && $request->status != 'all', function ($q) use ($request) {
-                $q->where('am_approval_status', $request->status);
+                if ($request->status === 'stage_1_pending') {
+                    $q->where('si_approval_stage', 'stage_1_pending')->where('am_approval_status', 'pending');
+                } elseif ($request->status === 'headoffice_pending') {
+                    $q->where('si_approval_stage', 'headoffice_pending');
+                } else {
+                    $q->where('am_approval_status', $request->status);
+                }
             })
             ->orderBy('inquiry_no', 'desc')
             ->paginate($perPage);
@@ -118,6 +124,7 @@ class SalesInquiryController extends Controller
                 'id' => $inquiry->id,
                 'customer' => $inquiry->customer,
                 'status' => $inquiry->am_approval_status,
+                'si_approval_stage' => $inquiry->si_approval_stage ?? 'stage_1_pending',
                 'contact_person' => $inquiry->contact_person,
                 'contract_type' => $inquiry->contract_type,
                 'remarks' => $inquiry->remarks,
@@ -252,6 +259,13 @@ class SalesInquiryController extends Controller
         //     return response()->json("Inquiry date cannot be greater than required date.", 400);
         // }
 
+        if ($sales_inquiry->si_approval_stage === 'headoffice_pending') {
+            return response()->json([
+                'error' => 'Sales Inquiry has been approved at Stage 1 and is pending Head Office approval. It cannot be edited unless reverted by Head Office.',
+                'message' => 'Sales Inquiry has been approved at Stage 1 and is pending Head Office approval. It cannot be edited unless reverted by Head Office.'
+            ], 422);
+        }
+
         if (in_array(strtolower($sales_inquiry->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "Sales Inquiry has already been {$sales_inquiry->am_approval_status} and cannot be updated.",
@@ -326,6 +340,11 @@ class SalesInquiryController extends Controller
                 ]);
             }
 
+            // If the Sales Inquiry was reverted, resubmit after edit back to Stage 1
+            if ($sales_inquiry->si_approval_stage === 'reverted' || $sales_inquiry->am_approval_status === 'reverted') {
+                $sales_inquiry->resubmitAfterEdit();
+            }
+
             DB::commit();
         } catch(\Exception $e) {
             DB::rollBack();
@@ -356,7 +375,11 @@ class SalesInquiryController extends Controller
     }
 
     public function edit(SalesInquiry $sales_inquiry) {
-        $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections", "preSaleInspection");
+        if ($sales_inquiry->si_approval_stage === 'headoffice_pending') {
+            return view('management.sales.inquiry.lockedModal', compact('sales_inquiry'));
+        }
+
+        $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections");
         $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 

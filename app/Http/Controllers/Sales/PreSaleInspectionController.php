@@ -95,7 +95,7 @@ class PreSaleInspectionController extends Controller
 
             $inspectionNo = $request->inspection_no;
             if (empty($inspectionNo) || PreSaleInspection::where('inspection_no', $inspectionNo)->exists()) {
-                $inspectionNo = self::generateUniqueNumber($request->date);
+                $inspectionNo = self::generateUniqueNumber($request->date, $request->location_id);
             }
 
             $inspection = PreSaleInspection::create([
@@ -227,31 +227,58 @@ class PreSaleInspectionController extends Controller
         }
     }
 
-    public static function generateUniqueNumber($dateParam = null)
+    public static function generateUniqueNumber($dateParam = null, $locationParam = null)
     {
-        $date = Carbon::parse($dateParam ?? date('Y-m-d'))->format('Y-m-d');
-        $prefix = 'PSI-' . $date;
+        try {
+            $datePart = $dateParam ? Carbon::parse($dateParam)->format('m-d-Y') : date('m-d-Y');
+        } catch (\Exception $e) {
+            $datePart = date('m-d-Y');
+        }
 
-        $existing = PreSaleInspection::where('inspection_no', 'like', "$prefix-%")
+        if (empty($locationParam)) {
+            $locationParam = request('location_id') ?? request('company_location_id') ?? auth()->user()?->company_location_id;
+        }
+
+        $locationCode = 'LOC';
+        if ($locationParam) {
+            if ($locationParam instanceof CompanyLocation) {
+                $locationCode = $locationParam->code ?: 'LOC';
+            } elseif (is_numeric($locationParam)) {
+                $loc = CompanyLocation::find($locationParam);
+                $locationCode = $loc?->code ?: 'LOC';
+            } elseif (is_string($locationParam)) {
+                $loc = CompanyLocation::where('code', $locationParam)->first();
+                $locationCode = $loc ? $loc->code : $locationParam;
+            }
+        }
+
+        $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
+        $prefix = $locationCode . '-DEKH';
+
+        $searchPattern = $prefix . '-%-' . $datePart;
+
+        $existing = PreSaleInspection::where('inspection_no', 'like', $searchPattern)
             ->lockForUpdate()
             ->pluck('inspection_no')
             ->toArray();
 
         $maxNumber = 0;
+        $regex = '/^' . preg_quote($prefix, '/') . '-(\d+)-' . preg_quote($datePart, '/') . '$/';
         foreach ($existing as $no) {
-            $parts = explode('-', $no);
-            $num = (int) end($parts);
-            if ($num > $maxNumber) {
-                $maxNumber = $num;
+            if (preg_match($regex, $no, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNumber) {
+                    $maxNumber = $num;
+                }
             }
         }
 
         $newNumber = $maxNumber + 1;
-        $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
 
         while (in_array($candidate, $existing) || PreSaleInspection::where('inspection_no', $candidate)->exists()) {
             $newNumber++;
-            $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
         }
 
         return $candidate;
@@ -260,7 +287,8 @@ class PreSaleInspectionController extends Controller
     public function getNumber(Request $request, $inspectionDate = null)
     {
         $dateParam = $inspectionDate ?? $request->inspection_date ?? $request->date ?? date('Y-m-d');
-        $inspection_no = self::generateUniqueNumber($dateParam);
+        $locationParam = $request->location_id ?? $request->company_location_id ?? null;
+        $inspection_no = self::generateUniqueNumber($dateParam, $locationParam);
 
         if ($request->ajax()) {
             return response()->json([
