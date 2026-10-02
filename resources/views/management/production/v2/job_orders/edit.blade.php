@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('production.job-orders.update', $jobOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+                    <form action="{{ route('production.job-orders.update', $jobOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data" novalidate>
                         @csrf
                         @method('PUT')
                         <input type="hidden" id="url" value="{{ route('production.job-orders.index') }}" />
@@ -713,7 +713,7 @@
                                                             <div class="col-md-1">
                                                                 <div class="form-group">
                                                                     <label>Stuffing (MTs):</label>
-                                                                    <input type="number" name="packing_items[{{ $packingIndex }}][stuffing_in_container]" value="{{ $packingItem?->stuffing_in_container ?? 0 }}" class="form-control stuffing" step="0.01" min="0">
+                                                                    <input type="number" name="packing_items[{{ $packingIndex }}][stuffing_in_container]" value="{{ $packingItem?->stuffing_in_container ?? 0 }}" class="form-control stuffing" step="any" min="0">
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-2">
