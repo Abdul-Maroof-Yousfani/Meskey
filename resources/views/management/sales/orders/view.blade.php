@@ -123,7 +123,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Pre Sale Inspection:</label>
+                        <label class="form-label">Pre Sale Dekh:</label>
                         <input type="text" class="form-control" readonly 
                             value="{{ $sale_order->preSaleInspection ? '#' . $sale_order->preSaleInspection->inspection_no . ' (' . $sale_order->preSaleInspection->party_name . ')' : 'None' }}">
                     </div>

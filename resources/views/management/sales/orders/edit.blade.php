@@ -101,9 +101,9 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Pre Sale Inspection:</label>
+                        <label class="form-label">Pre Sale Dekh:</label>
                         <select name="pre_sale_inspection_id" id="pre_sale_inspection_id" class="form-control select2">
-                            <option value="">Select Pre Sale Inspection (Optional)</option>
+                            <option value="">Select Pre Sale Dekh (Optional)</option>
                             @foreach ($preSaleInspections ?? [] as $psi)
                                 <option value="{{ $psi->id }}" @selected($psi->id == $sale_order->pre_sale_inspection_id)>
                                     #{{ $psi->inspection_no }} ({{ $psi->party_name }})

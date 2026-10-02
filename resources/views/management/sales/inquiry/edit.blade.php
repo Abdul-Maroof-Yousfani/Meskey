@@ -63,9 +63,9 @@
                 </div>
                 <div class="col-md-12 mb-2">
                     <div class="form-group">
-                        <label class="form-label">Pre Sale Inspection: <small class="text-muted">(Optional)</small></label>
+                        <label class="form-label">Pre Sale Dekh: <small class="text-muted">(Optional)</small></label>
                         <select name="pre_sale_inspection_id" id="pre_sale_inspection_id" class="form-control select2">
-                            <option value="">Select Pre Sale Inspection</option>
+                            <option value="">Select Pre Sale Dekh</option>
                             @foreach ($preSaleInspections ?? [] as $psi)
                                 @php
                                     $itemNames = $psi->items && $psi->items->count() > 0 
