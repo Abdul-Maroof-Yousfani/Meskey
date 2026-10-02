@@ -1715,6 +1715,940 @@ function initializeDynamicSelect2(
     }
   });
 }
+
+
+
+function initializeDynamicSelect2_withbutton(
+  selector,
+  tableName,
+  columnName,
+  idColumn = "id",
+  enableTags = false,
+  isMultiple = false,
+  isSelectOnClose = true,
+  isAllowClear = false,
+) {
+  const $el = $(selector);
+
+  if (!$el.length) {
+    console.warn(`Select2 element "${selector}" not found.`);
+    return;
+  }
+
+  // Remove previous Select2 instance if already initialized
+  if ($el.hasClass("select2-hidden-accessible")) {
+    $el.select2("destroy");
+  }
+
+  $el.select2({
+    ajax: {
+      url: "/dynamic-fetch-data",
+      type: "GET",
+      dataType: "json",
+      delay: 250,
+
+      data: function (params) {
+        return {
+          search: params.term || "",
+          table: tableName,
+          column: columnName,
+          idColumn: idColumn,
+          enableTags: enableTags,
+        };
+      },
+
+      processResults: function (data) {
+        const items = isAllowClear
+          ? [
+            {
+              id: "all",
+              text: "Select an option",
+            },
+            ...(data.items || []),
+          ]
+          : data.items || [];
+
+        return {
+          results: items,
+        };
+      },
+
+      cache: true,
+    },
+
+    minimumInputLength: 0,
+    tags: enableTags,
+    multiple: isMultiple,
+    allowClear: isAllowClear,
+    selectOnClose: isSelectOnClose,
+    placeholder: "Select an option",
+  });
+
+  // ==========================================
+  // CLEAR
+  // ==========================================
+
+  $el
+    .off("select2:clear.dynamicSelect2")
+    .on("select2:clear.dynamicSelect2", function () {
+      // Only clear value.
+      // NO AJAX / NO FILTER REQUEST.
+      $(this).val(null);
+    });
+
+  // ==========================================
+  // "ALL" OPTION
+  // ==========================================
+
+  $el
+    .off("select2:select.dynamicSelect2")
+    .on("select2:select.dynamicSelect2", function (e) {
+      if (e.params.data.id === "all") {
+        // Only change value.
+        // NO AJAX / NO FILTER REQUEST.
+        $(this).val("");
+      }
+    });
+
+  // ==========================================
+  // RETURN NOTHING
+  // ==========================================
+
+  // This Select2 only initializes the dropdown.
+  // Actual filter/data request will happen from button.
+}
+
+function initializeDynamicDependentSelect2_withbutton(
+  selector,
+  target,
+  tableName,
+  columnName,
+  idColumn = "id",
+  targetTable = null,
+  targetColumn = null,
+  targetDisplayColumn = "name",
+  enableTags = false,
+  isMultiple = false,
+  isSelectOnClose = true,
+  isAllowClear = false
+) {
+  const $el = $(selector);
+  const $targetEl = $(target);
+
+  if (!$el.length) {
+    console.warn(`Source Select2 "${selector}" not found.`);
+    return function () { };
+  }
+
+  if (!$targetEl.length) {
+    console.warn(`Target Select2 "${target}" not found.`);
+    return function () { };
+  }
+
+  // ==========================================
+  // DESTROY OLD SELECT2
+  // ==========================================
+
+  if ($el.hasClass("select2-hidden-accessible")) {
+    $el.select2("destroy");
+  }
+
+  if ($targetEl.hasClass("select2-hidden-accessible")) {
+    $targetEl.select2("destroy");
+  }
+
+  // ==========================================
+  // SOURCE SELECT2
+  // ==========================================
+
+  $el.select2({
+    ajax: {
+      url: "/dynamic-dependent-fetch-data",
+      type: "GET",
+      dataType: "json",
+      delay: 250,
+
+      data: function (params) {
+        return {
+          search: params.term || "",
+          table: tableName,
+          column: columnName,
+          idColumn: idColumn,
+          enableTags: enableTags,
+          targetTable: targetTable,
+          targetColumn: targetColumn,
+          fetchMode: "source",
+        };
+      },
+
+      processResults: function (data) {
+        const items = isAllowClear
+          ? [
+            {
+              id: "all",
+              text: "Select an option",
+            },
+            ...(data.items || []),
+          ]
+          : data.items || [];
+
+        return {
+          results: items,
+        };
+      },
+
+      cache: true,
+    },
+
+    minimumInputLength: 0,
+    tags: enableTags,
+    multiple: isMultiple,
+    allowClear: isAllowClear,
+    selectOnClose: isSelectOnClose,
+    placeholder: "Select an option",
+  });
+
+  // ==========================================
+  // TARGET SELECT2
+  // ==========================================
+
+  $targetEl.select2({
+    ajax: {
+      url: "/dynamic-dependent-fetch-data",
+      type: "GET",
+      dataType: "json",
+      delay: 250,
+
+      data: function (params) {
+        return {
+          search: params.term || "",
+          table: targetTable,
+          column: targetDisplayColumn,
+          idColumn: "id",
+          targetTable: targetTable,
+          targetColumn: targetColumn,
+          fetchMode: "target",
+          sourceId: $el.val(),
+        };
+      },
+
+      processResults: function (data) {
+        const items = isAllowClear
+          ? [
+            {
+              id: "all",
+              text: "Select an option",
+            },
+            ...(data.items || []),
+          ]
+          : data.items || [];
+
+        return {
+          results: items,
+        };
+      },
+
+      cache: true,
+    },
+
+    minimumInputLength: 0,
+    allowClear: isAllowClear,
+    placeholder: "Select an option",
+  });
+
+  // ==========================================
+  // BUTTON REQUEST FUNCTION
+  // ==========================================
+
+  function fetchTargetData() {
+    const selectedId = $el.val();
+
+    // No source selected
+    if (!selectedId || selectedId === "all") {
+      $targetEl
+        .empty()
+        .val(null)
+        .trigger("change.select2");
+
+      return;
+    }
+
+    $.ajax({
+      url: "/dynamic-dependent-fetch-data",
+      type: "GET",
+
+      data: {
+        table: targetTable,
+        column: targetDisplayColumn,
+        idColumn: "id",
+        targetTable: targetTable,
+        targetColumn: targetColumn,
+        fetchMode: "target",
+        sourceId: selectedId,
+      },
+
+      beforeSend: function () {
+        $targetEl.prop("disabled", true);
+      },
+
+      success: function (data) {
+        const items = data.items || [];
+
+        const options = items.map(function (item) {
+          return new Option(
+            item.text,
+            item.id,
+            false,
+            false
+          );
+        });
+
+        $targetEl
+          .empty()
+          .append(options)
+          .val(null)
+          .trigger("change.select2");
+      },
+
+      error: function (xhr, status, error) {
+        console.error(
+          "Dynamic dependent request failed:",
+          error
+        );
+
+        console.error(
+          "Response:",
+          xhr.responseText
+        );
+      },
+
+      complete: function () {
+        $targetEl.prop("disabled", false);
+      }
+    });
+  }
+
+  // ==========================================
+  // CLEAR SOURCE
+  // ==========================================
+
+  $el
+    .off("select2:clear.dynamicDependent")
+    .on("select2:clear.dynamicDependent", function () {
+
+      // Clear target only.
+      // NO AJAX REQUEST.
+      $targetEl
+        .empty()
+        .val(null)
+        .trigger("change.select2");
+    });
+
+  // ==========================================
+  // ALL OPTION
+  // ==========================================
+
+  $el
+    .off("select2:select.dynamicDependent")
+    .on("select2:select.dynamicDependent", function (e) {
+
+      if (e.params.data.id === "all") {
+
+        // Clear source value.
+        $(this).val("");
+
+        // Clear target.
+        // NO AJAX REQUEST.
+        $targetEl
+          .empty()
+          .val(null)
+          .trigger("change.select2");
+      }
+    });
+
+  // ==========================================
+  // IMPORTANT
+  // ==========================================
+  //
+  // NO:
+  //
+  // $el.on("change", ...)
+  //
+  // NO:
+  //
+  // fetchTargetData();
+  //
+  // Request happens ONLY when returned
+  // function is called manually.
+  // ==========================================
+
+  return fetchTargetData;
+}
+
+function filterationCommon_withbtn(
+  url,
+  loadmore = false,
+  appenddiv = "filteredData",
+  formId = "filterForm",
+) {
+  let $container = $("#" + appenddiv);
+  let $form = $("#" + formId);
+
+  // ==========================================
+  // FIND CONTAINER
+  // ==========================================
+
+  if ($container.length === 0) {
+    console.warn(
+      `Container with ID "${appenddiv}" not found. Falling back to "filteredData".`,
+    );
+
+    appenddiv = "filteredData";
+    $container = $("#" + appenddiv);
+
+    if ($container.length === 0) {
+      $container = $(
+        "[data-filter-container], .filtered-data, .data-container, .ajax-content",
+      ).first();
+
+      if ($container.length > 0) {
+        appenddiv = $container.attr("id") || "filteredData";
+      } else {
+        console.error(
+          "No suitable container found for filtered data!"
+        );
+
+        return function () { };
+      }
+    }
+  }
+
+  // ==========================================
+  // FIND FORM
+  // ==========================================
+
+  if ($form.length === 0) {
+    console.warn(
+      `Form with ID "${formId}" not found. Falling back to "filterForm".`,
+    );
+
+    formId = "filterForm";
+    $form = $("#" + formId);
+
+    if ($form.length === 0) {
+      $form = $(
+        "form[data-filter-form], .filter-form, form:has([name^='filter'])",
+      ).first();
+
+      if ($form.length > 0) {
+        formId = $form.attr("id") || "filterForm";
+      } else {
+        console.error(
+          "No suitable form found for filtering!"
+        );
+
+        return function () { };
+      }
+    }
+  }
+
+  // ==========================================
+  // CSRF
+  // ==========================================
+
+  $.ajaxSetup({
+    headers: {
+      "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+    },
+  });
+
+  // ==========================================
+  // LOADING
+  // ==========================================
+
+  function showLoading() {
+    if ($container.length) {
+      renderLoadingTable(
+        $container.find("table").length
+          ? $container.find("table")
+          : $container,
+        12,
+      );
+    }
+  }
+
+  // ==========================================
+  // FETCH DATA
+  // ==========================================
+
+  function fetch_data(formData) {
+    showLoading();
+
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: formData,
+
+      success: function (data) {
+
+        // Replace filtered content
+        $container.html(data);
+
+        // Reinitialize Select2
+        $(".selectWithoutAjax").select2();
+
+        // Reinitialize daterangepicker
+        initializeDaterangepicker();
+
+        // Attach query params
+        attachQueryParams();
+      },
+
+      error: function (xhr, status, error) {
+
+        console.error(
+          "Filter AJAX Error:",
+          error
+        );
+
+        if (typeof handleAjaxError === "function") {
+          handleAjaxError(
+            xhr,
+            status,
+            error
+          );
+        }
+      },
+    });
+  }
+
+  // ==========================================
+  // UPDATE URL
+  // ==========================================
+
+  function updateUrlParams(formData) {
+
+    const urlParams =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const newParams =
+      new URLSearchParams(formData);
+
+    // Remove existing parameters
+    for (const [key] of newParams) {
+      urlParams.delete(key);
+    }
+
+    // Add new parameters
+    for (const [key, value] of newParams) {
+
+      if (key.endsWith("[]")) {
+
+        if (value) {
+          urlParams.append(key, value);
+        }
+
+      } else {
+
+        if (value) {
+          urlParams.set(key, value);
+        } else {
+          urlParams.delete(key);
+        }
+      }
+    }
+
+    const queryString =
+      urlParams.toString();
+
+    const newUrl =
+      queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
+
+    window.history.pushState(
+      null,
+      "",
+      newUrl
+    );
+  }
+
+  // ==========================================
+  // FILTER REQUEST
+  // ==========================================
+
+  function runFilter() {
+
+    const formData =
+      $form.serialize();
+
+    updateUrlParams(formData);
+
+    fetch_data(formData);
+  }
+
+  // ==========================================
+  // DATE RANGE INITIALIZATION
+  // ==========================================
+
+  function initializeDaterangepicker() {
+
+    try {
+
+      if ($("#date_range").length) {
+
+        const $dateRange =
+          $("#date_range");
+
+        const existingValue =
+          $dateRange.val();
+
+        let startDate =
+          moment().subtract(
+            28,
+            "days"
+          );
+
+        let endDate =
+          moment();
+
+        if (
+          existingValue &&
+          existingValue.includes(" - ")
+        ) {
+
+          const dates =
+            existingValue.split(" - ");
+
+          startDate =
+            moment(
+              dates[0],
+              "YYYY-MM-DD"
+            );
+
+          endDate =
+            moment(
+              dates[1],
+              "YYYY-MM-DD"
+            );
+        }
+
+        // Prevent duplicate initialization
+        if (
+          $dateRange.data(
+            "daterangepicker"
+          )
+        ) {
+
+          $dateRange
+            .data("daterangepicker")
+            .remove();
+        }
+
+        $dateRange.daterangepicker({
+
+          startDate: startDate,
+
+          endDate: endDate,
+
+          autoUpdateInput: false,
+
+          locale: {
+            format: "YYYY-MM-DD",
+            cancelLabel: "Clear",
+          },
+        });
+
+        if (!existingValue) {
+
+          $dateRange.val(
+            startDate.format(
+              "YYYY-MM-DD"
+            ) +
+            " - " +
+            endDate.format(
+              "YYYY-MM-DD"
+            )
+          );
+        }
+
+        // Remove old events
+        $dateRange.off(
+          ".filteration"
+        );
+
+        // IMPORTANT:
+        // Date change does NOT call runFilter().
+        $dateRange.on(
+          "apply.daterangepicker.filteration",
+          function (ev, picker) {
+
+            $(this).val(
+              picker.startDate.format(
+                "YYYY-MM-DD"
+              ) +
+              " - " +
+              picker.endDate.format(
+                "YYYY-MM-DD"
+              )
+            );
+
+            // NO runFilter()
+          }
+        );
+
+        $dateRange.on(
+          "cancel.daterangepicker.filteration",
+          function () {
+
+            $(this).val("");
+
+            // NO runFilter()
+          }
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Daterangepicker initialization error:",
+        error
+      );
+    }
+  }
+
+  // ==========================================
+  // CUSTOM DATE RANGES
+  // ==========================================
+
+  function initializeCustomDateRanges() {
+
+    // ========================================
+    // DATERANGE
+    // ========================================
+
+    const $daterange =
+      $('input[name="daterange"]');
+
+    if ($daterange.length) {
+
+      $daterange.daterangepicker({
+
+        opens: "left",
+
+        autoUpdateInput: false,
+
+        locale: {
+          cancelLabel: "Clear",
+        },
+      });
+
+      $daterange.off(
+        ".filteration"
+      );
+
+      $daterange.on(
+        "apply.daterangepicker.filteration",
+        function (ev, picker) {
+
+          $(this).val(
+            `${picker.startDate.format(
+              "MM/DD/YYYY"
+            )} - ${picker.endDate.format(
+              "MM/DD/YYYY"
+            )}`
+          );
+
+          // NO runFilter()
+        }
+      );
+
+      $daterange.on(
+        "cancel.daterangepicker.filteration",
+        function (ev, picker) {
+
+          ev.preventDefault();
+
+          $(this).val("");
+
+          picker.setStartDate(
+            moment()
+          );
+
+          picker.setEndDate(
+            moment()
+          );
+
+          // NO runFilter()
+        }
+      );
+    }
+
+    // ========================================
+    // DATERANGE2
+    // ========================================
+
+    const $daterange2 =
+      $('input[name="daterange2"]');
+
+    if ($daterange2.length) {
+
+      $daterange2.daterangepicker({
+
+        opens: "left",
+
+        autoUpdateInput: false,
+
+        locale: {
+          cancelLabel: "Clear",
+        },
+      });
+
+      $daterange2.off(
+        ".filteration"
+      );
+
+      $daterange2.on(
+        "apply.daterangepicker.filteration",
+        function (ev, picker) {
+
+          $(this).val(
+            `${picker.startDate.format(
+              "MM/DD/YYYY"
+            )} - ${picker.endDate.format(
+              "MM/DD/YYYY"
+            )}`
+          );
+
+          // NO runFilter()
+        }
+      );
+
+      $daterange2.on(
+        "cancel.daterangepicker.filteration",
+        function (ev, picker) {
+
+          ev.preventDefault();
+
+          $(this).val("");
+
+          picker.setStartDate(
+            moment()
+          );
+
+          picker.setEndDate(
+            moment()
+          );
+
+          // NO runFilter()
+        }
+      );
+    }
+  }
+
+  // ==========================================
+  // IMPORTANT:
+  // NO FORM CHANGE EVENT
+  // NO KEYUP EVENT
+  // ==========================================
+
+  /*
+  Removed intentionally:
+
+  $form.find("input, select")
+      .on("change keyup", function () {
+          runFilter();
+      });
+
+  */
+
+  // ==========================================
+  // PAGINATION
+  // ==========================================
+
+  $(document)
+    .off(
+      "click.filteration",
+      "#paginationLinks a"
+    )
+    .on(
+      "click.filteration",
+      "#paginationLinks a",
+      function (e) {
+
+        e.preventDefault();
+
+        const href =
+          $(this).attr("href");
+
+        const page =
+          new URL(
+            href,
+            window.location.origin
+          )
+            .searchParams
+            .get("page");
+
+        const formData =
+          $form.serialize() +
+          "&page=" +
+          page;
+
+        updateUrlParams(
+          formData
+        );
+
+        fetch_data(
+          formData
+        );
+      }
+    );
+
+  // ==========================================
+  // PER PAGE
+  // ==========================================
+
+  // IMPORTANT:
+  // Per-page change does NOT automatically request.
+  //
+  // If you want per-page to work only
+  // when filter button is clicked,
+  // it is automatically included in
+  // $form.serialize().
+
+  $(document)
+    .off(
+      "change.filteration",
+      "#per_page"
+    );
+
+  // ==========================================
+  // INITIALIZE DATE PICKERS
+  // ==========================================
+
+  initializeDaterangepicker();
+
+  initializeCustomDateRanges();
+
+  // ==========================================
+  // IMPORTANT
+  // ==========================================
+  //
+  // NO initial runFilter()
+  //
+  // The request will ONLY happen when
+  // the returned runFilter() function
+  // is called.
+  // ==========================================
+
+  return runFilter;
+}
+
+
+
+
 function initializeDynamicDependentSelect2(
   selector,
   target,
