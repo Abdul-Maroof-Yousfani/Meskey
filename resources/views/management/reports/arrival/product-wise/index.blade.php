@@ -68,6 +68,11 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="mt-2">
+                                            <div class="form-group mb-0">
+                                                <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -94,11 +99,28 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
-            filterationCommon(
+
+
+    $(document).ready(function () {
+            
+            const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.product-wise') }}`
             );
+
+
+            $('#filterForm').on('submit', function (e) {
+
+                e.preventDefault();
+
+
+                // Filter/data request
+                runFilter();
+            });
+            runFilter();
             $('.selectWithoutAjax').select2();
+
         });
+
+     
     </script>
 @endsection

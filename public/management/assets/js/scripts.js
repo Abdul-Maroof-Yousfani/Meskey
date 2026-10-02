@@ -2280,6 +2280,7 @@ function filterationCommon_withbtn(
   // ==========================================
 
   function runFilter() {
+    $form.find('input[name="page"]').val(1);
 
     const formData =
       $form.serialize();
@@ -2569,60 +2570,55 @@ function filterationCommon_withbtn(
   // ==========================================
 
   $(document)
-    .off(
-      "click.filteration",
-      "#paginationLinks a"
-    )
-    .on(
-      "click.filteration",
-      "#paginationLinks a",
-      function (e) {
+    .off("click", "#paginationLinks a")
+    .on("click", "#paginationLinks a", function (e) {
+      e.preventDefault();
 
-        e.preventDefault();
-
-        const href =
-          $(this).attr("href");
-
-        const page =
-          new URL(
-            href,
-            window.location.origin
-          )
-            .searchParams
-            .get("page");
-
-        const formData =
-          $form.serialize() +
-          "&page=" +
-          page;
-
-        updateUrlParams(
-          formData
-        );
-
-        fetch_data(
-          formData
-        );
+      var href = $(this).attr("href");
+      if (!href || href === "#" || href.indexOf("javascript") === 0) {
+        return;
       }
-    );
 
-  // ==========================================
-  // PER PAGE
-  // ==========================================
+      var page = 1;
+      if (href.indexOf("page=") !== -1) {
+        page = href.split("page=")[1].split("&")[0];
+      } else {
+        try {
+          var urlObj = new URL(href, window.location.origin);
+          page = urlObj.searchParams.get("page") || 1;
+        } catch (err) {
+          page = 1;
+        }
+      }
 
-  // IMPORTANT:
-  // Per-page change does NOT automatically request.
-  //
-  // If you want per-page to work only
-  // when filter button is clicked,
-  // it is automatically included in
-  // $form.serialize().
+      $form.find('input[name="page"]').val(page);
+
+      var formData = $form.serialize();
+      if (formData.indexOf("page=") === -1) {
+        formData += "&page=" + page;
+      }
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    });
 
   $(document)
-    .off(
-      "change.filteration",
-      "#per_page"
-    );
+    .off("change", "#per_page")
+    .on("change", "#per_page", function (e) {
+      e.preventDefault();
+
+      var perPage = $(this).val();
+      $form.find('input[name="per_page"]').val(perPage);
+      $form.find('input[name="page"]').val(1);
+
+      var formData = $form.serialize();
+      if (formData.indexOf("per_page=") === -1) {
+        formData += "&per_page=" + perPage;
+      }
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    });
 
   // ==========================================
   // INITIALIZE DATE PICKERS
