@@ -786,7 +786,7 @@ class PaymentRequestController extends Controller
 
             $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
                 $query->where('ticket_id', $ticket->id);
-            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
+            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'other_adjustment_amount')
                 ->latest()
                 ->first();
         }
