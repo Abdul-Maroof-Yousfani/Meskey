@@ -75,7 +75,7 @@
         $avgRate = $loadingWeight / $noOfBags;
     }
 
-    $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
+    $bagWeightInKgSum = $paymentRequestData->bag_weight_amount ?? $ratePerKg * ($bagWeight * $noOfBags);
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
@@ -183,7 +183,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -197,10 +197,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            },
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    },
                 @endif
             @endforeach
         ],
@@ -885,7 +885,7 @@
                         <tr>
                             <td><strong>Bags weight in Kg</strong></td>
                             <td>
-                                <input type="number" step="0.0001" class="form-control editable-field" name="bag_weight"
+                                <input type="number" step="any" class="form-control editable-field" name="bag_weight"
                                     id="bag_weight_input" value="{{ $bagWeight }}">
                             </td>
                             <td>
@@ -893,8 +893,8 @@
                                     value="{{ $bagWeight * $noOfBags }}" readonly>
                             </td>
                             <td>
-                                <input type="number" step="0.0001" class="form-control editable-field"
-                                    name="bag_weight_amount" id="bag_weight_amount" value="{{ $bagWeightInKgSum }}">
+                                <input type="number" step="any" class="form-control editable-field" name="bag_weight_amount"
+                                    id="bag_weight_amount" value="{{ $bagWeightInKgSum }}">
                                 <input type="hidden" class="form-control" name="bag_weight_amount_display"
                                     id="bag_weight_amount_display" value="{{ number_format($bagWeightInKgSum, 4) }}">
                             </td>
@@ -1338,8 +1338,8 @@
             }
 
             function updateBagWeightCalculations() {
-                const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
-                const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
+                const currentBagWeight = Number(parseFloat($('#bag_weight_input').val() || 0).toFixed(4));
+                const bagWeightAmount = Number(parseFloat($('#bag_weight_amount').val() || 0).toFixed(4));
 
                 const bagWeightTotal = currentBagWeight * noOfBags;
                 $('#bag_weight_total').val(bagWeightTotal.toFixed(4));
@@ -1410,8 +1410,8 @@
             function updateAllCalculations() {
                 updateBagWeightCalculations();
 
-                const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
-                const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
+                const currentBagWeight = Number(parseFloat($('#bag_weight_input').val() || 0).toFixed(4));
+                const bagWeightAmount = Number(parseFloat($('#bag_weight_amount').val() || 0).toFixed(4));
 
                 const bagRateAmount = bagRate * noOfBags;
                 $('#bag_rate_amount').val(bagRateAmount);
