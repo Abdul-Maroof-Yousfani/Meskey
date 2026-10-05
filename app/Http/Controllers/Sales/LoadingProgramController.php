@@ -535,7 +535,10 @@ class LoadingProgramController extends Controller
         $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($userId) {
-                $q->where('created_by', $userId);
+                $q->where(function ($sub) use ($userId) {
+                    $sub->where('created_by', $userId)
+                        ->orWhere('parent_user_id', $userId);
+                });
             })
             ->activeContract()
             ->where(function ($q) use ($existingSoIds) {
@@ -563,18 +566,23 @@ class LoadingProgramController extends Controller
                     return true;
                 }
 
-                // For other orders, check if they have any approved DO with remaining balance
+                // Check approved DOs
                 $excludeItemIds = $data["LoadingProgram"]->loadingProgramItems->pluck('id')->toArray();
-                return DeliveryOrder::where('so_id', $sale_order->id)
+                $dos = DeliveryOrder::where('so_id', $sale_order->id)
                     ->where('am_approval_status', 'approved')
                     ->when($mainCompanyLoc, function ($q) use ($mainCompanyLoc) {
                         return $q->whereRaw('FIND_IN_SET(?, location_id)', [(string) $mainCompanyLoc]);
                     })
-                    ->get()
-                    ->some(function ($do) use ($excludeItemIds) {
-                        return getLoadingProgramBalance($do->id, $excludeItemIds) > 0 &&
-                            get_second_weighbridge_balance_by_delivery_order($do->id) > 0;
-                    });
+                    ->get();
+
+                if ($dos->isEmpty()) {
+                    return true;
+                }
+
+                return $dos->some(function ($do) use ($excludeItemIds) {
+                    return getLoadingProgramBalance($do->id, $excludeItemIds) > 0 &&
+                        get_second_weighbridge_balance_by_delivery_order($do->id) > 0;
+                });
             });
 
         $currentSaleOrders = $data['LoadingProgram']->saleOrders->isEmpty()
@@ -1398,7 +1406,7 @@ class LoadingProgramController extends Controller
     public function fetchSaleOrdersByLocation(Request $request)
     {
         abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
-
+        
         $location_id = $request->location_id;
         $excludeItemIds = null;
         $existingSoIds = [];
@@ -1418,11 +1426,13 @@ class LoadingProgramController extends Controller
                 $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
             }
         }
-
-        $userId = auth()->id();
+        $userId = auth()->user()->id;
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($userId) {
-                $q->where('created_by', $userId);
+                $q->where(function ($sub) use ($userId) {
+                    $sub->where('created_by', $userId)
+                        ->orWhere('parent_user_id', $userId);
+                });
             })
             ->activeContract()
             ->where(function ($q) use ($existingSoIds) {
@@ -1431,8 +1441,10 @@ class LoadingProgramController extends Controller
                     $q->orWhereIn('id', $existingSoIds);
                 }
             })
-            ->whereHas('locations', function ($q) use ($location_id) {
-                $q->where('location_id', $location_id);
+            ->when($location_id, function ($q) use ($location_id) {
+                $q->whereHas('locations', function ($lq) use ($location_id) {
+                    $lq->where('location_id', $location_id);
+                });
             })
             ->get()
             ->filter(function ($so) use ($location_id, $excludeItemIds, $request, $existingSoIds) {
@@ -1451,12 +1463,21 @@ class LoadingProgramController extends Controller
                     return true;
                 }
 
-                // For other orders, check if they have any approved DO with remaining balance
-                return DeliveryOrder::where('so_id', $so->id)
+                // Check approved DOs
+                $dos = DeliveryOrder::where('so_id', $so->id)
                     ->where('am_approval_status', 'approved')
-                    ->whereRaw('FIND_IN_SET(?, location_id)', [(string) $location_id])
-                    ->get()
-                    ->some(function ($do) use ($excludeItemIds) {
+                    ->when($location_id, function ($q) use ($location_id) {
+                        $q->whereRaw('FIND_IN_SET(?, location_id)', [(string) $location_id]);
+                    })
+                    ->get();
+
+                // If no approved DO exists for this SO, allow the SO (DO is optional)
+                if ($dos->isEmpty()) {
+                    return true;
+                }
+
+                // For orders with approved DOs, check if at least one has remaining balance
+                return $dos->some(function ($do) use ($excludeItemIds) {
                     return getLoadingProgramBalance($do->id, $excludeItemIds) > 0 &&
                         get_second_weighbridge_balance_by_delivery_order($do->id) > 0;
                 });
