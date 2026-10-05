@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Export\Bank;
 use App\Models\Master\Customer;
 use App\Models\Sales\PaymentIntimation;
+use App\Models\Sales\PaymentIntimationDeposit;
 use App\Models\Sales\SalesOrder;
 use App\Models\User;
 use App\Notifications\NewNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class PaymentIntimationController extends Controller
@@ -27,9 +29,9 @@ class PaymentIntimationController extends Controller
         $search = $request->search;
         $user = auth()->user();
 
-        $query = PaymentIntimation::with(['customer', 'sale_order', 'bank'])->latest();
+        $query = PaymentIntimation::with(['customer', 'sale_order', 'deposits.bank', 'bank_relation'])->latest();
 
-        // If not super-admin, show only payment intimations for SOs created by this user
+        // If user is not super-admin, restrict to their own Sale Orders
         if ($user && $user->user_type !== 'super-admin') {
             $query->whereHas('sale_order', function ($q) use ($user) {
                 $q->where('created_by', $user->id);
@@ -37,14 +39,15 @@ class PaymentIntimationController extends Controller
         }
 
         if ($search) {
-            $query->where(function ($sub) use ($search) {
-                $sub->whereHas('customer', function ($q) use ($search) {
-                    $q->where('name', 'like', "%$search%");
-                })->orWhereHas('sale_order', function ($q) use ($search) {
-                    $q->where('reference_no', 'like', "%$search%");
-                })->orWhereHas('bank', function ($q) use ($search) {
-                    $q->where('bank_name', 'like', "%$search%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('sale_order', function ($sub) use ($search) {
+                    $sub->where('reference_no', 'like', "%{$search}%");
+                })
+                ->orWhere('payment_deposit', 'like', "%{$search}%")
+                ->orWhere('bank', 'like', "%{$search}%");
             });
         }
 
@@ -74,9 +77,48 @@ class PaymentIntimationController extends Controller
         $request->validate([
             'customer_id' => 'required',
             'sale_order_id' => 'required',
-            'bank_id' => 'required',
-            'payment_deposit' => 'required|numeric',
         ]);
+
+        // Normalize deposits from request
+        $depositsInput = [];
+        if ($request->has('deposits') && is_array($request->deposits)) {
+            $depositsInput = $request->deposits;
+        } elseif (is_array($request->bank_id)) {
+            foreach ($request->bank_id as $k => $bId) {
+                $depositsInput[] = [
+                    'bank_id' => $bId,
+                    'payment_deposit' => $request->payment_deposit[$k] ?? 0,
+                ];
+            }
+        } elseif ($request->bank_id) {
+            $depositsInput[] = [
+                'bank_id' => $request->bank_id,
+                'payment_deposit' => $request->payment_deposit ?? 0,
+            ];
+        }
+
+        if (empty($depositsInput)) {
+            return response()->json(['error' => 'At least one Bank and Payment Deposit entry is required.'], 422);
+        }
+
+        $totalDeposit = 0;
+        $bankIds = [];
+        $validDeposits = [];
+        foreach ($depositsInput as $item) {
+            if (empty($item['bank_id'])) {
+                return response()->json(['error' => 'Please select a bank for all deposit rows.'], 422);
+            }
+            if (!isset($item['payment_deposit']) || !is_numeric($item['payment_deposit']) || (float)$item['payment_deposit'] < 0) {
+                return response()->json(['error' => 'Please enter a valid deposit amount for all rows.'], 422);
+            }
+            $amount = (float)$item['payment_deposit'];
+            $totalDeposit += $amount;
+            $bankIds[] = $item['bank_id'];
+            $validDeposits[] = [
+                'bank_id' => $item['bank_id'],
+                'payment_deposit' => $amount,
+            ];
+        }
 
         $user = auth()->user();
         if ($user && $user->user_type !== 'super-admin') {
@@ -86,7 +128,17 @@ class PaymentIntimationController extends Controller
             }
         }
 
-        $payload = $request->except('_token');
+        // Fetch bank names to store as JSON in parent table
+        $banks = Bank::whereIn('id', array_unique($bankIds))->get();
+        $bankNames = [];
+        foreach ($bankIds as $bId) {
+            $bankObj = $banks->firstWhere('id', $bId);
+            if ($bankObj) {
+                $bankNames[] = $bankObj->bank_name;
+            }
+        }
+
+        $payload = $request->except(['_token', 'deposits', 'bank_id', 'payment_deposit']);
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
@@ -95,10 +147,30 @@ class PaymentIntimationController extends Controller
             $file->move(public_path($path), $filename);
             $payload['attachment'] = $path . '/' . $filename;
         }
+
         $payload['created_by'] = auth()->user()->id ?? null;
         $payload['company_id'] = auth()->user()->company_id ?? null;
+        $payload['payment_deposit'] = $totalDeposit;
+        $payload['bank'] = json_encode($bankNames);
+        $payload['bank_id'] = $bankIds[0] ?? null;
 
-        $payment_intimation = PaymentIntimation::create($payload);
+        DB::beginTransaction();
+        try {
+            $payment_intimation = PaymentIntimation::create($payload);
+
+            foreach ($validDeposits as $dep) {
+                $payment_intimation->deposits()->create([
+                    'bank_id' => $dep['bank_id'],
+                    'payment_deposit' => $dep['payment_deposit'],
+                ]);
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Failed to save payment intimation: ' . $e->getMessage()], 500);
+        }
+
         $payment_intimation->load('sale_order', 'customer');
 
         $users = User::permission('payment-intimation')->get();
@@ -122,7 +194,7 @@ class PaymentIntimationController extends Controller
     {
         abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         $user = auth()->user();
-        $query = PaymentIntimation::with(['sale_order']);
+        $query = PaymentIntimation::with(['sale_order', 'deposits.bank']);
         if ($user && $user->user_type !== 'super-admin') {
             $query->whereHas('sale_order', function ($q) use ($user) {
                 $q->where('created_by', $user->id);
@@ -148,7 +220,7 @@ class PaymentIntimationController extends Controller
     {
         abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         $user = auth()->user();
-        $query = PaymentIntimation::with(['customer', 'sale_order', 'bank']);
+        $query = PaymentIntimation::with(['customer', 'sale_order', 'deposits.bank', 'bank_relation']);
         if ($user && $user->user_type !== 'super-admin') {
             $query->whereHas('sale_order', function ($q) use ($user) {
                 $q->where('created_by', $user->id);
@@ -164,9 +236,48 @@ class PaymentIntimationController extends Controller
         $request->validate([
             'customer_id' => 'required',
             'sale_order_id' => 'required',
-            'bank_id' => 'required',
-            'payment_deposit' => 'required|numeric',
         ]);
+
+        // Normalize deposits from request
+        $depositsInput = [];
+        if ($request->has('deposits') && is_array($request->deposits)) {
+            $depositsInput = $request->deposits;
+        } elseif (is_array($request->bank_id)) {
+            foreach ($request->bank_id as $k => $bId) {
+                $depositsInput[] = [
+                    'bank_id' => $bId,
+                    'payment_deposit' => $request->payment_deposit[$k] ?? 0,
+                ];
+            }
+        } elseif ($request->bank_id) {
+            $depositsInput[] = [
+                'bank_id' => $request->bank_id,
+                'payment_deposit' => $request->payment_deposit ?? 0,
+            ];
+        }
+
+        if (empty($depositsInput)) {
+            return response()->json(['error' => 'At least one Bank and Payment Deposit entry is required.'], 422);
+        }
+
+        $totalDeposit = 0;
+        $bankIds = [];
+        $validDeposits = [];
+        foreach ($depositsInput as $item) {
+            if (empty($item['bank_id'])) {
+                return response()->json(['error' => 'Please select a bank for all deposit rows.'], 422);
+            }
+            if (!isset($item['payment_deposit']) || !is_numeric($item['payment_deposit']) || (float)$item['payment_deposit'] < 0) {
+                return response()->json(['error' => 'Please enter a valid deposit amount for all rows.'], 422);
+            }
+            $amount = (float)$item['payment_deposit'];
+            $totalDeposit += $amount;
+            $bankIds[] = $item['bank_id'];
+            $validDeposits[] = [
+                'bank_id' => $item['bank_id'],
+                'payment_deposit' => $amount,
+            ];
+        }
 
         $user = auth()->user();
         $query = PaymentIntimation::with(['sale_order']);
@@ -184,7 +295,17 @@ class PaymentIntimationController extends Controller
             }
         }
 
-        $payload = $request->except('_token', '_method');
+        // Fetch bank names to store as JSON in parent table
+        $banks = Bank::whereIn('id', array_unique($bankIds))->get();
+        $bankNames = [];
+        foreach ($bankIds as $bId) {
+            $bankObj = $banks->firstWhere('id', $bId);
+            if ($bankObj) {
+                $bankNames[] = $bankObj->bank_name;
+            }
+        }
+
+        $payload = $request->except(['_token', '_method', 'deposits', 'bank_id', 'payment_deposit']);
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
@@ -194,7 +315,28 @@ class PaymentIntimationController extends Controller
             $payload['attachment'] = $path . '/' . $filename;
         }
 
-        $payment_intimation->update($payload);
+        $payload['payment_deposit'] = $totalDeposit;
+        $payload['bank'] = json_encode($bankNames);
+        $payload['bank_id'] = $bankIds[0] ?? null;
+
+        DB::beginTransaction();
+        try {
+            $payment_intimation->update($payload);
+
+            // Re-sync deposits
+            $payment_intimation->deposits()->delete();
+            foreach ($validDeposits as $dep) {
+                $payment_intimation->deposits()->create([
+                    'bank_id' => $dep['bank_id'],
+                    'payment_deposit' => $dep['payment_deposit'],
+                ]);
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Failed to update payment intimation: ' . $e->getMessage()], 500);
+        }
 
         return response()->json(['success' => 'Payment Intimation has been updated successfully']);
     }
@@ -210,7 +352,16 @@ class PaymentIntimationController extends Controller
             });
         }
         $payment_intimation = $query->findOrFail($id);
-        $payment_intimation->delete();
+
+        DB::beginTransaction();
+        try {
+            $payment_intimation->deposits()->delete();
+            $payment_intimation->delete();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Failed to delete payment intimation: ' . $e->getMessage()], 500);
+        }
 
         return response()->json(['success' => 'Payment Intimation has been deleted successfully']);
     }

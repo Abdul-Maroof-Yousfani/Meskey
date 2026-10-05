@@ -13,18 +13,56 @@
                     <input type="text" class="form-control" value="{{ $payment_intimation->sale_order->reference_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label">Bank</label>
-                    <input type="text" class="form-control" value="{{ $payment_intimation->bank->bank_name ?? 'N/A' }} - {{ $payment_intimation->bank->account_no ?? 'N/A' }}" readonly>
+
+            <div class="col-md-12 mb-3">
+                <label class="form-label font-weight-bold">Bank & Payment Deposit Breakdown</label>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm m-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="10%">#</th>
+                                <th width="50%">Bank</th>
+                                <th width="40%" class="text-right">Deposit Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if($payment_intimation->deposits && $payment_intimation->deposits->count() > 0)
+                                @foreach($payment_intimation->deposits as $idx => $dep)
+                                    <tr>
+                                        <td>{{ $idx + 1 }}</td>
+                                        <td>{{ $dep->bank->bank_name ?? 'N/A' }} {{ $dep->bank && $dep->bank->account_no ? '('.$dep->bank->account_no.')' : '' }}</td>
+                                        <td class="text-right">{{ number_format($dep->payment_deposit, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td>1</td>
+                                    <td>
+                                        @if($payment_intimation->bank_relation)
+                                            {{ $payment_intimation->bank_relation->bank_name }} - {{ $payment_intimation->bank_relation->account_no }}
+                                        @elseif(!empty($payment_intimation->bank))
+                                            @php
+                                                $decoded = json_decode($payment_intimation->bank, true);
+                                            @endphp
+                                            {{ is_array($decoded) ? implode(', ', $decoded) : $payment_intimation->bank }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td class="text-right">{{ number_format($payment_intimation->payment_deposit, 2) }}</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-weight-bold bg-light">
+                                <td colspan="2" class="text-right">Total Deposit:</td>
+                                <td class="text-right">{{ number_format($payment_intimation->payment_deposit, 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label">Payment Deposit</label>
-                    <input type="text" class="form-control" value="{{ number_format($payment_intimation->payment_deposit, 2) }}" readonly>
-                </div>
-            </div>
+
             @if($payment_intimation->attachment)
             <div class="col-md-6">
                 <div class="form-group">

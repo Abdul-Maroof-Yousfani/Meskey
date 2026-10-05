@@ -105,6 +105,7 @@ class PreSaleInspectionController extends Controller
                 'party_name' => $request->party_name,
                 'party_contact_no' => $request->party_contact_no,
                 'reference' => $request->reference,
+                'visitor_name' => $request->visitor_name,
                 'remarks' => $request->remarks ?? '',
                 'status' => 'active',
                 'company_id' => auth()->user()?->company_id ?? 1,
@@ -160,6 +161,7 @@ class PreSaleInspectionController extends Controller
                 'party_name' => $request->party_name,
                 'party_contact_no' => $request->party_contact_no,
                 'reference' => $request->reference,
+                'visitor_name' => $request->visitor_name,
                 'remarks' => $request->remarks ?? '',
                 'status' => 'active',
             ]);

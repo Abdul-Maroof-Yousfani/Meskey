@@ -16,6 +16,7 @@ class PaymentIntimation extends Model
         'customer_id',
         'sale_order_id',
         'bank_id',
+        'bank',
         'payment_deposit',
         'company_id',
         'created_by',
@@ -35,5 +36,15 @@ class PaymentIntimation extends Model
     public function bank()
     {
         return $this->belongsTo(Bank::class, 'bank_id');
+    }
+
+    public function bank_relation()
+    {
+        return $this->belongsTo(Bank::class, 'bank_id');
+    }
+
+    public function deposits()
+    {
+        return $this->hasMany(PaymentIntimationDeposit::class, 'payment_intimation_id');
     }
 }

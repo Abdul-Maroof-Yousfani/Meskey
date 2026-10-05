@@ -23,6 +23,7 @@ class DeliveryOrderController extends Controller
 {
     public function index()
     {
+        
         abort_if(!canAccess('sales-delivery-order-list') && !auth()->user()->can('sales-delivery-order-list'), 403);
         // Only get customers that have delivery order records
         $customerIds = DeliveryOrder::distinct()->pluck('customer_id')->filter();
@@ -544,6 +545,7 @@ class DeliveryOrderController extends Controller
             ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
                 $q->where('am_approval_status', $request->status_for_filter);
             })
+            ->where('created_by',auth()->user()->id)
             ->orderBy("reference_no", "desc")
             ->paginate($perPage);
 

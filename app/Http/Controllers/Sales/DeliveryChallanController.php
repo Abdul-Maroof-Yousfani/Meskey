@@ -915,6 +915,7 @@ class DeliveryChallanController extends Controller
                     $sq->whereRaw('LOWER(truck_no) LIKE ?', [$truckNo]);
                 });
             })
+            ->where('created_by_id',auth()->user()->id)
             ->latest()
             ->paginate($perPage);
 

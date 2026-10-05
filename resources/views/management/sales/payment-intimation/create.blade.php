@@ -23,27 +23,53 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label" for="bank_id">Bank <span class="text-danger">*</span></label>
-                        <select name="bank_id" id="bank_id" class="form-control select2" style="width: 100%" required>
-                            <option value="">Select Bank</option>
-                            @foreach ($banks as $bank)
-                                <option value="{{ $bank->id }}">{{ $bank->bank_name }} - {{ $bank->account_no }}</option>
-                            @endforeach
-                        </select>
+
+                {{-- Bank & Payment Deposit Dynamic Rows Section --}}
+                <div class="col-md-12 mt-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label font-weight-bold mb-0">Bank & Payment Deposit <span class="text-danger">*</span></label>
+                        <button type="button" class="btn btn-primary btn-sm" id="addDepositBtn">
+                            <i class="ft-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="depositContainer">
+                        <div class="row deposit-row align-items-center mb-2">
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Bank <span class="text-danger">*</span></label>
+                                    <select name="deposits[0][bank_id]" class="form-control select2 deposit-bank" style="width: 100%" required>
+                                        <option value="">Select Bank</option>
+                                        @foreach ($banks as $bank)
+                                            <option value="{{ $bank->id }}">{{ $bank->bank_name }} - {{ $bank->account_no }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Payment Deposit <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control deposit-amount" name="deposits[0][payment_deposit]" required placeholder="Enter amount">
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-center" style="padding-top: 24px;">
+                                <button type="button" class="btn btn-danger btn-sm remove-deposit-btn d-none" title="Remove Row">
+                                    <i class="ft-trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label" for="payment_deposit">Payment Deposit <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" class="form-control" id="payment_deposit" name="payment_deposit" required placeholder="Enter amount">
-                    </div>
-                </div>
+
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label" for="attachment">Attachment</label>
                         <input type="file" class="form-control" id="attachment" name="attachment">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Total Payment Deposit</label>
+                        <input type="text" class="form-control" id="total_payment_deposit_display" readonly value="0.00" style="background-color: #f8f9fa; font-weight: bold;">
                     </div>
                 </div>
             </div>
@@ -85,5 +111,71 @@
                 });
             }
         });
+
+        let depositIndex = 1;
+
+        $('#addDepositBtn').on('click', function() {
+            let rowHtml = `
+                <div class="row deposit-row align-items-center mb-2">
+                    <div class="col-md-5">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Bank <span class="text-danger">*</span></label>
+                            <select name="deposits[${depositIndex}][bank_id]" class="form-control select2 deposit-bank" style="width: 100%" required>
+                                <option value="">Select Bank</option>
+                                @foreach ($banks as $bank)
+                                    <option value="{{ $bank->id }}">{{ $bank->bank_name }} - {{ $bank->account_no }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Payment Deposit <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control deposit-amount" name="deposits[${depositIndex}][payment_deposit]" required placeholder="Enter amount">
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-center" style="padding-top: 24px;">
+                        <button type="button" class="btn btn-danger btn-sm remove-deposit-btn" title="Remove Row">
+                            <i class="ft-trash-2"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            let $row = $(rowHtml);
+            $('#depositContainer').append($row);
+            $row.find('.select2').select2({ width: '100%' });
+            depositIndex++;
+            updateRemoveButtons();
+            calculateTotal();
+        });
+
+        $(document).on('click', '.remove-deposit-btn', function() {
+            $(this).closest('.deposit-row').remove();
+            updateRemoveButtons();
+            calculateTotal();
+        });
+
+        $(document).on('input', '.deposit-amount', function() {
+            calculateTotal();
+        });
+
+        function updateRemoveButtons() {
+            let rows = $('#depositContainer .deposit-row');
+            if (rows.length <= 1) {
+                rows.find('.remove-deposit-btn').addClass('d-none');
+            } else {
+                rows.find('.remove-deposit-btn').removeClass('d-none');
+            }
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            $('.deposit-amount').each(function() {
+                let val = parseFloat($(this).val()) || 0;
+                total += val;
+            });
+            $('#total_payment_deposit_display').val(total.toFixed(2));
+        }
     });
 </script>

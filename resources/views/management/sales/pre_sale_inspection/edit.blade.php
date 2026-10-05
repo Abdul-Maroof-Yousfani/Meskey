@@ -70,6 +70,13 @@
                             value="{{ $pre_sale_inspection->reference }}" placeholder="Enter Reference">
                     </div>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Visitor Name:</label>
+                        <input type="text" name="visitor_name" id="visitor_name" class="form-control"
+                            value="{{ $pre_sale_inspection->visitor_name }}" placeholder="Enter Visitor Name">
+                    </div>
+                </div>
 
                 {{-- Item Details --}}
                 <div class="col-12 mt-2">

@@ -18,18 +18,34 @@
                     {{ $payment_intimation->sale_order->reference_no ?? 'N/A' }}
                 </td>
                 <td class="align-middle">
-                    {{ $payment_intimation->bank->bank_name ?? 'N/A' }}
+                    @php
+                        $bankDisplay = 'N/A';
+                        if (!empty($payment_intimation->bank)) {
+                            $decoded = json_decode($payment_intimation->bank, true);
+                            if (is_array($decoded)) {
+                                $bankDisplay = implode(', ', $decoded);
+                            } else {
+                                $bankDisplay = $payment_intimation->bank;
+                            }
+                        } elseif ($payment_intimation->deposits && $payment_intimation->deposits->count() > 0) {
+                            $bNames = $payment_intimation->deposits->map(fn($d) => $d->bank->bank_name ?? null)->filter()->unique()->toArray();
+                            $bankDisplay = !empty($bNames) ? implode(', ', $bNames) : 'N/A';
+                        } elseif ($payment_intimation->bank_relation) {
+                            $bankDisplay = $payment_intimation->bank_relation->bank_name ?? 'N/A';
+                        }
+                    @endphp
+                    {{ $bankDisplay }}
                 </td>
                 <td class="align-middle">
                     {{ number_format($payment_intimation->payment_deposit, 2) }}
                 </td>
                 <td class="align-middle">
                     <div class="btn-group" role="group">
-                        {{-- <button 
+                        <button 
                             onclick="openModal(this,'{{ route('sales.payment-intimation.edit', $payment_intimation->id) }}','Edit Payment Intimation', false, '60%')"
-                            class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                            class="btn btn-sm btn-warning" title="Edit" style="margin-right: 5px;">
                             <i class="ft-edit"></i>
-                        </button> --}}
+                        </button>
                         
                         <button onclick="openModal(this,'{{ route('sales.payment-intimation.show', $payment_intimation->id) }}','View Payment Intimation', false, '60%')" type="button"
                                 class="btn btn-sm btn-info" title="View" style="margin-right: 5px;">
