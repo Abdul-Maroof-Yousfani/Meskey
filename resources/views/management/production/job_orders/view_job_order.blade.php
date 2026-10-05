@@ -271,36 +271,20 @@
                                 <th class="text-uppercase bg-light small pl-3">MP Bag Wt.</th>
                             </tr>
                             <tr>
-                                @if($sub->bagProduct)
-                                    <td class="small">{{ $sub->bagProduct->name }}</td>
-                                @endif
-                                @if($sub->bagSize)
-                                    <td class="small">{{ $sub->bagSize->size ?? 'N/A' }}</td>
-                                @endif
-                                @if($sub->brand)
-                                    <td class="small">{{ $sub->brand->name }}</td>
-                                @endif
-                                @if($sub->bagColor)
-                                    <td class="small">{{ $sub->bagColor->color }}</td>
-                                @endif
-                                @if($sub->threadColor)
-                                    <td class="small">{{ $sub->threadColor->color }}</td>
-                                @endif
-                                @if($sub->stitching)
-                                    <td class="small">{{ $sub->stitching->name }}</td>
-                                @endif
-                                @if($sub->no_of_primary_bags)
-                                    <td class="small">{{ $sub->no_of_primary_bags }}</td>
-                                @endif
+                                <td class="small">{{ $sub->bagType->name ?? $sub->bagProduct->name ?? 'N/A' }}</td>
+                                <td class="small">{{ $sub->bagSize->size ?? 'N/A' }}</td>
+                                <td class="small">{{ $sub->brand->name ?? 'N/A' }}</td>
+                                <td class="small">{{ $sub->bagColor->color ?? 'N/A' }}</td>
+                                <td class="small">{{ $sub->threadColor->color ?? 'N/A' }}</td>
+                                <td class="small">{{ $sub->stitching->name ?? 'N/A' }}</td>
+                                <td class="small">{{ $sub->no_of_primary_bags ?? '-' }}</td>
                                 <td class="small">
                                     {{ ($item->bag_size ?? 0) * ($sub->no_of_primary_bags ?? 0) }}
                                 </td>
-                                @if($sub->total_bags)
-                                    <td class="small font-weight-bold">{{ number_format($sub->total_bags) }} @if($sub->extra_bags_percentage > 0) ({{ $sub->extra_bags_percentage }}% Extra) @endif</td>
-                                @endif
-                                @if($sub->empty_bag_weight)
-                                <td class="small">{{ $sub->empty_bag_weight }} g</td>
-                                @endif
+                                <td class="small font-weight-bold">
+                                    {{ $sub->total_bags ? number_format($sub->total_bags) : '-' }} @if(($sub->extra_bags_percentage ?? 0) > 0) ({{ $sub->extra_bags_percentage }}% Extra) @endif
+                                </td>
+                                <td class="small">{{ $sub->empty_bag_weight ? $sub->empty_bag_weight . ' g' : '-' }}</td>
                             </tr>
                         @endforeach
                     @endif

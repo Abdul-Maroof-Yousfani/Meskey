@@ -114,6 +114,7 @@ class JobOrderController extends Controller
             'packingItems.bagColor',
             'packingItems.threadColor',
             'packingItems.stitching',
+            'packingItems.subItems.bagType',
             'packingItems.subItems.bagProduct',
             'packingItems.subItems.bagSize',
             'packingItems.subItems.stitching',
@@ -367,7 +368,7 @@ class JobOrderController extends Controller
                 $query->when($request->filled('company_location_id'), function ($q) use ($request) {
                     $q->where('company_location_id', $request->company_location_id);
                 });
-                $query->with('subItems');
+                $query->with(['subItems.bagType', 'subItems.bagProduct']);
             },
             'specifications',
             'product',
@@ -790,6 +791,7 @@ class JobOrderController extends Controller
                 $subRemainingBags = $originalMt > 0 ? round(($remainingMtInItem / $originalMt) * $subOriginalBags) : 0;
 
                 return [
+                    'bag_type_id'    => $sub->bag_type_id,
                     'bag_product_id' => $sub->bag_type_id,
                     'bag_type_name'  => $sub->bagType->name ?? '',
                     'bag_size_id'    => $sub->bag_size_id,

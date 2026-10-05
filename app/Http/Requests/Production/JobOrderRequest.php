@@ -117,8 +117,12 @@ class JobOrderRequest extends FormRequest
                 'nullable',
                 'array'
             ],
+            'packing_items.*.sub_items.*.bag_type_id' => [
+                'nullable',
+                'exists:bag_types,id'
+            ],
             'packing_items.*.sub_items.*.bag_product_id' => [
-                'required',
+                'nullable',
                 'exists:products,id'
             ],
             'packing_items.*.sub_items.*.bag_size_id' => [

@@ -376,7 +376,7 @@
                                     <table class="table table-bordered table-sm mb-0">
                                         <thead class="thead-light">
                                             <tr>
-                                                <th class="col-2">Bag Type/Product</th>
+                                                <th class="col-2">Bag Type</th>
 
                                                 <th>Bag Size </th>
                                                 <th>No of Primary Bags fit in master bag</th>
@@ -536,21 +536,13 @@
 <table class="sub-packing-item-template d-none">
     <tbody>
         <tr class="sub-packing-item-row">
-            <!-- <td class="col-2">
-            <input type="hidden" class="packing-item-ref" name="packing_items[INDEX][sub_items][SUB_INDEX][job_order_packing_item_id]" value="">
-            <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_type_id]" class="form-control form-control-sm select2 sub-bag-type">
-                <option value="">Select Bag Type</option>
-                @foreach($bagTypes as $bagType)
-                    <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
-                @endforeach
-            </select>
-        </td> -->
-            <td>
-                <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_product_id]"
-                    class="form-control form-control-sm select2 sub-bag-product">
-                    <option value="">Select Bag Type/Product</option>
-                    @foreach($bagProducts as $bagProduct)
-                        <option value="{{ $bagProduct->id }}">{{ $bagProduct->name }}</option>
+            <td class="col-2">
+                <input type="hidden" class="packing-item-ref" name="packing_items[INDEX][sub_items][SUB_INDEX][job_order_packing_item_id]" value="">
+                <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_type_id]"
+                    class="form-control form-control-sm select2 sub-bag-type">
+                    <option value="">Select Bag Type</option>
+                    @foreach($bagTypes as $bagType)
+                        <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
                     @endforeach
                 </select>
             </td>
@@ -895,14 +887,12 @@
                         subRowHtml = subRowHtml.replace(/\[SUB_INDEX\]/g, '[' + sIdx + ']').replace(/\[INDEX\]/g, '[' + index + ']');
                         let subRow = $(subRowHtml);
                         
-                        // Sub Bag Type/Product mapping
-                        let subBagProductSelect = subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_product_id]"]`);
-
-                        let subMappedId = findBagProductIdByName(sub.bag_type_name, subBagProductSelect);
-                        if (subMappedId) {
-                            subBagProductSelect.val(subMappedId);
-                        } else {
-                            subBagProductSelect.val(sub.bag_product_id);
+                        // Sub Bag Type mapping
+                        let subBagTypeSelect = subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_type_id]"]`);
+                        if (sub.bag_type_id) {
+                            subBagTypeSelect.val(sub.bag_type_id);
+                        } else if (sub.bag_product_id) {
+                            subBagTypeSelect.val(sub.bag_product_id);
                         }
 
                         subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_size_id]"]`).val(sub.bag_size_id);

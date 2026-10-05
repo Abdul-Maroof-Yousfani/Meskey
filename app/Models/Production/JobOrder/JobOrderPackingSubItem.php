@@ -12,6 +12,7 @@ class JobOrderPackingSubItem extends Model
 
     protected $fillable = [
         'job_order_packing_item_id',
+        'bag_type_id',
         'bag_product_id',
         'bag_size_id',
         'no_of_primary_bags',
@@ -33,6 +34,11 @@ class JobOrderPackingSubItem extends Model
     public function packingItem()
     {
         return $this->belongsTo(JobOrderPackingItem::class, 'job_order_packing_item_id');
+    }
+
+    public function bagType()
+    {
+        return $this->belongsTo(\App\Models\BagType::class, 'bag_type_id');
     }
 
     public function bagProduct()
