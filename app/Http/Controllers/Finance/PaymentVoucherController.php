@@ -531,6 +531,7 @@ class PaymentVoucherController extends Controller
                 ]);
             }
         }
+        $jvPool = [];
         $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
             ->whereHas('paymentRequestData.purchaseOrder', function ($q) use ($supplierId) {
                 $q->where('supplier_id', $supplierId);
@@ -538,8 +539,8 @@ class PaymentVoucherController extends Controller
             ->whereDoesntHave('paymentVoucherData')
             ->where('status', 'approved')
             ->get()
-            ->map(function ($request) {
-                return [
+            ->map(function ($request) use (&$jvPool) {
+                return $this->attachGrnAndJvDetails([
                     'id' => $request->id,
                     'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
                     'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
@@ -560,8 +561,12 @@ class PaymentVoucherController extends Controller
                     'request_date' => $request->created_at
                         ? $request->created_at->format('Y-m-d')
                         : '',
-                ];
+                ], $request, $jvPool);
             });
+
+        $paymentRequests = $paymentRequests->filter(function ($item) {
+            return ($item['net_amount'] ?? 0) > 0.001;
+        })->values();
 
         return response()->json([
             'success' => true,
@@ -1029,6 +1034,12 @@ class PaymentVoucherController extends Controller
                 });
         }
 
+        // Filter out payment requests that are fully adjusted by JV (net_amount <= 0)
+        // so that they do not appear in Payment Voucher creation
+        $paymentRequests = $paymentRequests->filter(function ($item) {
+            return ($item['net_amount'] ?? 0) > 0.001;
+        })->values();
+
         return response()->json([
             'success' => true,
             'payment_requests' => $paymentRequests,
@@ -1267,14 +1278,57 @@ class PaymentVoucherController extends Controller
             'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
             'remarks' => 'nullable|string',
         ]);
-        DB::transaction(function () use ($request) {
+
+        $requestedIds = $request->payment_requests ?? [];
+        $sortedRequests = PaymentRequest::with(['paymentRequestData.purchaseOrder', 'deliveryChallan.delivery_challan_data', 'paymentVoucherData'])
+            ->whereIn('id', $requestedIds)
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($sortedRequests->isEmpty()) {
+            return response()->json([
+                'error' => 'No valid payment requests found.',
+                'message' => 'No valid payment requests found.',
+                'errors' => ['payment_requests' => ['No valid payment requests found.']]
+            ], 422);
+        }
+
+        // 1. Concurrency Check: Ensure no selected PR already has a Payment Voucher created concurrently
+        foreach ($sortedRequests as $paymentRequest) {
+            if ($paymentRequest->paymentVoucherData()->exists()) {
+                $errorMsg = "Payment Request (PR# {$paymentRequest->id}) has already been paid in another Payment Voucher. Please refresh the page.";
+                return response()->json([
+                    'error' => $errorMsg,
+                    'message' => $errorMsg,
+                    'errors' => ['payment_requests' => [$errorMsg]]
+                ], 422);
+            }
+        }
+
+        // 2. Concurrency Check: Live simulation of JV adjustments to stop fully adjusted PRs from being processed
+        $simJvPool = [];
+        foreach ($sortedRequests as $paymentRequest) {
+            $simResult = $this->attachGrnAndJvDetails(['amount' => $paymentRequest->amount], $paymentRequest, $simJvPool);
+            if (($simResult['net_amount'] ?? 0) <= 0.001 && ($simResult['jv_adjustment_amount'] ?? 0) > 0) {
+                $jvText = !empty($simResult['jv_no']) ? "JV# {$simResult['jv_no']}" : "Journal Voucher";
+                $grnText = !empty($simResult['grn_no']) ? " (GRN# {$simResult['grn_no']})" : "";
+                $errorMsg = "Selected Payment Request (PR# {$paymentRequest->id}{$grnText}) is already fully adjusted via {$jvText}. A Payment Voucher cannot be created for it. Please refresh the page.";
+                return response()->json([
+                    'error' => $errorMsg,
+                    'message' => $errorMsg,
+                    'errors' => ['payment_requests' => [$errorMsg]]
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($request, $sortedRequests) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
-            // dd($request->all());
-            $firstRequest = PaymentRequest::with(['paymentRequestData.purchaseOrder', 'deliveryChallan'])
-                ->find($request->payment_requests[0]);
+
+            $firstRequest = $sortedRequests->first();
 
             $requestAccount = Account::find($request->request_account_id);
             $tableName = $requestAccount?->table_name ?? null;
@@ -1350,14 +1404,7 @@ class PaymentVoucherController extends Controller
             $allPaymentAgainst = [];
             $allReferenceNos = [];
             $perRequestData = [];
-
             $jvPool = [];
-            $requestedIds = $request->payment_requests ?? [];
-            $sortedRequests = PaymentRequest::with(['paymentRequestData', 'deliveryChallan.delivery_challan_data'])
-                ->whereIn('id', $requestedIds)
-                ->orderBy('created_at', 'asc')
-                ->orderBy('id', 'asc')
-                ->get();
 
             foreach ($sortedRequests as $paymentRequest) {
                 $requestId = $paymentRequest->id;
@@ -1402,7 +1449,6 @@ class PaymentVoucherController extends Controller
                 // Check for GRN and JV adjustments
                 $grnNo = $paymentRequest->paymentRequestData?->grn_no ?? null;
                 $grnId = $paymentRequest->paymentRequestData?->grn_id ?? null;
-                $userAdj = isset($request->adjustment_amounts[$requestId]) ? (float) $request->adjustment_amounts[$requestId] : null;
 
                 $appliedAdj = 0;
                 $matchingJvNos = [];
@@ -1426,8 +1472,8 @@ class PaymentVoucherController extends Controller
                         ->orderBy('id', 'asc')
                         ->get();
 
-                    $maxToAdjust = ($userAdj !== null) ? min((float) $paymentRequest->amount, max(0, $userAdj)) : (float) $paymentRequest->amount;
-                    $remainingToAdjust = $maxToAdjust;
+                    // Automatically check and adjust live approved JVs up to PR amount
+                    $remainingToAdjust = (float) $paymentRequest->amount;
 
                     $processedJvsThisRequest = [];
                     foreach ($details as $detail) {
@@ -1495,15 +1541,17 @@ class PaymentVoucherController extends Controller
 
                 $payableAmount = max(0, (float) $paymentRequest->amount - $appliedAdj);
 
-                PaymentVoucherData::create([
-                    'payment_voucher_id' => $paymentVoucher->id,
-                    'payment_request_id' => $requestId,
-                    'amount' => $payableAmount,
-                    'net_amount' => $payableAmount,
-                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description',
-                ]);
+                if ($payableAmount > 0) {
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $paymentVoucher->id,
+                        'payment_request_id' => $requestId,
+                        'amount' => $payableAmount,
+                        'net_amount' => $payableAmount,
+                        'description' => $paymentRequest->paymentRequestData->notes ?? 'No description',
+                    ]);
 
-                $totalAmount += $payableAmount;
+                    $totalAmount += $payableAmount;
+                }
 
                 $perRequestData[] = [
                     'amount' => $payableAmount,
@@ -1563,9 +1611,9 @@ class PaymentVoucherController extends Controller
                 );
             }
 
-            // Create debit transactions with full ticket details (if amount > 0 or if JV adjustment applied)
+            // Create debit transactions with full ticket details (only if amount > 0)
             foreach ($perRequestData as $item) {
-                if ($item['amount'] > 0 || !empty($item['applied_adj'])) {
+                if ($item['amount'] > 0) {
                     $supplierRemarks = "A payment of Rs. " . number_format($item['amount'], 2) . " has been made for: " . $item['ticket_details'];
                     if (!empty($item['applied_adj']) && $item['applied_adj'] > 0) {
                         $supplierRemarks .= " (Gross: Rs. " . number_format($item['gross_amount'], 2) . ", JV Adj: Rs. " . number_format($item['applied_adj'], 2) . ", Net: Rs. " . number_format($item['amount'], 2) . ($item['jv_nos'] ? " against JV# {$item['jv_nos']}" : "") . ")";
@@ -1590,7 +1638,7 @@ class PaymentVoucherController extends Controller
                             'payment_against' => $item['request_type'],
                             'against_reference_no' => "{$item['truckNo']}/{$item['biltyNo']}",
                             'counter_account_id' => $request->account_id,
-                            'remarks' => $item['ticket_details'],
+                            'remarks' => $supplierRemarks,
                             'jv_narration' => !empty($item['jv_narration']) ? substr($item['jv_narration'], 0, 255) : null,
                             'reference_no' => $item['grn_no'] ?? null,
                             'grn_no' => $item['grn_no'] ?? null,

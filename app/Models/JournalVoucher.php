@@ -107,41 +107,91 @@ class JournalVoucher extends Model
         $this->update($updateData);
 
         // Post ledger transactions if they do not already exist
-        $voucherType = \App\Models\Master\Account\TransactionVoucherType::where('code', 'JV')->first();
-        if ($voucherType) {
+        $txVoucherType = \App\Models\Master\Account\TransactionVoucherType::where('code', 'JV')->first();
+        if ($txVoucherType) {
             $existingTx = \App\Models\Master\Account\Transaction::where('purpose', 'like', "journal-voucher-{$this->id}-%")
                 ->exists();
 
             if (!$existingTx) {
                 foreach ($this->journalVoucherDetails as $detail) {
+                    $voucherNo = $detail->voucher_no;
+                    $detailVoucherType = $detail->voucher_type;
+
+                    if (empty($voucherNo)) {
+                        if ($detail->receipt_voucher_id && $detail->receiptVoucher) {
+                            $voucherNo = $detail->receiptVoucher->unique_no;
+                            $detailVoucherType = $detailVoucherType ?: 'receipt_voucher';
+                        } elseif ($detail->sales_order_id && $detail->salesOrder) {
+                            $voucherNo = $detail->salesOrder->reference_no ?? $detail->salesOrder->unique_no;
+                            $detailVoucherType = $detailVoucherType ?: 'sales_order';
+                        } elseif (!empty($detail->voucher_id)) {
+                            if ($detail->grn) {
+                                $voucherNo = $detail->grn->unique_no;
+                                $detailVoucherType = $detailVoucherType ?: 'grn';
+                            } else {
+                                $voucherNo = (string) $detail->voucher_id;
+                            }
+                        }
+                    }
+
+                    $isGrn = strtolower($detailVoucherType ?? '') === 'grn' || (is_string($voucherNo) && str_starts_with($voucherNo, 'KHI-'));
+                    $typeLabel = $detailVoucherType ? strtoupper(str_replace('_', ' ', $detailVoucherType)) : ($isGrn ? 'GRN' : 'VOUCHER');
+
                     if ($detail->debit_amount > 0) {
+                        $formattedAmount = number_format($detail->debit_amount, 2);
+                        if (!empty($voucherNo)) {
+                            $remarks = "Amount Rs. {$formattedAmount} adjusted against {$typeLabel}# {$voucherNo}";
+                            if (!empty($detail->description)) {
+                                $remarks .= " ({$detail->description})";
+                            } elseif (!empty($this->description)) {
+                                $remarks .= " ({$this->description})";
+                            }
+                        } else {
+                            $remarks = $detail->description ?? ($this->description ?? "Journal entry for {$this->jv_no}");
+                        }
+
                         createTransaction(
                             (float) $detail->debit_amount,
                             $detail->acc_id,
-                            $voucherType->id,
+                            $txVoucherType->id,
                             $this->jv_no,
                             'debit',
                             'no',
                             [
-                                'reference_no' => $detail->voucher_no ?? '',
+                                'reference_no' => $voucherNo ?? '',
+                                'grn_no' => $isGrn ? $voucherNo : null,
                                 'purpose' => "journal-voucher-{$this->id}-{$this->jv_no}",
-                                'remarks' => $detail->description ?? ($this->description ?? "Journal entry for {$this->jv_no}"),
+                                'remarks' => $remarks,
                                 'voucher_date' => $this->jv_date ? $this->jv_date->format('Y-m-d') : now()->format('Y-m-d')
                             ]
                         );
                     }
 
                     if ($detail->credit_amount > 0) {
+                        $formattedAmount = number_format($detail->credit_amount, 2);
+                        if (!empty($voucherNo)) {
+                            $remarks = "Amount Rs. {$formattedAmount} adjusted against {$typeLabel}# {$voucherNo}";
+                            if (!empty($detail->description)) {
+                                $remarks .= " ({$detail->description})";
+                            } elseif (!empty($this->description)) {
+                                $remarks .= " ({$this->description})";
+                            }
+                        } else {
+                            $remarks = $detail->description ?? ($this->description ?? "Journal entry for {$this->jv_no}");
+                        }
+
                         createTransaction(
                             (float) $detail->credit_amount,
                             $detail->acc_id,
-                            $voucherType->id,
+                            $txVoucherType->id,
                             $this->jv_no,
                             'credit',
                             'no',
                             [
+                                'reference_no' => $voucherNo ?? '',
+                                'grn_no' => $isGrn ? $voucherNo : null,
                                 'purpose' => "journal-voucher-{$this->id}-{$this->jv_no}",
-                                'remarks' => $detail->description ?? ($this->description ?? "Journal entry for {$this->jv_no}"),
+                                'remarks' => $remarks,
                                 'voucher_date' => $this->jv_date ? $this->jv_date->format('Y-m-d') : now()->format('Y-m-d')
                             ]
                         );
