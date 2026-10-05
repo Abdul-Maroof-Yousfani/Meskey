@@ -11,7 +11,6 @@
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <a href="{{ route('production.job-orders.create') }}" 
-                        onclick="loadPageContent('{{ route('production.job-orders.create') }}')"
                         class="btn btn-primary position-relative">
                         <i class="ft-plus mr-1"></i>Create Job Order
                     </a>

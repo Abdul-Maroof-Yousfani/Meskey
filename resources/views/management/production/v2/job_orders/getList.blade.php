@@ -68,7 +68,6 @@
                     <td>
                         <div role="group">
                             <a href="{{ route('production.job-orders.edit', $jo->id) }}" 
-                               onclick="loadPageContent('{{ route('production.job-orders.edit', $jo->id) }}')"
                                class="btn btn-outline-primary" title="Edit">
                                 <i class="ft-edit"></i>
                             </a>
@@ -78,7 +77,6 @@
                                 <i class="ft-trash"></i>
                             </button>
                             <a href="{{ route('production.job-orders.show', $jo->id) }}" 
-                               onclick="loadPageContent('{{ route('production.job-orders.show', $jo->id) }}')"
                                class="btn btn-outline-info" title="View">
                                 <i class="ft-eye"></i>
                             </a>
@@ -94,7 +92,6 @@
                         <h5 class="text-muted">No Job Orders Found</h5>
                         <p class="text-muted mb-3">Get started by creating your first job order</p>
                         <a href="{{ route('production.job-orders.create') }}" 
-                           onclick="loadPageContent('{{ route('production.job-orders.create') }}')" 
                            class="btn btn-primary">
                             <i class="ft-plus mr-1"></i> Create Job Order
                         </a>

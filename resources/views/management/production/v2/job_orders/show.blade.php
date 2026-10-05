@@ -12,12 +12,10 @@
                     <h4 class="card-title mb-0">Job Order: {{ $jobOrder->job_order_no }}</h4>
                     <div>
                         <a href="{{ route('production.job-orders.edit', $jobOrder->id) }}" 
-                           onclick="loadPageContent('{{ route('production.job-orders.edit', $jobOrder->id) }}')" 
                            class="btn btn-sm btn-primary mr-1">
                             <i class="ft-edit mr-1"></i>Edit
                         </a>
                         <a href="{{ route('production.job-orders.index') }}" 
-                           onclick="loadPageContent('{{ route('production.job-orders.index') }}')" 
                            class="btn btn-sm btn-secondary">
                             <i class="ft-arrow-left mr-1"></i>Back to List
                         </a>

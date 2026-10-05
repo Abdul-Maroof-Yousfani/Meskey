@@ -12,12 +12,10 @@
                     <h4 class="card-title mb-0">Edit Job Order: {{ $jobOrder->job_order_no }}</h4>
                     <div>
                         <a href="{{ route('production.job-orders.show', $jobOrder->id) }}" 
-                           onclick="loadPageContent('{{ route('production.job-orders.show', $jobOrder->id) }}')" 
                            class="btn btn-sm btn-info mr-1">
                             <i class="ft-eye mr-1"></i>View
                         </a>
                         <a href="{{ route('production.job-orders.index') }}" 
-                           onclick="loadPageContent('{{ route('production.job-orders.index') }}')" 
                            class="btn btn-sm btn-secondary">
                             <i class="ft-arrow-left mr-1"></i>Back
                         </a>
@@ -81,8 +79,8 @@
                                     <!-- Commodity / Product -->
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Commodity / Product</label>
-                                            <select name="product_id" id="product_id" class="form-control select2">
+                                            <label>Commodity / Product <span class="text-danger">*</span></label>
+                                            <select name="product_id" id="product_id" class="form-control select2" required>
                                                 <option value="">-- Select Commodity --</option>
                                                 @foreach($products as $prod)
                                                     <option value="{{ $prod->id }}" {{ $jobOrder->product_id == $prod->id ? 'selected' : '' }}>
@@ -664,13 +662,13 @@
                                                             </div>
                                                             <div class="col-md-1">
                                                                 <div class="form-group">
-                                                                    <label>Packing Size (kg):</label>
+                                                                    <label>Packing Size (kg): <span class="text-danger">*</span></label>
                                                                     <input type="number" name="packing_items[{{ $packingIndex }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $packingItem?->bag_size }}">
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-1">
                                                                 <div class="form-group">
-                                                                    <label>No. of Bags:</label>
+                                                                    <label>No. of Bags: <span class="text-danger">*</span></label>
                                                                     <input type="number" name="packing_items[{{ $packingIndex }}][no_of_bags]" class="form-control no-of-bags" value="{{ $packingItem?->no_of_bags }}">
                                                                 </div>
                                                             </div>
@@ -765,9 +763,9 @@
                                                                             <table class="table table-bordered table-sm mb-0">
                                                                                 <thead class="thead-light">
                                                                                     <tr>
-                                                                                        <th style="min-width: 170px;">Bag Type/Product</th>
-                                                                                        <th style="min-width: 120px;">Bag Size</th>
-                                                                                        <th style="min-width: 130px;">Primary Bags/Master</th>
+                                                                                        <th style="min-width: 170px;">Bag Type/Product <span class="text-danger">*</span></th>
+                                                                                        <th style="min-width: 120px;">Bag Size <span class="text-danger">*</span></th>
+                                                                                        <th style="min-width: 130px;">Primary Bags/Master <span class="text-danger">*</span></th>
                                                                                         <th style="min-width: 110px;">Packing Size (kg)</th>
                                                                                         <th style="min-width: 90px;">No. of Bags</th>
                                                                                         <th style="min-width: 90px;">Empty Bags</th>
@@ -798,7 +796,7 @@
                                                                                                 </td>
                                                                                                 <td>
                                                                                                     <select name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][bag_size_id]"
-                                                                                                        class="form-control form-control-sm select2 sub-bag-size">
+                                                                                                        class="form-control form-control-sm select2 sub-bag-size" required>
                                                                                                         <option value="">Select Size</option>
                                                                                                         @foreach($sizes as $size)
                                                                                                             <option value="{{ $size->id }}" {{ $subItem->bag_size_id == $size->id ? 'selected' : '' }}>{{ $size->size }}</option>
@@ -1006,7 +1004,6 @@
                             <!-- Form Actions -->
                             <div class="col-md-12 text-right mt-3">
                                 <a href="{{ route('production.job-orders.index') }}" 
-                                   onclick="loadPageContent('{{ route('production.job-orders.index') }}')" 
                                    class="btn btn-secondary mr-2">
                                     Cancel
                                 </a>
@@ -1070,7 +1067,7 @@
             </td>
             <td>
                 <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_size_id]"
-                    class="form-control form-control-sm sub-select2 sub-bag-size">
+                    class="form-control form-control-sm sub-select2 sub-bag-size" required>
                     <option value="">Select Size</option>
                     @foreach($sizes as $size)
                         <option value="{{ $size->id }}">{{ $size->size }}</option>
@@ -2152,6 +2149,233 @@
 
         // Initialize display for location & phases
         $('#company_location_id').trigger('change');
+
+        // ==========================================
+        // FORM VALIDATION HELPERS
+        // ==========================================
+        var isFormValid = true;
+        var firstErrorEl = null;
+
+        // Helper: clear field error
+        function clearError($el) {
+            if (!$el || !$el.length) return;
+            $el.removeClass('is-invalid');
+
+            // If Select2 widget exists
+            var $s2 = $el.siblings('.select2-container');
+            if ($s2.length) {
+                $s2.siblings('.invalid-feedback').remove();
+                $s2.nextAll('.invalid-feedback').remove();
+                $s2.find('.select2-selection').css('border-color', '');
+            }
+
+            // If inside an input-group
+            if ($el.closest('.input-group').length) {
+                $el.closest('.input-group').nextAll('.invalid-feedback').first().remove();
+            }
+
+            // If inside a form-group
+            if ($el.closest('.form-group').length) {
+                $el.closest('.form-group').find('.invalid-feedback').remove();
+            }
+
+            // Direct sibling error messages
+            $el.nextAll('.invalid-feedback').remove();
+            $el.siblings('.invalid-feedback').remove();
+        }
+
+        // Helper: mark field error
+        function markError($el, msg) {
+            if (!$el || !$el.length) return;
+            $el.addClass('is-invalid');
+
+            clearError($el);
+
+            var $errorDiv = $('<div class="invalid-feedback d-block text-danger">' + msg + '</div>');
+
+            var $s2 = $el.siblings('.select2-container');
+            if ($s2.length) {
+                $s2.after($errorDiv);
+                $s2.find('.select2-selection').css('border-color', '#ff4961');
+            } else if ($el.closest('.input-group').length) {
+                $el.closest('.input-group').after($errorDiv);
+            } else if ($el.closest('.form-group').length) {
+                $el.closest('.form-group').append($errorDiv);
+            } else {
+                $el.after($errorDiv);
+            }
+
+            if (!firstErrorEl) firstErrorEl = $el;
+            isFormValid = false;
+        }
+
+        // Form Submit Handler
+        $('#ajaxSubmit').on('submit', function (e) {
+            isFormValid = true;
+            firstErrorEl = null;
+
+            // ---- Basic Information ----
+            // Plant / Factory Location
+            var $location = $('#company_location_id');
+            clearError($location);
+            if (!$location.val()) {
+                markError($location, 'Plant / Factory Location is required.');
+            }
+
+            // Commodity / Product
+            var $product = $('#product_id');
+            clearError($product);
+            if (!$product.val()) {
+                markError($product, 'Commodity / Product is required.');
+            }
+
+            // Job Order Date
+            var $joDate = $('#job_order_date');
+            clearError($joDate);
+            if (!$joDate.val()) {
+                markError($joDate, 'Job Order Date is required.');
+            }
+
+            // ---- Phase 1: Parameters List ----
+            var phase1Active = $('#chk-phase1').is(':checked') || false;
+            if (phase1Active) {
+                $('#phase1-params-tbody tr.param-row').each(function (idx) {
+                    var $row = $(this);
+                    var $valInput = $row.find('.param-value-input');
+                    var paramKey = $row.find('input[name*="[key]"]').val() || ('Item #' + (idx + 1));
+
+                    clearError($valInput);
+                    if (!$valInput.val() || $valInput.val().trim() === '') {
+                        markError($valInput, 'Parameter Value is required for "' + paramKey + '".');
+                    }
+                });
+            }
+
+            // ---- Phase 2: Process Selection & Parameters List ----
+            var phase2Active = $('#chk-phase2').is(':checked') || false;
+            if (phase2Active) {
+                var $p2Process = $('#p2_process_type');
+                clearError($p2Process);
+                if (!$p2Process.val() || $p2Process.val() === '-1' || $p2Process.val() === '') {
+                    markError($p2Process, 'Process Selection is required for Phase 2.');
+                }
+
+                $('#phase2-params-tbody tr.param-row').each(function (idx) {
+                    var $row = $(this);
+                    var $valInput = $row.find('.param-value-input');
+                    var paramKey = $row.find('input[name*="[key]"]').val() || ('Item #' + (idx + 1));
+
+                    clearError($valInput);
+                    if (!$valInput.val() || $valInput.val().trim() === '') {
+                        markError($valInput, 'Parameter Value is required for "' + paramKey + '".');
+                    }
+                });
+            }
+
+            // ---- Packing Items & Master Packing (inside Phase 3 tab) ----
+            var phase3Active = $('#chk-phase3').is(':checked') || false;
+            if (phase3Active) {
+                $('.packing-item').each(function (pIdx) {
+                    var $item = $(this);
+                    var pNo = pIdx + 1;
+                    var $bagSize = $item.find('.bag-size');
+                    var $noOfBags = $item.find('.no-of-bags');
+
+                    clearError($bagSize);
+                    if (!$bagSize.val() || parseFloat($bagSize.val()) <= 0) {
+                        markError($bagSize, 'Packing Size (kg) is required for Packing Item #' + pNo + '.');
+                    }
+
+                    clearError($noOfBags);
+                    if (!$noOfBags.val() || parseInt($noOfBags.val()) <= 0) {
+                        markError($noOfBags, 'No. of Bags is required for Packing Item #' + pNo + '.');
+                    }
+
+                    // Master Packing (Sub-items)
+                    $item.find('.sub-packing-item-row').not('.sub-packing-item-template .sub-packing-item-row').each(function (subIdx) {
+                        var $subRow = $(this);
+                        var subNo = subIdx + 1;
+                        var $bagProduct = $subRow.find('.sub-bag-product');
+                        var $bagSize = $subRow.find('.sub-bag-size');
+                        var $primaryBags = $subRow.find('.sub-no-of-primary-bags');
+
+                        clearError($bagProduct);
+                        if (!$bagProduct.val() || $bagProduct.val() === '') {
+                            markError($bagProduct, 'Bag Type / Product is required for Packing #' + pNo + ' Master Packing Item #' + subNo + '.');
+                        }
+
+                        clearError($bagSize);
+                        if (!$bagSize.val() || $bagSize.val() === '') {
+                            markError($bagSize, 'Bag Size is required for Packing #' + pNo + ' Master Packing Item #' + subNo + '.');
+                        }
+
+                        clearError($primaryBags);
+                        if (!$primaryBags.val() || parseInt($primaryBags.val()) <= 0) {
+                            markError($primaryBags, 'Primary Bags Fit is required for Packing #' + pNo + ' Master Packing Item #' + subNo + '.');
+                        }
+                    });
+                });
+            }
+
+            // ---- Container Protection & Packing Materials ----
+            $('#containerProtectionItems .container-protection-item').each(function (idx) {
+                var $item = $(this);
+                var itemNo = idx + 1;
+
+                var $product = $item.find('.container-protection-product');
+                var $qty = $item.find('.container-protection-quantity');
+
+                // Clear previous errors
+                clearError($product);
+                clearError($qty);
+
+                if (!$product.val() || $product.val() === '') {
+                    markError($product, 'Product is required for Container Protection Item #' + itemNo + '.');
+                }
+
+                if (!$qty.val() || parseFloat($qty.val()) <= 0) {
+                    markError($qty, 'Quantity Per Container is required for Container Protection Item #' + itemNo + '.');
+                }
+            });
+
+            // ---- If validation failed ----
+            if (!isFormValid) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                // Scroll to first error
+                if (firstErrorEl) {
+                    var $tabPane = firstErrorEl.closest('.tab-pane');
+                    if ($tabPane.length && !$tabPane.hasClass('active')) {
+                        var tabId = $tabPane.attr('id');
+                        $('a[href="#' + tabId + '"]').tab('show');
+                        setTimeout(function () {
+                            $('html, body').animate({
+                                scrollTop: firstErrorEl.closest('.form-group, fieldset, .card, td, tr').offset().top - 120
+                            }, 400);
+                        }, 350);
+                    } else {
+                        $('html, body').animate({
+                            scrollTop: firstErrorEl.closest('.form-group, fieldset, .card, td, tr').offset().top - 120
+                        }, 400);
+                    }
+                }
+
+                toastr.error('Please fix the highlighted errors before submitting.', 'Validation Error');
+                return false;
+            }
+        });
+
+        // Clear error on user input or change
+        $(document).on('input change', 'input, select, textarea', function () {
+            clearError($(this));
+        });
+
+        // Clear error when select2 option is chosen or cleared
+        $(document).on('select2:select select2:clear', 'select', function () {
+            clearError($(this));
+        });
     });
 </script>
 

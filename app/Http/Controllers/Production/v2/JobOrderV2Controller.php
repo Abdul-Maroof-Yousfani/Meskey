@@ -141,7 +141,7 @@ class JobOrderV2Controller extends Controller
     {
         $request->validate([
             'company_location_id' => 'required|exists:company_locations,id',
-            'product_id' => 'nullable|exists:products,id',
+            'product_id' => 'required|exists:products,id',
             'export_order_id' => 'nullable|exists:export_orders,id',
             'job_order_date' => 'required|date',
             'ref_no' => 'nullable|string|max:100',
@@ -173,7 +173,7 @@ class JobOrderV2Controller extends Controller
 
             // Generate unique job order number if not provided or collision exists
             $jobOrderNo = $request->job_order_no;
-            if (empty($jobOrderNo) || JobOrderV2::where('job_order_no', $jobOrderNo)->exists()) {
+            if (empty($jobOrderNo) || JobOrderV2::withTrashed()->where('job_order_no', $jobOrderNo)->exists()) {
                 $jobOrderNo = self::generateUniqueNumber($request->job_order_date, $location);
             }
 
@@ -311,7 +311,8 @@ class JobOrderV2Controller extends Controller
                 // Handle Packing Items
                 if ($request->has('packing_items') && is_array($request->packing_items)) {
                     foreach ($request->packing_items as $index => $itemData) {
-                        if (empty($itemData['bag_product_id']) && empty($itemData['brand_id'])) {
+                        // Skip only if the entire item is blank
+                        if (empty($itemData['bag_product_id']) && empty($itemData['brand_id']) && empty($itemData['bag_size']) && empty($itemData['no_of_bags'])) {
                             continue;
                         }
                         $subItems = $itemData['sub_items'] ?? [];
@@ -322,11 +323,27 @@ class JobOrderV2Controller extends Controller
                         $itemData['empty_bags'] = $itemData['empty_bags'] ?? 0;
                         $itemData['extra_bags_percentage'] = $itemData['extra_bags_percentage'] ?? 0;
                         $itemData['min_weight_empty_bags'] = $itemData['min_weight_empty_bags'] ?? 0;
-                        $itemData['total_bags'] = $itemData['total_bags'] ?? 0;
-                        $itemData['total_kgs'] = $itemData['total_kgs'] ?? 0;
-                        $itemData['metric_tons'] = $itemData['metric_tons'] ?? 0;
                         $itemData['no_of_containers'] = $itemData['no_of_containers'] ?? 0;
                         $itemData['stuffing_in_container'] = $itemData['stuffing_in_container'] ?? 0;
+                        $itemData['bag_size'] = $itemData['bag_size'] ?? 0;
+                        $itemData['no_of_bags'] = $itemData['no_of_bags'] ?? 0;
+
+                        // Ensure database non-null columns have safe fallbacks
+                        if (empty($itemData['brand_id'])) {
+                            $itemData['brand_id'] = Brands::where('status', 1)->first()?->id ?? 1;
+                        }
+                        if (empty($itemData['bag_product_id'])) {
+                            $defaultBagProduct = Product::where('status', 'active')->where('product_type', 'general_items')
+                                ->whereHas('category', function ($q) { $q->whereIn(DB::raw('LOWER(name)'), ['bag', 'bags']); })
+                                ->first() ?? Product::where('status', 'active')->where('product_type', 'general_items')->first();
+                            $itemData['bag_product_id'] = $defaultBagProduct?->id ?? 1;
+                        }
+                        if (empty($itemData['bag_condition_id'])) {
+                            $itemData['bag_condition_id'] = BagCondition::where('status', 1)->first()?->id ?? 1;
+                        }
+                        if (empty($itemData['bag_color_id'])) {
+                            $itemData['bag_color_id'] = Color::where('status', 1)->first()?->id ?? 1;
+                        }
 
                         // Calculate totals from sub-items if present
                         if (!empty($subItems)) {
@@ -340,6 +357,16 @@ class JobOrderV2Controller extends Controller
                             $itemData['total_bags'] = $totalBagsFromSubItems + ($itemData['extra_bags'] ?? 0) + ($itemData['empty_bags'] ?? 0);
                             $itemData['total_kgs'] = $totalKgsFromSubItems;
                             $itemData['metric_tons'] = $itemData['total_kgs'] / 1000;
+                        } else {
+                            if (empty($itemData['total_bags']) || $itemData['total_bags'] == 0) {
+                                $itemData['total_bags'] = (int)($itemData['no_of_bags'] ?? 0) + (int)($itemData['extra_bags'] ?? 0) + (int)($itemData['empty_bags'] ?? 0);
+                            }
+                            if (empty($itemData['total_kgs']) || $itemData['total_kgs'] == 0) {
+                                $itemData['total_kgs'] = (float)($itemData['no_of_bags'] ?? 0) * (float)($itemData['bag_size'] ?? 0);
+                            }
+                            if (empty($itemData['metric_tons']) || $itemData['metric_tons'] == 0) {
+                                $itemData['metric_tons'] = (float)($itemData['total_kgs'] ?? 0) / 1000;
+                            }
                         }
 
                         $packingItem = ProductionJobOrderPackingItem::create($itemData);
@@ -564,7 +591,7 @@ class JobOrderV2Controller extends Controller
 
         $request->validate([
             'company_location_id' => 'required|exists:company_locations,id',
-            'product_id' => 'nullable|exists:products,id',
+            'product_id' => 'required|exists:products,id',
             'export_order_id' => 'nullable|exists:export_orders,id',
             'job_order_date' => 'required|date',
             'ref_no' => 'nullable|string|max:100',
@@ -715,7 +742,8 @@ class JobOrderV2Controller extends Controller
                     $jobOrder->packingItems()->delete();
 
                     foreach ($request->packing_items as $index => $itemData) {
-                        if (empty($itemData['bag_product_id']) && empty($itemData['brand_id'])) {
+                        // Skip only if the entire item is blank
+                        if (empty($itemData['bag_product_id']) && empty($itemData['brand_id']) && empty($itemData['bag_size']) && empty($itemData['no_of_bags'])) {
                             continue;
                         }
                         $subItems = $itemData['sub_items'] ?? [];
@@ -726,11 +754,27 @@ class JobOrderV2Controller extends Controller
                         $itemData['empty_bags'] = $itemData['empty_bags'] ?? 0;
                         $itemData['extra_bags_percentage'] = $itemData['extra_bags_percentage'] ?? 0;
                         $itemData['min_weight_empty_bags'] = $itemData['min_weight_empty_bags'] ?? 0;
-                        $itemData['total_bags'] = $itemData['total_bags'] ?? 0;
-                        $itemData['total_kgs'] = $itemData['total_kgs'] ?? 0;
-                        $itemData['metric_tons'] = $itemData['metric_tons'] ?? 0;
                         $itemData['no_of_containers'] = $itemData['no_of_containers'] ?? 0;
                         $itemData['stuffing_in_container'] = $itemData['stuffing_in_container'] ?? 0;
+                        $itemData['bag_size'] = $itemData['bag_size'] ?? 0;
+                        $itemData['no_of_bags'] = $itemData['no_of_bags'] ?? 0;
+
+                        // Ensure database non-null columns have safe fallbacks
+                        if (empty($itemData['brand_id'])) {
+                            $itemData['brand_id'] = Brands::where('status', 1)->first()?->id ?? 1;
+                        }
+                        if (empty($itemData['bag_product_id'])) {
+                            $defaultBagProduct = Product::where('status', 'active')->where('product_type', 'general_items')
+                                ->whereHas('category', function ($q) { $q->whereIn(DB::raw('LOWER(name)'), ['bag', 'bags']); })
+                                ->first() ?? Product::where('status', 'active')->where('product_type', 'general_items')->first();
+                            $itemData['bag_product_id'] = $defaultBagProduct?->id ?? 1;
+                        }
+                        if (empty($itemData['bag_condition_id'])) {
+                            $itemData['bag_condition_id'] = BagCondition::where('status', 1)->first()?->id ?? 1;
+                        }
+                        if (empty($itemData['bag_color_id'])) {
+                            $itemData['bag_color_id'] = Color::where('status', 1)->first()?->id ?? 1;
+                        }
 
                         if (!empty($subItems)) {
                             $totalBagsFromSubItems = collect($subItems)->sum('no_of_bags');
@@ -743,6 +787,16 @@ class JobOrderV2Controller extends Controller
                             $itemData['total_bags'] = $totalBagsFromSubItems + ($itemData['extra_bags'] ?? 0) + ($itemData['empty_bags'] ?? 0);
                             $itemData['total_kgs'] = $totalKgsFromSubItems;
                             $itemData['metric_tons'] = $itemData['total_kgs'] / 1000;
+                        } else {
+                            if (empty($itemData['total_bags']) || $itemData['total_bags'] == 0) {
+                                $itemData['total_bags'] = (int)($itemData['no_of_bags'] ?? 0) + (int)($itemData['extra_bags'] ?? 0) + (int)($itemData['empty_bags'] ?? 0);
+                            }
+                            if (empty($itemData['total_kgs']) || $itemData['total_kgs'] == 0) {
+                                $itemData['total_kgs'] = (float)($itemData['no_of_bags'] ?? 0) * (float)($itemData['bag_size'] ?? 0);
+                            }
+                            if (empty($itemData['metric_tons']) || $itemData['metric_tons'] == 0) {
+                                $itemData['metric_tons'] = (float)($itemData['total_kgs'] ?? 0) / 1000;
+                            }
                         }
 
                         $packingItem = ProductionJobOrderPackingItem::create($itemData);
@@ -900,8 +954,8 @@ class JobOrderV2Controller extends Controller
         $prefix = $locationCode . '-JO-V2';
         $searchPattern = $prefix . '-%-' . $datePart;
 
-        $existing = JobOrderV2::where('job_order_no', 'like', $searchPattern)
-            ->lockForUpdate()
+        $existing = JobOrderV2::withTrashed()
+            ->where('job_order_no', 'like', $searchPattern)
             ->pluck('job_order_no')
             ->toArray();
 
@@ -919,7 +973,7 @@ class JobOrderV2Controller extends Controller
         $newNumber = $maxNumber + 1;
         $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
 
-        while (in_array($candidate, $existing) || JobOrderV2::where('job_order_no', $candidate)->exists()) {
+        while (in_array($candidate, $existing) || JobOrderV2::withTrashed()->where('job_order_no', $candidate)->exists()) {
             $newNumber++;
             $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
         }
