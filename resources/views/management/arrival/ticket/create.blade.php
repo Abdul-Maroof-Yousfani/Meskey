@@ -32,6 +32,32 @@ $userLocation = $authUser->companyLocation ?? null;
                 </div>
             </div>
         @endif -->
+        @if (auth()->user()->user_type == 'super-admin')
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <div class="lock-arrival-wrapper">
+                        <div class="lock-arrival-header">
+                            <label class="lock-arrival-label" for="decision_making_initial">
+                                <i class="ft-lock"></i>
+                                Lock Arrival
+                            </label>
+                            <div class="custom-control custom-switch lock-arrival-switch">
+                                <input type="checkbox" name="decision_making_initial" value="1" class="custom-control-input"
+                                    id="decision_making_initial">
+                                <label class="custom-control-label" for="decision_making_initial"></label>
+                            </div>
+                        </div>
+                        <p class="lock-arrival-description">
+                            <i class="fas fa-circle-info"></i>
+                            Lock the arrival to reserve this ticket number. Once locked, no further processing will be done
+                            — it is only for booking the ticket number.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Location:</label>
