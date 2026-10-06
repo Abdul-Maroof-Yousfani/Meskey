@@ -24,6 +24,8 @@ class ApprovalModule extends Model
             'App\Models\PaymentVoucher' => 'Payment Voucher',
             'App\Models\Procurement\Store\PurchaseRequestData' => 'Purchase Request Item',
             'App\Models\Procurement\Store\PurchaseQuotationData' => 'Purchase Quotation Item',
+            'App\Models\Sales\PreSaleInspection' => 'Pre Sale Inspection',
+            'App\Models\Sales\DekhConfirmation' => 'Dekh Confirmation',
         ];
 
         return $map[$this->model_class] ?? $this->model_class;

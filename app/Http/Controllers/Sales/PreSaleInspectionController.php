@@ -15,8 +15,16 @@ use Illuminate\Http\Request;
 
 class PreSaleInspectionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:dekh-list', ['only' => ['index', 'getList', 'view', 'show']]);
+        $this->middleware('check.company:dekh-create', ['only' => ['create', 'store', 'edit', 'update', 'destroy']]);
+    }
+
     public function index()
     {
+        abort_if(!canAccess('dekh-list') && !auth()->user()?->can('dekh-list'), 403);
+
         $items = Product::all();
         $locations = get_locations();
 
@@ -25,6 +33,8 @@ class PreSaleInspectionController extends Controller
 
     public function getList(Request $request)
     {
+        abort_if(!canAccess('dekh-list') && !auth()->user()?->can('dekh-list'), 403);
+
         $perPage = $request->get('per_page', 25);
 
         $inspections = PreSaleInspection::with([
@@ -80,6 +90,8 @@ class PreSaleInspectionController extends Controller
 
     public function create()
     {
+        abort_if(!canAccess('dekh-create') && !auth()->user()?->can('dekh-create'), 403);
+
         $locations = get_locations();
         $items = Product::all();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
@@ -90,6 +102,8 @@ class PreSaleInspectionController extends Controller
 
     public function store(PreSaleInspectionRequest $request)
     {
+        abort_if(!canAccess('dekh-create') && !auth()->user()?->can('dekh-create'), 403);
+
         try {
             DB::beginTransaction();
 
@@ -140,6 +154,16 @@ class PreSaleInspectionController extends Controller
 
     public function edit(PreSaleInspection $pre_sale_inspection)
     {
+        abort_if(!canAccess('dekh-create') && !auth()->user()?->can('dekh-create'), 403);
+
+        $status = strtolower($pre_sale_inspection->am_approval_status ?? '');
+        if (in_array($status, ['approved', 'rejected'])) {
+            if (request()->ajax()) {
+                return response()->json(['error' => "This Pre Sale Dekh is {$status} and cannot be edited."], 422);
+            }
+            abort(403, "This Pre Sale Dekh is {$status} and cannot be edited.");
+        }
+
         $pre_sale_inspection->load('location', 'items.item', 'items.factory', 'items.section');
         $locations = get_locations();
         $items = Product::all();
@@ -151,6 +175,13 @@ class PreSaleInspectionController extends Controller
 
     public function update(PreSaleInspectionRequest $request, PreSaleInspection $pre_sale_inspection)
     {
+        abort_if(!canAccess('dekh-create') && !auth()->user()?->can('dekh-create'), 403);
+
+        $status = strtolower($pre_sale_inspection->am_approval_status ?? '');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(['error' => "This Pre Sale Dekh is {$status} and cannot be edited."], 422);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -196,6 +227,8 @@ class PreSaleInspectionController extends Controller
 
     public function view(PreSaleInspection $pre_sale_inspection)
     {
+        abort_if(!canAccess('dekh-list') && !auth()->user()?->can('dekh-list'), 403);
+
         $pre_sale_inspection->load('location', 'items.item', 'items.factory', 'items.section', 'creator', 'salesInquiries', 'salesOrders');
         return view('management.sales.pre_sale_inspection.view', compact('pre_sale_inspection'));
     }
@@ -207,6 +240,16 @@ class PreSaleInspectionController extends Controller
 
     public function destroy(PreSaleInspection $pre_sale_inspection)
     {
+        abort_if(!canAccess('dekh-create') && !auth()->user()?->can('dekh-create'), 403);
+
+        $status = strtolower($pre_sale_inspection->am_approval_status ?? '');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "This Pre Sale Dekh is {$status} and cannot be deleted.",
+                'message' => "This Pre Sale Dekh is {$status} and cannot be deleted."
+            ], 422);
+        }
+
         if ($pre_sale_inspection->salesInquiries()->exists() || $pre_sale_inspection->salesOrders()->exists()) {
             return response()->json([
                 'error' => 'This Pre Sale Inspection is linked with a Sales Inquiry or Sales Order and cannot be deleted.',
