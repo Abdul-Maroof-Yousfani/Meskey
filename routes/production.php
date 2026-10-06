@@ -112,5 +112,7 @@ Route::resource("production-drying-job-order",ProductionDryingController::class)
 Route::post('get-production-drying-job-order', [ProductionDryingController::class, 'getList'])->name('get.production-drying-job-order');
 
 
-Route::resource("production-steam-parboiling-job-order",ProductionSteamParboilingController::class);
+Route::resource("production-steam-parboiling-job-order", ProductionSteamParboilingController::class)->parameters([
+    'production-steam-parboiling-job-order' => 'order'
+]);
 Route::post('get-production-steam-parboiling-job-order', [ProductionSteamParboilingController::class, 'getList'])->name('get.production-steam-parboiling-job-order');
