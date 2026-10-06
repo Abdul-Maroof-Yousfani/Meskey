@@ -82,11 +82,6 @@
                                 <div class="col-md-4">
                                     <input type="text" class="form-control" id="search" name="search" placeholder="Search by request #, job order, remarks...">
                                 </div>
-                                <div class="col-md-8 text-right">
-                                    <button type="button" class="btn btn-secondary" id="resetFilters">
-                                        <i class="ft-rotate-ccw"></i> Reset
-                                    </button>
-                                </div>
                             </div>
                         </div>
                         <div class="card-content">
