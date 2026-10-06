@@ -494,6 +494,15 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('production-job-order-rm-qc')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('job-order-rm-qc.index') }}"
+                                    onclick="loadPageContent('{{ route('job-order-rm-qc.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Job Order RM QC</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                             @canAccess('production-bag-request')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('bag-requests.index') }}"
@@ -534,15 +543,7 @@
                                     </li>
                                 </ul>
                             </li>
-                            @canAccess('production-job-order-rm-qc')
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('job-order-rm-qc.index') }}"
-                                    onclick="loadPageContent('{{ route('job-order-rm-qc.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Job Order RM QC</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                           
 
                             @canAccess('production-voucher')
                                 <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -586,7 +587,7 @@
 
                     
                    
-                    @canAccess('production-plant-breakdown')
+                    <!-- @canAccess('production-plant-breakdown')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('plant-breakdown.index') }}"
                             onclick="loadPageContent('{{ route('plant-breakdown.index') }}')" data-toggle="dropdown"><i
@@ -594,7 +595,7 @@
                             <span data-i18n="Task Board">Plant Breakdown</span>
                         </a>
                     </li>
-                    @endcanAccess
+                    @endcanAccess -->
                     
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
