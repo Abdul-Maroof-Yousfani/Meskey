@@ -1301,3 +1301,21 @@ th {
     font-size: 0.75rem;
   }
 }
+
+.milling-submenu .dropdown-menu {
+  display: none !important;
+}
+
+.milling-submenu:hover>.dropdown-menu {
+  display: block !important;
+}
+
+.production-analysis-submenu .dropdown-menu {
+  display: none !important;
+}
+
+.production-analysis-submenu:hover>.dropdown-menu {
+  display: block !important;
+  top: 0 !important;
+  left: 100% !important;
+}
