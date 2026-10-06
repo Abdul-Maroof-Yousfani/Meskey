@@ -84,7 +84,7 @@
                     </a>
                     @if (auth()->user()->user_type == 'super-admin')
                     <a href="{{ route('ticket.arrival-revert-test', $row->id) }}" class="badge badge-danger border-0 mr-2">
-                        Master Control Test
+                        Master Control (Maund)
                     </a>
                     @endif
                     @endcanAccess
