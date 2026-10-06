@@ -43,28 +43,6 @@
                 </td>
                 <td class="text-right px-4">
                     <div class="btn-group" role="group">
-                        @if($item->status === 'pending')
-                            @php
-                                $createRoute = match($item->type) {
-                                    \App\Models\Production\ProductionAnalysisRequest::TYPE_INPUT => route('production-input-analysis.create') . '?analysis_request_id=' . $item->id,
-                                    \App\Models\Production\ProductionAnalysisRequest::TYPE_OUTPUT => route('production-output-analysis.create') . '?analysis_request_id=' . $item->id,
-                                    \App\Models\Production\ProductionAnalysisRequest::TYPE_MACHINE => route('production-machine-analysis.create') . '?analysis_request_id=' . $item->id,
-                                    default => '#',
-                                };
-                                $modalTitle = match($item->type) {
-                                    \App\Models\Production\ProductionAnalysisRequest::TYPE_INPUT => 'Create Input Analysis',
-                                    \App\Models\Production\ProductionAnalysisRequest::TYPE_OUTPUT => 'Create Output Analysis',
-                                    \App\Models\Production\ProductionAnalysisRequest::TYPE_MACHINE => 'Create Machine Analysis',
-                                    default => 'Create Analysis',
-                                };
-                            @endphp
-                            <button onclick="openModal(this, '{{ $createRoute }}', '{{ $modalTitle }}', false, '95%')" 
-                                    title="Create {{ $item->type_name }}" 
-                                    class="btn btn-sm btn-success mr-1">
-                                <i class="ft-play"></i> Create
-                            </button>
-                        @endif
-
                         <button onclick="openModal(this,'{{ route('production-analysis-request.show', $item->id) }}','View Analysis Request', true, '70%')" 
                                 title="View Details" 
                                 class="btn btn-sm btn-info mr-1">
