@@ -71,9 +71,13 @@
                 <div class="d-flex gap-2 align-items-center justify-content-">
 
                     <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
-                        class="info p-1 text-center mr-2 position-relative">
+                        class="info p-1 text-center mr-2 position-relative" title="View Ticket">
                         <i class="ft-eye font-medium-3"></i>
                     </a>
+                    {{-- <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','Edit Ticket', false)"
+                        class="warning p-1 text-center mr-2 position-relative" title="Edit Ticket">
+                        <i class="ft-edit font-medium-3"></i>
+                    </a> --}}
                     @canAccess('arrival-master-control')
                     <a href="{{ route('ticket.arrival-revert', $row->id) }}" class="badge badge-danger border-0 mr-2">
                         Master Control
