@@ -22,8 +22,14 @@ class ProductionMachineAnalysis extends Model
         'plant_id',
         'production_machine_id',
         'remarks',
+        'analysis_request_id',
         'created_by'
     ];
+
+    public function analysisRequest()
+    {
+        return $this->belongsTo(ProductionAnalysisRequest::class, 'analysis_request_id');
+    }
 
     public function companyLocation()
     {

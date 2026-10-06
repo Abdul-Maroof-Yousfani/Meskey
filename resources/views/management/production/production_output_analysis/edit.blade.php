@@ -13,46 +13,29 @@
                         <input type="date" name="date" class="form-control" value="{{ \Carbon\Carbon::parse($item->analysis_date)->format('Y-m-d') }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-5">
                     <div class="form-group">
-                        <label>Company Location:</label>
-                        <select name="location_id" id="location_id" class="form-control select2" required>
-                            <option value="">Select Location</option>
-                            @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}" @selected($item->location_id == $location->id)>
-                                    {{ $location->name }}
+                        <label>Analysis Request: <span class="text-danger">*</span></label>
+                        <select name="analysis_request_id" id="analysis_request_id" class="form-control select2" required>
+                            <option value="">Select Analysis Request</option>
+                            @foreach($analysisRequests as $req)
+                                <option value="{{ $req->id }}"
+                                    data-company-location-id="{{ $req->company_location_id }}"
+                                    data-company-location-name="{{ $req->companyLocation?->name }}"
+                                    data-arrival-location-id="{{ $req->arrival_location_id }}"
+                                    data-arrival-location-name="{{ $req->arrivalLocation?->name }}"
+                                    data-plant-id="{{ $req->plant_id }}"
+                                    data-plant-name="{{ $req->plant?->name }}"
+                                    data-job-order-id="{{ $req->job_order_id }}"
+                                    data-job-order-no="{{ $req->jobOrder?->job_order_no }}"
+                                    @selected($item->analysis_request_id == $req->id)>
+                                    {{ $req->request_no }} - {{ $req->companyLocation?->name }} (Plant: {{ $req->plant?->name ?? 'N/A' }}) - {{ $req->request_date->format('d-m-Y') }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Arrival Location:</label>
-                        <select name="arrival_location_id" id="arrival_location_id" class="form-control select2" required>
-                            <option value="">Select Arrival Location</option>
-                            @foreach($arrivalLocations as $loc)
-                                <option value="{{ $loc->id }}" @selected($item->arrival_location_id == $loc->id)>
-                                    {{ $loc->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Plant:</label>
-                        <select name="plant_id" id="plant_id" class="form-control select2" required>
-                            <option value="">Select Plant</option>
-                            @foreach($plants as $pl)
-                                <option value="{{ $pl->id }}" @selected($item->plant_id == $pl->id)>
-                                    {{ $pl->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label>Product (Commodity):</label>
                         <select name="product_id" id="product_id" class="form-control select2" required>
@@ -64,6 +47,48 @@
                             @endforeach
                         </select>
                     </div>
+                </div>
+
+                <!-- Selected Request Details Summary -->
+                <div id="request_details_box" class="col-12 mb-2 {{ $item->analysisRequest ? '' : 'd-none' }}">
+                    <div class="alert alert-light border py-2 px-3 mb-0 d-flex flex-wrap align-items-center justify-content-between" style="background: #f8fafc; border-radius: 6px;">
+                        <div>
+                            <i class="ft-map-pin text-primary mr-1"></i> Location: <strong id="req_disp_location">{{ $item->analysisRequest?->companyLocation?->name ?? $item->location?->name ?? '' }}</strong> &bull;
+                            <i class="ft-navigation text-info mr-1 ml-2"></i> Arrival: <span id="req_disp_arrival">{{ $item->analysisRequest?->arrivalLocation?->name ?? $item->arrivalLocation?->name ?? '' }}</span> &bull;
+                            <i class="ft-cpu text-success mr-1 ml-2"></i> Plant: <span id="req_disp_plant">{{ $item->analysisRequest?->plant?->name ?? $item->plant?->name ?? '' }}</span>
+                            <span id="req_disp_jo_wrapper" class="ml-2 {{ $item->analysisRequest?->jobOrder ? '' : 'd-none' }}">
+                                &bull; <i class="ft-file-text text-warning mr-1"></i> Job Order: <strong id="req_disp_jo">{{ $item->analysisRequest?->jobOrder?->job_order_no ?? '' }}</strong>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden Location, Arrival Location, Plant dropdowns -->
+                <div class="d-none">
+                    <select name="location_id" id="location_id">
+                        <option value="">Select Location</option>
+                        @foreach($companyLocations as $location)
+                            <option value="{{ $location->id }}" @selected($item->location_id == $location->id)>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="arrival_location_id" id="arrival_location_id">
+                        <option value="">Select Arrival Location</option>
+                        @foreach($arrivalLocations as $loc)
+                            <option value="{{ $loc->id }}" @selected($item->arrival_location_id == $loc->id)>
+                                {{ $loc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="plant_id" id="plant_id">
+                        <option value="">Select Plant</option>
+                        @foreach($plants as $pl)
+                            <option value="{{ $pl->id }}" @selected($item->plant_id == $pl->id)>
+                                {{ $pl->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
 
@@ -265,43 +290,43 @@
             }
         });
 
-        // Cascading Dropdowns
-        $('#location_id').on('change', function() {
-            let companyId = $(this).val();
-            $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', true).trigger('change');
-            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
-            
-            if (companyId) {
-                $('#arrival_location_id').html('<option value="">Loading...</option>').trigger('change');
-                let url = '{{ route("production-machine-analysis.get-arrival-locations", ":id") }}';
-                url = url.replace(':id', companyId);
-                $.get(url, function(data) {
-                    $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', false);
-                    $.each(data, function(i, item) {
-                        $('#arrival_location_id').append(`<option value="${item.id}">${item.name}</option>`);
-                    });
-                    $('#arrival_location_id').trigger('change');
-                });
+        // Handle Analysis Request Selection
+        $('#analysis_request_id').on('change', function() {
+            let $opt = $(this).find(':selected');
+            let compLocId = $opt.data('company-location-id');
+            let arrivalLocId = $opt.data('arrival-location-id');
+            let plantId = $opt.data('plant-id');
+            let jobOrderId = $opt.data('job-order-id');
+            let compLocName = $opt.data('company-location-name');
+            let arrivalLocName = $opt.data('arrival-location-name');
+            let plantName = $opt.data('plant-name');
+            let jobOrderNo = $opt.data('job-order-no');
+
+            if (compLocId) {
+                $('#location_id').val(compLocId);
+                $('#arrival_location_id').val(arrivalLocId);
+                $('#plant_id').val(plantId);
+
+                $('#req_disp_location').text(compLocName || '');
+                $('#req_disp_arrival').text(arrivalLocName || '');
+                $('#req_disp_plant').text(plantName || '');
+                if (jobOrderNo) {
+                    $('#req_disp_jo').text(jobOrderNo);
+                    $('#req_disp_jo_wrapper').removeClass('d-none');
+                } else {
+                    $('#req_disp_jo_wrapper').addClass('d-none');
+                }
+                $('#request_details_box').removeClass('d-none');
+            } else {
+                $('#location_id').val('');
+                $('#arrival_location_id').val('');
+                $('#plant_id').val('');
+                $('#request_details_box').addClass('d-none');
             }
         });
 
-        $('#arrival_location_id').on('change', function() {
-            let companyId = $('#location_id').val();
-            let arrivalId = $(this).val();
-            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
-            
-            if (companyId && arrivalId) {
-                $('#plant_id').html('<option value="">Loading...</option>').trigger('change');
-                let url = '{{ route("production-machine-analysis.get-plants", [":companyId", ":arrivalId"]) }}';
-                url = url.replace(':companyId', companyId).replace(':arrivalId', arrivalId);
-                $.get(url, function(data) {
-                    $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', false);
-                    $.each(data, function(i, item) {
-                        $('#plant_id').append(`<option value="${item.id}">${item.name}</option>`);
-                    });
-                    $('#plant_id').trigger('change');
-                });
-            }
-        });
+        if ($('#analysis_request_id').val()) {
+            $('#analysis_request_id').trigger('change');
+        }
     });
 </script>

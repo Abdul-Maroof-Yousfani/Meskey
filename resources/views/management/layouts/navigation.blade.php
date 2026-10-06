@@ -519,6 +519,14 @@
                                 data-i18n="Bootstrap Tables">Production Analysis</span></a>
                                 <ul class="dropdown-menu">
                                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                            href="{{ route('production-analysis-request.index') }}"
+                                            onclick="loadPageContent('{{ route('production-analysis-request.index') }}')"
+                                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                            <span data-i18n="Task Board">Analysis Request</span>
+                                        </a>
+                                    </li>
+
+                                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                             href="{{ route('production-input-analysis.index') }}"
                                             onclick="loadPageContent('{{ route('production-input-analysis.index') }}')"
                                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
