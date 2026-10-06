@@ -21,6 +21,7 @@ class ArrivalSamplingRequest extends Model
         'is_re_sampling',
         'approved_status',
         'decision_making',
+        'decision_making_time',
         'sample_taken_by',
         'approved_remarks',
         'lumpsum_deduction',
@@ -31,6 +32,10 @@ class ArrivalSamplingRequest extends Model
         'lumpsum_deduction_maund',
         'lumpsum_deduction_kgs_maund',
         'lumpsum_deduction_kgs',
+    ];
+
+    protected $casts = [
+        'decision_making_time' => 'datetime',
     ];
 
     /**
