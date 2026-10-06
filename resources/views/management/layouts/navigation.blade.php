@@ -689,15 +689,51 @@
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Sales</span></a>
                 <ul class="dropdown-menu">
 
-                    @canAccess('pre-sale-inspection')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.pre-sale-inspection.index') }}"
-                            onclick="loadPageContent('{{ route('sales.pre-sale-inspection.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Pre Sale Dekh</span>
-                        </a>
-                    </li>
-                    @endcanAccess
+                    @php
+                        $canDekh = canAccess('dekh-list');
+                        $canDekhConfirmation = canAccess('dekh-confirmation-list') || canAccess('dekh-confirmation');
+                    @endphp
+
+                    @if($canDekh && $canDekhConfirmation)
+                        <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
+                            <a class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Pre Sale Dekh</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('sales.pre-sale-inspection.index') }}"
+                                        onclick="loadPageContent('{{ route('sales.pre-sale-inspection.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Pre Sale Dekh</span>
+                                    </a>
+                                </li>
+                                <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('sales.dekh-confirmation.index') }}"
+                                        onclick="loadPageContent('{{ route('sales.dekh-confirmation.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Dekh Confirmation</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    @elseif($canDekh)
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('sales.pre-sale-inspection.index') }}"
+                                onclick="loadPageContent('{{ route('sales.pre-sale-inspection.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Pre Sale Dekh</span>
+                            </a>
+                        </li>
+                    @elseif($canDekhConfirmation)
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('sales.dekh-confirmation.index') }}"
+                                onclick="loadPageContent('{{ route('sales.dekh-confirmation.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Dekh Confirmation</span>
+                            </a>
+                        </li>
+                    @endif
 
                     @canAccess('sales-inquiry')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"

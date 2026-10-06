@@ -10,6 +10,7 @@ use App\Http\Controllers\Sales\SecondWeighBridgeController;
 use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\PreSaleInspectionController;
+use App\Http\Controllers\Sales\DekhConfirmationController;
 use App\Http\Controllers\Sales\SalesInquiryController;
 use App\Http\Controllers\Sales\SalesInvoiceController;
 use App\Http\Controllers\Sales\SalesReturnController;
@@ -22,6 +23,13 @@ Route::name("sales.")->group(function () {
     Route::get("pre-sale-inspection/{pre_sale_inspection}/view", [PreSaleInspectionController::class, "view"])->name("pre-sale-inspection.view");
     Route::get("/get/pre-sale-inspection-number", [PreSaleInspectionController::class, "getNumber"])->name("get.pre-sale-inspection-number");
     Route::get("/get/pre-sale-inspection-data/{id}", [PreSaleInspectionController::class, "getInspectionData"])->name("get.pre-sale-inspection-data");
+
+    // Dekh Confirmation Routes
+    Route::get("dekh-confirmation", [DekhConfirmationController::class, "index"])->name("dekh-confirmation.index");
+    Route::post("get-dekh-confirmation", [DekhConfirmationController::class, "getList"])->name("get.dekh-confirmation.list");
+    Route::get("dekh-confirmation/{id}/view", [DekhConfirmationController::class, "view"])->name("dekh-confirmation.view");
+    Route::post("dekh-confirmation/{id}/mark-complete", [DekhConfirmationController::class, "markComplete"])->name("dekh-confirmation.mark-complete");
+    Route::post("dekh-confirmation/{id}/save-vehicle", [DekhConfirmationController::class, "saveVehicle"])->name("dekh-confirmation.save-vehicle");
 
     Route::resource("sales-inquiry", SalesInquiryController::class);
     Route::post("get-sales-inquiry", [SalesInquiryController::class, "getList"])->name("get.sales-inquiry.list");

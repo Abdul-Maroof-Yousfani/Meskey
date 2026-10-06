@@ -112,7 +112,7 @@
                                 </button>
                                 @endcanAccess
                                 @canAccess('sales-delivery-order-create')
-                                @if(auth()->user()->id == $group['created_by_id'])
+                                @if(auth()->user()->id == $group['created_by_id'] || auth()->user()->user_type === 'super-admin' || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('admin'))
                                     @if(isset($group['sale_order']) && $group['sale_order']->do_status !== 'closed')
                                         @if(!$group['sale_order']->is_auto_created_from_so)
                                             <button

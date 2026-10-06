@@ -131,6 +131,12 @@
                         @endif
                     </div>
                 @endif
+                {{-- Approval Status Workflow Component --}}
+                <div class="row mt-3 border-top pt-3">
+                    <div class="col-12">
+                        <x-approval-status :model="$pre_sale_inspection" :list-refresh="route('sales.get.pre-sale-inspection.list')" />
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -18,6 +18,7 @@ use App\Models\Sales\SalesOrder;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\ApprovalsModule\ApprovalModuleRole;
 
 class DeliveryOrderController extends Controller
 {
@@ -494,6 +495,19 @@ class DeliveryOrderController extends Controller
     public function getList(Request $request)
     {
         abort_if(!canAccess('sales-delivery-order-list') && !auth()->user()->can('sales-delivery-order-list'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
+
+        $userRoleIds = (new DeliveryOrder)->getUserRoleIdsForApproval($authUser);
+        $isApprover = false;
+        if (!$isSuperAdmin && !empty($userRoleIds)) {
+            $doModule = (new DeliveryOrder)->getApprovalModule();
+            $moduleId = $doModule ? $doModule->id : 17;
+            $isApprover = ApprovalModuleRole::where('module_id', $moduleId)
+                ->whereIn('role_id', $userRoleIds)
+                ->exists();
+        }
+
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
@@ -545,7 +559,9 @@ class DeliveryOrderController extends Controller
             ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
                 $q->where('am_approval_status', $request->status_for_filter);
             })
-            ->where('created_by',auth()->user()->id)
+            ->when(!$isSuperAdmin && !$isApprover, function ($q) use ($authUser) {
+                return $q->where('created_by', $authUser->id);
+            })
             ->orderBy("reference_no", "desc")
             ->paginate($perPage);
 

@@ -135,6 +135,78 @@ trait HasApproval
             ->pluck('current_count', 'role_id')
             ->toArray();
     }
+    public function getUserRoleIdsForApproval($user = null)
+    {
+        $user = $user ?: Auth::user();
+        if (!$user) {
+            return [];
+        }
+
+        $userRoleIds = $user->roles->pluck('id')->toArray();
+        $currentCompanyId = $user->current_company_id;
+        if ($currentCompanyId) {
+            $companyRole = $user->companies()->where('company_id', $currentCompanyId)->first();
+            if ($companyRole && $companyRole->pivot->role_id) {
+                $userRoleIds[] = $companyRole->pivot->role_id;
+            }
+        }
+
+        return array_values(array_unique(array_filter($userRoleIds)));
+    }
+
+    public function getMatchingApprovalRow($user = null, $module = null, $currentCycle = null)
+    {
+        $user = $user ?: Auth::user();
+        $module = $module ?: $this->getApprovalModule();
+        $currentCycle = $currentCycle ?: $this->getCurrentApprovalCycle();
+
+        if (!$user || !$module) {
+            return null;
+        }
+
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
+
+        if ($module->requires_sequential_approval) {
+            $pendingRow = $this->approvalRows()
+                ->where('module_id', $module->id)
+                ->where('approval_cycle', $currentCycle)
+                ->orderBy('id')
+                ->whereColumn('current_count', '<', 'required_count')
+                ->first();
+
+            if ($pendingRow && in_array($pendingRow->role_id, $userRoleIds)) {
+                return $pendingRow;
+            }
+            return null;
+        }
+
+        $row = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->whereIn('role_id', $userRoleIds)
+            ->whereColumn('current_count', '<', 'required_count')
+            ->first();
+
+        if (!$row) {
+            $row = $this->approvalRows()
+                ->where('module_id', $module->id)
+                ->where('approval_cycle', $currentCycle)
+                ->whereIn('role_id', $userRoleIds)
+                ->where('status', 'pending')
+                ->first();
+        }
+
+        if (!$row) {
+            $row = $this->approvalRows()
+                ->where('module_id', $module->id)
+                ->where('approval_cycle', $currentCycle)
+                ->whereIn('role_id', $userRoleIds)
+                ->first();
+        }
+
+        return $row;
+    }
+
     public function canUserApprove() {
         $user = Auth::user();
         if (!$user) {
@@ -152,7 +224,7 @@ trait HasApproval
         if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
             return false;
         }
-        $userRoleIds = $user->roles->pluck('id')->toArray();
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
         $requiredRoles = $module->roles->pluck('role_id')->toArray();
 
 
@@ -178,7 +250,7 @@ trait HasApproval
         if (isset($this->am_change_made) && $this->am_change_made == 0) {
             return false;
         }
-        $userRoleIds = $user->roles->pluck('id')->toArray();
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
         $requiredRoles = $module->roles->pluck('role_id')->toArray();
 
 
@@ -195,8 +267,6 @@ trait HasApproval
         if (in_array(strtolower($this->getApprovalStatus()), ['approved', 'rejected', 'reverted'])) {
             return false;
         }
-
-        
 
         $currentCycle = $this->getCurrentApprovalCycle();
 
@@ -259,13 +329,9 @@ trait HasApproval
             return false;
         }
         $currentCycle = $this->getCurrentApprovalCycle();
-        $userRoleId = $user->roles->first()->id;
-
-        $approvalRow = $this->approvalRows()
-            ->where('module_id', $module->id)
-            ->where('approval_cycle', $currentCycle)
-            ->where('role_id', $userRoleId)
-            ->first();
+        $approvalRow = $this->getMatchingApprovalRow($user, $module, $currentCycle);
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
+        $userRoleId = $approvalRow ? $approvalRow->role_id : ($userRoleIds[0] ?? ($user->roles->first()->id ?? 1));
 
         if ($approvalRow && $approvalRow->current_count < $approvalRow->required_count) {
             $approvalRow->increment('current_count');
@@ -310,13 +376,9 @@ trait HasApproval
             return false;
         }
         $currentCycle = $this->getCurrentApprovalCycle();
-        $userRoleId = $user->roles->first()->id;
-
-        $approvalRow = $this->approvalRows()
-            ->where('module_id', $module->id)
-            ->where('approval_cycle', $currentCycle)
-            ->where('role_id', $userRoleId)
-            ->first();
+        $approvalRow = $this->getMatchingApprovalRow($user, $module, $currentCycle);
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
+        $userRoleId = $approvalRow ? $approvalRow->role_id : ($userRoleIds[0] ?? ($user->roles->first()->id ?? 1));
 
         if ($approvalRow && $approvalRow->current_count < $approvalRow->required_count) {
             $approvalRow->increment('current_count');
@@ -362,7 +424,9 @@ trait HasApproval
         }
 
         $currentCycle = $this->getCurrentApprovalCycle();
-        $userRoleId = $user->roles->first()->id;
+        $approvalRow = $this->getMatchingApprovalRow($user, $module, $currentCycle);
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
+        $userRoleId = $approvalRow ? $approvalRow->role_id : ($userRoleIds[0] ?? ($user->roles->first()->id ?? 1));
 
         $this->approvalLogs()
             ->where('module_id', $module->id)
@@ -411,7 +475,9 @@ trait HasApproval
         }
 
         $currentCycle = $this->getCurrentApprovalCycle();
-        $userRoleId = $user->roles->first()->id;
+        $approvalRow = $this->getMatchingApprovalRow($user, $module, $currentCycle);
+        $userRoleIds = $this->getUserRoleIdsForApproval($user);
+        $userRoleId = $approvalRow ? $approvalRow->role_id : ($userRoleIds[0] ?? ($user->roles->first()->id ?? 1));
 
         $this->approvalLogs()
             ->where('module_id', $module->id)
@@ -470,11 +536,11 @@ trait HasApproval
     {
         $module = $this->getApprovalModule();
 
-        if (isset($module->approval_column, $this->{$module->approval_column})) {
+        if (!empty($module->approval_column)) {
             $this->update([$module->approval_column => 'approved']);
         }
 
-        if (isset($this->am_change_made)) {
+        if (array_key_exists('am_change_made', $this->attributes) || \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'am_change_made')) {
             $this->update(['am_change_made' => 1]);
         }
     }
@@ -483,11 +549,11 @@ trait HasApproval
     {
         $module = $this->getApprovalModule();
 
-        if (isset($module->approval_column, $this->{$module->approval_column})) {
+        if (!empty($module->approval_column)) {
             $this->update([$module->approval_column => 'partial approved']);
         }
 
-        if (isset($this->am_change_made)) {
+        if (array_key_exists('am_change_made', $this->attributes) || \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'am_change_made')) {
             $this->update(['am_change_made' => 1]);
         }
     }
@@ -496,11 +562,11 @@ trait HasApproval
     {
         $module = $this->getApprovalModule();
 
-        if (isset($module->approval_column, $this->{$module->approval_column})) {
+        if (!empty($module->approval_column)) {
             $this->update([$module->approval_column => 'rejected']);
         }
 
-        if (isset($this->am_change_made)) {
+        if (array_key_exists('am_change_made', $this->attributes) || \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'am_change_made')) {
             $this->update(['am_change_made' => 0]);
         }
     }
@@ -509,11 +575,11 @@ trait HasApproval
     {
         $module = $this->getApprovalModule();
 
-        if (isset($module->approval_column, $this->{$module->approval_column})) {
+        if (!empty($module->approval_column)) {
             $this->update([$module->approval_column => 'reverted']);
         }
 
-        if (isset($this->am_change_made)) {
+        if (array_key_exists('am_change_made', $this->attributes) || \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'am_change_made')) {
             $this->update(['am_change_made' => 0]);
         }
     }
