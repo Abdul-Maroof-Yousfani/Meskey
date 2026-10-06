@@ -87,6 +87,9 @@ class ArrivalTicket extends Model
         'weightslip_attachment',
         'other_attachment',
         'miller_id',
+        'is_arrival_lock',
+        'locked_at',
+        'unlocked_at',
     ];
 
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
