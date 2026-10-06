@@ -12,6 +12,8 @@ use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Production\PlantBreakdownController;
 use App\Http\Controllers\Production\BagRequestController;
+use App\Http\Controllers\Production\ProductionDryingController;
+use App\Http\Controllers\Production\ProductionSteamParboilingController;
 
 
 
@@ -103,3 +105,12 @@ Route::get('production-machine-analysis/get-machines/{arrivalId}/{plantId}', [Pr
 Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
 Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
 Route::get('get-slabs-by-product', [ProductionOutputAnalysisController::class, 'getSlabsByProduct'])->name('production-output-analysis.get-slabs');
+
+
+
+Route::resource("production-drying-job-order",ProductionDryingController::class);
+Route::post('get-production-drying-job-order', [ProductionDryingController::class, 'getList'])->name('get.production-drying-job-order');
+
+
+Route::resource("production-steam-parboiling-job-order",ProductionSteamParboilingController::class);
+Route::post('get-production-steam-parboiling-job-order', [ProductionSteamParboilingController::class, 'getList'])->name('get.production-steam-parboiling-job-order');

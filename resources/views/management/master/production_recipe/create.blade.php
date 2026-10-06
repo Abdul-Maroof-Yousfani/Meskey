@@ -187,8 +187,19 @@
                         </select>
                     </td>
                     <td>
-                        <input type="text" name="items[${paramIndex}][value]" class="form-control form-control-sm param-value-input"
-                            placeholder="${placeholder}" value="${value}" required>
+                         <input type="${
+                            type == 'text' ? 'text' :
+                            type == 'number' ? 'number' :
+                            type == 'percentage' ? 'number' :
+                            type == 'temperature' ? 'number' :
+                            type == 'time' ? 'time' :
+                            'text'
+                        }"
+                        name="items[${paramIndex}][value]"
+                        class="form-control form-control-sm param-value-input"
+                        placeholder="${placeholder}"
+                        value="${value}"
+                        required>
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-param-row" data-id="${attrId}" title="Remove">
