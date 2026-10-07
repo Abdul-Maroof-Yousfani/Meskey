@@ -14,7 +14,7 @@ use App\Models\Arrival\ArrivalTicket;
 use Illuminate\Support\Facades\DB;
 use App\Models\Master\ArrivalSubLocation;
 
-class TurnaroundReportController extends Controller
+class WeightDifferenceController extends Controller
 {
     public function index()
     {
@@ -24,7 +24,7 @@ class TurnaroundReportController extends Controller
         $product_slab_types = ProductSlabType::getForArrivalReport(null, null, 'purchase');
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         $warehouses = ArrivalSubLocation::get();
-        return view('management.reports.arrival.turnaround_time_analysis.index', compact('commodities', 'suppliers', 'stations', 'product_slab_types', 'arrival_compulsory_qc_params', 'warehouses'));
+        return view('management.reports.arrival.weight-difference.index', compact('commodities', 'suppliers', 'stations', 'product_slab_types', 'arrival_compulsory_qc_params', 'warehouses'));
     }
 
     public function getList(Request $request)
@@ -34,20 +34,19 @@ class TurnaroundReportController extends Controller
             DB::raw('SUM(net_weight) as total_net_weight'),
             DB::raw('SUM(arrived_net_weight) as total_loading_weight')
         )
-        ->where('qc_product',"!=",NULL)
+        ->where('qc_product', "!=", NULL)
         ->when($request->station_id, function ($q) use ($request) {
             return $q->where('station_id', $request->station_id);
-            
         })
-        ->when($request->commodity_id,function($q) use ($request){
+        ->when($request->commodity_id, function ($q) use ($request) {
             return $q->whereIn('qc_product', $request->commodity_id);
         })
-        ->when($request->status_id, function($q) use ($request){
-            if($request->status_id == "fully_approved") {
+        ->when($request->status_id, function ($q) use ($request) {
+            if ($request->status_id == "fully_approved") {
                 return $q->where('document_approval_status', 'fully_approved');
-            } elseif($request->status_id == "half_approved") {
+            } elseif ($request->status_id == "half_approved") {
                 return $q->where('document_approval_status', 'half_approved');
-            } elseif($request->status_id == "rejected" || $request->status_id == "") {
+            } elseif ($request->status_id == "rejected" || $request->status_id == "") {
                 return $q->where('document_approval_status', NULL);
             }
         })
@@ -67,7 +66,7 @@ class TurnaroundReportController extends Controller
         })
         ->groupBy('qc_product')
         ->get();
-        
-        return view('management.reports.arrival.turnaround_time_analysis.get_turnaround_time', compact('arrival_data'));
+
+        return view('management.reports.arrival.weight-difference.get_weight_diff', compact('arrival_data'));
     }
 }

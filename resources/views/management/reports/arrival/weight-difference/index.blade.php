@@ -13,7 +13,7 @@
                 </div>
                 <div class="col-md-6 d-flex align-items-end justify-content-end">
                     <div class="form-group mb-0">
-                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','Turnaround_Time_Analysis')">
+                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','Arrival_Weight_Difference')">
                             <i class="fa fa-file-excel-o mr-2"></i> Export to Excel
                         </button>
                     </div>
@@ -130,7 +130,7 @@
     <script>
         $(document).ready(function () {
             const runFilter = filterationCommon_withbtn(
-                `{{ route('reports.arrival.get.turn-time') }}`
+                `{{ route('reports.arrival.get.arrival-weight') }}`
             );
 
             $('#filterForm').on('submit', function (e) {

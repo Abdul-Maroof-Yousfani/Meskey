@@ -1376,14 +1376,13 @@
                                 </a>
                             </li>
                             @endcanAccess
-                            @canAccess('turnaround-time-analysis-report')
+                            @canAccess('arrival-weight-difference-report')
                             <li data-menu="">
                                 <a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('turnaround-time.index') }}"
-                                    onclick="loadPageContent('{{ route('turnaround-time.index') }}')"
+                                    href="{{ route('arrival-weight-report.index') }}"
+                                    onclick="loadPageContent('{{ route('arrival-weight-report.index') }}')"
                                     data-toggle="dropdown">
-                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Turnaround
-                                        Time Analysis Report</span>
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Arrival Weight Difference Report</span>
                                 </a>
                             </li>
                             @endcanAccess
