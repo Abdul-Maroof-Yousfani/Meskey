@@ -70,8 +70,8 @@
                 $firstQcTime = $firstInit?->result_posted_at;
 
                 // 3. 1st Decision (1st Dec)
-                $firstDecTime = $firstInit?->decision_making_time;
-                $lastDecTime = $lastInit?->decision_making_time ?? $firstDecTime;
+                $firstDecTime = $firstInit?->approved_at;
+                $lastDecTime = $lastInit?->approved_at ?? $firstDecTime;
 
                 // 4. Location (Loc)
                 $locTime = (!$isFullReject && $row->unloadingLocation) ? $row->unloadingLocation->created_at : null;
@@ -79,9 +79,9 @@
                 // 5. 1st Weight
                 $firstWeightTime = (!$isFullReject && $row->firstWeighbridge) ? $row->firstWeighbridge->created_at : null;
 
-                // 6. Inner Sample & 2nd Dec (decision_making_time - result_posted_at for type inner)
+                // 6. Inner Sample & 2nd Dec (approved_at - result_posted_at for type inner)
                 $innerSampleTime = (!$isFullReject && $firstInner) ? $firstInner->result_posted_at : null;
-                $secondDecTime = (!$isFullReject && ($lastInner || $firstInner)) ? ($lastInner?->decision_making_time ?? $firstInner?->decision_making_time) : null;
+                $secondDecTime = (!$isFullReject && ($lastInner || $firstInner)) ? ($lastInner?->approved_at ?? $firstInner?->approved_at) : null;
 
                 // 7. 2nd Weight (second_weighbridges.created_at)
                 $secondWeightTime = (!$isFullReject && $row->secondWeighbridge) ? $row->secondWeighbridge->created_at : null;
