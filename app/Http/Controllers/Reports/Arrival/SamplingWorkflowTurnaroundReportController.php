@@ -8,6 +8,7 @@ use App\Models\Master\Station;
 use App\Models\Master\ArrivalSubLocation;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\CompanyLocation;
 
 class SamplingWorkflowTurnaroundReportController extends Controller
 {
@@ -16,8 +17,11 @@ class SamplingWorkflowTurnaroundReportController extends Controller
         $commodities = Product::all();
         $stations = Station::all();
         $warehouses = ArrivalSubLocation::get();
+        $locations = CompanyLocation::when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->whereIn('id', getUserCurrentCompanyLocations());
+        })->get();
 
-        return view('management.reports.arrival.sampling-workflow-turnaround.index', compact('commodities', 'stations', 'warehouses'));
+        return view('management.reports.arrival.sampling-workflow-turnaround.index', compact('commodities', 'stations', 'warehouses', 'locations'));
     }
 
     public function getList(Request $request)
@@ -71,6 +75,12 @@ class SamplingWorkflowTurnaroundReportController extends Controller
                     })->where('arrival_tickets.first_qc_status', '!=', 'rejected')
                       ->where('arrival_tickets.status', '!=', 'Reject Full')
                       ->where('arrival_tickets.status', '!=', 'Reject Half');
+                }
+            })
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                $locationIds = array_filter((array)$request->company_location_id);
+                if (!empty($locationIds)) {
+                    return $q->whereIn('arrival_tickets.location_id', $locationIds);
                 }
             })
             ->when($request->filled('warehouse_id'), function ($q) use ($request) {

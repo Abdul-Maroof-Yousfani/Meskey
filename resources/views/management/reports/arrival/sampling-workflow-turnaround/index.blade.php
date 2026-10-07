@@ -29,6 +29,22 @@
                                         <div class="row justify-content-nd text">
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id[]" id="company_location"
+                                                        {{ count($locations) == 1 ? 'disabled' : 'multiple' }}
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Location</option>
+                                                        @foreach ($locations as $location)
+                                                            <option value="{{ $location->id }}"
+                                                                {{ (is_array(request('company_location_id')) && in_array($location->id, request('company_location_id'))) || count($locations) == 1 ? 'selected' : '' }}>
+                                                                {{ $location->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
                                                     <label>Warehouse:</label>
                                                     <select name="warehouse_id[]" id="warehouse_id"
                                                         {{ count($warehouses) == 1 ? 'disabled' : 'multiple' }}

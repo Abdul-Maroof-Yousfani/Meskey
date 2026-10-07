@@ -1,4 +1,37 @@
 @php
+    if (!function_exists('getWorkflowMinutes')) {
+        function getWorkflowMinutes($start, $end) {
+            if (!$start || !$end) {
+                return 0;
+            }
+            try {
+                $startDate = \Carbon\Carbon::parse($start);
+                $endDate = \Carbon\Carbon::parse($end);
+                if ($endDate->lessThan($startDate)) {
+                    return 0;
+                }
+                return (int) round($startDate->diffInMinutes($endDate));
+            } catch (\Exception $e) {
+                return 0;
+            }
+        }
+    }
+
+    if (!function_exists('formatWorkflowMinutes')) {
+        function formatWorkflowMinutes($totalMinutes) {
+            if ($totalMinutes < 0) {
+                return '-';
+            }
+            $hours = intdiv($totalMinutes, 60);
+            $minutes = $totalMinutes % 60;
+
+            if ($hours > 0) {
+                return "{$hours}h {$minutes}m";
+            }
+            return "{$minutes}m";
+        }
+    }
+
     if (!function_exists('formatWorkflowDuration')) {
         function formatWorkflowDuration($start, $end) {
             if (!$start || !$end) {
@@ -100,7 +133,26 @@
                 $durInnerTo2ndDec = $isFullReject ? '-' : formatWorkflowDuration($innerSampleTime, $secondDecTime);
                 $dur2ndWeightToAccounts = $isFullReject ? '-' : formatWorkflowDuration($secondWeightTime, $accountsTime);
                 $durAccountsToHo = $isFullReject ? '-' : formatWorkflowDuration($accountsTime, $hoConfirmTime);
-                $durTotal = formatWorkflowDuration($gateTime, $hoConfirmTime);
+                $primaryTotal = formatWorkflowDuration($gateTime, $hoConfirmTime);
+                if ($primaryTotal !== '-') {
+                    $durTotal = $primaryTotal;
+                } else {
+                    $hasAnyStage = ($firstQcTime || $firstDecTime || $locTime || $firstWeightTime || $innerSampleTime || $secondWeightTime || $accountsTime);
+                    if ($hasAnyStage) {
+                        $stageMinutes = 
+                            getWorkflowMinutes($gateTime, $firstQcTime)
+                            + getWorkflowMinutes($firstQcTime, $firstDecTime)
+                            + ($isFullReject ? 0 : getWorkflowMinutes($lastDecTime, $locTime))
+                            + ($isFullReject ? 0 : getWorkflowMinutes($locTime, $firstWeightTime))
+                            + ($isFullReject ? 0 : getWorkflowMinutes($innerSampleTime, $secondDecTime))
+                            + ($isFullReject ? 0 : getWorkflowMinutes($secondWeightTime, $accountsTime))
+                            + ($isFullReject ? 0 : getWorkflowMinutes($accountsTime, $hoConfirmTime));
+
+                        $durTotal = formatWorkflowMinutes($stageMinutes);
+                    } else {
+                        $durTotal = '-';
+                    }
+                }
             @endphp
             <tr>
                 <td>{{ $row->unique_no }}</td>
