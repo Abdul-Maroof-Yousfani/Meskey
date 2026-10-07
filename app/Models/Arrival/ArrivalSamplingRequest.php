@@ -15,6 +15,7 @@ class ArrivalSamplingRequest extends Model
     protected $fillable = [
         'remark',
         'is_done',
+        'done_by',
         'company_id',
         'party_ref_no',
         'sampling_type',
