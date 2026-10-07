@@ -249,6 +249,7 @@ class InnersamplingController extends Controller
                 'sample_taken_by' => $request->sample_taken_by ?? NULL,
                 'done_by' => auth()->user()->id,
                 'approved_status' => $initialStatus,
+                'result_posted_at' => now(),
             ];
 
             if ($initialStatus === 'approved') {
