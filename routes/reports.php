@@ -10,7 +10,8 @@ use App\Http\Controllers\Reports\Arrival\{
     BagWiseArrivalReportController,
     StationWiseQCAnalysisReportController,
     CustomQcSampleReportController,
-    TruckSummaryReportController
+    TruckSummaryReportController,
+    TurnaroundReportController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,9 @@ Route::prefix('arrival')->group(function () {
   Route::post('/get-station-wise-qc-analysis', [StationWiseQCAnalysisReportController::class, 'getList'])->name('reports.arrival.get.station-wise-qc-analysis');
   Route::resource('custom-qc-sample', CustomQcSampleReportController::class);
   Route::post('/get-custom-qc-sample', [CustomQcSampleReportController::class, 'getList'])->name('reports.arrival.get.custom-qc-sample');
+
+  Route::resource('turnaround-time', TurnaroundReportController::class);
+  Route::post('/get-turn-time', [TurnaroundReportController::class, 'getList'])->name('reports.arrival.get.turn-time');
 });
 
 
