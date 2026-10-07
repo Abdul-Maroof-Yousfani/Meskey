@@ -157,7 +157,7 @@
             });
 
             const runFilter = filterationCommon_withbtn(
-                `{{ route('reports.arrival.get.sampling-workflow-turnaround') }}`
+                `{{ route('reports.arrival.get.sampling-workflow') }}`
             );
 
             $('#filterForm').on('submit', function (e) {
