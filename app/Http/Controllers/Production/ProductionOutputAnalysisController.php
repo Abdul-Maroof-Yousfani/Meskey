@@ -25,13 +25,49 @@ class ProductionOutputAnalysisController extends Controller
         return view('management.production.production_output_analysis.index', compact('locations', 'arrivalLocations', 'plants'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         
-        // Pre-select if only one location is assigned
-        $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        $analysisRequests = \App\Models\Production\ProductionAnalysisRequest::where('type', \App\Models\Production\ProductionAnalysisRequest::TYPE_OUTPUT)
+            ->where(function ($q) use ($request) {
+                $q->where('status', 'pending');
+                if ($request->filled('analysis_request_id')) {
+                    $q->orWhere('id', $request->analysis_request_id);
+                }
+            })
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])
+            ->latest('id')
+            ->get();
+
+        $analysisRequest = null;
+        $initialArrivalLocations = collect();
+        $initialPlants = collect();
+
+        if ($request->filled('analysis_request_id')) {
+            $analysisRequest = $analysisRequests->firstWhere('id', $request->analysis_request_id)
+                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])->find($request->analysis_request_id);
+
+            if ($analysisRequest) {
+                $preSelectedLocationId = $analysisRequest->company_location_id;
+                $initialArrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $preSelectedLocationId)->get();
+                $initialPlants = \App\Models\Master\Plant::where('company_location_id', $preSelectedLocationId)
+                    ->where('arrival_location_id', $analysisRequest->arrival_location_id)
+                    ->get();
+            } else {
+                $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+            }
+        } elseif ($analysisRequests->count() === 1) {
+            $analysisRequest = $analysisRequests->first();
+            $preSelectedLocationId = $analysisRequest->company_location_id;
+            $initialArrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $preSelectedLocationId)->get();
+            $initialPlants = \App\Models\Master\Plant::where('company_location_id', $preSelectedLocationId)
+                ->where('arrival_location_id', $analysisRequest->arrival_location_id)
+                ->get();
+        } else {
+            $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        }
         
         $units = UnitOfMeasure::all();
         $products = Product::where('status', 'active')->get();
@@ -39,7 +75,17 @@ class ProductionOutputAnalysisController extends Controller
             ->where('for_general_item', 1)
             ->get();
             
-        return view('management.production.production_output_analysis.create', compact('companyLocations', 'units', 'products', 'productSlabTypes', 'preSelectedLocationId'));
+        return view('management.production.production_output_analysis.create', compact(
+            'companyLocations', 
+            'units', 
+            'products', 
+            'productSlabTypes', 
+            'preSelectedLocationId',
+            'analysisRequests',
+            'analysisRequest',
+            'initialArrivalLocations',
+            'initialPlants'
+        ));
     }
 
     public function store(Request $request)
@@ -47,19 +93,45 @@ class ProductionOutputAnalysisController extends Controller
         try {
             DB::beginTransaction();
 
+            $analysisReq = null;
+            if ($request->filled('analysis_request_id')) {
+                $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
+            }
+
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
                 'analysis_date' => $request->date,
-                'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_location_id,
-                'plant_id' => $request->plant_id,
+                'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
+                'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
                 'milling_degree' => $request->milling_degree,
                 'inner_stitching' => $request->inner_stitching,
                 'outer_stitching' => $request->outer_stitching,
                 'remarks' => $request->remarks,
                 'product_id' => $request->product_id,
+                'crop_year_id' => $request->crop_year_id,
+                'brand_id' => $request->brand_id,
+                'variety' => $request->variety,
+                'bag_packing_id' => $request->bag_packing_id,
                 'production_analysis_type' => 'output',
+                'analysis_request_id' => $request->analysis_request_id ?? null,
             ]);
+
+            // If created against an Analysis Request, mark it completed & link Job Order if present
+            if ($request->filled('analysis_request_id')) {
+                $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
+                if ($analysisReq) {
+                    $analysisReq->update(['status' => 'completed']);
+                    if ($analysisReq->job_order_id) {
+                        DB::table('job_orders_against_production_analysis')->insertOrIgnore([
+                            'job_order_id' => $analysisReq->job_order_id,
+                            'production_id' => $analysis->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
 
             // Store New Line Items
             if ($request->has('items')) {
@@ -139,6 +211,17 @@ class ProductionOutputAnalysisController extends Controller
             $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
         }
 
+        $analysisRequests = \App\Models\Production\ProductionAnalysisRequest::where('type', \App\Models\Production\ProductionAnalysisRequest::TYPE_OUTPUT)
+            ->where(function ($q) use ($item) {
+                $q->where('status', 'pending');
+                if ($item->analysis_request_id) {
+                    $q->orWhere('id', $item->analysis_request_id);
+                }
+            })
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])
+            ->latest('id')
+            ->get();
+
         $arrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $item->location_id)->get();
         $plants = \App\Models\Master\Plant::where('company_location_id', $item->location_id)
             ->where('arrival_location_id', $item->arrival_location_id)
@@ -150,6 +233,7 @@ class ProductionOutputAnalysisController extends Controller
             'companyLocations', 
             'products',
             'units',
+            'analysisRequests',
             'arrivalLocations',
             'plants'
         ));
@@ -161,16 +245,23 @@ class ProductionOutputAnalysisController extends Controller
             DB::beginTransaction();
 
             $analysis = ProductionAnalysis::findOrFail($id);
+
+            $analysisReq = null;
+            if ($request->filled('analysis_request_id')) {
+                $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
+            }
+
             $analysis->update([
                 'analysis_date' => $request->date,
-                'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_location_id,
-                'plant_id' => $request->plant_id,
+                'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
+                'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
                 'milling_degree' => $request->milling_degree,
                 'inner_stitching' => $request->inner_stitching,
                 'outer_stitching' => $request->outer_stitching,
                 'remarks' => $request->remarks,
                 'product_id' => $request->product_id,
+                'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
 
             $analysis->jobOrders()->detach();

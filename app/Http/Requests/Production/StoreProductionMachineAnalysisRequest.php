@@ -14,6 +14,20 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('analysis_request_id')) {
+            $req = \App\Models\Production\ProductionAnalysisRequest::find($this->analysis_request_id);
+            if ($req) {
+                $this->merge([
+                    'company_location_id' => $this->company_location_id ?: $req->company_location_id,
+                    'arrival_location_id' => $this->arrival_location_id ?: $req->arrival_location_id,
+                    'plant_id' => $this->plant_id ?: $req->plant_id,
+                ]);
+            }
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -22,6 +36,7 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'analysis_request_id' => 'required|exists:production_analysis_requests,id',
             'date' => 'required|date',
             'company_location_id' => 'required|exists:company_locations,id',
             'arrival_location_id' => 'required|exists:arrival_locations,id',

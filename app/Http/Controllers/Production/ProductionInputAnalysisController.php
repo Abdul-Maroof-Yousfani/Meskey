@@ -28,20 +28,65 @@ class ProductionInputAnalysisController extends Controller
         return view('management.production.production_input_analysis.index', compact('locations', 'arrivalLocations', 'plants'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         
-        // Pre-select if only one location is assigned
-        $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        $analysisRequests = \App\Models\Production\ProductionAnalysisRequest::where('type', \App\Models\Production\ProductionAnalysisRequest::TYPE_INPUT)
+            ->where(function ($q) use ($request) {
+                $q->where('status', 'pending');
+                if ($request->filled('analysis_request_id')) {
+                    $q->orWhere('id', $request->analysis_request_id);
+                }
+            })
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])
+            ->latest('id')
+            ->get();
+
+        $analysisRequest = null;
+        $initialArrivalLocations = collect();
+        $initialPlants = collect();
+
+        if ($request->filled('analysis_request_id')) {
+            $analysisRequest = $analysisRequests->firstWhere('id', $request->analysis_request_id)
+                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])->find($request->analysis_request_id);
+
+            if ($analysisRequest) {
+                $preSelectedLocationId = $analysisRequest->company_location_id;
+                $initialArrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $preSelectedLocationId)->get();
+                $initialPlants = \App\Models\Master\Plant::where('company_location_id', $preSelectedLocationId)
+                    ->where('arrival_location_id', $analysisRequest->arrival_location_id)
+                    ->get();
+            } else {
+                $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+            }
+        } elseif ($analysisRequests->count() === 1) {
+            $analysisRequest = $analysisRequests->first();
+            $preSelectedLocationId = $analysisRequest->company_location_id;
+            $initialArrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $preSelectedLocationId)->get();
+            $initialPlants = \App\Models\Master\Plant::where('company_location_id', $preSelectedLocationId)
+                ->where('arrival_location_id', $analysisRequest->arrival_location_id)
+                ->get();
+        } else {
+            $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        }
         
         $units = UnitOfMeasure::all();
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
             
-        return view('management.production.production_input_analysis.create', compact('companyLocations', 'units', 'productSlabTypes', 'preSelectedLocationId'));
+        return view('management.production.production_input_analysis.create', compact(
+            'companyLocations', 
+            'units', 
+            'productSlabTypes', 
+            'preSelectedLocationId',
+            'analysisRequests',
+            'analysisRequest',
+            'initialArrivalLocations',
+            'initialPlants'
+        ));
     }
 
     public function store(StoreProductionInputAnalysisRequest $request)
@@ -49,15 +94,37 @@ class ProductionInputAnalysisController extends Controller
         try {
             DB::beginTransaction();
 
+            $analysisReq = null;
+            if ($request->filled('analysis_request_id')) {
+                $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
+            }
+
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
                 'analysis_date' => $request->date,
-                'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_location_id,
-                'plant_id' => $request->plant_id,
+                'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
+                'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
                 'remarks' => $request->remarks,
                 'production_analysis_type' => 'input',
+                'analysis_request_id' => $request->analysis_request_id ?? null,
             ]);
+
+            // If created against an Analysis Request, mark it completed & link Job Order if present
+            if ($request->filled('analysis_request_id')) {
+                $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
+                if ($analysisReq) {
+                    $analysisReq->update(['status' => 'completed']);
+                    if ($analysisReq->job_order_id) {
+                        DB::table('job_orders_against_production_analysis')->insertOrIgnore([
+                            'job_order_id' => $analysisReq->job_order_id,
+                            'production_id' => $analysis->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
 
             // Store New Line Items
             if ($request->has('items')) {
@@ -119,6 +186,17 @@ class ProductionInputAnalysisController extends Controller
                                             ->where("status", "active")
                                             ->get();
         
+        $analysisRequests = \App\Models\Production\ProductionAnalysisRequest::where('type', \App\Models\Production\ProductionAnalysisRequest::TYPE_INPUT)
+            ->where(function ($q) use ($item) {
+                $q->where('status', 'pending');
+                if ($item->analysis_request_id) {
+                    $q->orWhere('id', $item->analysis_request_id);
+                }
+            })
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])
+            ->latest('id')
+            ->get();
+
         // Dependent dropdown data for edit view
         $arrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $item->location_id)->get();
         $plants = \App\Models\Master\Plant::where('company_location_id', $item->location_id)
@@ -130,6 +208,7 @@ class ProductionInputAnalysisController extends Controller
             'productSlabTypes',
             'companyLocations', 
             'units',
+            'analysisRequests',
             'arrivalLocations',
             'plants'
         ));
@@ -142,13 +221,19 @@ class ProductionInputAnalysisController extends Controller
 
             $analysis = ProductionAnalysis::findOrFail($id);
 
+            $analysisReq = null;
+            if ($request->filled('analysis_request_id')) {
+                $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
+            }
+
             // Update Parent Record
             $analysis->update([
                 'analysis_date' => $request->date,
-                'location_id' => $request->location_id,
-                'arrival_location_id' => $request->arrival_location_id,
-                'plant_id' => $request->plant_id,
+                'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
+                'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
                 'remarks' => $request->remarks,
+                'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
 
             // Sync Job Orders (Detach all regardless of presence in request as we don't use them anymore)

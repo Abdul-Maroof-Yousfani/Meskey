@@ -128,7 +128,7 @@
                                 @endcanAccess
 
                                 @canAccess('sales-delivery-challan-create')
-                                @if(auth()->user()->id == $group['created_by_id'])
+                                @if(auth()->user()->id == $group['created_by_id'] || auth()->user()->user_type === 'super-admin' || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('admin'))
                                     @if($group['status'] === 'pending' || $group['status'] === 'reverted')
 
                                         <button

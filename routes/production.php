@@ -14,6 +14,8 @@ use App\Http\Controllers\Production\PlantBreakdownController;
 use App\Http\Controllers\Production\BagRequestController;
 use App\Http\Controllers\Production\ProductionDryingController;
 use App\Http\Controllers\Production\ProductionSteamParboilingController;
+use App\Http\Controllers\Production\ProductionAnalysisRequestController;
+use App\Http\Controllers\Production\ProductionMachineAnalysisController;
 
 
 
@@ -95,24 +97,28 @@ Route::post('get-production-quality-check', [ProductionQualityCheckController::c
 Route::resource("production-input-analysis", ProductionInputAnalysisController::class);
 Route::post('get-production-input-analysis', [ProductionInputAnalysisController::class, 'getList'])->name('get.production-input-analysis');
 
-use App\Http\Controllers\Production\ProductionMachineAnalysisController;
 Route::resource("production-machine-analysis", ProductionMachineAnalysisController::class);
 Route::post('get-production-machine-analysis', [ProductionMachineAnalysisController::class, 'getList'])->name('get.production-machine-analysis');
 Route::get('production-machine-analysis/get-arrival-locations/{id}', [ProductionMachineAnalysisController::class, 'getArrivalLocationsByCompanyLocation'])->name('production-machine-analysis.get-arrival-locations');
 Route::get('production-machine-analysis/get-plants/{companyId}/{arrivalId}', [ProductionMachineAnalysisController::class, 'getPlantsByArrivalLocation'])->name('production-machine-analysis.get-plants');
 Route::get('production-machine-analysis/get-machines/{arrivalId}/{plantId}', [ProductionMachineAnalysisController::class, 'getMachinesByPlant'])->name('production-machine-analysis.get-machines');
+Route::resource("production-machine-analysis", ProductionMachineAnalysisController::class);
 
 Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
 Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
 Route::get('get-slabs-by-product', [ProductionOutputAnalysisController::class, 'getSlabsByProduct'])->name('production-output-analysis.get-slabs');
 
-
-
 Route::resource("production-drying-job-order",ProductionDryingController::class);
 Route::post('get-production-drying-job-order', [ProductionDryingController::class, 'getList'])->name('get.production-drying-job-order');
-
 
 Route::resource("production-steam-parboiling-job-order", ProductionSteamParboilingController::class)->parameters([
     'production-steam-parboiling-job-order' => 'order'
 ]);
 Route::post('get-production-steam-parboiling-job-order', [ProductionSteamParboilingController::class, 'getList'])->name('get.production-steam-parboiling-job-order');
+
+Route::resource('production-analysis-request', ProductionAnalysisRequestController::class);
+Route::post('get-production-analysis-request', [ProductionAnalysisRequestController::class, 'getList'])->name('get.production-analysis-request');
+Route::get('production-analysis-request/get-number', [ProductionAnalysisRequestController::class, 'getNumber'])->name('production-analysis-request.get-number');
+Route::get('production-analysis-request/get-arrival-locations/{id}', [ProductionAnalysisRequestController::class, 'getArrivalLocationsByCompanyLocation'])->name('production-analysis-request.get-arrival-locations');
+Route::get('production-analysis-request/get-plants/{companyId}/{arrivalId}', [ProductionAnalysisRequestController::class, 'getPlantsByArrivalLocation'])->name('production-analysis-request.get-plants');
+Route::get('production-analysis-request/get-job-orders/{companyLocationId}', [ProductionAnalysisRequestController::class, 'getJobOrdersByCompanyLocation'])->name('production-analysis-request.get-job-orders');

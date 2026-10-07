@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Master\Vendor;
+use App\Models\ApprovalsModule\ApprovalModuleRole;
 
 class DeliveryChallanController extends Controller
 {
@@ -43,8 +44,17 @@ class DeliveryChallanController extends Controller
         if (!$authUser) {
             return false;
         }
-        if ($authUser->user_type === 'super-admin') {
+        if ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin')) {
             return true;
+        }
+
+        $userRoleIds = (new DeliveryChallan)->getUserRoleIdsForApproval($authUser);
+        if (!empty($userRoleIds)) {
+            $dcModule = (new DeliveryChallan)->getApprovalModule();
+            $moduleId = $dcModule ? $dcModule->id : 18;
+            if (ApprovalModuleRole::where('module_id', $moduleId)->whereIn('role_id', $userRoleIds)->exists()) {
+                return true;
+            }
         }
 
         $userLocations = $this->getUserArrivalLocations();
@@ -75,11 +85,20 @@ class DeliveryChallanController extends Controller
     public function index() {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
+        $userRoleIds = (new DeliveryChallan)->getUserRoleIdsForApproval($authUser);
+        $isApprover = false;
+        if (!$isSuperAdmin && !empty($userRoleIds)) {
+            $dcModule = (new DeliveryChallan)->getApprovalModule();
+            $moduleId = $dcModule ? $dcModule->id : 18;
+            $isApprover = ApprovalModuleRole::where('module_id', $moduleId)
+                ->whereIn('role_id', $userRoleIds)
+                ->exists();
+        }
         $locations = $this->getUserArrivalLocations();
 
         $dcQuery = DeliveryChallan::query();
-        if (!$isSuperAdmin) {
+        if (!$isSuperAdmin && !$isApprover) {
             $dcQuery->where(function($q) use ($locations) {
                 foreach ($locations as $locId) {
                     $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
@@ -95,9 +114,9 @@ class DeliveryChallanController extends Controller
         $customers = Customer::whereIn('id', $customerIds)->get();
 
         // Only get items that have delivery challan data records attached to an existing DC
-        $itemIds = \App\Models\Sales\DeliveryChallanData::whereIn('delivery_challan_id', function($query) use ($isSuperAdmin, $locations) {
+        $itemIds = \App\Models\Sales\DeliveryChallanData::whereIn('delivery_challan_id', function($query) use ($isSuperAdmin, $isApprover, $locations) {
                 $q = $query->select('id')->from('delivery_challans');
-                if (!$isSuperAdmin) {
+                if (!$isSuperAdmin && !$isApprover) {
                     $q->where(function($sq) use ($locations) {
                         foreach ($locations as $locId) {
                             $sq->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
@@ -112,9 +131,9 @@ class DeliveryChallanController extends Controller
 
         // Only get delivery orders that are linked to existing delivery challans
         $doIds = DB::table('delivery_challan_delivery_order')
-            ->whereIn('delivery_challan_id', function($query) use ($isSuperAdmin, $locations) {
+            ->whereIn('delivery_challan_id', function($query) use ($isSuperAdmin, $isApprover, $locations) {
                 $q = $query->select('id')->from('delivery_challans');
-                if (!$isSuperAdmin) {
+                if (!$isSuperAdmin && !$isApprover) {
                     $q->where(function($sq) use ($locations) {
                         foreach ($locations as $locId) {
                             $sq->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
@@ -133,7 +152,7 @@ class DeliveryChallanController extends Controller
     public function create() {
         abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         $payment_terms = PaymentTerm::all();
@@ -161,7 +180,7 @@ class DeliveryChallanController extends Controller
     public function store(DeliveryChallanRequest $request) {
         abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         DB::beginTransaction();
@@ -468,7 +487,7 @@ class DeliveryChallanController extends Controller
     public function update(DeliveryChallanRequest $request, DeliveryChallan $delivery_challan) {
         abort_if(!canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         if (!$this->canUserAccessDeliveryChallan($delivery_challan)) {
@@ -852,14 +871,23 @@ class DeliveryChallanController extends Controller
     public function getList(Request $request) {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
+        $userRoleIds = (new DeliveryChallan)->getUserRoleIdsForApproval($authUser);
+        $isApprover = false;
+        if (!$isSuperAdmin && !empty($userRoleIds)) {
+            $dcModule = (new DeliveryChallan)->getApprovalModule();
+            $moduleId = $dcModule ? $dcModule->id : 18;
+            $isApprover = ApprovalModuleRole::where('module_id', $moduleId)
+                ->whereIn('role_id', $userRoleIds)
+                ->exists();
+        }
         $locations = $this->getUserArrivalLocations();
 
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
         $delivery_challans = DeliveryChallan::with(['delivery_order', 'delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
-            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+            ->when(!$isSuperAdmin && !$isApprover, function ($query) use ($locations) {
                 $query->where(function ($q) use ($locations) {
                     foreach ($locations as $locId) {
                         $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
@@ -915,7 +943,9 @@ class DeliveryChallanController extends Controller
                     $sq->whereRaw('LOWER(truck_no) LIKE ?', [$truckNo]);
                 });
             })
-            ->where('created_by_id',auth()->user()->id)
+            ->when(!$isSuperAdmin && !$isApprover, function ($q) use ($authUser) {
+                return $q->where('created_by_id', $authUser->id);
+            })
             ->latest()
             ->paginate($perPage);
 
@@ -1031,7 +1061,7 @@ class DeliveryChallanController extends Controller
     public function get_delivery_orders(Request $request) {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         $customer_id = $request->customer_id;
@@ -1117,7 +1147,7 @@ class DeliveryChallanController extends Controller
     public function getItemsByTickets(Request $request) {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         $ticket_id = $request->ticket_id;
@@ -1137,7 +1167,7 @@ class DeliveryChallanController extends Controller
     public function getTickets(Request $request) {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         $delivery_order_ids = $request->delivery_order_ids;
@@ -1204,7 +1234,7 @@ class DeliveryChallanController extends Controller
     public function getTicketsWithDispatchQc(Request $request) {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         $delivery_challan_id = $request->delivery_challan_id;
@@ -1254,7 +1284,7 @@ class DeliveryChallanController extends Controller
     public function getTicketDataForDC(Request $request) {
         abort_if(!canAccess('sales-delivery-challan-list') && !auth()->user()->can('sales-delivery-challan-list') && !canAccess('sales-delivery-challan-create') && !auth()->user()->can('sales-delivery-challan-create'), 403);
         $authUser = auth()->user();
-        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isSuperAdmin = $authUser && ($authUser->user_type === 'super-admin' || $authUser->hasRole('Admin') || $authUser->hasRole('admin'));
         $locations = $this->getUserArrivalLocations();
 
         $ticket_id = $request->ticket_id;

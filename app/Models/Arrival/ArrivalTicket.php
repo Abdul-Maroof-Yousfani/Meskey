@@ -44,6 +44,7 @@ class ArrivalTicket extends Model
         'accounts_of_name',
         'broker_id',
         'arrival_purchase_order_id',
+        'contract_link_time',
         'sauda_type_id',
         'decision_making',
         'decision_making_time',
@@ -59,6 +60,7 @@ class ArrivalTicket extends Model
         'loading_date',
         'is_ticket_verified',
         'ticket_verified_by',
+        'verify_at',
         'loading_weight',
         'remarks',
         'status',
@@ -85,13 +87,18 @@ class ArrivalTicket extends Model
         'weightslip_attachment',
         'other_attachment',
         'miller_id',
+        'is_arrival_lock',
+        'locked_at',
+        'unlocked_at',
     ];
 
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-    // protected $casts = [
-    //     'loading_date' => 'date',
-    // ];
+    protected $casts = [
+        'verify_at' => 'datetime',
+        'contract_link_time' => 'datetime',
+        'decision_making_time' => 'datetime',
+    ];
 
     public function company()
     {

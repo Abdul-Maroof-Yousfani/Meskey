@@ -31,6 +31,7 @@ class ProductionAnalysis extends Model
         'production_analysis_type',
         'arrival_location_id',
         'plant_id',
+        'analysis_request_id',
     ];
 
     protected $casts = [
@@ -95,5 +96,10 @@ class ProductionAnalysis extends Model
             'production_analysis_id', // Foreign key on items table
             'production_analysis_item_id' // Foreign key on slabs table
         );
+    }
+
+    public function analysisRequest()
+    {
+        return $this->belongsTo(ProductionAnalysisRequest::class, 'analysis_request_id');
     }
 }

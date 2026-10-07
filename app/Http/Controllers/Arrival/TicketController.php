@@ -297,29 +297,65 @@ class TicketController extends Controller
      */
     public function edit(Request $request, $id)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+        $userLocation = $authUser->companyLocation ?? null;
         $authUserCompany = $request->company_id;
-        $isSuperAdmin = getUserParams('user_type') == 'super-admin';
-        $userLocation = getUserParams('company_location_id');
 
+        $arrivalTicket = ArrivalTicket::with([
+            'location',
+            'product',
+            'miller',
+            'broker',
+            'decisionBy',
+            'accountsOf',
+            'station',
+            'truckType',
+            'purchaseOrder.saudaType',
+            'saudaType'
+        ])->findOrFail($id);
+
+        $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
+        if ($arrivalTicket->location_id && !$companyLocations->contains('id', $arrivalTicket->location_id)) {
+            $ticketLocation = CompanyLocation::find($arrivalTicket->location_id);
+            if ($ticketLocation) {
+                $companyLocations->push($ticketLocation);
+            }
+        }
+
+        $targetLocationId = $arrivalTicket->location_id ?? $userLocation?->id;
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
-            // ->where('purchase_type', 'regular')
-            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
-                $q->where('company_location_id', $userLocation);
+            ->where("am_approval_status", "approved")
+            ->where(function ($q) use ($targetLocationId, $arrivalTicket) {
+                if ($targetLocationId) {
+                    $q->where('company_location_id', $targetLocationId);
+                }
+                if ($arrivalTicket->arrival_purchase_order_id) {
+                    $q->orWhere('id', $arrivalTicket->arrival_purchase_order_id);
+                }
             })
             ->orderByDesc('id')
-            ->get();
-
-        $accountsOf = User::role('Purchaser')
-            ->whereHas('companies', function ($q) use ($authUserCompany) {
-                $q->where('companies.id', $authUserCompany);
-            })
             ->get();
 
         $suppliers = Supplier::where('status', 'active')->get();
         $products = Product::where('status', 'active')->get();
 
-        $arrivalTicket = ArrivalTicket::findOrFail($id);
-        return view('management.arrival.ticket.edit', compact('arrivalTicket', 'accountsOf', 'arrivalPurchaseOrders', 'suppliers', 'products'));
+        $accountsOf = User::role('Purchaser')
+            ->where('parent_user_id', null)
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
+
+        return view('management.arrival.ticket.edit', [
+            'arrivalTicket' => $arrivalTicket,
+            'accountsOf' => $accountsOf,
+            'arrivalPurchaseOrders' => $arrivalPurchaseOrders,
+            'suppliers' => $suppliers,
+            'products' => $products,
+            'companyLocations' => $companyLocations,
+            'isSuperAdmin' => $isSuperAdmin
+        ]);
     }
 
     public function show(Request $request, $id)
@@ -471,12 +507,80 @@ class TicketController extends Controller
     {
         $arrivalTicket = ArrivalTicket::findOrFail($id);
 
-        $data = $request->validated();
-        $request['accounts_of_id'] = $request['accounts_of'] ?? NULL;
-        $request['truck_type_id'] = $request['arrival_truck_type_id'] ?? NULL;
-        $arrivalTicket->update($request->all());
+        $requestData = $request->validated();
 
-        return response()->json(['success' => 'Arrival Ticket updated successfully.', 'data' => $arrivalTicket], 200);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        if ($request->filled('company_location_id')) {
+            $requestData['location_id'] = $request->company_location_id;
+        }
+
+        // Do not overwrite unique_no on update
+        unset($requestData['unique_no']);
+
+        if (!empty($requestData['accounts_of'])) {
+            $supplier = Supplier::where('company_name', $requestData['accounts_of'])->first();
+            $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
+            $requestData['accounts_of_name'] = $requestData['accounts_of'];
+        } else {
+            $requestData['accounts_of_id'] = null;
+            $requestData['accounts_of_name'] = null;
+        }
+
+        if (!empty($requestData['station'])) {
+            $station = Station::firstOrCreate(
+                [
+                    'name' => $requestData['station'],
+                    'company_id' => $requestData['company_id'] ?? null,
+                ]
+            );
+
+            $requestData['station_id'] = $station->id;
+            $requestData['station_name'] = $station->name;
+        } else {
+            $requestData['station_id'] = null;
+            $requestData['station_name'] = null;
+        }
+
+        if (!empty($requestData['broker_name'])) {
+            $broker = Supplier::where('company_name', $requestData['broker_name'])->first();
+            $requestData['broker_id'] = $broker ? $broker->id : null;
+        } else {
+            $requestData['broker_id'] = null;
+        }
+
+        if (!empty($requestData['miller_name'])) {
+            $miller = Miller::where('name', $requestData['miller_name'])->first();
+            if (!$miller) {
+                $miller = Miller::create(['name' => $requestData['miller_name']]);
+            }
+            $requestData['miller_id'] = $miller->id;
+        } else {
+            $requestData['miller_id'] = null;
+        }
+
+        $requestData['truck_type_id'] = $requestData['arrival_truck_type_id'] ?? null;
+
+        if (!empty($requestData['arrival_purchase_order_id'])) {
+            if ($request->filled('sauda_type_id')) {
+                $requestData['sauda_type_id'] = $request->sauda_type_id;
+            } else {
+                $po = ArrivalPurchaseOrder::find($requestData['arrival_purchase_order_id']);
+                $requestData['sauda_type_id'] = $po?->sauda_type_id;
+            }
+        } else {
+            $requestData['sauda_type_id'] = null;
+        }
+
+        $requestData['loading_date'] = !empty($requestData['loading_date']) ? $requestData['loading_date'] : null;
+
+        $arrivalTicket->update($requestData);
+
+        return response()->json([
+            'success' => 'Arrival Ticket updated successfully.',
+            'data' => $arrivalTicket
+        ], 200);
     }
 
     /**

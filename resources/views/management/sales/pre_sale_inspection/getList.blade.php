@@ -1,12 +1,13 @@
 <table class="table table-hover m-0">
     <thead class="bg-light">
         <tr>
-            <th width="14%">Dekh #</th>
+            <th width="13%">Dekh #</th>
             <th width="10%">Date</th>
-            <th width="12%">Location</th>
-            <th width="18%">Party Name & Contact</th>
-            <th width="34%">Items, Factory, Section & Weight</th>
-            <th width="12%" class="text-center">Action</th>
+            <th width="11%">Location</th>
+            <th width="16%">Party Name & Contact</th>
+            <th width="30%">Items, Factory, Section & Weight</th>
+            <th width="10%" class="text-center">Status</th>
+            <th width="10%" class="text-center">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -76,28 +77,46 @@
                     @endif
                 </td>
                 <td class="text-center align-middle">
+                    @php
+                        $status = strtolower($row->am_approval_status ?? 'pending');
+                        $badge = match ($status) {
+                            'approved' => 'badge-success',
+                            'rejected' => 'badge-danger',
+                            'reverted' => 'badge-secondary',
+                            default => 'badge-warning',
+                        };
+                    @endphp
+                    <span class="badge {{ $badge }}">
+                        {{ ucfirst($status) }}
+                    </span>
+                </td>
+                <td class="text-center align-middle">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-info"
                             onclick="openModal(this,'{{ route('sales.pre-sale-inspection.view', $row->id) }}','View Pre Sale Dekh', false, '80%')"
                             title="View" style="margin-right: 5px;">
                             <i class="ft-eye"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-warning"
-                            onclick="openModal(this,'{{ route('sales.pre-sale-inspection.edit', $row->id) }}','Edit Pre Sale Dekh', false, '80%')"
-                            title="Edit" style="margin-right: 5px;">
-                            <i class="ft-edit"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-danger"
-                            onclick="deletemodal('{{ route('sales.pre-sale-inspection.destroy', $row->id) }}', '{{ route('sales.get.pre-sale-inspection.list') }}')"
-                            title="Delete">
-                            <i class="ft-trash-2"></i>
-                        </button>
+                        @if(!in_array(strtolower($row->am_approval_status ?? ''), ['approved', 'rejected']))
+                            @canAccess('dekh-create')
+                            <button type="button" class="btn btn-sm btn-warning"
+                                onclick="openModal(this,'{{ route('sales.pre-sale-inspection.edit', $row->id) }}','Edit Pre Sale Dekh', false, '80%')"
+                                title="Edit" style="margin-right: 5px;">
+                                <i class="ft-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger"
+                                onclick="deletemodal('{{ route('sales.pre-sale-inspection.destroy', $row->id) }}', '{{ route('sales.get.pre-sale-inspection.list') }}')"
+                                title="Delete">
+                                <i class="ft-trash-2"></i>
+                            </button>
+                            @endcanAccess
+                        @endif
                     </div>
                 </td>
             </tr>
         @empty
             <tr>
-                <td colspan="6" class="text-center py-4 text-muted">
+                <td colspan="7" class="text-center py-4 text-muted">
                     No Pre Sale Dekh records found.
                 </td>
             </tr>
