@@ -20,6 +20,8 @@ use App\Models\SaudaType;
 use App\Models\User;
 use App\Models\{BagType, BagCondition, BagPacking};
 use App\Models\Master\ArrivalLocation;
+use App\Services\AuditLogService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -297,6 +299,14 @@ class TicketController extends Controller
 
         $arrivalTicket = ArrivalTicket::create($requestData);
 
+        AuditLogService::log(
+            $arrivalTicket,
+            $isLock ? 'arrival_ticket_created_locked' : 'arrival_ticket_created',
+            "Arrival Ticket #{$arrivalTicket->unique_no} created" . ($isLock ? ' with arrival lock.' : '.'),
+            null,
+            $arrivalTicket->toArray()
+        );
+
         return response()->json([
             'success' => 'Arrival Ticket created successfully.',
             'data' => $arrivalTicket
@@ -518,6 +528,9 @@ class TicketController extends Controller
     {
         $arrivalTicket = ArrivalTicket::findOrFail($id);
 
+        $oldAttributes = $arrivalTicket->getAttributes();
+        $wasLocked = (bool) $arrivalTicket->is_arrival_lock;
+
         $requestData = $request->validated();
 
         $authUser = auth()->user();
@@ -587,11 +600,13 @@ class TicketController extends Controller
         $requestData['loading_date'] = !empty($requestData['loading_date']) ? $requestData['loading_date'] : null;
 
         $isLock = $request->boolean('is_arrival_lock');
+        $isUnlocked = false;
         if ($arrivalTicket->is_arrival_lock && !$isLock) {
             // Unlocked on edit: record unlocked_at, clear lock flags
             $requestData['is_arrival_lock'] = null;
             $requestData['locked_at'] = null;
             $requestData['unlocked_at'] = now();
+            $isUnlocked = true;
         } elseif ($isLock) {
             $requestData['is_arrival_lock'] = 1;
             $requestData['locked_at'] = $arrivalTicket->locked_at ?? now();
@@ -599,6 +614,31 @@ class TicketController extends Controller
         }
 
         $arrivalTicket->update($requestData);
+
+        $changes = $arrivalTicket->getChanges();
+        unset($changes['updated_at']);
+
+        $changedOld = !empty($changes) ? array_intersect_key($oldAttributes, $changes) : null;
+        $changedNew = !empty($changes) ? $changes : null;
+
+        if ($isUnlocked) {
+            $action = 'arrival_ticket_unlocked';
+            $description = "Arrival Ticket #{$arrivalTicket->unique_no} unlocked and updated.";
+        } elseif (!$wasLocked && $isLock) {
+            $action = 'arrival_ticket_locked';
+            $description = "Arrival Ticket #{$arrivalTicket->unique_no} locked and updated.";
+        } else {
+            $action = 'arrival_ticket_updated';
+            $description = "Arrival Ticket #{$arrivalTicket->unique_no} updated.";
+        }
+
+        AuditLogService::log(
+            $arrivalTicket,
+            $action,
+            $description,
+            $changedOld,
+            $changedNew
+        );
 
         return response()->json([
             'success' => 'Arrival Ticket updated successfully.',
@@ -611,6 +651,14 @@ class TicketController extends Controller
      */
     public function destroy(ArrivalTicket $arrivalTicket): JsonResponse
     {
+        AuditLogService::log(
+            $arrivalTicket,
+            'arrival_ticket_deleted',
+            "Arrival Ticket #{$arrivalTicket->unique_no} deleted.",
+            $arrivalTicket->toArray(),
+            null
+        );
+
         $arrivalTicket->delete();
         return response()->json(['success' => 'Arrival Ticket deleted successfully.'], 200);
     }
@@ -619,6 +667,11 @@ class TicketController extends Controller
     {
         // dd(request()->all());
         try {
+            $oldValues = [
+                'bilty_return_confirmation' => $ticket->bilty_return_confirmation,
+                'bilty_return_reason' => $ticket->bilty_return_reason,
+            ];
+
             $updateData = [
                 'bilty_return_confirmation' => 1,
                 'bilty_return_reason' => request('bilty_return_reason'),
@@ -627,6 +680,14 @@ class TicketController extends Controller
             ];
 
             $ticket->update($updateData);
+
+            AuditLogService::log(
+                $ticket,
+                'arrival_ticket_bilty_return_confirmed',
+                "Bilty return confirmed for Arrival Ticket #{$ticket->unique_no}. Reason: " . request('bilty_return_reason'),
+                $oldValues,
+                $updateData
+            );
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {

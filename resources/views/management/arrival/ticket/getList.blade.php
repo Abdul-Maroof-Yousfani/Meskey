@@ -1,3 +1,17 @@
+<style>
+    .sticky-table tr.bg-locked :is(th, td) {
+        background-color: #e9ecef !important;
+    }
+    .sticky-table tr.bg-locked:hover :is(th, td) {
+        background-color: #dfe3e8 !important;
+    }
+    .layout-dark .sticky-table tr.bg-locked :is(th, td) {
+        background-color: #2b3035 !important;
+    }
+    .layout-dark .sticky-table tr.bg-locked:hover :is(th, td) {
+        background-color: #343a40 !important;
+    }
+</style>
 <x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'"
     :pagination="$tickets->links()">
     @slot('head')
@@ -16,10 +30,15 @@
 
     @slot('body')
     @foreach ($tickets as $key => $row)
-        <tr class="@if ($row->first_qc_status == 'rejected') bg-red @endif">
+        <tr class="@if ($row->first_qc_status == 'rejected') bg-red @elseif ($row->is_arrival_lock) bg-locked @endif"
+            @if ($row->is_arrival_lock) title="Arrival Locked Ticket" @endif>
             <td>
                 <p class="m-0">
-                    #{{ $row->unique_no }} <br>
+                    #{{ $row->unique_no }}
+                    @if ($row->is_arrival_lock)
+                        <i class="ft-lock text-warning ml-1" title="Locked Arrival Ticket" style="font-size: 13px;"></i>
+                    @endif
+                    <br>
                 </p>
             </td>
             <td>

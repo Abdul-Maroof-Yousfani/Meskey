@@ -13,6 +13,7 @@ use App\Models\{SaudaType, ArrivalPurchaseOrder, BagType, BagCondition, BagPacki
 use App\Models\Master\{ArrivalLocation, Station, ArrivalSubLocation, ProductSlab};
 use App\Models\AuditLog;
 use App\Models\Master\Miller;
+use App\Services\AuditLogService;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use Illuminate\Validation\ValidationException;
@@ -577,7 +578,7 @@ class ArrivalMasterRevertController extends Controller
 
 
     /**
-     * Update Half/Full Approval
+     * Update Ticket Details
      */
     private function updateTicket($request, $arrivalTicket)
     {
@@ -590,7 +591,6 @@ class ArrivalMasterRevertController extends Controller
             'truck_no' => 'required|string|max:255',
             'product_id' => 'nullable',
             'bags' => 'required|numeric',
-            'product_id' => 'nullable',
             'truck_type_id' => 'required|max:255',
             'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',
@@ -599,6 +599,8 @@ class ArrivalMasterRevertController extends Controller
             'arrival_purchase_order_id' => 'nullable|integer',
             'accounts_of' => 'required|string'
         ]);
+
+        $oldTicketAttributes = $arrivalTicket ? $arrivalTicket->getAttributes() : null;
 
         // Update or create approval record
         if ($arrivalTicket) {
@@ -636,11 +638,21 @@ class ArrivalMasterRevertController extends Controller
                 $requestData['miller_id'] = $miller->id;
             }
 
-            //    dd($requestData);
             $arrivalTicket->update($requestData);
-        }
 
-        $this->logRevertAction($arrivalTicket, 'half_full_approval_update', 'Half/Full approval updated');
+            $changes = $arrivalTicket->getChanges();
+            unset($changes['updated_at']);
+            $changedOld = (!empty($changes) && $oldTicketAttributes) ? array_intersect_key($oldTicketAttributes, $changes) : null;
+            $changedNew = !empty($changes) ? $changes : null;
+
+            $this->logRevertAction(
+                $arrivalTicket,
+                'ticket_master_update',
+                "Ticket #{$arrivalTicket->unique_no} updated via Master Control",
+                $changedOld,
+                $changedNew
+            );
+        }
     }
 
     /**
@@ -653,6 +665,8 @@ class ArrivalMasterRevertController extends Controller
             'arrival_location_id' => 'required|exists:arrival_locations,id'
         ]);
 
+        $oldLocationId = $arrivalTicket->unloadingLocation?->arrival_location_id;
+
         if ($arrivalTicket->unloadingLocation) {
 
             $arrivalTicket->unloadingLocation()->update([
@@ -661,7 +675,13 @@ class ArrivalMasterRevertController extends Controller
 
         }
 
-        $this->logRevertAction($arrivalTicket->unloadingLocation, 'location_transfer_update', 'Location transfer updated');
+        $this->logRevertAction(
+            $arrivalTicket,
+            'location_transfer_update',
+            "Location transfer updated for Ticket #{$arrivalTicket->unique_no}",
+            ['arrival_location_id' => $oldLocationId],
+            ['arrival_location_id' => $validated['arrival_location_id']]
+        );
     }
 
     /**
@@ -674,6 +694,7 @@ class ArrivalMasterRevertController extends Controller
             'arrival_first_weight' => 'required|numeric|min:0'
         ]);
 
+        $oldWeight = $arrivalTicket->firstWeighbridge?->weight;
 
         if ($arrivalTicket->firstWeighbridge) {
             $arrivalTicket->firstWeighbridge()->update([
@@ -681,7 +702,13 @@ class ArrivalMasterRevertController extends Controller
             ]);
         }
 
-        $this->logRevertAction($arrivalTicket->firstWeighbridge, 'first_weighbridge_update', 'First weighbridge weight updated');
+        $this->logRevertAction(
+            $arrivalTicket,
+            'first_weighbridge_update',
+            "First weighbridge weight updated for Ticket #{$arrivalTicket->unique_no}",
+            ['arrival_first_weight' => $oldWeight],
+            ['arrival_first_weight' => $validated['arrival_first_weight']]
+        );
     }
 
     /**
@@ -692,6 +719,9 @@ class ArrivalMasterRevertController extends Controller
         $validated = $request->validate([
             'arrival_second_weight' => 'required|numeric|min:0'
         ]);
+
+        $oldWeight = $arrivalTicket->secondWeighbridge?->weight;
+        $oldNetWeight = $arrivalTicket->arrived_net_weight;
 
         if ($arrivalTicket->secondWeighbridge) {
             $arrivalTicket->secondWeighbridge()->update([
@@ -707,17 +737,23 @@ class ArrivalMasterRevertController extends Controller
         }
 
         // Auto-calculate net weight difference
+        $newNetWeight = $oldNetWeight;
         if ($arrivalTicket->firstWeighbridge) {
             $firstWeight = $arrivalTicket->firstWeighbridge->weight;
-            $netWeight = $firstWeight - $validated['arrival_second_weight'];
+            $newNetWeight = $firstWeight - $validated['arrival_second_weight'];
 
             $arrivalTicket->update([
-                'arrived_net_weight' => $netWeight
+                'arrived_net_weight' => $newNetWeight
             ]);
-            // You can save this net weight if needed
         }
 
-        $this->logRevertAction($arrivalTicket, 'second_weighbridge_update', 'Second weighbridge weight updated');
+        $this->logRevertAction(
+            $arrivalTicket,
+            'second_weighbridge_update',
+            "Second weighbridge weight updated for Ticket #{$arrivalTicket->unique_no}",
+            ['arrival_second_weight' => $oldWeight, 'arrived_net_weight' => $oldNetWeight],
+            ['arrival_second_weight' => $validated['arrival_second_weight'], 'arrived_net_weight' => $newNetWeight]
+        );
     }
 
     /**
@@ -737,6 +773,8 @@ class ArrivalMasterRevertController extends Controller
             'remark' => 'nullable|string'
         ]);
 
+        $oldApprovals = $arrivalTicket->approvals ? $arrivalTicket->approvals->only(array_keys($validated)) : null;
+
         // Update or create approval record
         if ($arrivalTicket->approvals) {
 
@@ -745,7 +783,13 @@ class ArrivalMasterRevertController extends Controller
             $arrivalTicket->approvals()->create($validated);
         }
 
-        $this->logRevertAction($arrivalTicket, 'half_full_approval_update', 'Half/Full approval updated');
+        $this->logRevertAction(
+            $arrivalTicket,
+            'half_full_approval_update',
+            "Half/Full approval updated for Ticket #{$arrivalTicket->unique_no}",
+            $oldApprovals,
+            $validated
+        );
     }
 
 
@@ -795,6 +839,13 @@ class ArrivalMasterRevertController extends Controller
             if (!$isDecisionMakingReq && $ArrivalSamplingRequest->arrivalTicket->decision_making === 1) {
                 $decisionMadeOn = now();
             }
+
+            $oldReqData = $ArrivalSamplingRequest->only([
+                'remark', 'decision_making', 'lumpsum_deduction', 'lumpsum_deduction_kgs', 'is_lumpsum_deduction', 'approved_status'
+            ]);
+            $oldTicketData = $ArrivalSamplingRequest->arrivalTicket ? $ArrivalSamplingRequest->arrivalTicket->only([
+                'lumpsum_deduction', 'lumpsum_deduction_kgs', 'is_lumpsum_deduction', 'decision_making', 'sauda_type_id', 'first_qc_status', 'second_qc_status', 'location_transfer_status'
+            ]) : null;
 
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
@@ -892,6 +943,23 @@ class ArrivalMasterRevertController extends Controller
 
             $ArrivalSamplingRequest->save();
 
+            $newReqData = [
+                'remark' => $request->remarks,
+                'decision_making' => $isDecisionMaking,
+                'lumpsum_deduction' => (float) ($request->lumpsum_deduction ?? 0.00),
+                'lumpsum_deduction_kgs' => (float) ($request->lumpsum_deduction_kgs ?? 0.00),
+                'is_lumpsum_deduction' => $isLumpsum,
+                'approved_status' => $request->stage_status,
+            ];
+
+            $this->logRevertAction(
+                $arrivalTicket,
+                'qc_update',
+                "QC updated for Ticket #{$arrivalTicket->unique_no} (Stage: {$request->stage_status})",
+                ['sampling_request' => $oldReqData, 'ticket' => $oldTicketData],
+                ['sampling_request' => $newReqData, 'ticket' => $updateData]
+            );
+
             return response()->json([
                 'success' => 'Data stored successfully',
                 'data' => [],
@@ -915,19 +983,37 @@ class ArrivalMasterRevertController extends Controller
     {
         // dd($request->arrivalSamplingRequestid);
         if ($requestisPending) {
+            $oldData = $requestisPending->toArray();
             $requestisPending->delete();
-            $this->logRevertAction($arrivalTicket, 'qc_request_revert', 'QC Request  reverted');
+            $this->logRevertAction(
+                $arrivalTicket,
+                'qc_request_revert',
+                "QC Request #{$requestisPending->id} reverted for Ticket #{$arrivalTicket->unique_no}",
+                $oldData,
+                null
+            );
         }
     }
     private function revertLocationTransfer($arrivalTicket)
     {
         if ($arrivalTicket->unloadingLocation) {
+            $oldData = [
+                'unloading_location' => $arrivalTicket->unloadingLocation->toArray(),
+                'location_transfer_status' => $arrivalTicket->location_transfer_status,
+                'first_weighbridge_status' => $arrivalTicket->first_weighbridge_status,
+            ];
             $arrivalTicket->unloadingLocation->delete();
             $arrivalTicket->update([
                 'location_transfer_status' => 'pending',
                 'first_weighbridge_status' => null,
             ]);
-            $this->logRevertAction($arrivalTicket, 'location_transfer_revert', 'Location transfer reverted');
+            $this->logRevertAction(
+                $arrivalTicket,
+                'location_transfer_revert',
+                "Location transfer reverted for Ticket #{$arrivalTicket->unique_no}",
+                $oldData,
+                ['location_transfer_status' => 'pending', 'first_weighbridge_status' => null]
+            );
         }
     }
 
@@ -937,13 +1023,24 @@ class ArrivalMasterRevertController extends Controller
     private function revertFirstWeighbridge($arrivalTicket)
     {
         if ($arrivalTicket->firstWeighbridge) {
+            $oldData = [
+                'first_weighbridge' => $arrivalTicket->firstWeighbridge->toArray(),
+                'first_weighbridge_status' => $arrivalTicket->first_weighbridge_status,
+                'document_approval_status' => $arrivalTicket->document_approval_status,
+            ];
             $arrivalTicket->firstWeighbridge->delete();
             $arrivalTicket->update([
                 'first_weighbridge_status' => 'pending',
                 'document_approval_status' => null,
             ]);
 
-            $this->logRevertAction($arrivalTicket, 'first_weighbridge_revert', 'First weighbridge reverted');
+            $this->logRevertAction(
+                $arrivalTicket,
+                'first_weighbridge_revert',
+                "First weighbridge reverted for Ticket #{$arrivalTicket->unique_no}",
+                $oldData,
+                ['first_weighbridge_status' => 'pending', 'document_approval_status' => null]
+            );
         }
     }
 
@@ -953,13 +1050,24 @@ class ArrivalMasterRevertController extends Controller
     private function revertSecondWeighbridge($arrivalTicket)
     {
         if ($arrivalTicket->secondWeighbridge) {
+            $oldData = [
+                'second_weighbridge' => $arrivalTicket->secondWeighbridge->toArray(),
+                'second_weighbridge_status' => $arrivalTicket->second_weighbridge_status,
+                'freight_status' => $arrivalTicket->freight_status,
+            ];
             $arrivalTicket->secondWeighbridge->delete();
             $arrivalTicket->update([
                 'second_weighbridge_status' => 'pending',
                 'freight_status' => null,
             ]);
 
-            $this->logRevertAction($arrivalTicket, 'second_weighbridge_revert', 'Second weighbridge reverted');
+            $this->logRevertAction(
+                $arrivalTicket,
+                'second_weighbridge_revert',
+                "Second weighbridge reverted for Ticket #{$arrivalTicket->unique_no}",
+                $oldData,
+                ['second_weighbridge_status' => 'pending', 'freight_status' => null]
+            );
         }
     }
 
@@ -969,32 +1077,47 @@ class ArrivalMasterRevertController extends Controller
     private function revertHalfFullApproval($arrivalTicket)
     {
         if ($arrivalTicket->approvals) {
+            $oldData = [
+                'approvals' => $arrivalTicket->approvals->toArray(),
+                'document_approval_status' => $arrivalTicket->document_approval_status,
+                'second_weighbridge_status' => $arrivalTicket->second_weighbridge_status,
+            ];
             $arrivalTicket->approvals->delete();
             $arrivalTicket->update([
                 'document_approval_status' => null,
                 'second_weighbridge_status' => null,
             ]);
-            $this->logRevertAction($arrivalTicket, 'half_full_approval_revert', 'Half/Full approval reverted');
+            $this->logRevertAction(
+                $arrivalTicket,
+                'half_full_approval_revert',
+                "Half/Full approval reverted for Ticket #{$arrivalTicket->unique_no}",
+                $oldData,
+                ['document_approval_status' => null, 'second_weighbridge_status' => null]
+            );
         }
     }
     private function revertFreight($arrivalTicket)
     {
         if ($arrivalTicket->freight) {
+            $oldData = [
+                'freight' => $arrivalTicket->freight->toArray(),
+                'arrival_slip' => $arrivalTicket->arrivalSlip?->toArray(),
+                'freight_status' => $arrivalTicket->freight_status,
+                'arrival_slip_status' => $arrivalTicket->arrival_slip_status,
+            ];
 
-            $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+            $grnNo = $arrivalTicket->arrivalSlip?->unique_no;
 
 
             // Delete transactions
-            $Transaction = Transaction::where('grn_no', $grnNo)->delete();
-
-
-            // Delete GRN
-            //   $arrivalTicket->arrivalSlip->grnNumber()->delete();
-            GrnNumber::where('unique_no', $grnNo)->delete();
+            if ($grnNo) {
+                Transaction::where('grn_no', $grnNo)->delete();
+                GrnNumber::where('unique_no', $grnNo)->delete();
+            }
 
 
             // Delete arrival slip
-            $arrivalTicket->arrivalSlip->delete();
+            $arrivalTicket->arrivalSlip?->delete();
 
             // Delete freight
             $arrivalTicket->freight->delete();
@@ -1004,7 +1127,13 @@ class ArrivalMasterRevertController extends Controller
                 'arrival_slip_status' => null
             ]);
 
-            $this->logRevertAction($arrivalTicket, 'freight_revert', 'Freight reverted');
+            $this->logRevertAction(
+                $arrivalTicket,
+                'freight_revert',
+                "Freight reverted for Ticket #{$arrivalTicket->unique_no}",
+                $oldData,
+                ['freight_status' => 'pending', 'arrival_slip_status' => null]
+            );
         }
     }
 
@@ -1014,6 +1143,13 @@ class ArrivalMasterRevertController extends Controller
      */
     private function revertCompleteTicket($arrivalTicket)
     {
+        $oldData = [
+            'approvals' => $arrivalTicket->approvals?->toArray(),
+            'second_weighbridge' => $arrivalTicket->secondWeighbridge?->toArray(),
+            'first_weighbridge' => $arrivalTicket->firstWeighbridge?->toArray(),
+            'unloading_location' => $arrivalTicket->unloadingLocation?->toArray(),
+        ];
+
         // Revert in reverse order (dependencies first)
         if ($arrivalTicket->approvals) {
             $arrivalTicket->approvals->delete();
@@ -1031,7 +1167,13 @@ class ArrivalMasterRevertController extends Controller
             $arrivalTicket->unloadingLocation->delete();
         }
 
-        $this->logRevertAction($arrivalTicket, 'complete_ticket_revert', 'Complete ticket reverted to initial state');
+        $this->logRevertAction(
+            $arrivalTicket,
+            'complete_ticket_revert',
+            "Complete ticket reverted to initial state for Ticket #{$arrivalTicket->unique_no}",
+            $oldData,
+            null
+        );
     }
 
     /**
@@ -1081,6 +1223,12 @@ class ArrivalMasterRevertController extends Controller
                 $ticketUpdates[$field] = $validated[$field];
             }
         }
+
+        $oldTicket = $arrivalTicket->only($ticketFields);
+        $oldUnloading = $arrivalTicket->unloadingLocation ? $arrivalTicket->unloadingLocation->only(['arrival_location_id']) : null;
+        $oldFirstW = $arrivalTicket->firstWeighbridge ? $arrivalTicket->firstWeighbridge->only(['weight']) : null;
+        $oldSecondW = $arrivalTicket->secondWeighbridge ? $arrivalTicket->secondWeighbridge->only(['weight']) : null;
+        $oldApprovals = $arrivalTicket->approvals ? $arrivalTicket->approvals->only(['gala_id', 'bag_type_id', 'filling_bags_no', 'bag_condition_id', 'bag_packing_id', 'total_bags', 'total_rejection', 'amanat', 'remark', 'note']) : null;
 
         if (!empty($ticketUpdates)) {
             $arrivalTicket->update($ticketUpdates);
@@ -1148,36 +1296,37 @@ class ArrivalMasterRevertController extends Controller
             }
         }
 
-        $this->logRevertAction($arrivalTicket, 'master_update', 'Master data updated via revert controller');
+        $this->logRevertAction(
+            $arrivalTicket,
+            'master_update',
+            "Master data updated via Master Control for Ticket #{$arrivalTicket->unique_no}",
+            [
+                'ticket' => $oldTicket,
+                'unloading_location' => $oldUnloading,
+                'first_weighbridge' => $oldFirstW,
+                'second_weighbridge' => $oldSecondW,
+                'approvals' => $oldApprovals,
+            ],
+            $validated
+        );
     }
 
     /**
      * Log revert actions for audit trail
      */
-    private function logRevertAction($model, $actionType, $description)
+    private function logRevertAction($model, $actionType, $description, ?array $oldValues = null, ?array $newValues = null)
     {
-
-        //dd($arrivalTicket->getOriginal(),$arrivalTicket->getAttributes());
-        // You can create an audit log model or use activity logs
         try {
-            $data = [
-                'user_id' => auth()->user()->id,
-                'action' => $actionType,
-                'description' => $description,
-                'model_type' => get_class($model),
-                'model_id' => $model->id,
-                'old_values' => json_encode($model->getOriginal()),
-                'new_values' => json_encode($model->getAttributes()),
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent()
-            ];
-
-            $d = AuditLog::create($data);
-
+            AuditLogService::log(
+                $model,
+                $actionType,
+                $description,
+                $oldValues,
+                $newValues,
+                auth()->id() ?? 1
+            );
         } catch (\Exception $e) {
-            dd($e->getMessage());
             \Log::error('Audit Log Error: ' . $e->getMessage());
-            \Log::info('=== AUDIT LOG DEBUG END WITH ERROR ===');
         }
     }
 
