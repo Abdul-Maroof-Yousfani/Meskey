@@ -37,14 +37,14 @@ $userLocation = $authUser->companyLocation ?? null;
                 <div class="form-group">
                     <div class="lock-arrival-wrapper">
                         <div class="lock-arrival-header">
-                            <label class="lock-arrival-label" for="decision_making_initial">
-                                <i class="ft-lock"></i>
+                            <label class="lock-arrival-label" for="is_arrival_lock">
+                                <i class="ft-lock lock-icon"></i>
                                 Lock Arrival
                             </label>
                             <div class="custom-control custom-switch lock-arrival-switch">
-                                <input type="checkbox" name="decision_making_initial" value="1" class="custom-control-input"
-                                    id="decision_making_initial">
-                                <label class="custom-control-label" for="decision_making_initial"></label>
+                                <input type="checkbox" name="is_arrival_lock" value="1" class="custom-control-input"
+                                    id="is_arrival_lock">
+                                <label class="custom-control-label" for="is_arrival_lock"></label>
                             </div>
                         </div>
                         <p class="lock-arrival-description">
@@ -402,6 +402,10 @@ $userLocation = $authUser->companyLocation ?? null;
         $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
 
         $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
+
+        $(document).on('change', '#is_arrival_lock', function () {
+            $(this).closest('.lock-arrival-wrapper').toggleClass('active', $(this).is(':checked'));
+        });
 
         initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
         //  initializeDynamicSelect2('#product_id', 'products', 'name', 'id', false, false);

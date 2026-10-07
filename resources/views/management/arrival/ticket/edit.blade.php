@@ -5,6 +5,34 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
     <div class="row form-mar">
 
+        @if (auth()->user()->user_type == 'super-admin')
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="form-group">
+                    <div class="lock-arrival-wrapper {{ $arrivalTicket->is_arrival_lock ? 'active' : '' }}">
+                        <div class="lock-arrival-header">
+                            <label class="lock-arrival-label" for="is_arrival_lock">
+                                <i class="ft-lock lock-icon"></i>
+                                <span id="lock_status_text">{{ $arrivalTicket->is_arrival_lock ? 'Arrival Locked' : 'Lock Arrival' }}</span>
+                            </label>
+                            <div class="custom-control custom-switch lock-arrival-switch">
+                                <input type="checkbox" name="is_arrival_lock" value="1" class="custom-control-input"
+                                    id="is_arrival_lock" @checked($arrivalTicket->is_arrival_lock)>
+                                <label class="custom-control-label" for="is_arrival_lock"></label>
+                            </div>
+                        </div>
+                        <p class="lock-arrival-description">
+                            <i class="fas fa-circle-info"></i>
+                            <span id="lock_description_text">
+                                {{ $arrivalTicket->is_arrival_lock 
+                                    ? 'Uncheck this switch to unlock the arrival and allow further processing.' 
+                                    : 'Lock the arrival to reserve this ticket number. Once locked, no further processing will be done — it is only for booking the ticket number.' }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Location:</label>
@@ -310,6 +338,18 @@
 
         $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
         $(document).on('change', '[name="sample_money_type"]', calculateSampleMoney);
+
+        $(document).on('change', '#is_arrival_lock', function () {
+            const isChecked = $(this).is(':checked');
+            $(this).closest('.lock-arrival-wrapper').toggleClass('active', isChecked);
+            if (isChecked) {
+                $('#lock_status_text').text('Arrival Locked');
+                $('#lock_description_text').text('Uncheck this switch to unlock the arrival and allow further processing.');
+            } else {
+                $('#lock_status_text').text('Unlock Arrival (Will be unlocked on save)');
+                $('#lock_description_text').text('Saving this form will unlock the arrival and record unlocked timestamp.');
+            }
+        });
 
         initializeDynamicSelect2('#miller_id', 'millers', 'name', 'name', true, false);
         initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);

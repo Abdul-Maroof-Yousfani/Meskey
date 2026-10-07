@@ -93,6 +93,8 @@ Route::post('/supplier/import-row', [SupplierController::class, 'importRow'])->n
 Route::resource('supplier', SupplierController::class);
 Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
 
+Route::get('/customer/import-modal', [CustomerController::class, 'importModal'])->name('customer.import-modal');
+Route::post('/customer/import-row', [CustomerController::class, 'importRow'])->name('customer.import-row');
 Route::resource('customer', CustomerController::class);
 Route::post('/get-customer', [CustomerController::class, 'getList'])->name('get.customer');
 

@@ -284,6 +284,17 @@ class TicketController extends Controller
         $requestData['truck_type_id'] = $requestData['arrival_truck_type_id'] ?? null;
         $requestData['sauda_type_id'] = $request->sauda_type_id ?? null;
 
+        $isLock = $request->boolean('is_arrival_lock');
+        if ($isLock) {
+            $requestData['is_arrival_lock'] = 1;
+            $requestData['locked_at'] = now();
+            $requestData['unlocked_at'] = null;
+        } else {
+            $requestData['is_arrival_lock'] = null;
+            $requestData['locked_at'] = null;
+            $requestData['unlocked_at'] = null;
+        }
+
         $arrivalTicket = ArrivalTicket::create($requestData);
 
         return response()->json([
@@ -574,6 +585,18 @@ class TicketController extends Controller
         }
 
         $requestData['loading_date'] = !empty($requestData['loading_date']) ? $requestData['loading_date'] : null;
+
+        $isLock = $request->boolean('is_arrival_lock');
+        if ($arrivalTicket->is_arrival_lock && !$isLock) {
+            // Unlocked on edit: record unlocked_at, clear lock flags
+            $requestData['is_arrival_lock'] = null;
+            $requestData['locked_at'] = null;
+            $requestData['unlocked_at'] = now();
+        } elseif ($isLock) {
+            $requestData['is_arrival_lock'] = 1;
+            $requestData['locked_at'] = $arrivalTicket->locked_at ?? now();
+            $requestData['unlocked_at'] = null;
+        }
 
         $arrivalTicket->update($requestData);
 
