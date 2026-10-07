@@ -11,7 +11,8 @@ use App\Http\Controllers\Reports\Arrival\{
     StationWiseQCAnalysisReportController,
     CustomQcSampleReportController,
     TruckSummaryReportController,
-    WeightDifferenceController
+    WeightDifferenceController,
+    SamplingWorkflowTurnaroundReportController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +44,9 @@ Route::prefix('arrival')->group(function () {
 
   Route::resource('arrival-weight-report', WeightDifferenceController::class);
   Route::post('/get-arrival-weight', [WeightDifferenceController::class, 'getList'])->name('reports.arrival.get.arrival-weight');
+
+  Route::resource('sampling-workflow-turnaround', SamplingWorkflowTurnaroundReportController::class);
+  Route::post('/get-sampling-workflow-turnaround', [SamplingWorkflowTurnaroundReportController::class, 'getList'])->name('reports.arrival.get.sampling-workflow-turnaround');
 });
 
 
