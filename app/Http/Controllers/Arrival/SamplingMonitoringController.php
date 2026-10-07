@@ -422,7 +422,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction' => (float) $request->lumpsum_deduction ?? 0.00,
                 'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
-                'decision_making_time' => now(),
+                'approved_at' => now(),
             ]);
 
             $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
@@ -583,7 +583,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction_maund' => (float) $request->lumpsum_deduction_maund ?? 0.00,
                 'lumpsum_deduction_kgs_maund' => (float) $request->lumpsum_deduction_kgs_maund ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
-                'decision_making_time' => now(),
+                'approved_at' => now(),
             ]);
 
             $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();

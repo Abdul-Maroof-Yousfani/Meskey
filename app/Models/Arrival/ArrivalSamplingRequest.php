@@ -38,11 +38,13 @@ class ArrivalSamplingRequest extends Model
         'is_auto_approved',
         'purchaser_remarks',
         'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'decision_making_time' => 'datetime',
         'result_posted_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     /**
