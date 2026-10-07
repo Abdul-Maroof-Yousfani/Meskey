@@ -631,26 +631,53 @@ function filterationCommon(
     const urlParams = new URLSearchParams(window.location.search);
     const newParams = new URLSearchParams(formData);
 
-    for (const [key, value] of newParams) {
-      urlParams.delete(key);
+    // Collect base names of all fields present in the filter form
+    const formFieldBaseNames = new Set();
+    $form.find("[name]").each(function () {
+      const name = $(this).attr("name");
+      if (name && name !== "generatebtn" && name !== "_token") {
+        formFieldBaseNames.add(name);
+        formFieldBaseNames.add(name.replace(/\[\]$/, ""));
+      }
+    });
+
+    // Remove any parameter in urlParams that belongs to this form
+    const keysToDelete = [];
+    for (const key of urlParams.keys()) {
+      const baseKey = key.replace(/\[\d*\]$/, "");
+      if (formFieldBaseNames.has(key) || formFieldBaseNames.has(baseKey)) {
+        keysToDelete.push(key);
+      }
     }
+    keysToDelete.forEach(function (key) {
+      urlParams.delete(key);
+    });
+
+    for (const [key] of newParams) {
+      if (key !== "generatebtn" && key !== "_token") {
+        urlParams.delete(key);
+      }
+    }
+
     // Handle array parameters like commodity_id[]
     for (const [key, value] of newParams) {
-      if (key.endsWith("[]")) {
-        if (value) {
+      if (key === "generatebtn" || key === "_token") {
+        continue;
+      }
+      if (value !== null && value !== undefined && value.toString().trim() !== "") {
+        if (key.endsWith("[]")) {
           // Add new value to array parameter
           urlParams.append(key, value);
-        }
-      } else {
-        if (value) {
-          urlParams.set(key, value);
         } else {
-          urlParams.delete(key);
+          urlParams.set(key, value);
         }
       }
     }
 
-    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    const queryString = urlParams.toString();
+    const newUrl = queryString
+      ? `${window.location.pathname}?${queryString}`
+      : window.location.pathname;
     window.history.pushState(null, "", newUrl);
   }
 
@@ -2236,26 +2263,45 @@ function filterationCommon_withbtn(
     const newParams =
       new URLSearchParams(formData);
 
-    // Remove existing parameters
-    for (const [key] of newParams) {
+    // Collect base names of all fields present in the filter form
+    const formFieldBaseNames = new Set();
+    $form.find("[name]").each(function () {
+      const name = $(this).attr("name");
+      if (name && name !== "generatebtn" && name !== "_token") {
+        formFieldBaseNames.add(name);
+        formFieldBaseNames.add(name.replace(/\[\]$/, ""));
+      }
+    });
+
+    // Remove any parameter in urlParams that belongs to this form
+    const keysToDelete = [];
+    for (const key of urlParams.keys()) {
+      const baseKey = key.replace(/\[\d*\]$/, "");
+      if (formFieldBaseNames.has(key) || formFieldBaseNames.has(baseKey)) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(function (key) {
       urlParams.delete(key);
+    });
+
+    for (const [key] of newParams) {
+      if (key !== "generatebtn" && key !== "_token") {
+        urlParams.delete(key);
+      }
     }
 
     // Add new parameters
     for (const [key, value] of newParams) {
+      if (key === "generatebtn" || key === "_token") {
+        continue;
+      }
 
-      if (key.endsWith("[]")) {
-
-        if (value) {
+      if (value !== null && value !== undefined && value.toString().trim() !== "") {
+        if (key.endsWith("[]")) {
           urlParams.append(key, value);
-        }
-
-      } else {
-
-        if (value) {
-          urlParams.set(key, value);
         } else {
-          urlParams.delete(key);
+          urlParams.set(key, value);
         }
       }
     }

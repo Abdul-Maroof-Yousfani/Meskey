@@ -24,8 +24,11 @@ class ArrivalTicketRequest extends FormRequest
      */
     public function rules(): array
     {
+        $ticket = $this->route('ticket');
+        $ticketId = $ticket ? ($ticket instanceof ArrivalTicket ? $ticket->id : $ticket) : null;
+
         return [
-            'unique_no' => 'nullable|string|max:255|unique:arrival_tickets,unique_no,NULL,id,company_id,' . $this->company_id,
+            'unique_no' => 'nullable|string|max:255|unique:arrival_tickets,unique_no,' . ($ticketId ?? 'NULL') . ',id,company_id,' . $this->company_id,
             'company_location_id' => 'required',
             'company_id' => 'required|exists:companies,id',
             'product_id' => 'required|exists:products,id',
@@ -66,7 +69,7 @@ class ArrivalTicketRequest extends FormRequest
     protected function validateTruckNumberFormat($attribute, $value, $fail)
     {
         $truckNo = strtoupper($value);
-        $truckFormat = Auth::user()->companyLocation->truck_no_format ?? 0;
+        $truckFormat = Auth::user()?->companyLocation->truck_no_format ?? 0;
 
         if ($truckFormat === 1 && !preg_match('/^[A-Z]+-\d+$/', $truckNo)) {
             $fail('Truck number must contain alphabets followed by a dash and then numbers (e.g., ABC-123)');
@@ -78,8 +81,14 @@ class ArrivalTicketRequest extends FormRequest
      */
     protected function validateUniqueTruckBiltyCombination($attribute, $value, $fail)
     {
+        $ticket = $this->route('ticket');
+        $ticketId = $ticket ? ($ticket instanceof ArrivalTicket ? $ticket->id : $ticket) : null;
+
         $existingTicket = ArrivalTicket::where('truck_no', strtoupper($value))
             ->where('bilty_no', $this->bilty_no)
+            ->when($ticketId, function ($query) use ($ticketId) {
+                $query->where('id', '!=', $ticketId);
+            })
             ->first();
 
         if ($existingTicket) {
@@ -95,8 +104,13 @@ class ArrivalTicketRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
+        $ticket = $this->route('ticket');
+        $ticketId = $ticket ? ($ticket instanceof ArrivalTicket ? $ticket->id : $ticket) : null;
+        $ticketModel = $ticket instanceof ArrivalTicket ? $ticket : ($ticketId ? ArrivalTicket::find($ticketId) : null);
+
         $this->merge([
             'truck_no' => strtoupper($this->truck_no),
+            'company_id' => $this->company_id ?? auth()->user()?->current_company_id ?? $ticketModel?->company_id,
             // 'company_location_id' => $this->company_location_id ?? auth()->user()->company_location_id
         ]);
     }

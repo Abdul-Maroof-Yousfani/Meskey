@@ -1376,6 +1376,16 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('arrival-weight-difference-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('arrival-weight-report.index') }}"
+                                    onclick="loadPageContent('{{ route('arrival-weight-report.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Arrival Weight Difference Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess
