@@ -34,6 +34,10 @@ class ArrivalSamplingRequest extends Model
         'lumpsum_deduction_kgs_maund',
         'lumpsum_deduction_kgs',
         'result_posted_at',
+        'is_request_by_purchaser',
+        'is_auto_approved',
+        'purchaser_remarks',
+        'approved_by',
     ];
 
     protected $casts = [
