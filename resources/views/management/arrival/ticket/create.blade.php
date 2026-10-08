@@ -32,30 +32,28 @@ $userLocation = $authUser->companyLocation ?? null;
                 </div>
             </div>
         @endif -->
-        @if (auth()->user()->user_type == 'super-admin')
-            <div class="col-xs-12 col-sm-12 col-md-12">
-                <div class="form-group">
-                    <div class="lock-arrival-wrapper">
-                        <div class="lock-arrival-header">
-                            <label class="lock-arrival-label" for="is_arrival_lock">
-                                <i class="ft-lock lock-icon"></i>
-                                Lock Arrival
-                            </label>
-                            <div class="custom-control custom-switch lock-arrival-switch">
-                                <input type="checkbox" name="is_arrival_lock" value="1" class="custom-control-input"
-                                    id="is_arrival_lock">
-                                <label class="custom-control-label" for="is_arrival_lock"></label>
-                            </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <div class="lock-arrival-wrapper">
+                    <div class="lock-arrival-header">
+                        <label class="lock-arrival-label" for="is_arrival_lock">
+                            <i class="ft-lock lock-icon"></i>
+                            Lock Arrival
+                        </label>
+                        <div class="custom-control custom-switch lock-arrival-switch">
+                            <input type="checkbox" name="is_arrival_lock" value="1" class="custom-control-input"
+                                id="is_arrival_lock">
+                            <label class="custom-control-label" for="is_arrival_lock"></label>
                         </div>
-                        <p class="lock-arrival-description">
-                            <i class="fas fa-circle-info"></i>
-                            Lock the arrival to reserve this ticket number. Once locked, no further processing will be done
-                            — it is only for booking the ticket number.
-                        </p>
                     </div>
+                    <p class="lock-arrival-description">
+                        <i class="fas fa-circle-info"></i>
+                        Lock the arrival to reserve this ticket number. Once locked, no further processing will be done
+                        — it is only for booking the ticket number.
+                    </p>
                 </div>
             </div>
-        @endif
+        </div>
 
 
         <div class="col-xs-12 col-sm-12 col-md-12">
