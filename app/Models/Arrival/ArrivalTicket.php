@@ -98,6 +98,8 @@ class ArrivalTicket extends Model
         'verify_at' => 'datetime',
         'contract_link_time' => 'datetime',
         'decision_making_time' => 'datetime',
+        'locked_at' => 'datetime',
+        'unlocked_at' => 'datetime',
     ];
 
     public function company()

@@ -1101,6 +1101,19 @@ th {
   background: #ffb5b5;
 }
 
+.sticky-table tr.bg-locked :is(th, td) {
+        background-color: #e9ecef !important;
+    }
+    .sticky-table tr.bg-locked:hover :is(th, td) {
+        background-color: #dfe3e8 !important;
+    }
+    .layout-dark .sticky-table tr.bg-locked :is(th, td) {
+        background-color: #2b3035 !important;
+    }
+    .layout-dark .sticky-table tr.bg-locked:hover :is(th, td) {
+        background-color: #343a40 !important;
+    }
+
 .sticky-table th {
   position: sticky;
   top: 0;

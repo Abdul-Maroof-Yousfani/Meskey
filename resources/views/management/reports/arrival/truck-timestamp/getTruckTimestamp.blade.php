@@ -136,7 +136,7 @@
                 // Admin Edit
                 $adminEditTime = '';
                 $adminEditBy = '';
-                if ($row->latestAuditLog) {
+                if ($row->latestAuditLog && !in_array($row->latestAuditLog->action, ['arrival_ticket_created', 'arrival_ticket_created_locked'])) {
                     $adminEditTime = formatDateTime($row->latestAuditLog->created_at);
                     $adminEditBy = $row->latestAuditLog->user?->name ?? '';
                 }

@@ -33,10 +33,18 @@ class ArrivalSamplingRequest extends Model
         'lumpsum_deduction_maund',
         'lumpsum_deduction_kgs_maund',
         'lumpsum_deduction_kgs',
+        'result_posted_at',
+        'is_request_by_purchaser',
+        'is_auto_approved',
+        'purchaser_remarks',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'decision_making_time' => 'datetime',
+        'result_posted_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     /**
@@ -85,6 +93,11 @@ class ArrivalSamplingRequest extends Model
     {
         return $this->hasMany(ArrivalSamplingResult::class, 'arrival_sampling_request_id', 'id')
             ->with('slabType');
+    }
+
+    public function arrivalSamplingResults()
+    {
+        return $this->hasMany(ArrivalSamplingResult::class, 'arrival_sampling_request_id', 'id');
     }
 
 }

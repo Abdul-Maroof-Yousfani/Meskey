@@ -1386,6 +1386,16 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('sampling-workflow-turnaround-time-analysis-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('sampling-workflow.index') }}"
+                                    onclick="loadPageContent('{{ route('sampling-workflow.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Sampling & Workflow Turnaround Time Analysis</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

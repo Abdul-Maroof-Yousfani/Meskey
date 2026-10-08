@@ -37,6 +37,7 @@ class ArrivalTicketRequest extends FormRequest
             'arrival_purchase_order_id' => 'nullable|exists:arrival_purchase_orders,id',
             'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',
+            'is_arrival_lock' => 'nullable',
             'truck_no' => [
                 'required',
                 'string',

@@ -124,6 +124,7 @@ class InitialSamplingController extends Controller
             'party_ref_no' => $request->party_ref_no ?? NULL,
             'sample_taken_by' => $request->sample_taken_by ?? NULL,
             'done_by' => auth()->user()->id,
+            'result_posted_at' => now(),
         ]);
 
         if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
