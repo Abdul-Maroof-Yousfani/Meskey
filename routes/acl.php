@@ -16,6 +16,9 @@ Route::get('/check-username', [UserController::class, 'checkUsernameAvailability
 
 Route::resource('company', CompanyController::class);
 Route::post('/get-company', [CompanyController::class, 'getList'])->name('get.company');
+Route::post('company/{company}/settings', [CompanyController::class, 'storeSetting'])->name('company.settings.store');
+Route::put('company/{company}/settings/{setting}', [CompanyController::class, 'updateSetting'])->name('company.settings.update');
+Route::delete('company/{company}/settings/{setting}', [CompanyController::class, 'destroySetting'])->name('company.settings.destroy');
 
 Route::resource('menu', MenuController::class);
 Route::post('/get-menu', [MenuController::class, 'getList'])->name('get.menu');

@@ -17,6 +17,7 @@ use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Production\JobOrder\JobOrderPackingItem;
 use App\Models\Production\JobOrder\JobOrderPackingSubItem;
 use App\Models\Master\ArrivalLocation;
+use App\Models\Acl\Company;
 
 use Carbon\Carbon;
 
@@ -74,21 +75,20 @@ class BagRequestController extends Controller
     {
         DB::beginTransaction();
         try {
+            $companyId = $request->company_id 
+                ?? auth()->user()?->current_company_id 
+                ?? ($request->company_location_id ? CompanyLocation::find($request->company_location_id)?->company_id : null)
+                ?? session('current_company_id') 
+                ?? 1;
+
+            $company = Company::find($companyId);
+            $stockCheckSetting = $company ? $company->settings()->where('key', 'stock_check')->first() : null;
+            $isStockCheckRequired = $stockCheckSetting && filter_var($stockCheckSetting->value, FILTER_VALIDATE_BOOLEAN);
+
             $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
 
-            $bagRequest = BagRequest::create([
-                'request_number' => $this->getNumber($request->request_date),
-                'request_date' => $request->request_date,
-                'arrival_location_id' => $request->arrival_location_id,
-                'gala_id' => $request->gala_id,
-                'job_order_ids' => $request->job_order_ids,
-                'remarks' => $request->remarks,
-                'company_id' => $request->company_id,
-                'company_location_id' => $request->company_location_id,
-                'created_by' => auth()->user()->id,
-            ]);
-
-            if ($request->has('items')) {
+            // Only check stock if stock_check setting exists and is enabled for this company
+            if ($request->has('items') && $isStockCheckRequired) {
                 // Aggregate quantities by item and brand to check total stock for this request
                 $aggregatedItems = collect($request->items)->groupBy(function($item) {
                     return $item['item_id'] . '-' . $item['brand_id'];
@@ -103,13 +103,31 @@ class BagRequestController extends Controller
                     
                     if ($available_stock < $totalRequested) {
                         DB::rollBack();
+                        $productName = optional($products->where("id", $first["item_id"])->first())->name ?? 'item';
                         return response()->json([
                             'status' => 'error',
-                            'message' => 'Insufficient stock for item ' . ($products->where("id", $first["item_id"])->first())->name . "\n Total Requested: " . $totalRequested . "\n Total Stock Available: " . $available_stock
-                        ], 500);
+                            'message' => 'Insufficient stock for item ' . $productName . "\n Total Requested: " . $totalRequested . "\n Total Stock Available: " . $available_stock,
+                            'errors' => [
+                                'stock' => ['Insufficient stock for item ' . $productName . '. Total Requested: ' . $totalRequested . ', Total Stock Available: ' . $available_stock]
+                            ]
+                        ], 422);
                     }
                 }
+            }
 
+            $bagRequest = BagRequest::create([
+                'request_number' => $this->getNumber($request->request_date),
+                'request_date' => $request->request_date,
+                'arrival_location_id' => $request->arrival_location_id,
+                'gala_id' => $request->gala_id,
+                'job_order_ids' => $request->job_order_ids,
+                'remarks' => $request->remarks,
+                'company_id' => $companyId,
+                'company_location_id' => $request->company_location_id,
+                'created_by' => auth()->user()->id,
+            ]);
+
+            if ($request->has('items')) {
                 foreach ($request->items as $item) {
                     $remainingToDistribute = $item['quantity'];
                     
@@ -317,12 +335,50 @@ class BagRequestController extends Controller
             $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
 
         $bagRequest = BagRequest::findOrFail($id);
+
+        $companyId = $bagRequest->company_id 
+            ?? $request->company_id 
+            ?? auth()->user()?->current_company_id 
+            ?? ($request->company_location_id ? CompanyLocation::find($request->company_location_id)?->company_id : null) 
+            ?? 1;
+
+        $company = Company::find($companyId);
+        $stockCheckSetting = $company ? $company->settings()->where('key', 'stock_check')->first() : null;
+        $isStockCheckRequired = $stockCheckSetting && filter_var($stockCheckSetting->value, FILTER_VALIDATE_BOOLEAN);
         
         // Validation: Ensure we don't reduce quantity below what's already issued
         if ($request->items) {
             foreach($request->items as $itemData) {
                 // This is complex because the items are mapped to JOs. 
                 // For now, I'll let the user edit but ideally we should validate.
+            }
+        }
+
+        // Only check stock if stock_check setting exists and is enabled for this company
+        if ($request->has('items') && $isStockCheckRequired) {
+            // Aggregate quantities by item and brand to check total stock for this request
+            $aggregatedItems = collect($request->items)->groupBy(function($item) {
+                return $item['item_id'] . '-' . $item['brand_id'];
+            });
+
+            foreach ($aggregatedItems as $key => $group) {
+                $first = $group->first();
+                $totalRequested = $group->sum('quantity');
+                
+                // We are checking that we have stock of the item in the gala
+                $available_stock = getStockByItem($first['item_id'], $first['brand_id'], $request->gala_id);
+                
+                if ($available_stock < $totalRequested) {
+                    DB::rollBack();
+                    $productName = optional($products->where("id", $first["item_id"])->first())->name ?? 'item';
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Insufficient stock for item ' . $productName . "\n Total Requested: " . $totalRequested . "\n Total Stock Available: " . $available_stock,
+                        'errors' => [
+                            'stock' => ['Insufficient stock for item ' . $productName . '. Total Requested: ' . $totalRequested . ', Total Stock Available: ' . $available_stock]
+                        ]
+                    ], 422);
+                }
             }
         }
 
@@ -339,27 +395,6 @@ class BagRequestController extends Controller
             // Sync items
             $bagRequest->items()->delete();
             if ($request->has('items')) {
-                // Aggregate quantities by item and brand to check total stock for this request
-                $aggregatedItems = collect($request->items)->groupBy(function($item) {
-                    return $item['item_id'] . '-' . $item['brand_id'];
-                });
-
-                foreach ($aggregatedItems as $key => $group) {
-                    $first = $group->first();
-                    $totalRequested = $group->sum('quantity');
-                    
-                    // We are checking that we have stock of the item in the gala
-                    $available_stock = getStockByItem($first['item_id'], $first['brand_id'], $request->gala_id);
-                    
-                    if ($available_stock < $totalRequested) {
-                        DB::rollBack();
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'Insufficient stock for item ' . ($products->where("id", $first["item_id"])->first())->name . "\n Total Requested: " . $totalRequested . "\n Total Stock Available: " . $available_stock
-                        ], 500);
-                    }
-                }
-
                 foreach ($request->items as $item) {
                     $remainingToDistribute = $item['quantity'];
                     

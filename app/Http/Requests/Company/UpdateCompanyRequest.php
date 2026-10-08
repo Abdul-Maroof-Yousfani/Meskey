@@ -30,6 +30,8 @@ class UpdateCompanyRequest extends FormRequest
             'stn' => 'nullable|string|max:255',
             'app_key' => 'nullable|string|max:255',
             'status' => 'nullable|integer|in:1,2',
+            'settings' => 'nullable|array',
+            'deleted_settings' => 'nullable|string',
         ];
     }
 
