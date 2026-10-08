@@ -183,7 +183,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -197,10 +197,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    },
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            },
                 @endif
             @endforeach
         ],
@@ -283,7 +283,7 @@
                 <div class="form-group">
                     <label>Arrival Date</label>
                     <input type="text" class="form-control" name="loading_date"
-                        value="{{ $arrivalTicket && $arrivalTicket->freight->created_at ? $arrivalTicket->freight->created_at->format('d-M-Y') : 'N/A' }}"
+                        value="{{ $arrivalTicket && $arrivalTicket->created_at ? $arrivalTicket->created_at->format('d-M-Y') : 'N/A' }}"
                         readonly>
                 </div>
             </div>
