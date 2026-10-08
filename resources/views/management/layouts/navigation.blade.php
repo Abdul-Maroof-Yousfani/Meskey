@@ -1396,6 +1396,16 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('gala-qc-analysis-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('gala-qc.index') }}"
+                                    onclick="loadPageContent('{{ route('gala-qc.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Gala QC Analysis Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess
