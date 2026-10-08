@@ -115,7 +115,7 @@ trait HasApprovalSalesOrder
     }
 
     /**
-     * Check if a user has Local-Sales permission.
+     * Check if a user has Sale Order Approval permission.
      */
     public function userHasSalesOrderPermission(User $user): bool
     {
@@ -123,7 +123,7 @@ trait HasApprovalSalesOrder
             return true;
         }
 
-        return $user->can('local-sales') || $user->can('sale-order');
+        return $user->can('sale-order-approval');
     }
 
     /**
@@ -168,7 +168,7 @@ trait HasApprovalSalesOrder
                     return true;
                 }
 
-                // 2. Any other child user under the same parent who has local-sales / sale-order permission
+                // 2. Any other child user under the same parent who has sale-order-approval permission
                 if ($user->parent_user_id == $parentId && $this->userHasSalesOrderPermission($user)) {
                     return true;
                 }

@@ -143,12 +143,14 @@
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                             <div class="btn-group" role="group">
 
-                                @canAccess('sale-order-list')
+                                @if(canAccess('sale-order-list') || (auth()->check() && (auth()->user()->can('sale-order-list'))))
                                 <a class="btn btn-sm btn-info"
                                     onclick="openModal(this,'{{ route('sales.sale-order.view', ['id' => $group['id']]) }}','View Sales Order', false, '90%')"
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                @endif
+                                @canAccess('sale-order-list')
                                 <button type="button" class="btn btn-sm btn-secondary"
                                     onclick="openModal(this,'{{ route('sales.sale-order.do-stats', ['id' => $group['id']]) }}','Delivery Order Stats - SO #{{ $group['so_no'] }}', false, '80%')"
                                     title="DO Stats" style="margin-right: 10px;">
