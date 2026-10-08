@@ -29,29 +29,29 @@
     $userLocation = $authUser->companyLocation ?? null;
 
     // $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', $userLocation->code) : '';
-                                                                                         ?>
+                                                                                                     ?>
 
                                                 <!-- @if ($isRegularUser)
-                                                                                        <div class="col-xs-12 col-sm-12 col-md-12">
-                                                                                            <div class="form-group">
-                                                                                                <label>Location:</label>
-                                                                                                <input type="text" class="form-control" value="{{ $userLocation->name ?? 'N/A' }}" disabled>
-                                                                                                <input type="hidden" name="company_location_id" value="{{ $userLocation->id ?? null }}" id="">
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    @else
-                                                                                        <div class="col-xs-12 col-sm-12 col-md-12">
-                                                                                            <div class="form-group">
-                                                                                                <label>Location:</label>
-                                                                                                <select name="company_location_id" id="company_location_id" class="form-control select2">
-                                                                                                    <option value="">Select Location</option>
-                                                                                                    @foreach ($companyLocations as $location)
-                                                                                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                                                                                    @endforeach
-                                                                                                </select>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    @endif -->
+                                                                                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                                                                                        <div class="form-group">
+                                                                                                            <label>Location:</label>
+                                                                                                            <input type="text" class="form-control" value="{{ $userLocation->name ?? 'N/A' }}" disabled>
+                                                                                                            <input type="hidden" name="company_location_id" value="{{ $userLocation->id ?? null }}" id="">
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                @else
+                                                                                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                                                                                        <div class="form-group">
+                                                                                                            <label>Location:</label>
+                                                                                                            <select name="company_location_id" id="company_location_id" class="form-control select2">
+                                                                                                                <option value="">Select Location</option>
+                                                                                                                @foreach ($companyLocations as $location)
+                                                                                                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                                                                                @endforeach
+                                                                                                            </select>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                @endif -->
                                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                                     <div class="form-group">
                                                         <div class="lock-arrival-wrapper">
@@ -102,7 +102,7 @@
                                                                     No#</button>
                                                             </div>
                                                             <!-- <input type="text" disabled class="form-control" name="unique_no" value=""
-                                                                                                    placeholder="Select Location"> -->
+                                                                                                                placeholder="Select Location"> -->
                                                             <input type="text" disabled class="form-control"
                                                                 name="unique_no" value="" placeholder="Select Location">
                                                         </div>
@@ -323,7 +323,7 @@
 
                                             <div class="row bottom-button-bar">
                                                 <div class="col-12">
-                                                    <a type="button"
+                                                    <a href="{{ route('ticket.index') }}"
                                                         class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
                                                     <button type="submit" class="btn btn-primary submitbutton">Save</button>
                                                 </div>
@@ -640,14 +640,14 @@
                     $.each(data.contracts, function (index, contract) {
                         $('#arrival_purchase_order_id').append(
                             `<option value="${contract.id}"
-                                            data-product-id="${contract.product_id}"
-                                            data-supplier-id="${contract.supplier.company_name}"
-                                            data-decision-id="${contract.decision_of_id}"
-                                            data-sauda-type-id="${contract.sauda_type_id}"
-                                            data-sauda-type-name="${contract.sauda_type?.name ?? 'N/A'}"
-                                            >
-                                            #${contract.contract_no} - Sauda Type: ${contract.sauda_type?.name ?? 'N/A'} - Purchase Type: ${contract.purchase_type?.toUpperCase() ?? 'N/A'}
-                                        </option>`
+                                                        data-product-id="${contract.product_id}"
+                                                        data-supplier-id="${contract.supplier.company_name}"
+                                                        data-decision-id="${contract.decision_of_id}"
+                                                        data-sauda-type-id="${contract.sauda_type_id}"
+                                                        data-sauda-type-name="${contract.sauda_type?.name ?? 'N/A'}"
+                                                        >
+                                                        #${contract.contract_no} - Sauda Type: ${contract.sauda_type?.name ?? 'N/A'} - Purchase Type: ${contract.purchase_type?.toUpperCase() ?? 'N/A'}
+                                                    </option>`
                         );
                     });
                 });
@@ -705,6 +705,6 @@
                 //          }
                 //      });
             @endif
-                         });
+                                     });
     </script>
 @endsection

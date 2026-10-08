@@ -11,11 +11,15 @@
                     <h2 class="page-title mb-0"> {{ $isResampling ? 'Initial Re-Sampling' : 'Initial Sampling' }} </h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6">
-                    <button
-                        onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}','{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}')"
-                        type="button" class="btn btn-primary position-relative ">
+                    <!-- <button
+                                        onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}','{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}')"
+                                        type="button" class="btn btn-primary position-relative ">
+                                        {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
+                                    </button> -->
+                    <a href="{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}"
+                        class="btn btn-primary position-relative ">
                         {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="row">
