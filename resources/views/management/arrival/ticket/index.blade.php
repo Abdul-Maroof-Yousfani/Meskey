@@ -10,10 +10,13 @@
                     <h2 class="page-title mb-0"> Ticket List</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 text-right">
-                    <button onclick="openModal(this,'{{ route('ticket.create') }}','Add Ticket')" type="button"
-                        class="btn btn-primary position-relative ">
+                    <!-- <button onclick="openModal(this,'{{ route('ticket.create') }}?quick=1','Add Ticket')" type="button"
+                                    class="btn btn-primary position-relative ">
+                                    Quick Create Ticket
+                                </button> -->
+                    <a href="{{ route('ticket.create') }}" class="btn btn-primary position-relative ">
                         Create Ticket
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="row">
