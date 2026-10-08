@@ -639,7 +639,7 @@ class PurchaseOrderController extends Controller
         ]);
 
         $locationId = (string) $request->location_id;
-        $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
+        $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->where('status', 'active')->get();
 
         $suppliers = $suppliers->map(function ($supplier) {
             return [
