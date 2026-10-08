@@ -18,6 +18,10 @@
                             data-product-id="{{ optional($samplingRequest->arrivalTicket)->qc_product }}"
                             data-ticket-id="{{ optional($samplingRequest->arrivalTicket)->id }}">
                             Ticket No: {{ $samplingRequest->arrivalTicket->unique_no }}
+
+                            @if ($samplingRequest->arrivalTicket->is_arrival_lock == 1)
+                                (Locked)
+                            @endif
                             {{-- Truck No: {{ $samplingRequest->arrivalTicket->truck_no ?? '-' }} --}}
                         </option>
                     @endforeach
