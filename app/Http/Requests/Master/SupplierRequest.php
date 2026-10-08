@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Master;
 
+use App\Models\Master\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,23 +13,64 @@ class SupplierRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('company_id') || empty($this->company_id)) {
+            $companyId = auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1;
+            $this->merge(['company_id' => $companyId]);
+        }
+    }
+
     public function rules(): array
     {
+        $companyId = $this->input('company_id') ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+        $supplierParam = $this->route('supplier');
+        $supplierId = $supplierParam instanceof Supplier
+            ? $supplierParam->id
+            : ($supplierParam ?? $this->supplier);
+
+        $checkDuplicateSupplier = function ($attribute, $value, $fail) use ($companyId, $supplierId) {
+            $companyName = trim($this->input('company_name') ?? '');
+            $ownerName = trim($this->input('owner_name') ?? '');
+
+            if ($companyName === '' || $ownerName === '') {
+                return;
+            }
+
+            // Strict check: Same company_name with same owner_name cannot be duplicated
+            $exists = Supplier::where('company_id', $companyId)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                ->when($supplierId, function ($q) use ($supplierId) {
+                    $q->where('id', '!=', $supplierId);
+                })
+                ->exists();
+
+            if ($exists) {
+                $fail("A supplier with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.");
+            }
+        };
+
         return [
             'company_id' => 'required|exists:companies,id',
             'type' => 'required|in:raw_material,store_supplier',
-            'unique_no' => 'nullable|string|max:255|unique:suppliers,unique_no',
+            'unique_no' => 'nullable|string|max:255|unique:suppliers,unique_no' . ($supplierId ? ",$supplierId" : ''),
             'company_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('suppliers', 'company_name')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->supplier)
+                $checkDuplicateSupplier,
             ],
-            // 'company_name' => 'required|string|max:255',
             // 'account_type' => 'required|in:credit,debit',
-            'owner_name' => 'required|string|max:255',
+            'owner_name' => [
+                'required',
+                'string',
+                'max:255',
+                $checkDuplicateSupplier,
+            ],
             'owner_mobile_no' => 'required|string|max:11|regex:/^[0-9]{11}$/',
             'owner_cnic_no' => 'required|string|regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/',
             'next_to_kin' => 'nullable|string|max:255',

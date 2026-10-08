@@ -57,6 +57,16 @@ class DeliveryChallanController extends Controller
             }
         }
 
+        if ($delivery_challan->created_by_id == $authUser->id) {
+            return true;
+        }
+
+        if ($delivery_challan->delivery_order()->whereHas('salesOrder', function ($q) use ($authUser) {
+            $q->where('created_by', $authUser->id);
+        })->exists()) {
+            return true;
+        }
+
         $userLocations = $this->getUserArrivalLocations();
         if (empty($userLocations)) {
             return false;
@@ -99,13 +109,19 @@ class DeliveryChallanController extends Controller
 
         $dcQuery = DeliveryChallan::query();
         if (!$isSuperAdmin && !$isApprover) {
-            $dcQuery->where(function($q) use ($locations) {
-                foreach ($locations as $locId) {
-                    $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+            $dcQuery->where(function($q) use ($locations, $authUser) {
+                if (!empty($locations)) {
+                    foreach ($locations as $locId) {
+                        $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+                    }
+                    $q->orWhereHas('delivery_challan_data.loadingProgramItem', function($sq) use ($locations) {
+                        $sq->whereIn('arrival_location_id', $locations);
+                    });
                 }
-                $q->orWhereHas('delivery_challan_data.loadingProgramItem', function($sq) use ($locations) {
-                    $sq->whereIn('arrival_location_id', $locations);
-                });
+                $q->orWhere('created_by_id', $authUser->id)
+                  ->orWhereHas('delivery_order.salesOrder', function ($soQ) use ($authUser) {
+                      $soQ->where('created_by', $authUser->id);
+                  });
             });
         }
 
@@ -887,13 +903,18 @@ class DeliveryChallanController extends Controller
 
         // Eager load the inquiry + all its items + related product
         $delivery_challans = DeliveryChallan::with(['delivery_order', 'delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
-            ->when(!$isSuperAdmin && !$isApprover, function ($query) use ($locations) {
-                $query->where(function ($q) use ($locations) {
-                    foreach ($locations as $locId) {
-                        $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+            ->when(!$isSuperAdmin && !$isApprover, function ($query) use ($locations, $authUser) {
+                $query->where(function ($q) use ($locations, $authUser) {
+                    if (!empty($locations)) {
+                        foreach ($locations as $locId) {
+                            $q->orWhereRaw("FIND_IN_SET(?, arrival_id)", [$locId]);
+                        }
+                        $q->orWhereHas('delivery_challan_data.loadingProgramItem', function ($sq) use ($locations) {
+                            $sq->whereIn('arrival_location_id', $locations);
+                        });
                     }
-                    $q->orWhereHas('delivery_challan_data.loadingProgramItem', function ($sq) use ($locations) {
-                        $sq->whereIn('arrival_location_id', $locations);
+                    $q->orWhereHas('delivery_order.salesOrder', function ($soQ) use ($authUser) {
+                        $soQ->where('created_by', $authUser->id);
                     });
                 });
             })
@@ -944,7 +965,12 @@ class DeliveryChallanController extends Controller
                 });
             })
             ->when(!$isSuperAdmin && !$isApprover, function ($q) use ($authUser) {
-                return $q->where('created_by_id', $authUser->id);
+                return $q->where(function ($subQ) use ($authUser) {
+                    $subQ->where('created_by_id', $authUser->id)
+                        ->orWhereHas('delivery_order.salesOrder', function ($soQ) use ($authUser) {
+                            $soQ->where('created_by', $authUser->id);
+                        });
+                });
             })
             ->latest()
             ->paginate($perPage);

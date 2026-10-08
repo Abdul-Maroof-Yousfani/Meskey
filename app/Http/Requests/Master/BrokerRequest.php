@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Master;
 
+use App\Models\Master\Broker;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,22 +13,71 @@ class BrokerRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('company_id') || empty($this->company_id)) {
+            $companyId = auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1;
+            $this->merge(['company_id' => $companyId]);
+        }
+    }
+
     public function rules(): array
     {
+        $companyId = $this->input('company_id') ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+        $brokerParam = $this->route('broker');
+        $brokerId = $brokerParam instanceof Broker
+            ? $brokerParam->id
+            : ($brokerParam ?? $this->broker);
+
+        $checkDuplicateBroker = function ($attribute, $value, $fail) use ($companyId, $brokerId) {
+            $companyName = trim($this->input('company_name') ?? '');
+            $ownerName = trim($this->input('owner_name') ?? '');
+
+            if ($companyName === '' || $ownerName === '') {
+                return;
+            }
+
+            // Strict check: Same company_name with same owner_name cannot be duplicated
+            $exists = Broker::where('company_id', $companyId)
+                ->where(function ($q) use ($companyName, $ownerName) {
+                    $q->where(function ($sq) use ($companyName, $ownerName) {
+                        $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                           ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                    })
+                    ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                        $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                           ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                    });
+                })
+                ->when($brokerId, function ($q) use ($brokerId) {
+                    $q->where('id', '!=', $brokerId);
+                })
+                ->exists();
+
+            if ($exists) {
+                $fail("A broker with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.");
+            }
+        };
+
         return [
             'company_id' => 'required|exists:companies,id',
-            'unique_no' => 'nullable|string|max:255|unique:brokers,unique_no',
+            'unique_no' => 'nullable|string|max:255|unique:brokers,unique_no' . ($brokerId ? ",$brokerId" : ''),
             'company_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('brokers', 'company_name')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->broker)
+                $checkDuplicateBroker,
             ],
-            // 'company_name' => 'required|string|max:255',
             // 'account_type' => 'required|in:credit,debit',
-            'owner_name' => 'required|string|max:255',
+            'owner_name' => [
+                'required',
+                'string',
+                'max:255',
+                $checkDuplicateBroker,
+            ],
 
 
 

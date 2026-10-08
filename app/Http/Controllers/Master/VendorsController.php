@@ -84,18 +84,50 @@ class VendorsController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
+            $companyId = $request->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+            $companyName = trim($request->company_name);
+            $ownerName = trim($request->owner_name);
+
+            // Double-check duplicate vendor: same company_name AND same owner_name
+            $duplicateVendor = Vendor::where('company_id', $companyId)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                ->exists();
+
+            if ($duplicateVendor) {
+                return response()->json([
+                    'error' => "A vendor with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.",
+                    'errors' => ['company_name' => ["A vendor with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists."]],
+                ], 422);
+            }
+
+            $requestData['company_id'] = $companyId;
             $requestData['unique_no'] = generateUniqueNumber('vendors', null, null, 'unique_no');
-            $requestData['name'] = $request->company_name;
+            $requestData['name'] = $companyName;
+            $requestData['company_name'] = $companyName;
+            $requestData['owner_name'] = $ownerName;
             $requestData['company_location_ids'] = $request->company_location_ids;
             $requestData['arrival_location_ids'] = $request->arrival_location_ids;
 
-            if ($request->account_id) {
+            // COA Account Deduplication / Reuse
+            if (!empty($request->account_id)) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                //   $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+                $existingAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'vendors')
+                          ->orWhere('hierarchy_path', 'like', '2-4-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
 
-                $requestData['account_id'] = $account->id;
+                if ($existingAccount && !Vendor::where('account_id', $existingAccount->id)->exists()) {
+                    $requestData['account_id'] = $existingAccount->id;
+                } else {
+                    $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-4', 'vendors'));
+                    $requestData['account_id'] = $account->id;
+                }
             }
 
             $supplier = Vendor::create($requestData);
@@ -138,6 +170,12 @@ class VendorsController extends Controller
                 'success' => 'Vendor created successfully.',
                 'data' => []
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->validator->errors()->first(),
+                'errors' => $e->validator->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -189,39 +227,51 @@ class VendorsController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
-            if (empty($supplier->account_id)) {
+            $companyId = $request->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+            $companyName = trim($request->company_name);
+            $ownerName = trim($request->owner_name);
 
-                // $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+            // Double-check duplicate vendor
+            $duplicateVendor = Vendor::where('company_id', $companyId)
+                ->where('id', '!=', $supplier->id)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                ->exists();
 
-
-
-
-                $account = Account::firstOrCreate(
-                    [
-                        'company_id' => $request->company_id,
-                        'company_name' => $request->company_name,
-                        'hierarchy_path'
-
-                    ],
-                    getParamsForAccountCreationByPath(
-                        $request->company_id,
-                        $request->company_name,
-                        '2-4',
-                        'vendors'
-                    )
-                );
-                $requestData['account_id'] = $account->id;
+            if ($duplicateVendor) {
+                return response()->json([
+                    'error' => "A vendor with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.",
+                    'errors' => ['company_name' => ["A vendor with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists."]],
+                ], 422);
             }
 
+            $requestData['company_id'] = $companyId;
+            $requestData['name'] = $companyName;
+            $requestData['company_name'] = $companyName;
+            $requestData['owner_name'] = $ownerName;
 
-            // if ($request->account_id) {
-            //     $requestData['account_id'] = $request->account_id;
-            // } elseif (empty($supplier->account_id)) {
+            // Handle Account Update / Creation
+            if (!empty($request->account_id)) {
+                $requestData['account_id'] = $request->account_id;
+            } elseif ($supplier->account) {
+                $supplier->account->update(['name' => $companyName]);
+            } else {
+                $existingAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'vendors')
+                          ->orWhere('hierarchy_path', 'like', '2-4-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
 
-            //     $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
-
-            //     $requestData['account_id'] = $account->id;
-            // }
+                if ($existingAccount && !Vendor::where('account_id', $existingAccount->id)->where('id', '!=', $supplier->id)->exists()) {
+                    $requestData['account_id'] = $existingAccount->id;
+                } else {
+                    $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-4', 'vendors'));
+                    $requestData['account_id'] = $account->id;
+                }
+            }
 
             $supplier->update($requestData);
 
@@ -251,6 +301,12 @@ class VendorsController extends Controller
                 'success' => 'Vendor updated successfully.',
                 'data' => []
             ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->validator->errors()->first(),
+                'errors' => $e->validator->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

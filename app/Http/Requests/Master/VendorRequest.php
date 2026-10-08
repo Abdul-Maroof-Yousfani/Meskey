@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Master;
 
+use App\Models\Master\Vendor;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class VendorRequest extends FormRequest
 {
@@ -12,21 +12,52 @@ class VendorRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        $resolvedCompanyId = $this->input('company_id') ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+        $this->merge([
+            'company_id' => $resolvedCompanyId,
+            'type' => $this->input('type', 'vendor') ?: 'vendor',
+            'company_name' => is_string($this->company_name) ? trim($this->company_name) : $this->company_name,
+            'owner_name' => is_string($this->owner_name) ? trim($this->owner_name) : $this->owner_name,
+        ]);
+    }
+
     public function rules(): array
     {
+        $vendor = $this->route('vendor');
+        $vendorId = $vendor instanceof Vendor ? $vendor->id : $vendor;
+        $companyId = $this->input('company_id') ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+        $ownerName = trim((string) $this->input('owner_name'));
+
         return [
             'company_id' => 'required|exists:companies,id',
-            'unique_no' => 'nullable|string|max:255|unique:vendors,unique_no',
+            'type' => 'nullable|in:vendor,clearing_agent',
+            'rate' => 'nullable|numeric|min:0',
+            'unique_no' => 'nullable|string|max:255|unique:vendors,unique_no' . ($vendorId ? ",$vendorId" : ''),
             'company_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('vendors', 'company_name')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->vendor)
+                function ($attribute, $value, $fail) use ($companyId, $ownerName, $vendorId) {
+                    $val = trim((string) $value);
+                    if ($val === '') {
+                        return;
+                    }
+
+                    $exists = Vendor::where('company_id', $companyId)
+                        ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($val)])
+                        ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                        ->when($vendorId, function ($q) use ($vendorId) {
+                            $q->where('id', '!=', $vendorId);
+                        })
+                        ->exists();
+
+                    if ($exists) {
+                        $fail("A vendor with Company Name '{$val}' and Owner Name '{$ownerName}' already exists.");
+                    }
+                },
             ],
-            // 'company_name' => 'required|string|max:255',
-            // 'account_type' => 'required|in:credit,debit',
             'owner_name' => 'required|string|max:255',
             'owner_mobile_no' => 'required|string|max:11|regex:/^[0-9]{11}$/',
             'owner_cnic_no' => 'required|string|regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/',

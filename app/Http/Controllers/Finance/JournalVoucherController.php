@@ -32,12 +32,30 @@ class JournalVoucherController extends Controller
      */
     public function getList(Request $request)
     {
-        $journalVouchers = JournalVoucher::with(['journalVoucherDetails.account', 'createdBy'])
+        $journalVouchers = JournalVoucher::with([
+                'journalVoucherDetails.account',
+                'journalVoucherDetails.receiptVoucher.customer',
+                'journalVoucherDetails.customerAdvance.customer',
+                'journalVoucherDetails.salesOrder.customer',
+                'createdBy'
+            ])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('jv_no', 'like', $searchTerm)
-                        ->orWhere('description', 'like', $searchTerm);
+                        ->orWhere('description', 'like', $searchTerm)
+                        ->orWhereHas('journalVoucherDetails.account', function ($aq) use ($searchTerm) {
+                            $aq->where('table_name', 'customers')->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('journalVoucherDetails.receiptVoucher.customer', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('journalVoucherDetails.customerAdvance.customer', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('journalVoucherDetails.salesOrder.customer', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm);
+                        });
                 });
             })
             ->latest()
@@ -69,6 +87,7 @@ class JournalVoucherController extends Controller
                 'customer_id' => null,
                 'customer_name' => null,
                 'receipt_vouchers' => collect([]),
+                'customer_advances' => collect([]),
                 'sales_orders' => collect([]),
                 'grns' => collect([])
             ];
@@ -94,6 +113,7 @@ class JournalVoucherController extends Controller
                     'customer_id' => null,
                     'customer_name' => null,
                     'receipt_vouchers' => collect([]),
+                    'customer_advances' => collect([]),
                     'sales_orders' => collect([]),
                     'grns' => collect([])
                 ];
@@ -154,6 +174,46 @@ class JournalVoucherController extends Controller
                 })
                 ->values();
 
+            $excludeJvNo = null;
+            if ($excludeJvId) {
+                $excludeJv = JournalVoucher::find($excludeJvId);
+                $excludeJvNo = $excludeJv ? $excludeJv->jv_no : null;
+            }
+
+            $customerAdvances = \App\Models\CustomerAdvance::where('customer_id', $customer->id)
+                ->where(function ($q) use ($excludeJvNo) {
+                    $q->whereIn('status', ['pending', 'partial_payment']);
+                    if ($excludeJvNo) {
+                        $q->orWhereHas('adjustments', function ($adjQuery) use ($excludeJvNo) {
+                            $adjQuery->where('voucher_no', $excludeJvNo);
+                        });
+                    }
+                })
+                ->get()
+                ->map(function ($adv) use ($excludeJvNo) {
+                    $remaining = (float) $adv->remaining_amount;
+                    if ($excludeJvNo) {
+                        $adjustment = \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $adv->id)
+                            ->where('voucher_no', $excludeJvNo)
+                            ->sum('amount');
+                        $remaining += (float) $adjustment;
+                    }
+
+                    return [
+                        'id' => $adv->id,
+                        'voucher_no' => $adv->voucher_no,
+                        'source_type' => $adv->source_type,
+                        'remaining_amount' => round($remaining, 2),
+                        'formatted_remaining' => number_format($remaining, 2),
+                        'text' => $adv->voucher_no . ' (Rem: ' . number_format($remaining, 2) . ')',
+                        'type' => 'customer_advance'
+                    ];
+                })
+                ->filter(function ($item) {
+                    return $item['remaining_amount'] > 0.01;
+                })
+                ->values();
+
             $salesOrders = SalesOrder::where('customer_id', $customer->id)
                 ->select('id', 'reference_no')
                 ->latest('id')
@@ -173,6 +233,7 @@ class JournalVoucherController extends Controller
                 'customer_id' => $customer->id,
                 'customer_name' => $customer->name,
                 'receipt_vouchers' => $receiptVouchers,
+                'customer_advances' => $customerAdvances,
                 'sales_orders' => $salesOrders,
                 'grns' => collect([])
             ];
@@ -238,6 +299,7 @@ class JournalVoucherController extends Controller
                 'customer_id' => null,
                 'customer_name' => null,
                 'receipt_vouchers' => collect([]),
+                'customer_advances' => collect([]),
                 'sales_orders' => collect([]),
                 'grns' => $data
             ];
@@ -248,6 +310,7 @@ class JournalVoucherController extends Controller
             'customer_id' => null,
             'customer_name' => null,
             'receipt_vouchers' => collect([]),
+            'customer_advances' => collect([]),
             'sales_orders' => collect([]),
             'grns' => collect([])
         ];
@@ -363,6 +426,7 @@ class JournalVoucherController extends Controller
     {
         $rvTotalUsage = [];
         $seenRvIds = [];
+        $advTotalUsage = [];
 
         foreach ($request->details as $index => $detail) {
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
@@ -414,6 +478,28 @@ class JournalVoucherController extends Controller
                 }
 
                 $rvTotalUsage[$rvId] = ($rvTotalUsage[$rvId] ?? 0) + $lineAmount;
+            }
+
+            if (!empty($detail['customer_advance_id'])) {
+                $advId = $detail['customer_advance_id'];
+                $adv = \App\Models\CustomerAdvance::find($advId);
+                if (!$adv) {
+                    return "Line " . ($index + 1) . ": Customer Advance was not found.";
+                }
+
+                $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
+                if (!$customer) {
+                    $account = Account::find($detail['acc_id']);
+                    if ($account && $account->table_name === 'customers') {
+                        if ($account->model_id) $customer = \App\Models\Master\Customer::find($account->model_id);
+                        if (!$customer) $customer = \App\Models\Master\Customer::where('name', $account->name)->first();
+                    }
+                }
+                if (!$customer || $adv->customer_id != $customer->id) {
+                    return "Line " . ($index + 1) . ": Excess Payment {$adv->voucher_no} does not belong to the selected account.";
+                }
+
+                $advTotalUsage[$advId] = ($advTotalUsage[$advId] ?? 0) + $lineAmount;
             }
 
             if (!empty($detail['sales_order_id'])) {
@@ -469,6 +555,23 @@ class JournalVoucherController extends Controller
             $remainingAmount = round($baseAmount - ($doConsumed + $jvConsumed), 2);
             if (round($totalEntered, 2) > round($remainingAmount + 0.01, 2)) {
                 return "The entered amount (" . number_format($totalEntered, 2) . ") for Receipt Voucher {$rv->unique_no} exceeds its remaining balance of " . number_format($remainingAmount, 2) . ".";
+            }
+        }
+
+        foreach ($advTotalUsage as $advId => $totalEntered) {
+            $adv = \App\Models\CustomerAdvance::find($advId);
+            $available = (float) $adv->remaining_amount;
+            if ($excludeJvId) {
+                $excludeJv = JournalVoucher::find($excludeJvId);
+                if ($excludeJv) {
+                    $prevAdj = \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $advId)
+                        ->where('voucher_no', $excludeJv->jv_no)
+                        ->sum('amount');
+                    $available += (float) $prevAdj;
+                }
+            }
+            if (round($totalEntered, 2) > round($available + 0.01, 2)) {
+                return "The entered amount (" . number_format($totalEntered, 2) . ") for Excess Payment {$adv->voucher_no} exceeds its available balance of " . number_format($available, 2) . ".";
             }
         }
 
@@ -535,6 +638,7 @@ class JournalVoucherController extends Controller
             'details' => 'required|array|min:2',
             'details.*.acc_id' => 'required|exists:accounts,id',
             'details.*.receipt_voucher_id' => 'nullable|exists:receipt_vouchers,id',
+            'details.*.customer_advance_id' => 'nullable|exists:customer_advances,id',
             'details.*.sales_order_id' => 'nullable|exists:sales_orders,id',
             'details.*.order_id' => 'nullable',
             'details.*.voucher_id' => 'nullable',
@@ -650,7 +754,34 @@ class JournalVoucherController extends Controller
                     $voucherType = $detail['voucher_type'] ?? null;
                     $salesOrderId = $detail['sales_order_id'] ?? null;
                     $receiptVoucherId = $detail['receipt_voucher_id'] ?? null;
+                    $customerAdvanceId = $detail['customer_advance_id'] ?? null;
                     $orderId = $detail['order_id'] ?? null;
+
+                    if ($customerAdvanceId) {
+                        $adv = \App\Models\CustomerAdvance::find($customerAdvanceId);
+                        if ($adv) {
+                            $voucherId = $adv->id;
+                            $voucherNo = $adv->voucher_no;
+                            $voucherType = 'customer_advance';
+
+                            $adjAmount = max($debitAmount, $creditAmount);
+                            if ($adjAmount > 0) {
+                                if ($adjAmount > $adv->remaining_amount) {
+                                    throw new \Exception("Cannot consume more than the remaining amount of Excess Payment {$adv->voucher_no}.");
+                                }
+                                $adv->used_amount += $adjAmount;
+                                $adv->remaining_amount -= $adjAmount;
+                                $adv->status = ($adv->remaining_amount <= 0.01) ? 'completed' : 'partial_payment';
+                                $adv->save();
+
+                                \App\Models\CustomerAdvanceAdjustment::create([
+                                    'customer_advance_id' => $adv->id,
+                                    'voucher_no' => $journalVoucher->jv_no,
+                                    'amount' => $adjAmount
+                                ]);
+                            }
+                        }
+                    }
 
                     if ($orderId && (empty($voucherId) || empty($voucherNo) || empty($voucherType))) {
                         $account = Account::find($detail['acc_id']);
@@ -689,6 +820,7 @@ class JournalVoucherController extends Controller
                         'journal_voucher_id' => $journalVoucher->id,
                         'acc_id' => $detail['acc_id'],
                         'receipt_voucher_id' => $receiptVoucherId,
+                        'customer_advance_id' => $customerAdvanceId,
                         'sales_order_id' => $salesOrderId,
                         'voucher_id' => $voucherId,
                         'voucher_no' => $voucherNo,
@@ -724,6 +856,7 @@ class JournalVoucherController extends Controller
         $journalVoucher = JournalVoucher::with([
             'journalVoucherDetails.account',
             'journalVoucherDetails.receiptVoucher',
+            'journalVoucherDetails.customerAdvance',
             'journalVoucherDetails.salesOrder',
             'approveUser',
             'deleteUser',
@@ -757,11 +890,13 @@ class JournalVoucherController extends Controller
         $accounts = Account::where("is_operational", "yes")->get();
 
         $rowRvs = [];
+        $rowAdvances = [];
         $rowSos = [];
         $rowOrders = [];
         foreach ($journalVoucher->journalVoucherDetails as $index => $detail) {
             $related = $this->fetchAccountRelatedData($detail->acc_id, $id);
             $rowRvs[$index] = collect($related['receipt_vouchers']);
+            $rowAdvances[$index] = collect($related['customer_advances']);
             $rowSos[$index] = collect($related['sales_orders']);
             $rowOrders[$index] = collect([]);
 
@@ -820,6 +955,25 @@ class JournalVoucherController extends Controller
                 }
             }
 
+            // Ensure current selected Advance is present even if remaining is 0 or consumed
+            $advId = $detail->customer_advance_id ?: ($detail->voucher_type === 'customer_advance' ? $detail->voucher_id : null);
+            if ($advId && !$rowAdvances[$index]->contains('id', $advId)) {
+                $currAdv = \App\Models\CustomerAdvance::find($advId);
+                if ($currAdv) {
+                    $currAmount = (float) max($detail->debit_amount, $detail->credit_amount);
+                    $totalAvail = (float) $currAdv->remaining_amount + $currAmount;
+                    $rowAdvances[$index]->prepend([
+                        'id' => $currAdv->id,
+                        'voucher_no' => $currAdv->voucher_no,
+                        'source_type' => $currAdv->source_type,
+                        'remaining_amount' => $totalAvail,
+                        'formatted_remaining' => number_format($totalAvail, 2),
+                        'text' => $currAdv->voucher_no . ' (Current: ' . number_format($totalAvail, 2) . ')',
+                        'type' => 'customer_advance'
+                    ]);
+                }
+            }
+
             // Ensure current selected SO is present
             if ($detail->sales_order_id && !$rowSos[$index]->contains('id', $detail->sales_order_id)) {
                 $currSo = $detail->salesOrder;
@@ -839,9 +993,11 @@ class JournalVoucherController extends Controller
             'journalVoucher' => $journalVoucher,
             'accounts' => $accounts,
             'rowRvs' => $rowRvs,
+            'rowAdvances' => $rowAdvances,
             'rowSos' => $rowSos,
             'rowOrders' => $rowOrders,
             'receiptVouchers' => collect([]),
+            'customerAdvances' => collect([]),
             'salesOrders' => collect([])
         ];
 
@@ -869,6 +1025,7 @@ class JournalVoucherController extends Controller
             'details' => 'required|array|min:2',
             'details.*.acc_id' => 'required|exists:accounts,id',
             'details.*.receipt_voucher_id' => 'nullable|exists:receipt_vouchers,id',
+            'details.*.customer_advance_id' => 'nullable|exists:customer_advances,id',
             'details.*.sales_order_id' => 'nullable|exists:sales_orders,id',
             'details.*.order_id' => 'nullable',
             'details.*.voucher_id' => 'nullable',
@@ -958,6 +1115,19 @@ class JournalVoucherController extends Controller
                     'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
                 ]);
 
+                // Revert old customer advance adjustments for this JV
+                $prevAdjustments = \App\Models\CustomerAdvanceAdjustment::where('voucher_no', $journalVoucher->jv_no)->get();
+                foreach ($prevAdjustments as $adj) {
+                    $adv = \App\Models\CustomerAdvance::find($adj->customer_advance_id);
+                    if ($adv) {
+                        $adv->used_amount -= $adj->amount;
+                        $adv->remaining_amount += $adj->amount;
+                        $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                        $adv->save();
+                    }
+                    $adj->delete();
+                }
+
                 // Delete old details
                 JournalVoucherDetail::where('journal_voucher_id', $journalVoucher->id)->delete();
 
@@ -979,7 +1149,34 @@ class JournalVoucherController extends Controller
                     $voucherType = $detail['voucher_type'] ?? null;
                     $salesOrderId = $detail['sales_order_id'] ?? null;
                     $receiptVoucherId = $detail['receipt_voucher_id'] ?? null;
+                    $customerAdvanceId = $detail['customer_advance_id'] ?? null;
                     $orderId = $detail['order_id'] ?? null;
+
+                    if ($customerAdvanceId) {
+                        $adv = \App\Models\CustomerAdvance::find($customerAdvanceId);
+                        if ($adv) {
+                            $voucherId = $adv->id;
+                            $voucherNo = $adv->voucher_no;
+                            $voucherType = 'customer_advance';
+
+                            $adjAmount = max($debitAmount, $creditAmount);
+                            if ($adjAmount > 0) {
+                                if ($adjAmount > $adv->remaining_amount) {
+                                    throw new \Exception("Cannot consume more than the remaining amount of Excess Payment {$adv->voucher_no}.");
+                                }
+                                $adv->used_amount += $adjAmount;
+                                $adv->remaining_amount -= $adjAmount;
+                                $adv->status = ($adv->remaining_amount <= 0.01) ? 'completed' : 'partial_payment';
+                                $adv->save();
+
+                                \App\Models\CustomerAdvanceAdjustment::create([
+                                    'customer_advance_id' => $adv->id,
+                                    'voucher_no' => $journalVoucher->jv_no,
+                                    'amount' => $adjAmount
+                                ]);
+                            }
+                        }
+                    }
 
                     if ($orderId && (empty($voucherId) || empty($voucherNo) || empty($voucherType))) {
                         $account = Account::find($detail['acc_id']);
@@ -1018,6 +1215,7 @@ class JournalVoucherController extends Controller
                         'journal_voucher_id' => $journalVoucher->id,
                         'acc_id' => $detail['acc_id'],
                         'receipt_voucher_id' => $receiptVoucherId,
+                        'customer_advance_id' => $customerAdvanceId,
                         'sales_order_id' => $salesOrderId,
                         'voucher_id' => $voucherId,
                         'voucher_no' => $voucherNo,
@@ -1108,6 +1306,19 @@ class JournalVoucherController extends Controller
             return response()->json([
                 'error' => "Cannot delete a journal voucher that has been {$currentApprovalStatus}."
             ], 422);
+        }
+
+        // Revert any customer advance adjustments made by this voucher
+        $prevAdjustments = \App\Models\CustomerAdvanceAdjustment::where('voucher_no', $journalVoucher->jv_no)->get();
+        foreach ($prevAdjustments as $adj) {
+            $adv = \App\Models\CustomerAdvance::find($adj->customer_advance_id);
+            if ($adv) {
+                $adv->used_amount -= $adj->amount;
+                $adv->remaining_amount += $adj->amount;
+                $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                $adv->save();
+            }
+            $adj->delete();
         }
 
         $journalVoucher->update([

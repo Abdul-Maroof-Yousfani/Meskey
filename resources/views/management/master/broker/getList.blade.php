@@ -1,13 +1,14 @@
 <table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th style="width: 10%;">S No.</th>
-            <th style="width: 18%;">Broker</th>
-            <th style="width: 18%;">Company</th>
-            <th style="width: 20%;">Address</th>
-            <th style="width: 12%;">Type</th>
-            <th style="width: 12%;">Created</th>
-            <th style="width: 10%;">Action</th>
+            <th style="width: 8%;">S No.</th>
+            <th style="width: 17%;">Broker</th>
+            <th style="width: 17%;">Company</th>
+            <th style="width: 18%;">Address</th>
+            <th style="width: 10%;">Type</th>
+            <th style="width: 10%;">Status</th>
+            <th style="width: 11%;">Created</th>
+            <th style="width: 9%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -47,6 +48,13 @@
                         </p>
                     </td>
                     <td>
+                        <p class="m-0">
+                            <span class="badge {{ strtolower($row->status ?? 'active') === 'active' ? 'badge-success' : 'badge-danger' }}">
+                                {{ ucfirst($row->status ?? 'Active') }}
+                            </span>
+                        </p>
+                    </td>
+                    <td>
                         {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
@@ -67,7 +75,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="7" class="ant-table-cell text-center">
+                <td colspan="8" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

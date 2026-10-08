@@ -55,6 +55,7 @@
                                             <th class="col-sm-2">Company </th>
                                             <th class="col-sm-2">COA Hierarchy </th>
                                             <th class="col-sm-1">Type </th>
+                                            <th class="col-sm-1">Status</th>
                                             <th class="col-sm-2">Address</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>

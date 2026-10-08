@@ -560,7 +560,12 @@ class DeliveryOrderController extends Controller
                 $q->where('am_approval_status', $request->status_for_filter);
             })
             ->when(!$isSuperAdmin && !$isApprover, function ($q) use ($authUser) {
-                return $q->where('created_by', $authUser->id);
+                return $q->where(function ($subQ) use ($authUser) {
+                    $subQ->where('created_by', $authUser->id)
+                        ->orWhereHas('salesOrder', function ($soQ) use ($authUser) {
+                            $soQ->where('created_by', $authUser->id);
+                        });
+                });
             })
             ->orderBy("reference_no", "desc")
             ->paginate($perPage);

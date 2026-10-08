@@ -53,7 +53,8 @@
                                             <th class="col-sm-1">S No. </th>
                                             <th class="col-sm-2">Supplier </th>
                                             <th class="col-sm-2">Company </th>
-                                            <th class="col-sm-4">Address</th>
+                                            <th class="col-sm-3">Address</th>
+                                            <th class="col-sm-1">Status</th>
                                             <th class="col-sm-2">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>

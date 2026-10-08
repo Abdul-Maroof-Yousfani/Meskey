@@ -4,7 +4,8 @@
             <th class="col-sm-1">S No. </th>
             <th class="col-sm-2">Vendor </th>
             <th class="col-sm-2">Company </th>
-            <th class="col-sm-4">Address</th>
+            <th class="col-sm-3">Address</th>
+            <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -34,6 +35,13 @@
                     <td>
                         <p class="m-0">
                             <small> {{ $row->address ?? '--' }}</small>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            <span class="badge {{ strtolower($row->status ?? 'active') === 'active' ? 'badge-success' : 'badge-danger' }}">
+                                {{ ucfirst($row->status ?? 'Active') }}
+                            </span>
                         </p>
                     </td>
                     <td>

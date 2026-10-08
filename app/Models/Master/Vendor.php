@@ -15,8 +15,10 @@ class Vendor extends Model
 
     protected $fillable = [
         'company_id',
+        'type',
         'unique_no',
         'name',
+        'rate',
         'account_id',
         'company_name',
         'owner_name',
@@ -39,13 +41,29 @@ class Vendor extends Model
     ];
 
     protected $casts = [
+        'rate' => 'decimal:2',
         'company_location_ids' => 'array',
         'arrival_location_ids' => 'array',
     ];
 
+    public function scopeVendors($query)
+    {
+        return $query->where('type', 'vendor');
+    }
+
+    public function scopeClearingAgents($query)
+    {
+        return $query->where('type', 'clearing_agent');
+    }
+
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(\App\Models\Master\Account\Account::class, 'account_id');
     }
 
     public function companyBankDetails()

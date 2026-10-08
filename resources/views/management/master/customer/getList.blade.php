@@ -6,6 +6,7 @@
             <th class="col-sm-2">Company </th>
             <th class="col-sm-2">COA Hierarchy </th>
             <th class="col-sm-1">Type </th>
+            <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Address</th>
             <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
@@ -52,6 +53,13 @@
                     <td>
                         <p class="m-0">
                             {{ ucfirst($row->type ?? '--') }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            <span class="badge {{ strtolower($row->status ?? 'active') === 'active' ? 'badge-success' : 'badge-danger' }}">
+                                {{ ucfirst($row->status ?? 'active') }}
+                            </span>
                         </p>
                     </td>
                     <td>

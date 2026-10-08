@@ -16,7 +16,11 @@
         <div class="row" style="width: 100% !important;">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Received From:</h5>
-                <p class="mb-0"><strong>Customer:</strong> {{ $receiptVoucher->customer->name ?? 'N/A' }}</p>
+                <p class="mb-1"><strong>Customer:</strong> {{ $receiptVoucher->customer->name ?? 'N/A' }}</p>
+                @php
+                    $coaAccount = $receiptVoucher->customer->account ?? $receiptVoucher->account ?? null;
+                @endphp
+                <p class="mb-0"><strong>COA:</strong> {{ $coaAccount ? $coaAccount->name . ' (' . $coaAccount->unique_no . ')' : 'N/A' }}</p>
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Reference Information</h5>
@@ -53,7 +57,7 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item['type'] }}</td>
                             <td>{{ $item['doc_no'] }}</td>
-                            <td>{{ $item['customer'] ? $item['customer'] : "N/A" }}</td>
+                            <td>{{ $item['customer'] ? $item['customer'] : ($receiptVoucher->customer->name ?? "N/A") }}</td>
                             <td class="text-right">{{ number_format($item['amount'], 2) }}</td>
                             <td class="text-right">{{ number_format($item['tax_amount'], 2) }}</td>
                             <td class="text-right">{{ number_format($item['net_amount'], 2) }}</td>
