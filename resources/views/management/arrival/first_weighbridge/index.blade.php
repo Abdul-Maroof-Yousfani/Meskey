@@ -11,10 +11,13 @@
                     <h2 class="page-title"> First Weighbridge</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('first-weighbridge.create') }}','Add First Weighbridge')"
-                        type="button" class="btn btn-primary position-relative ">
+                    <!-- <button onclick="openModal(this,'{{ route('first-weighbridge.create') }}','Add First Weighbridge')"
+                                type="button" class="btn btn-primary position-relative ">
+                                Create First Weighbridge
+                            </button> -->
+                    <a href="{{ route('first-weighbridge.create') }}" class="btn btn-primary position-relative ">
                         Create First Weighbridge
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="row">
@@ -65,7 +68,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.first-weighbridge') }}`)
         });
     </script>

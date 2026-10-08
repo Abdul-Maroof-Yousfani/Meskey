@@ -1,77 +1,101 @@
-<form action="{{ route('first-weighbridge.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
-    @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.first-weighbridge') }}" />
-    <div class="row form-mar">
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            {!! getUserMissingInfoAlert()  !!}
-            <div class="form-group">
-                <label>Ticket:</label>
-                <select class="form-control select2" name="arrival_ticket_id" id="arrival_ticket_id">
-                    <option value="">Select Ticket</option>
-                    @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}">
-                            Ticket No: {{ $arrivalTicket->unique_no }} --
-                            Truck No: {{ $arrivalTicket->truck_no }}
-                        </option>
-                    @endforeach
-                </select>
+@extends('management.layouts.master')
+@section('title')
+    Create First Weighbridge
+@endsection
+@section('content')
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">Create First Weighbridge</h4>
+                    </div>
+                    <div class="card-body">
+
+
+                        <form action="{{ route('first-weighbridge.store') }}" method="POST" id="ajaxSubmit"
+                            autocomplete="off">
+                            @csrf
+                            <input type="hidden" id="url" value="{{ route('first-weighbridge.create') }}" />
+                            <div class="row form-mar">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    {!! getUserMissingInfoAlert()  !!}
+                                    <div class="form-group">
+                                        <label>Ticket:</label>
+                                        <select class="form-control select2" name="arrival_ticket_id"
+                                            id="arrival_ticket_id">
+                                            <option value="">Select Ticket</option>
+                                            @foreach ($ArrivalTickets as $arrivalTicket)
+                                                <option value="{{ $arrivalTicket->id }}">
+                                                    Ticket No: {{ $arrivalTicket->unique_no }} --
+                                                    Truck No: {{ $arrivalTicket->truck_no }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="slabsContainer">
+                            </div>
+                            <div class="row bottom-button-bar">
+                                <div class="col-12">
+                                    <a href="{{ route('first-weighbridge.index') }}"
+                                        class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+                                    <button type="submit" class="btn btn-primary submitbutton">Save</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="row" id="slabsContainer">
-    </div>
-    <div class="row bottom-button-bar">
-        <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
-        </div>
-    </div>
-</form>
+    <script>
+        $(document).ready(function () {
+            $('#arrival_ticket_id').change(function () {
+                var arrival_ticket_id = $(this).val();
 
-<script>
-    $(document).ready(function () {
-        $('#arrival_ticket_id').change(function () {
-            var arrival_ticket_id = $(this).val();
-
-            if (arrival_ticket_id) {
-                $.ajax({
-                    url: '{{ route('getFirstWeighbridgeRelatedData') }}',
-                    type: 'GET',
-                    data: {
-                        arrival_ticket_id: arrival_ticket_id
-                    },
-                    dataType: 'json',
-                    beforeSend: function () {
-                        Swal.fire({
-                            title: "Processing...",
-                            text: "Please wait while fetching slabs.",
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
+                if (arrival_ticket_id) {
+                    $.ajax({
+                        url: '{{ route('getFirstWeighbridgeRelatedData') }}',
+                        type: 'GET',
+                        data: {
+                            arrival_ticket_id: arrival_ticket_id
+                        },
+                        dataType: 'json',
+                        beforeSend: function () {
+                            Swal.fire({
+                                title: "Processing...",
+                                text: "Please wait while fetching slabs.",
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                        },
+                        success: function (response) {
+                            Swal.close();
+                            if (response.success) {
+                                // Append the rendered HTML to a container element
+                                $('#slabsContainer').html(response.html);
+                            } else {
+                                Swal.fire("No Data", "No slabs found for this product.",
+                                    "info");
                             }
-                        });
-                    },
-                    success: function (response) {
-                        Swal.close();
-                        if (response.success) {
-                            // Append the rendered HTML to a container element
-                            $('#slabsContainer').html(response.html);
-                        } else {
-                            Swal.fire("No Data", "No slabs found for this product.",
-                                "info");
+                        },
+                        error: function () {
+                            Swal.close();
+                            Swal.fire("Error", "Something went wrong. Please try again.",
+                                "error");
                         }
-                    },
-                    error: function () {
-                        Swal.close();
-                        Swal.fire("Error", "Something went wrong. Please try again.",
-                            "error");
-                    }
-                });
-            }
+                    });
+                }
+            });
         });
-    });
 
-    $(document).ready(function () {
-        $('.select2').select2();
-    });
-</script>
+        $(document).ready(function () {
+            $('.select2').select2();
+        });
+    </script>
+@endsection
