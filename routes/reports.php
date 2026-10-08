@@ -12,7 +12,8 @@ use App\Http\Controllers\Reports\Arrival\{
     CustomQcSampleReportController,
     TruckSummaryReportController,
     WeightDifferenceController,
-    SamplingWorkflowTurnaroundReportController
+    SamplingWorkflowTurnaroundReportController,
+    GalaQcReportController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,9 @@ Route::prefix('arrival')->group(function () {
 
   Route::resource('sampling-workflow', SamplingWorkflowTurnaroundReportController::class);
   Route::post('/get-sampling-workflow', [SamplingWorkflowTurnaroundReportController::class, 'getList'])->name('reports.arrival.get.sampling-workflow');
+
+  Route::resource('gala-qc', GalaQcReportController::class);
+  Route::post('/get-gala-qc', [GalaQcReportController::class, 'getList'])->name('reports.arrival.get.gala-qc');
 });
 
 
