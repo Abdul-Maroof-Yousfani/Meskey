@@ -207,7 +207,7 @@ class TicketController extends Controller
     public function getSuppliersByLocation($locationId)
     {
         $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)
-            // ->where('status', 'active')
+            ->where('status', 'active')
             ->get();
 
         $suppliers = $suppliers->map(function ($supplier) {
