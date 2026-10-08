@@ -13,8 +13,7 @@
                     class="form-control select2">
                     <option value="">Select Ticket</option>
                     @foreach ($samplingRequests as $samplingRequest)
-                        <option {{ $samplingRequest->arrivalTicket->is_arrival_lock == 1 ? 'disabled' : '' }}
-                            value="{{ $samplingRequest->id }}"
+                        <option {{ $samplingRequest->arrivalTicket->is_arrival_lock == 1 ? 'disabled style="background-color: #dc3545; color: #fff; font-weight: bold;"' : '' }} value="{{ $samplingRequest->id }}"
                             data-product-id="{{ optional($samplingRequest->arrivalTicket)->qc_product }}"
                             data-ticket-id="{{ optional($samplingRequest->arrivalTicket)->id }}">
                             Ticket No: {{ $samplingRequest->arrivalTicket->unique_no }}
