@@ -210,7 +210,7 @@ class PurchaseOrderController extends Controller
         $locationId = $authUser->companyLocation?->id ?? '1';
         $locationId = (string) $locationId;
 
-        $data['suppliers'] = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
+        $data['suppliers'] = Supplier::whereJsonContains('company_location_ids', $locationId)->where('status', 'active')->get();
 
         return view('management.procurement.raw_material.purchase_order.create', $data);
     }
