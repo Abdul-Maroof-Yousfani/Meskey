@@ -5,33 +5,32 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.ticket') }}" />
     <div class="row form-mar">
 
-        @if (auth()->user()->user_type == 'super-admin')
-            <div class="col-xs-12 col-sm-12 col-md-12">
-                <div class="form-group">
-                    <div class="lock-arrival-wrapper {{ $arrivalTicket->is_arrival_lock ? 'active' : '' }}">
-                        <div class="lock-arrival-header">
-                            <label class="lock-arrival-label" for="is_arrival_lock">
-                                <i class="ft-lock lock-icon"></i>
-                                <span id="lock_status_text">{{ $arrivalTicket->is_arrival_lock ? 'Arrival Locked' : 'Lock Arrival' }}</span>
-                            </label>
-                            <div class="custom-control custom-switch lock-arrival-switch">
-                                <input type="checkbox" name="is_arrival_lock" value="1" class="custom-control-input"
-                                    id="is_arrival_lock" @checked($arrivalTicket->is_arrival_lock)>
-                                <label class="custom-control-label" for="is_arrival_lock"></label>
-                            </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <div class="lock-arrival-wrapper {{ $arrivalTicket->is_arrival_lock ? 'active' : '' }}">
+                    <div class="lock-arrival-header">
+                        <label class="lock-arrival-label" for="is_arrival_lock">
+                            <i class="ft-lock lock-icon"></i>
+                            <span
+                                id="lock_status_text">{{ $arrivalTicket->is_arrival_lock ? 'Arrival Locked' : 'Lock Arrival' }}</span>
+                        </label>
+                        <div class="custom-control custom-switch lock-arrival-switch">
+                            <input type="checkbox" name="is_arrival_lock" value="1" class="custom-control-input"
+                                id="is_arrival_lock" @checked($arrivalTicket->is_arrival_lock)>
+                            <label class="custom-control-label" for="is_arrival_lock"></label>
                         </div>
-                        <p class="lock-arrival-description">
-                            <i class="fas fa-circle-info"></i>
-                            <span id="lock_description_text">
-                                {{ $arrivalTicket->is_arrival_lock 
-                                    ? 'Uncheck this switch to unlock the arrival and allow further processing.' 
-                                    : 'Lock the arrival to reserve this ticket number. Once locked, no further processing will be done — it is only for booking the ticket number.' }}
-                            </span>
-                        </p>
                     </div>
+                    <p class="lock-arrival-description">
+                        <i class="fas fa-circle-info"></i>
+                        <span id="lock_description_text">
+                            {{ $arrivalTicket->is_arrival_lock
+    ? 'Uncheck this switch to unlock the arrival and allow further processing.'
+    : 'Lock the arrival to reserve this ticket number. Once locked, no further processing will be done — it is only for booking the ticket number.' }}
+                        </span>
+                    </p>
                 </div>
             </div>
-        @endif
+        </div>
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -53,8 +52,8 @@
                     <div class="input-group-prepend">
                         <button class="btn btn-primary" type="button">Ticket No#</button>
                     </div>
-                    <input type="text" disabled class="form-control" name="unique_no" value="{{ $arrivalTicket->unique_no }}"
-                        placeholder="Select Location">
+                    <input type="text" disabled class="form-control" name="unique_no"
+                        value="{{ $arrivalTicket->unique_no }}" placeholder="Select Location">
                 </div>
             </fieldset>
         </div>
@@ -65,8 +64,7 @@
                 <select name="arrival_purchase_order_id" id="arrival_purchase_order_id" class="form-control select2">
                     <option value="">N/A</option>
                     @foreach ($arrivalPurchaseOrders as $order)
-                        <option value="{{ $order->id }}"
-                            data-product-id="{{ $order->product_id }}"
+                        <option value="{{ $order->id }}" data-product-id="{{ $order->product_id }}"
                             data-product-name="{{ $order->product->name ?? '' }}"
                             data-supplier-id="{{ $order->supplier->company_name ?? '' }}"
                             data-supplier-name="{{ $order->supplier->company_name ?? '' }}"
@@ -89,7 +87,8 @@
             <div class="form-group">
                 <label>Sauda Type:</label>
                 <input type="text" name="sauda_type_display" id="sauda_type" class="form-control"
-                    value="{{ $arrivalTicket->saudaType->name ?? ($arrivalTicket->purchaseOrder->saudaType->name ?? '') }}" readonly />
+                    value="{{ $arrivalTicket->saudaType->name ?? ($arrivalTicket->purchaseOrder->saudaType->name ?? '') }}"
+                    readonly />
                 <input type="hidden" name="sauda_type_id" id="sauda_type_id"
                     value="{{ $arrivalTicket->sauda_type_id ?? $arrivalTicket->purchaseOrder?->sauda_type_id }}">
             </div>
@@ -157,7 +156,8 @@
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden" name="decision_id" id="decision_id_hidden" value="{{ $arrivalTicket->decision_id }}">
+                <input type="hidden" name="decision_id" id="decision_id_hidden"
+                    value="{{ $arrivalTicket->decision_id }}">
             </div>
         </div>
 
@@ -219,8 +219,7 @@
                     <option value="">Truck Type</option>
                     @foreach (getTableData('arrival_truck_types', ['id', 'name', 'sample_money']) as $arrival_truck_types)
                         <option data-samplemoney="{{ $arrival_truck_types->sample_money ?? 0 }}"
-                            value="{{ $arrival_truck_types->id }}"
-                            @selected(($arrivalTicket->truck_type_id ?? $arrivalTicket->arrival_truck_type_id) == $arrival_truck_types->id)>
+                            value="{{ $arrival_truck_types->id }}" @selected(($arrivalTicket->truck_type_id ?? $arrivalTicket->arrival_truck_type_id) == $arrival_truck_types->id)>
                             {{ $arrival_truck_types->name }}
                         </option>
                     @endforeach
@@ -258,8 +257,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Loading Date: (Optional)</label>
-                <input type="date" name="loading_date" placeholder="Loading Date" class="form-control" autocomplete="off"
-                    max="{{ date('Y-m-d') }}"
+                <input type="date" name="loading_date" placeholder="Loading Date" class="form-control"
+                    autocomplete="off" max="{{ date('Y-m-d') }}"
                     value="{{ $arrivalTicket->loading_date ? \Carbon\Carbon::parse($arrivalTicket->loading_date)->format('Y-m-d') : '' }}" />
             </div>
         </div>
