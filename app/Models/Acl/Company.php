@@ -25,4 +25,40 @@ class Company extends Model
             ->withPivot('role_id', 'locations', 'arrival_locations')
             ->withTimestamps();
     }
+
+    public function settings()
+    {
+        return $this->morphMany(\App\Models\Setting::class, 'settable');
+    }
+
+    /**
+     * Get typed setting value by key.
+     */
+    public function getSetting(string $key, $default = null)
+    {
+        $setting = $this->relationLoaded('settings')
+            ? $this->settings->firstWhere('key', $key)
+            : $this->settings()->where('key', $key)->first();
+
+        return $setting ? $setting->casted_value : $default;
+    }
+
+    /**
+     * Set setting value.
+     */
+    public function setSetting(string $key, $value, string $type = 'string', ?string $group = null)
+    {
+        $valString = $type === 'boolean'
+            ? (filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0')
+            : (is_array($value) ? json_encode($value) : (string) $value);
+
+        return $this->settings()->updateOrCreate(
+            ['key' => $key],
+            [
+                'value' => $valString,
+                'type' => $type,
+                'group' => $group,
+            ]
+        );
+    }
 }

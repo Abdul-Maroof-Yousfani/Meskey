@@ -167,10 +167,10 @@
                     <thead class="thead-light">
                         <tr>
                             {{-- <th class="text-center">Date</th> --}}
-                            <th>Account</th>
-                            <th>Description</th>
-                            <th class="text-right">Debit</th>
-                            <th class="text-right">Credit</th>
+                            <th style="width: 28%;">Account</th>
+                            <th style="width: 44%;">Description</th>
+                            <th class="text-right" style="width: 14%;">Debit</th>
+                            <th class="text-right" style="width: 14%;">Credit</th>
                             {{-- <th class="text-right">Balance</th> --}}
                         </tr>
                     </thead>
@@ -204,11 +204,8 @@
                                     <small
                                         class="text-black-50">({{ $transaction->account->hierarchy_path ?? 'N/A' }})</small>
                                 </td>
-                                <td>
-
+                                <td style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
                                     {{ $transaction->remarks }}
-
-
                                 </td>
                                 <td class="text-right">
                                     {{ $transaction->type == 'debit' ? number_format($transaction->amount, 2) : '-' }}
@@ -228,7 +225,7 @@
                                     </strong>
                                 </h5>
                             </td>
-                            <td>
+                            <td style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
                                 <strong>Total in Words: </strong>
                                 {{ numberToWords($paymentVoucher->total_amount) }}.
                             </td>
@@ -333,6 +330,17 @@
         background-color: rgba(0, 123, 255, 0.05);
     }
 
+    .table td,
+    .table th {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .table td.text-right,
+    .table th.text-right {
+        white-space: nowrap;
+    }
+
     .badge-success {
         background-color: #28a745;
     }
@@ -390,15 +398,19 @@
                 a.btn.btn-a:hover{box-shadow:0 2px 7px rgba(0,0,0,0.28) !important;cursor:pointer !important;background:#008749 !important;color:#fff !important;}
                 .logo p{font-weight:bold !important;}
                 #modal-sidebar.open{width:100% !important;}
+                .table-responsive{overflow:visible !important;width:100% !important;display:block !important;}
+                .table{width:100% !important;max-width:100% !important;page-break-inside:auto !important;border-collapse:collapse !important;}
+                .table tr{page-break-inside:avoid !important;}
                 table td input{padding:8px 8px !important;}
-                table tbody tr td{white-space:nowrap !important;}
+                table tbody tr td{white-space:normal !important;word-break:break-word !important;overflow-wrap:break-word !important;vertical-align:top !important;}
+                table tbody tr td.text-right,table thead tr th.text-right{white-space:nowrap !important;}
                 table td{padding:5px 5px !important;}
                 .table-responsive .sale_older_tab > caption + thead > tr:first-child > th,.sale_older_tab > colgroup + thead > tr:first-child > th,.sale_older_tab > thead:first-child > tr:first-child > th,.sale_older_tab > caption + thead > tr:first-child > td,.sale_older_tab > colgroup + thead > tr:first-child > td,.sale_older_tab > thead:first-child > tr:first-child > td{border-top:0;font-size:12px !important;padding:9px 5px !important;}
-                .table-responsive .sale_older_tab > thead > tr > th,.sale_older_tab > tbody > tr > th,.sale_older_tab > tfoot > tr > th,.sale_older_tab > thead > tr > td,.sale_older_tab > tbody > tr > td,.table > tfoot > tr > td{padding:2px 5px !important;font-size:12px !important;border-top:1px solid #000000 !important;border-bottom:1px solid #000000 !important;border-left:1px solid #000000 !important;border-right:1px solid #000000 !important;}
-                .table{page-break-inside:avoid !important;}
+                .table-responsive .sale_older_tab > thead > tr > th,.sale_older_tab > tbody > tr > th,.sale_older_tab > tfoot > tr > th,.sale_older_tab > thead > tr > td,.sale_older_tab > tbody > tr > td,.table > tfoot > tr > td{padding:4px 6px !important;font-size:12px !important;border-top:1px solid #000000 !important;border-bottom:1px solid #000000 !important;border-left:1px solid #000000 !important;border-right:1px solid #000000 !important;vertical-align:top !important;}
                 .table-bordered th,.table-bordered td{border:1px solid #E0E0E0 !important;}
                 .table .thead-light th{color:#495057 !important;background-color:#e9ecef !important;border-color:#E0E0E0 !important;}
-                .table th,.table td{padding:0.4rem 1rem !important;vertical-align:center !important;border-top:1px solid #E0E0E0 !important;}
+                .table th,.table td{padding:0.4rem 0.6rem !important;vertical-align:top !important;border-top:1px solid #E0E0E0 !important;word-break:break-word !important;overflow-wrap:break-word !important;}
+                .voucher-remarkss p{white-space:normal !important;word-break:break-word !important;overflow-wrap:break-word !important;}
                 .voucher-footer{width:100% !important;margin-top:2rem !important;padding-top:1rem !important;border-top:none !important;}
                 .voucher-footer .row{display:flex !important;flex-wrap:wrap !important;justify-content:space-between !important;text-align:center !important;}
                 .voucher-footer [class*="col-"]{flex:0 0 33.333% !important;max-width:33.333% !important;box-sizing:border-box !important;padding:0 10px !important;}
