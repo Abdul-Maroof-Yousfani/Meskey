@@ -578,15 +578,16 @@ class JournalVoucherController extends Controller
         // Validate GRN debit limits
         $grnTotalUsage = [];
         foreach ($request->details as $index => $detail) {
-            $orderId = $detail['order_id'] ?? $detail['voucher_id'] ?? null;
-            $voucherType = $detail['voucher_type'] ?? null;
+            $orderId = $detail['order_id'] ?? $detail['voucher_id'] ?? $detail['voucher_no'] ?? null;
+            $voucherType = strtolower(trim($detail['voucher_type'] ?? ''));
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
 
-            if ($voucherType === 'grn' || (!empty($orderId) && empty($detail['sales_order_id']) && empty($detail['receipt_voucher_id']))) {
+            if ($voucherType === 'grn' && !empty($orderId)) {
                 $grn = GrnNumber::where('id', $orderId)->orWhere('unique_no', $orderId)->first();
-                if ($grn) {
-                    $grnTotalUsage[$grn->id] = ($grnTotalUsage[$grn->id] ?? 0) + $debitAmount;
+                if (!$grn) {
+                    return "Line " . ($index + 1) . ": GRN was not found.";
                 }
+                $grnTotalUsage[$grn->id] = ($grnTotalUsage[$grn->id] ?? 0) + $debitAmount;
             }
         }
 
