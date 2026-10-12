@@ -1,4 +1,7 @@
 @php
+    $maxInitialQC = $maxInitialQC ?? ($tickets->map(fn($t) => $t->arrivalSamplingRequests->where('sampling_type', 'initial')->count())->max() ?: 1);
+    $maxInnerQC = $maxInnerQC ?? ($tickets->map(fn($t) => $t->arrivalSamplingRequests->where('sampling_type', 'inner')->count())->max() ?: 1);
+
     if (!function_exists('getWorkflowMinutes')) {
         function getWorkflowMinutes($start, $end) {
             if (!$start || !$end) {
@@ -80,10 +83,26 @@
         <th>Ticket #</th>
         <th>Status</th>
         <th>Gate -> 1st QC</th>
-        <th>1st QC -> 1st Dec</th>
-        <th>1st Dec -> Loc</th>
+        @for ($i = 1; $i <= $maxInitialQC; $i++)
+            @php
+                $isResampling = $tickets->contains(function ($t) use ($i) {
+                    $item = $t->arrivalSamplingRequests->where('sampling_type', 'initial')->values()->get($i - 1);
+                    return $item && (strtolower($item->is_re_sampling ?? '') === 'yes' || $item->is_re_sampling === 1 || $item->is_re_sampling === true);
+                });
+            @endphp
+            <th>{{ getOrdinalSuffix($i) }} QC {{ $isResampling ? '(resampling) ' : '' }}-> {{ getOrdinalSuffix($i) }} Dec</th>
+        @endfor
+        <th>{{ $maxInitialQC > 1 ? 'Last Dec -> Loc' : '1st Dec -> Loc' }}</th>
         <th>Loc -> 1st Weight</th>
-        <th>Inner Sample -> 2nd Dec</th>
+        @for ($j = 1; $j <= $maxInnerQC; $j++)
+            @php
+                $isInnerResampling = $tickets->contains(function ($t) use ($j) {
+                    $item = $t->arrivalSamplingRequests->where('sampling_type', 'inner')->values()->get($j - 1);
+                    return $item && (strtolower($item->is_re_sampling ?? '') === 'yes' || $item->is_re_sampling === 1 || $item->is_re_sampling === true);
+                });
+            @endphp
+            <th>{{ $maxInnerQC > 1 ? getOrdinalSuffix($j) . ' ' : '' }}Inner Sample {{ $isInnerResampling ? '(resampling) ' : '' }}-> 2nd Dec</th>
+        @endfor
         <th>2nd Weight -> Accounts</th>
         <th>Accounts -> HO Confirm</th>
         <th>Total Elapsed Time</th>
@@ -119,9 +138,45 @@
                 // 2. 1st QC
                 $firstQcTime = $firstInit?->result_posted_at;
 
-                // 3. 1st Decision (1st Dec)
-                $firstDecTime = $firstInit?->approved_at;
-                $lastDecTime = $lastInit?->approved_at ?? $firstDecTime;
+                // Dynamic Initial QC calculations
+                $qcDurations = [];
+                $lastDecTime = null;
+
+                for ($i = 0; $i < $maxInitialQC; $i++) {
+                    $initItem = $initialSamplings->get($i);
+                    $qcTime = $initItem?->result_posted_at;
+                    $decTime = null;
+
+                    if ($initItem) {
+                        if ($i === 0 && $row->decision_making_time && $initialSamplings->count() <= 1) {
+                            $decTime = $row->decision_making_time;
+                        } elseif ($initItem->approved_at) {
+                            $decTime = ($initItem->id === $row->lastInitialSampling?->id && $row->decision_making_time)
+                                ? $row->decision_making_time
+                                : $initItem->approved_at;
+                        } elseif (in_array($initItem->approved_status, ['approved', 'rejected', 'resampling'])) {
+                            $decTime = ($initItem->id === $row->lastInitialSampling?->id && $row->decision_making_time)
+                                ? $row->decision_making_time
+                                : ($initItem->decision_making_time ?? $initItem->updated_at);
+                        } elseif ($i === 0 && $row->decision_making_time) {
+                            $decTime = $row->decision_making_time;
+                        }
+
+                        if ($decTime) {
+                            $lastDecTime = $decTime;
+                        }
+                    }
+
+                    $qcDurations[] = [
+                        'formatted' => formatWorkflowDuration($qcTime, $decTime),
+                        'minutes' => getWorkflowMinutes($qcTime, $decTime),
+                        'has_stage' => ($qcTime || $decTime),
+                    ];
+                }
+
+                if (!$lastDecTime) {
+                    $lastDecTime = $row->decision_making_time ?? ($firstInit?->approved_at ?? $firstInit?->updated_at);
+                }
 
                 // 4. Location (Loc)
                 $locTime = (!$isFullReject && $row->unloadingLocation) ? $row->unloadingLocation->created_at : null;
@@ -129,9 +184,27 @@
                 // 5. 1st Weight
                 $firstWeightTime = (!$isFullReject && $row->firstWeighbridge) ? $row->firstWeighbridge->created_at : null;
 
-                // 6. Inner Sample & 2nd Dec (approved_at - result_posted_at for type inner)
-                $innerSampleTime = (!$isFullReject && $firstInner) ? $firstInner->result_posted_at : null;
-                $secondDecTime = (!$isFullReject && ($lastInner || $firstInner)) ? ($lastInner?->approved_at ?? $firstInner?->approved_at) : null;
+                // 6. Dynamic Inner Sample calculations
+                $innerDurations = [];
+                for ($j = 0; $j < $maxInnerQC; $j++) {
+                    $innerItem = $innerSamplings->get($j);
+                    $innerQcTime = (!$isFullReject && $innerItem) ? $innerItem->result_posted_at : null;
+                    $innerDecTime = null;
+
+                    if (!$isFullReject && $innerItem) {
+                        if ($innerItem->approved_at) {
+                            $innerDecTime = $innerItem->approved_at;
+                        } elseif (in_array($innerItem->approved_status, ['approved', 'rejected', 'resampling'])) {
+                            $innerDecTime = $innerItem->decision_making_time ?? $innerItem->updated_at;
+                        }
+                    }
+
+                    $innerDurations[] = [
+                        'formatted' => $isFullReject ? '-' : formatWorkflowDuration($innerQcTime, $innerDecTime),
+                        'minutes' => $isFullReject ? 0 : getWorkflowMinutes($innerQcTime, $innerDecTime),
+                        'has_stage' => ($innerQcTime || $innerDecTime),
+                    ];
+                }
 
                 // 7. 2nd Weight (second_weighbridges.created_at)
                 $secondWeightTime = (!$isFullReject && $row->secondWeighbridge) ? $row->secondWeighbridge->created_at : null;
@@ -144,24 +217,41 @@
 
                 // Formatted Durations
                 $durGateToQc = formatWorkflowDuration($gateTime, $firstQcTime);
-                $durQcToDec = formatWorkflowDuration($firstQcTime, $firstDecTime);
                 $durDecToLoc = $isFullReject ? '-' : formatWorkflowDuration($lastDecTime, $locTime);
                 $durLocTo1stWeight = $isFullReject ? '-' : formatWorkflowDuration($locTime, $firstWeightTime);
-                $durInnerTo2ndDec = $isFullReject ? '-' : formatWorkflowDuration($innerSampleTime, $secondDecTime);
                 $dur2ndWeightToAccounts = $isFullReject ? '-' : formatWorkflowDuration($secondWeightTime, $accountsTime);
                 $durAccountsToHo = $isFullReject ? '-' : formatWorkflowDuration($accountsTime, $hoConfirmTime);
+
                 $primaryTotal = formatWorkflowDuration($gateTime, $hoConfirmTime);
                 if ($primaryTotal !== '-') {
                     $durTotal = $primaryTotal;
                 } else {
-                    $hasAnyStage = ($firstQcTime || $firstDecTime || $locTime || $firstWeightTime || $innerSampleTime || $secondWeightTime || $accountsTime);
+                    $hasAnyInitStage = false;
+                    $qcMinutesTotal = 0;
+                    foreach ($qcDurations as $qcDur) {
+                        if ($qcDur['has_stage']) {
+                            $hasAnyInitStage = true;
+                        }
+                        $qcMinutesTotal += $qcDur['minutes'];
+                    }
+
+                    $hasAnyInnerStage = false;
+                    $innerMinutesTotal = 0;
+                    foreach ($innerDurations as $inDur) {
+                        if ($inDur['has_stage']) {
+                            $hasAnyInnerStage = true;
+                        }
+                        $innerMinutesTotal += $inDur['minutes'];
+                    }
+
+                    $hasAnyStage = ($firstQcTime || $hasAnyInitStage || $locTime || $firstWeightTime || $hasAnyInnerStage || $secondWeightTime || $accountsTime);
                     if ($hasAnyStage) {
                         $stageMinutes = 
                             getWorkflowMinutes($gateTime, $firstQcTime)
-                            + getWorkflowMinutes($firstQcTime, $firstDecTime)
+                            + $qcMinutesTotal
                             + ($isFullReject ? 0 : getWorkflowMinutes($lastDecTime, $locTime))
                             + ($isFullReject ? 0 : getWorkflowMinutes($locTime, $firstWeightTime))
-                            + ($isFullReject ? 0 : getWorkflowMinutes($innerSampleTime, $secondDecTime))
+                            + ($isFullReject ? 0 : $innerMinutesTotal)
                             + ($isFullReject ? 0 : getWorkflowMinutes($secondWeightTime, $accountsTime))
                             + ($isFullReject ? 0 : getWorkflowMinutes($accountsTime, $hoConfirmTime));
 
@@ -175,10 +265,14 @@
                 <td>{{ $row->unique_no }}</td>
                 <td><strong>{{ $statusText }}</strong></td>
                 <td>{{ $durGateToQc }}</td>
-                <td>{{ $durQcToDec }}</td>
+                @foreach ($qcDurations as $qcDur)
+                    <td>{{ $qcDur['formatted'] }}</td>
+                @endforeach
                 <td>{{ $durDecToLoc }}</td>
                 <td>{{ $durLocTo1stWeight }}</td>
-                <td>{{ $durInnerTo2ndDec }}</td>
+                @foreach ($innerDurations as $innerDur)
+                    <td>{{ $innerDur['formatted'] }}</td>
+                @endforeach
                 <td>{{ $dur2ndWeightToAccounts }}</td>
                 <td>{{ $durAccountsToHo }}</td>
                 <td>{{ $durTotal }}</td>

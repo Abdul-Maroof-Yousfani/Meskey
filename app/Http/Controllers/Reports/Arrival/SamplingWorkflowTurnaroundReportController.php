@@ -103,6 +103,14 @@ class SamplingWorkflowTurnaroundReportController extends Controller
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
 
-        return view('management.reports.arrival.sampling-workflow-turnaround.get_sampling_workflow_turnaround', compact('tickets'));
+        $maxInitialQC = $tickets->map(function ($t) {
+            return $t->arrivalSamplingRequests->where('sampling_type', 'initial')->count();
+        })->max() ?: 1;
+
+        $maxInnerQC = $tickets->map(function ($t) {
+            return $t->arrivalSamplingRequests->where('sampling_type', 'inner')->count();
+        })->max() ?: 1;
+
+        return view('management.reports.arrival.sampling-workflow-turnaround.get_sampling_workflow_turnaround', compact('tickets', 'maxInitialQC', 'maxInnerQC'));
     }
 }

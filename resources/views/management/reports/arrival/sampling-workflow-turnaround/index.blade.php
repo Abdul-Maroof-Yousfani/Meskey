@@ -126,7 +126,7 @@
                             <div class="card-body table-responsive" id="filteredData">
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
-                                        <tr>
+                                        {{-- <tr>
                                             <th>Ticket #</th>
                                             <th>Status</th>
                                             <th>Gate -> 1st QC</th>
@@ -137,7 +137,7 @@
                                             <th>2nd Weight -> Accounts</th>
                                             <th>Accounts -> HO Confirm</th>
                                             <th>Total Elapsed Time</th>
-                                        </tr>
+                                        </tr> --}}
                                     </thead>
                                 </table>
                             </div>
