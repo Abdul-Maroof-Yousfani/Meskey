@@ -165,7 +165,7 @@
                 @for ($i = 0; $i < $maxInitialQC; $i++)
                     @php
                         $initItem = $initialSamplings->get($i);
-                        $qcTime = $initItem ? formatDateTime($initItem->created_at) : '';
+                        $qcTime = $initItem ? formatDateTime($initItem->result_posted_at) : '';
                         $qcBy = $initItem ? ($initItem->takenByUser?->name ?? '') : '';
                         $tabaarTime = '';
                         $tabaarBy = '';
@@ -190,7 +190,7 @@
                     <td>{{ $tabaarBy }}</td>
                 @endfor
 
-                <td>{{ formatDateTime($row->result_posted_at) }}</td>
+                <td>{{ formatDateTime($row->unloadingLocation?->created_at) }}</td>
                 <td>{{ $row->unloadingLocation?->createdBy?->name ?? '' }}</td>
                 <td>{{ formatDateTime($row->firstWeighbridge?->created_at) }}</td>
                 <td>{{ $row->firstWeighbridge?->createdBy?->name ?? '' }}</td>
