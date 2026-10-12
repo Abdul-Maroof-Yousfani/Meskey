@@ -190,7 +190,7 @@
                     <td>{{ $tabaarBy }}</td>
                 @endfor
 
-                <td>{{ formatDateTime($row->unloadingLocation?->created_at) }}</td>
+                <td>{{ formatDateTime($row->result_posted_at) }}</td>
                 <td>{{ $row->unloadingLocation?->createdBy?->name ?? '' }}</td>
                 <td>{{ formatDateTime($row->firstWeighbridge?->created_at) }}</td>
                 <td>{{ $row->firstWeighbridge?->createdBy?->name ?? '' }}</td>
