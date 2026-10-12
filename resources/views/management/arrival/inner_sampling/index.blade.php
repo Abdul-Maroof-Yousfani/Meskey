@@ -11,11 +11,15 @@
                     <h2 class="page-title"> {{ $isResampling ? 'Inner Re-Sampling' : 'Inner Sampling' }}</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button
-                        onclick="openModal(this,'{{ route($isResampling ? 'inner-resampling.create' : 'inner-sampling.create') }}','{{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}')"
-                        type="button" class="btn btn-primary position-relative">
+                    <!-- <button
+                                        onclick="openModal(this,'{{ route($isResampling ? 'inner-resampling.create' : 'inner-sampling.create') }}','{{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}')"
+                                        type="button" class="btn btn-primary position-relative">
+                                        {{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}
+                                    </button> -->
+                    <a href="{{ route($isResampling ? 'inner-resampling.create' : 'inner-sampling.create') }}"
+                        class="btn btn-primary position-relative">
                         {{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="row">
@@ -69,7 +73,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route($isResampling ? 'get.inner-resampling' : 'get.inner-sampling') }}`)
         });
     </script>
