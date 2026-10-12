@@ -87,7 +87,7 @@
                                                         class="form-control selectWithoutAjax">
                                                         <option value="">Select Status</option>
                                                         <option value="half_approved" {{ request('status_id') == 'half_approved' ? 'selected' : '' }}>Reject Half</option>
-                                                        <option value="rejected" {{ request('status_id') == 'rejected' ? 'selected' : '' }}>Reject Full</option>
+                                                        {{-- <option value="rejected" {{ request('status_id') == 'rejected' ? 'selected' : '' }}>Reject Full</option> --}}
                                                         <option value="fully_approved" {{ request('status_id') == 'fully_approved' ? 'selected' : '' }}>OK</option>
                                                     </select>
                                                 </div>

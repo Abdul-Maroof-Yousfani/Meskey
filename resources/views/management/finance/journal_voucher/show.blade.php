@@ -8,7 +8,7 @@
     $totalDebits = 0;
     $totalCredits = 0;
     foreach($journalVoucher->journalVoucherDetails as $detail) {
-        if(!empty($detail->receipt_voucher_id) || (!empty($detail->sales_order_id) && empty($detail->voucher_type))) {
+        if(!empty($detail->receipt_voucher_id) || !empty($detail->customer_advance_id) || (!empty($detail->sales_order_id) && empty($detail->voucher_type))) {
             $isReceiving = true;
         }
         if(!empty($detail->voucher_no)) {
@@ -120,6 +120,7 @@
                                             <th>Account</th>
                                             @if($isReceiving)
                                                 <th>Receipt Voucher</th>
+                                                <th>Excess Amount</th>
                                                 <th>Sales order</th>
                                             @elseif($hasOrders)
                                                 <th>Order / GRN</th>
@@ -138,6 +139,15 @@
                                                 </td>
                                                 @if($isReceiving)
                                                     <td>{{ optional($detail->receiptVoucher)->unique_no ?? '—' }}</td>
+                                                    <td>
+                                                        @if($detail->customerAdvance)
+                                                            <span class="badge badge-info">{{ $detail->customerAdvance->voucher_no }}</span>
+                                                        @elseif($detail->voucher_type === 'customer_advance')
+                                                            <span class="badge badge-info">{{ $detail->voucher_no }}</span>
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    </td>
                                                     <td>{{ optional($detail->salesOrder)->reference_no ?? '—' }}</td>
                                                 @elseif($hasOrders)
                                                     <td>{{ $detail->voucher_no ?? '—' }}</td>
@@ -156,17 +166,17 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="{{ $isReceiving ? 4 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Total Debits:</strong></td>
+                                            <td colspan="{{ $isReceiving ? 5 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Total Debits:</strong></td>
                                             <td class="text-right" style="white-space: nowrap;"><strong>{{ number_format($totalDebits, 2) }}</strong></td>
                                             <td></td>
                                         </tr>
                                         <tr>
-                                            <td colspan="{{ $isReceiving ? 4 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Total Credits:</strong></td>
+                                            <td colspan="{{ $isReceiving ? 5 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Total Credits:</strong></td>
                                             <td></td>
                                             <td class="text-right" style="white-space: nowrap;"><strong>{{ number_format($totalCredits, 2) }}</strong></td>
                                         </tr>
                                         <tr>
-                                            <td colspan="{{ $isReceiving ? 4 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
+                                            <td colspan="{{ $isReceiving ? 5 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                             <td class="text-right" style="white-space: nowrap;"><strong style="color: {{ abs($totalDebits - $totalCredits) > 0.01 ? 'red' : 'green' }}">{{ number_format($totalDebits - $totalCredits, 2) }}</strong></td>
                                             <td></td>
                                         </tr>

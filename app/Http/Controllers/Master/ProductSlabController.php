@@ -60,9 +60,37 @@ class ProductSlabController extends Controller
     public function create()
     {
         $products = Product::doesntHave('slabs')->get();
-        $slab_types = ProductSlabType::where('status', 'active')->get();
+        $slab_types = ProductSlabType::where('status', 'active')->orderBy('order_by', 'asc')->get();
+        $referenceSlabs = ProductSlab::generalEnabled()
+            ->whereHas('product')
+            ->with('product')
+            ->select('product_id')
+            ->groupBy('product_id')
+            ->get()
+            ->sortBy(function ($item) {
+                return $item->product->name ?? '';
+            })
+            ->values();
 
-        return view('management.master.product_slab.create', compact('slab_types', 'products'));
+        return view('management.master.product_slab.create', compact('slab_types', 'products', 'referenceSlabs'));
+    }
+
+    public function getReferenceSlabs($productId = null)
+    {
+        $slab_types = ProductSlabType::where('status', 'active')
+            ->orderBy('order_by', 'asc')
+            ->get();
+
+        $productSlabs = $productId
+            ? ProductSlab::generalEnabled()->where('product_id', $productId)->get()
+            : collect();
+
+        $html = view('management.master.product_slab.partials.slabs_container', compact('slab_types', 'productSlabs'))->render();
+
+        return response()->json([
+            'success' => true,
+            'html' => $html
+        ]);
     }
 
     public function storeMultiple(Request $request)

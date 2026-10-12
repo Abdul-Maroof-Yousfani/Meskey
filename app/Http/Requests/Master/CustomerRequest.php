@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Master;
 
+use App\Models\Master\Customer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,27 +17,68 @@ class CustomerRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('company_id') || empty($this->company_id)) {
+            $companyId = auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1;
+            $this->merge(['company_id' => $companyId]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        $companyId = $this->input('company_id') ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+        $customerParam = $this->route('customer');
+        $customerId = $customerParam instanceof \App\Models\Master\Customer
+            ? $customerParam->id
+            : ($customerParam ?? $this->customer);
+
+        $checkDuplicateCustomer = function ($attribute, $value, $fail) use ($companyId, $customerId) {
+            $companyName = trim($this->input('company_name') ?? '');
+            $ownerName = trim($this->input('owner_name') ?? '');
+
+            if ($companyName === '' || $ownerName === '') {
+                return;
+            }
+
+            // Strict check: Same company_name ke sath same owner_name ka customer add nahi hona chahiye
+            $exists = Customer::where('company_id', $companyId)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                ->when($customerId, function ($q) use ($customerId) {
+                    $q->where('id', '!=', $customerId);
+                })
+                ->exists();
+
+            if ($exists) {
+                $fail("A customer with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.");
+            }
+        };
+
         return [
             'company_id' => 'required|exists:companies,id',
             'type' => 'required',
-            'unique_no' => 'nullable|string|max:255|unique:customers,unique_no',
+            'unique_no' => 'nullable|string|max:255|unique:customers,unique_no' . ($customerId ? ",$customerId" : ''),
             'company_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('customers', 'company_name')
-                    ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->customer),
+                $checkDuplicateCustomer,
             ],
-            // 'company_name' => 'required|string|max:255',
             // 'account_type' => 'required|in:credit,debit',
-            'owner_name' => 'required|string|max:255',
+            'owner_name' => [
+                'required',
+                'string',
+                'max:255',
+                $checkDuplicateCustomer,
+            ],
             'owner_mobile_no' => 'required|string|max:11|regex:/^[0-9]{11}$/',
             'owner_cnic_no' => 'required|string|regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/',
             'next_to_kin' => 'nullable|string|max:255',

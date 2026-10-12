@@ -87,7 +87,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th style="width: 28%;">Item (Product) <span class="text-danger">*</span></th>
-                                    <th style="width: 25%;">Factory</th>
+                                    <th style="width: 25%;">Factory <span class="text-danger">*</span></th>
                                     <th style="width: 25%;">Section</th>
                                     <th style="width: 14%;">Weight sample in (kg) <span class="text-danger">*</span></th>
                                     <th style="width: 8%;" class="text-center">Action</th>
@@ -104,7 +104,7 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="arrival_location_id[]" class="form-control select2 psi-factory-select">
+                                        <select name="arrival_location_id[]" class="form-control select2 psi-factory-select" required>
                                             <option value="">Select Factory</option>
                                         </select>
                                     </td>
@@ -160,7 +160,7 @@
                 </select>
             </td>
             <td>
-                <select name="arrival_location_id[]" class="form-control psi-factory-select">
+                <select name="arrival_location_id[]" class="form-control psi-factory-select" required>
                     <option value="">Select Factory</option>
                 </select>
             </td>

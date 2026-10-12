@@ -154,10 +154,13 @@ trait HasApprovalSalesOrder
             $creatorId = $this->created_by ?? Auth::id();
             $creator = User::find($creatorId);
 
-            $parentId = $creator?->parent_user_id ?? $this->parent_user_id;
+            $parentId = $creator?->parent_user_id;
+            if (empty($parentId) && !empty($this->parent_user_id) && $this->parent_user_id != $creatorId) {
+                $parentId = $this->parent_user_id;
+            }
 
-            // Case A: Creator has a parent user
-            if (!empty($parentId)) {
+            // Case A: Creator has a parent user (different from himself)
+            if (!empty($parentId) && $parentId != $creatorId) {
                 // The creator CANNOT approve his own order when he has a parent!
                 if ($user->id == $creatorId) {
                     return false;
@@ -176,10 +179,16 @@ trait HasApprovalSalesOrder
                 return false;
             }
 
-            // Case B: Creator has NO parent user (self-approval at Stage 1)
+            // Case B: Creator has NO parent user (creator is the parent / root user)
+            // 1. Creator himself (as parent) can approve at Stage 1
             if ($creator && $user->id == $creator->id) {
                 return true;
             }
+
+            // 2. Any child user under this creator who has sale-order-approval permission
+            // if ($creator && $user->parent_user_id == $creator->id && $this->userHasSalesOrderPermission($user)) {
+            //     return true;
+            // }
 
             return false;
         }
@@ -225,16 +234,29 @@ trait HasApprovalSalesOrder
         $module = $this->getApprovalModule();
         $moduleId = $module ? $module->id : 16;
 
-        // Check if user already took an approved action in this current cycle
-        $alreadyActed = $this->approvalLogs()
-            ->where('module_id', $moduleId)
-            ->where('approval_cycle', $currentCycle)
-            ->where('user_id', $user->id)
-            ->where('status', 'active')
-            ->whereIn('action', ['approved', 'partial_approved'])
-            ->exists();
-        if ($alreadyActed) {
-            return false;
+        // Check if user already took an approved action in this current cycle for this stage
+        if ($currentStage === 'stage_1_pending') {
+            $alreadyActed = $this->approvalLogs()
+                ->where('module_id', $moduleId)
+                ->where('approval_cycle', $currentCycle)
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->whereIn('action', ['approved', 'partial_approved'])
+                ->exists();
+            if ($alreadyActed) {
+                return false;
+            }
+        } elseif ($currentStage === 'headoffice_pending') {
+            $alreadyApprovedHO = $this->approvalLogs()
+                ->where('module_id', $moduleId)
+                ->where('approval_cycle', $currentCycle)
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->where('action', 'approved')
+                ->exists();
+            if ($alreadyApprovedHO) {
+                return false;
+            }
         }
 
         return $this->canAct($user);
@@ -257,7 +279,10 @@ trait HasApprovalSalesOrder
 
         // Resolve role for Stage 1
         $stage1RoleId = 1;
-        $parentId = $creator?->parent_user_id ?? $this->parent_user_id;
+        $parentId = $creator?->parent_user_id;
+        if (empty($parentId) && !empty($this->parent_user_id) && $this->parent_user_id != $creator?->id) {
+            $parentId = $this->parent_user_id;
+        }
         if (!empty($parentId)) {
             $parent = User::find($parentId);
             $stage1RoleId = $parent?->roles()?->latest()?->first()?->id ?? ($creator?->roles()?->latest()?->first()?->id ?? 1);
@@ -311,7 +336,10 @@ trait HasApprovalSalesOrder
 
         $creator = User::find($this->created_by ?? Auth::id());
         $stage1RoleId = 1;
-        $parentId = $creator?->parent_user_id ?? $this->parent_user_id;
+        $parentId = $creator?->parent_user_id;
+        if (empty($parentId) && !empty($this->parent_user_id) && $this->parent_user_id != $creator?->id) {
+            $parentId = $this->parent_user_id;
+        }
         if (!empty($parentId)) {
             $parent = User::find($parentId);
             $stage1RoleId = $parent?->roles()?->latest()?->first()?->id ?? ($creator?->roles()?->latest()?->first()?->id ?? 1);

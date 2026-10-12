@@ -17,6 +17,7 @@ class JournalVoucherDetail extends Model
         'journal_voucher_id',
         'acc_id',
         'receipt_voucher_id',
+        'customer_advance_id',
         'sales_order_id',
         'voucher_id',
         'voucher_no',
@@ -53,6 +54,11 @@ class JournalVoucherDetail extends Model
     public function salesOrder()
     {
         return $this->belongsTo(SalesOrder::class, 'sales_order_id');
+    }
+
+    public function customerAdvance()
+    {
+        return $this->belongsTo(\App\Models\CustomerAdvance::class, 'customer_advance_id');
     }
 
     public function grn()

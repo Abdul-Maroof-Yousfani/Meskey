@@ -64,6 +64,7 @@ class WeightDifferenceController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             }
         })
+        ->where('first_qc_status',"!=", "rejected")
         ->groupBy('qc_product')
         ->get();
 

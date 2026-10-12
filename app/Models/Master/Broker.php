@@ -63,6 +63,11 @@ class Broker extends Model
         return $this->hasMany(ArrivalPurchaseOrder::class, 'broker_id');
     }
 
+    public function account()
+    {
+        return $this->belongsTo(\App\Models\Master\Account\Account::class, 'account_id');
+    }
+
     public function scopeForUserLocation($query, $user)
     {
         $companyLocation = $user->companyLocation;

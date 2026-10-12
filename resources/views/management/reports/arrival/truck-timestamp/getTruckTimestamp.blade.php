@@ -165,7 +165,7 @@
                 @for ($i = 0; $i < $maxInitialQC; $i++)
                     @php
                         $initItem = $initialSamplings->get($i);
-                        $qcTime = $initItem ? formatDateTime($initItem->created_at) : '';
+                        $qcTime = $initItem ? formatDateTime($initItem->result_posted_at) : '';
                         $qcBy = $initItem ? ($initItem->takenByUser?->name ?? '') : '';
                         $tabaarTime = '';
                         $tabaarBy = '';

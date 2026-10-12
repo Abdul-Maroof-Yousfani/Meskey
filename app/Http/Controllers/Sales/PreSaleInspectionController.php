@@ -27,8 +27,9 @@ class PreSaleInspectionController extends Controller
 
         $items = Product::all();
         $locations = get_locations();
+        $arrivalLocations = ArrivalLocation::where('status', 'active')->get();
 
-        return view('management.sales.pre_sale_inspection.index', compact('items', 'locations'));
+        return view('management.sales.pre_sale_inspection.index', compact('items', 'locations', 'arrivalLocations'));
     }
 
     public function getList(Request $request)
@@ -39,6 +40,7 @@ class PreSaleInspectionController extends Controller
 
         $inspections = PreSaleInspection::with([
             'location',
+            'factory',
             'items.item',
             'items.factory',
             'items.section',
@@ -57,6 +59,9 @@ class PreSaleInspectionController extends Controller
                         ->orWhereHas('location', function ($lq) use ($search) {
                             $lq->whereRaw('LOWER(name) LIKE ?', [$search]);
                         })
+                        ->orWhereHas('factory', function ($fq) use ($search) {
+                            $fq->whereRaw('LOWER(name) LIKE ?', [$search]);
+                        })
                         ->orWhereHas('items.item', function ($iq) use ($search) {
                             $iq->whereRaw('LOWER(name) LIKE ?', [$search]);
                         });
@@ -70,6 +75,9 @@ class PreSaleInspectionController extends Controller
             })
             ->when($request->filled('location_id') && $request->location_id != 'all', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
+            })
+            ->when($request->filled('arrival_location_id') && $request->arrival_location_id != 'all', function ($q) use ($request) {
+                return $q->where('arrival_location_id', $request->arrival_location_id);
             })
             ->when($request->filled('item_id') && $request->item_id != 'all', function ($q) use ($request) {
                 return $q->whereHas('items', function ($iq) use ($request) {
@@ -107,45 +115,83 @@ class PreSaleInspectionController extends Controller
         try {
             DB::beginTransaction();
 
-            $inspectionNo = $request->inspection_no;
-            if (empty($inspectionNo) || PreSaleInspection::where('inspection_no', $inspectionNo)->exists()) {
-                $inspectionNo = self::generateUniqueNumber($request->date, $request->location_id);
-            }
-
-            $inspection = PreSaleInspection::create([
-                'inspection_no' => $inspectionNo,
-                'date' => $request->date,
-                'location_id' => $request->location_id,
-                'party_name' => $request->party_name,
-                'party_contact_no' => $request->party_contact_no,
-                'reference' => $request->reference,
-                'visitor_name' => $request->visitor_name,
-                'remarks' => $request->remarks ?? '',
-                'status' => 'active',
-                'company_id' => auth()->user()?->company_id ?? 1,
-                'created_by' => auth()->user()?->id ?? 1,
-            ]);
-
-            // Save items with factory, section, and weight
             $itemIds = $request->item_id ?? [];
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $weights = $request->weight ?? [];
 
+            // Group items by factory location (arrival_location_id)
+            $groupedItems = [];
             foreach ($itemIds as $index => $itemId) {
                 if (!empty($itemId)) {
-                    $inspection->items()->create([
+                    $factoryId = $factoryIds[$index] ?? null;
+                    if (!$factoryId) {
+                        return response()->json(["error" => "Factory Location is required for every item row."], 422);
+                    }
+                    $groupedItems[$factoryId][] = [
                         'item_id' => $itemId,
-                        'arrival_location_id' => !empty($factoryIds[$index]) ? $factoryIds[$index] : null,
+                        'arrival_location_id' => $factoryId,
                         'arrival_sub_location_id' => !empty($sectionIds[$index]) ? $sectionIds[$index] : null,
                         'weight' => $weights[$index] ?? 0,
-                    ]);
+                    ];
                 }
+            }
+
+            if (empty($groupedItems)) {
+                return response()->json(["error" => "At least one item is required."], 422);
+            }
+
+            // Generate base number (e.g. LOC-DEKH-001-10-09-2026)
+            $baseNo = self::generateUniqueNumber($request->date, $request->location_id);
+
+            $createdInspections = [];
+
+            foreach ($groupedItems as $factoryId => $items) {
+                $factory = ArrivalLocation::find($factoryId);
+                $factoryName = $factory ? trim($factory->name) : 'FAC';
+
+                $inspectionNo = $baseNo . '-' . $factoryName;
+
+                // Ensure unique inspection_no if already exists
+                $counter = 1;
+                $candidateNo = $inspectionNo;
+                while (PreSaleInspection::where('inspection_no', $candidateNo)->exists()) {
+                    $candidateNo = $inspectionNo . '-' . $counter;
+                    $counter++;
+                }
+                $inspectionNo = $candidateNo;
+
+                $inspection = PreSaleInspection::create([
+                    'inspection_no' => $inspectionNo,
+                    'date' => $request->date,
+                    'location_id' => $request->location_id,
+                    'arrival_location_id' => $factoryId,
+                    'party_name' => $request->party_name,
+                    'party_contact_no' => $request->party_contact_no,
+                    'reference' => $request->reference,
+                    'visitor_name' => $request->visitor_name ?? '',
+                    'remarks' => $request->remarks ?? '',
+                    'status' => 'active',
+                    'am_approval_status' => 'pending',
+                    'am_change_made' => 1,
+                    'company_id' => auth()->user()?->company_id ?? 1,
+                    'created_by' => auth()->user()?->id ?? 1,
+                ]);
+
+                foreach ($items as $itemData) {
+                    $inspection->items()->create($itemData);
+                }
+
+                $createdInspections[] = $inspectionNo;
             }
 
             DB::commit();
 
-            return response()->json("Pre Sale Inspection has been created successfully");
+            $msg = count($createdInspections) > 1
+                ? count($createdInspections) . " Pre Sale Dekh created successfully (" . implode(', ', $createdInspections) . ")"
+                : "Pre Sale Dekh ({$createdInspections[0]}) created successfully";
+
+            return response()->json($msg);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(["error" => $e->getMessage()], 500);
@@ -164,11 +210,25 @@ class PreSaleInspectionController extends Controller
             abort(403, "This Pre Sale Dekh is {$status} and cannot be edited.");
         }
 
-        $pre_sale_inspection->load('location', 'items.item', 'items.factory', 'items.section');
+        $pre_sale_inspection->load('location', 'factory', 'items.item', 'items.factory', 'items.section');
         $locations = get_locations();
         $items = Product::all();
-        $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
-        $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+
+        // Lock factory dropdown in edit: only show this inspection's factory
+        if ($pre_sale_inspection->arrival_location_id) {
+            $arrivalLocations = ArrivalLocation::with("companyLocation")
+                ->select('id', 'name', 'company_location_id')
+                ->where('id', $pre_sale_inspection->arrival_location_id)
+                ->get();
+            $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")
+                ->select('id', 'name', 'arrival_location_id')
+                ->where('arrival_location_id', $pre_sale_inspection->arrival_location_id)
+                ->where('status', 'active')
+                ->get();
+        } else {
+            $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
+            $arrivalSubLocations = ArrivalSubLocation::with("arrivalLocation")->select('id', 'name', 'arrival_location_id')->where('status', 'active')->get();
+        }
 
         return view('management.sales.pre_sale_inspection.edit', compact('pre_sale_inspection', 'locations', 'items', 'arrivalLocations', 'arrivalSubLocations'));
     }
@@ -185,10 +245,13 @@ class PreSaleInspectionController extends Controller
         try {
             DB::beginTransaction();
 
+            $factoryId = $pre_sale_inspection->arrival_location_id ?: ($request->arrival_location_id[0] ?? null);
+
             $pre_sale_inspection->update([
-                'inspection_no' => $request->inspection_no,
+                'inspection_no' => $request->inspection_no ?: $pre_sale_inspection->inspection_no,
                 'date' => $request->date,
                 'location_id' => $request->location_id,
+                'arrival_location_id' => $factoryId,
                 'party_name' => $request->party_name,
                 'party_contact_no' => $request->party_contact_no,
                 'reference' => $request->reference,
@@ -201,7 +264,6 @@ class PreSaleInspectionController extends Controller
             $pre_sale_inspection->items()->delete();
 
             $itemIds = $request->item_id ?? [];
-            $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $weights = $request->weight ?? [];
 
@@ -209,7 +271,7 @@ class PreSaleInspectionController extends Controller
                 if (!empty($itemId)) {
                     $pre_sale_inspection->items()->create([
                         'item_id' => $itemId,
-                        'arrival_location_id' => !empty($factoryIds[$index]) ? $factoryIds[$index] : null,
+                        'arrival_location_id' => $factoryId,
                         'arrival_sub_location_id' => !empty($sectionIds[$index]) ? $sectionIds[$index] : null,
                         'weight' => $weights[$index] ?? 0,
                     ]);
@@ -229,7 +291,7 @@ class PreSaleInspectionController extends Controller
     {
         abort_if(!canAccess('dekh-list') && !auth()->user()?->can('dekh-list'), 403);
 
-        $pre_sale_inspection->load('location', 'items.item', 'items.factory', 'items.section', 'creator', 'salesInquiries', 'salesOrders');
+        $pre_sale_inspection->load('location', 'factory', 'items.item', 'items.factory', 'items.section', 'creator', 'salesInquiries', 'salesOrders');
         return view('management.sales.pre_sale_inspection.view', compact('pre_sale_inspection'));
     }
 
@@ -300,7 +362,7 @@ class PreSaleInspectionController extends Controller
         $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
         $prefix = $locationCode . '-DEKH';
 
-        $searchPattern = $prefix . '-%-' . $datePart;
+        $searchPattern = $prefix . '-%-' . $datePart . '%';
 
         $existing = PreSaleInspection::where('inspection_no', 'like', $searchPattern)
             ->lockForUpdate()
@@ -308,7 +370,7 @@ class PreSaleInspectionController extends Controller
             ->toArray();
 
         $maxNumber = 0;
-        $regex = '/^' . preg_quote($prefix, '/') . '-(\d+)-' . preg_quote($datePart, '/') . '$/';
+        $regex = '/^' . preg_quote($prefix, '/') . '-(\d+)-' . preg_quote($datePart, '/') . '(?:-.*)?$/';
         foreach ($existing as $no) {
             if (preg_match($regex, $no, $matches)) {
                 $num = (int) $matches[1];
@@ -321,7 +383,7 @@ class PreSaleInspectionController extends Controller
         $newNumber = $maxNumber + 1;
         $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
 
-        while (in_array($candidate, $existing) || PreSaleInspection::where('inspection_no', $candidate)->exists()) {
+        while (in_array($candidate, $existing) || PreSaleInspection::where('inspection_no', 'like', $candidate . '%')->exists()) {
             $newNumber++;
             $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
         }
@@ -349,6 +411,7 @@ class PreSaleInspectionController extends Controller
     {
         $inspection = PreSaleInspection::with([
             'location',
+            'factory',
             'items.item',
             'items.factory',
             'items.section',
@@ -360,6 +423,8 @@ class PreSaleInspectionController extends Controller
             'date' => $inspection->date ? $inspection->date->format('Y-m-d') : null,
             'location_id' => $inspection->location_id,
             'location_name' => $inspection->location?->name,
+            'arrival_location_id' => $inspection->arrival_location_id,
+            'factory_name' => $inspection->factory?->name,
             'party_name' => $inspection->party_name,
             'party_contact_no' => $inspection->party_contact_no,
             'reference' => $inspection->reference,

@@ -713,12 +713,12 @@ body.drawer-opened {
 } */
 
 /* Green toggle when checked */
-.custom-control-input:checked~.custom-control-label::before {
+.lock-arrival-wrapper .custom-control-input:checked~.custom-control-label::before {
   background-color: #28a745;
   border-color: #28a745;
 }
 
-.custom-control-input:checked~.custom-control-label::after {
+.lock-arrival-wrapper .custom-control-input:checked~.custom-control-label::after {
   background-color: #fff;
 }
 

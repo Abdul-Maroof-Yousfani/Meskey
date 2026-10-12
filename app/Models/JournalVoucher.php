@@ -92,6 +92,39 @@ class JournalVoucher extends Model
         return $this->belongsTo(Company::class, 'company_id');
     }
 
+    public function getCustomerNameAttribute(): string
+    {
+        $customers = collect();
+
+        $details = $this->relationLoaded('journalVoucherDetails')
+            ? $this->journalVoucherDetails
+            : $this->journalVoucherDetails()->with([
+                'account',
+                'receiptVoucher.customer',
+                'customerAdvance.customer',
+                'salesOrder.customer'
+            ])->get();
+
+        foreach ($details as $detail) {
+            if ($detail->receiptVoucher && $detail->receiptVoucher->customer) {
+                $customers->push($detail->receiptVoucher->customer->name);
+            }
+            if ($detail->customerAdvance && $detail->customerAdvance->customer) {
+                $customers->push($detail->customerAdvance->customer->name);
+            }
+            if ($detail->salesOrder && $detail->salesOrder->customer) {
+                $customers->push($detail->salesOrder->customer->name);
+            }
+            if ($detail->account && strtolower($detail->account->table_name ?? '') === 'customers') {
+                $customers->push($detail->account->name);
+            }
+        }
+
+        $unique = $customers->filter()->unique()->values();
+
+        return $unique->isNotEmpty() ? $unique->implode(', ') : '—';
+    }
+
     protected function onApprovalComplete()
     {
         $module = $this->getApprovalModule();
@@ -118,20 +151,31 @@ class JournalVoucher extends Model
                     $detailVoucherType = $detail->voucher_type;
 
                     if (empty($voucherNo)) {
-                        if ($detail->receipt_voucher_id && $detail->receiptVoucher) {
+                        if ($detail->customer_advance_id && $detail->customerAdvance) {
+                            $voucherNo = $detail->customerAdvance->voucher_no;
+                            $detailVoucherType = 'excess_payment';
+                        } elseif ($detail->receipt_voucher_id && $detail->receiptVoucher) {
                             $voucherNo = $detail->receiptVoucher->unique_no;
                             $detailVoucherType = $detailVoucherType ?: 'receipt_voucher';
                         } elseif ($detail->sales_order_id && $detail->salesOrder) {
                             $voucherNo = $detail->salesOrder->reference_no ?? $detail->salesOrder->unique_no;
                             $detailVoucherType = $detailVoucherType ?: 'sales_order';
                         } elseif (!empty($detail->voucher_id)) {
-                            if ($detail->grn) {
+                            if ($detail->voucher_type === 'customer_advance') {
+                                $adv = \App\Models\CustomerAdvance::find($detail->voucher_id);
+                                $voucherNo = $adv ? $adv->voucher_no : (string) $detail->voucher_id;
+                                $detailVoucherType = 'excess_payment';
+                            } elseif ($detail->grn) {
                                 $voucherNo = $detail->grn->unique_no;
                                 $detailVoucherType = $detailVoucherType ?: 'grn';
                             } else {
                                 $voucherNo = (string) $detail->voucher_id;
                             }
                         }
+                    }
+
+                    if ($detailVoucherType === 'customer_advance') {
+                        $detailVoucherType = 'excess_payment';
                     }
 
                     $isGrn = strtolower($detailVoucherType ?? '') === 'grn' || (is_string($voucherNo) && str_starts_with($voucherNo, 'KHI-'));
@@ -211,6 +255,19 @@ class JournalVoucher extends Model
         if ($module && isset($module->approval_column)) {
             $updateData[$module->approval_column] = 'rejected';
         }
+        // Revert any customer advance adjustments made by this JV
+        $adjustments = \App\Models\CustomerAdvanceAdjustment::where('voucher_no', $this->jv_no)->get();
+        foreach ($adjustments as $adj) {
+            $adv = \App\Models\CustomerAdvance::find($adj->customer_advance_id);
+            if ($adv) {
+                $adv->used_amount -= $adj->amount;
+                $adv->remaining_amount += $adj->amount;
+                $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                $adv->save();
+            }
+            $adj->delete();
+        }
+
         $this->update($updateData);
     }
 

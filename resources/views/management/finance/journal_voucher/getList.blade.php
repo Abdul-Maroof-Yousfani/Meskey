@@ -3,6 +3,7 @@
         <tr>
             <th>JV No</th>
             <th>Date</th>
+            <th>Customer</th>
             <th>Description</th>
             <th>Status</th>
             <th>Created By</th>
@@ -14,7 +15,14 @@
             @foreach ($journalVouchers as $voucher)
                 <tr>
                     <td>{{ $voucher->jv_no }}</td>
-                    <td>{{ $voucher->jv_date->format('d-m-Y') }}</td>
+                    <td>{{ $voucher->jv_date ? $voucher->jv_date->format('d-m-Y') : 'N/A' }}</td>
+                    <td>
+                        @if(!empty($voucher->customer_name) && $voucher->customer_name !== '—')
+                            <span class="font-weight-bold" style="white-space: normal;">{{ $voucher->customer_name }}</span>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
                     <td>{{ Str::limit($voucher->description ?? 'N/A', 50) }}</td>
                     <td>
                         @php
@@ -52,7 +60,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="6" class="ant-table-cell text-center">
+                <td colspan="7" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

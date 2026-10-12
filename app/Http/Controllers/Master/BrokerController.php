@@ -97,16 +97,57 @@ class BrokerController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
+            $companyId = $request->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+            $companyName = trim($request->company_name);
+            $ownerName = trim($request->owner_name);
+
+            // Double-check duplicate broker: same company_name AND same owner_name
+            $duplicateBroker = Broker::where('company_id', $companyId)
+                ->where(function ($q) use ($companyName, $ownerName) {
+                    $q->where(function ($sq) use ($companyName, $ownerName) {
+                        $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                           ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                    })
+                    ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                        $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                           ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                    });
+                })
+                ->exists();
+
+            if ($duplicateBroker) {
+                return response()->json([
+                    'error' => "A broker with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.",
+                    'errors' => ['company_name' => ["A broker with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists."]],
+                ], 422);
+            }
+
+            $requestData['company_id'] = $companyId;
             $requestData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
-            $requestData['name'] = $request->company_name;
+            $requestData['name'] = $companyName;
+            $requestData['company_name'] = $companyName;
+            $requestData['owner_name'] = $ownerName;
             $requestData['company_location_ids'] = $request->company_location_ids;
 
-            if ($request->account_id) {
+            // COA Account Deduplication / Reuse for Brokers (Hierarchy Path: 2-3)
+            if (!empty($request->account_id)) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
+                $existingAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'brokers')
+                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
 
-                $requestData['account_id'] = $account->id;
+                if ($existingAccount && !Broker::where('account_id', $existingAccount->id)->exists()) {
+                    $requestData['account_id'] = $existingAccount->id;
+                } else {
+                    $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-3', 'brokers'));
+                    $requestData['account_id'] = $account->id;
+                }
             }
 
             $broker = Broker::create($requestData);
@@ -149,6 +190,12 @@ class BrokerController extends Controller
                 'success' => 'Broker created successfully.',
                 'data' => []
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->validator->errors()->first(),
+                'errors' => $e->validator->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -194,12 +241,61 @@ class BrokerController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
-            if ($request->account_id) {
-                $requestData['account_id'] = $request->account_id;
-            } elseif (empty($broker->account_id)) {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
+            $companyId = $request->company_id ?: ($broker->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1));
+            $companyName = trim($request->company_name);
+            $ownerName = trim($request->owner_name);
 
-                $requestData['account_id'] = $account->id;
+            // Double check duplicate broker: same company_name AND same owner_name (ignoring current broker)
+            $duplicateBroker = Broker::where('company_id', $companyId)
+                ->where('id', '!=', $broker->id)
+                ->where(function ($q) use ($companyName, $ownerName) {
+                    $q->where(function ($sq) use ($companyName, $ownerName) {
+                        $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                           ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                    })
+                    ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                        $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                           ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                    });
+                })
+                ->exists();
+
+            if ($duplicateBroker) {
+                return response()->json([
+                    'error' => "A broker with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.",
+                    'errors' => ['company_name' => ["A broker with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists."]],
+                ], 422);
+            }
+
+            $requestData['company_id'] = $companyId;
+            $requestData['name'] = $companyName;
+            $requestData['company_name'] = $companyName;
+            $requestData['owner_name'] = $ownerName;
+
+            if ($broker->account) {
+                // Existing account update
+                $broker->account->update([
+                    'name' => $companyName,
+                ]);
+            } elseif (!empty($request->account_id)) {
+                $requestData['account_id'] = $request->account_id;
+            } else {
+                // Check if unlinked COA exists before creating new
+                $existingAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'brokers')
+                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
+
+                if ($existingAccount && !Broker::where('account_id', $existingAccount->id)->where('id', '!=', $broker->id)->exists()) {
+                    $requestData['account_id'] = $existingAccount->id;
+                } else {
+                    $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-3', 'brokers'));
+                    $requestData['account_id'] = $account->id;
+                }
             }
 
             $broker->update($requestData);
@@ -230,6 +326,12 @@ class BrokerController extends Controller
                 'success' => 'Broker updated successfully.',
                 'data' => []
             ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->validator->errors()->first(),
+                'errors' => $e->validator->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

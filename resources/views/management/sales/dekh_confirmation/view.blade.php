@@ -13,8 +13,11 @@
 
 @php
     $conf = $inspection->confirmation;
-    $isCompleted = $conf && $conf->is_completed;
-    $isApproved = $conf && strtolower($conf->am_approval_status ?? '') === 'approved';
+    $isCompleted = (bool)($conf && $conf->is_completed);
+    $appStatus = $conf ? strtolower($conf->am_approval_status ?? '') : '';
+    $rawApprovalStatus = $appStatus ?: strtolower($inspection->confirmation_approval_status ?? '');
+    $isApproved = $rawApprovalStatus === 'approved';
+    $isReverted = $rawApprovalStatus === 'reverted';
     $vehicleNo = $conf?->vehicle_no ?? $inspection->vehicle_no;
 @endphp
 
@@ -36,16 +39,32 @@
                             <span class="badge badge-success ml-2">Confirmation Approved</span>
                         @elseif($isCompleted)
                             <span class="badge badge-info ml-2">Confirmation Approval Pending</span>
+                        @elseif($isReverted)
+                            <span class="badge badge-warning ml-2">Confirmation Reverted</span>
                         @else
-                            <span class="badge badge-warning ml-2">Pending Completion</span>
+                            <span class="badge badge-secondary ml-2">Pending Completion</span>
                         @endif
                     </div>
                 </div>
 
+                {{-- Revert Alert Notice --}}
+                @if($isReverted && !$isCompleted)
+                    @php
+                        $revertLog = $conf?->approvalLogs->where('action', 'reverted')->last();
+                    @endphp
+                    <div class="alert alert-warning border mb-3 py-2 px-3">
+                        <div class="font-weight-bold text-dark"><i class="ft-alert-triangle mr-1"></i> Reverted for Revision by Approver</div>
+                        @if($revertLog && !empty($revertLog->comments))
+                            <div class="mt-1 font-italic text-dark"><strong>Reason / Comments:</strong> "{{ $revertLog->comments }}"</div>
+                        @endif
+                        <small class="text-muted d-block mt-1">Please modify the confirmed items or remarks below and click <strong>"Re-submit as Complete"</strong> to send back for approval.</small>
+                    </div>
+                @endif
+
                 {{-- General Info --}}
                 <div class="row border-bottom pb-2 mb-3">
                     <div class="col-md-4">
-                        <div class="info-label">Location:</div>
+                        <div class="info-label">Company Location:</div>
                         <div class="info-value">
                             <span class="badge badge-light border text-dark font-medium-1">
                                 {{ $inspection->location?->name ?? 'N/A' }}
@@ -81,39 +100,70 @@
                 {{-- Items, Factory, Section & Weights --}}
                 <div class="row border-bottom pb-3 mb-3">
                     <div class="col-12">
-                        <div class="info-label mb-2"><i class="ft-package"></i> Items Details:</div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="info-label"><i class="ft-package"></i> Items Details:</div>
+                            @if(!$isCompleted)
+                                <small class="text-muted"><i class="ft-info"></i> Check item(s) to confirm (at least 1 required)</small>
+                            @endif
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-bordered table-sm m-0">
                                 <thead class="bg-light">
                                     <tr>
+                                        @if(!$isCompleted)
+                                            <th style="width: 4%;" class="text-center">
+                                                <input type="checkbox" id="selectAllItems" checked title="Select All / Deselect All">
+                                            </th>
+                                        @endif
                                         <th style="width: 5%;">#</th>
-                                        <th style="width: 30%;">Item (Product)</th>
-                                        <th style="width: 25%;">Factory</th>
-                                        <th style="width: 25%;">Section</th>
-                                        <th class="text-right" style="width: 15%;">Weight sample in (kg)</th>
+                                        <th style="width: 28%;">Item (Product)</th>
+                                        <th style="width: 22%;">Factory</th>
+                                        <th style="width: 22%;">Section</th>
+                                        <th class="text-right" style="width: 13%;">Weight sample (kg)</th>
+                                        @if($isCompleted)
+                                            <th class="text-center" style="width: 10%;">Confirmation</th>
+                                        @endif
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @php $totalWeight = 0; @endphp
                                     @forelse($inspection->items as $idx => $pi)
                                         @php $totalWeight += (float)$pi->weight; @endphp
-                                        <tr>
-                                            <td>{{ $idx + 1 }}</td>
-                                            <td class="font-weight-bold text-dark">{{ $pi->item?->name ?? 'N/A' }}</td>
-                                            <td>{{ $pi->factory?->name ?? '-' }}</td>
-                                            <td>{{ $pi->section?->name ?? '-' }}</td>
-                                            <td class="text-right font-weight-bold">{{ number_format($pi->weight, 2) }}</td>
+                                        <tr class="{{ !$isCompleted ? 'clickable-row' : '' }}">
+                                            @if(!$isCompleted)
+                                                <td class="text-center align-middle">
+                                                    <input type="checkbox" class="confirm-item-checkbox" value="{{ $pi->id }}"
+                                                        {{ ($isReverted ? (bool)$pi->is_confirmed : ($pi->is_confirmed !== null ? (bool)$pi->is_confirmed : true)) ? 'checked' : '' }}>
+                                                </td>
+                                            @endif
+                                            <td class="align-middle">{{ $idx + 1 }}</td>
+                                            <td class="font-weight-bold text-dark align-middle">{{ $pi->item?->name ?? 'N/A' }}</td>
+                                            <td class="align-middle">{{ $pi->factory?->name ?? '-' }}</td>
+                                            <td class="align-middle">{{ $pi->section?->name ?? '-' }}</td>
+                                            <td class="text-right font-weight-bold align-middle">{{ number_format($pi->weight, 2) }}</td>
+                                            @if($isCompleted)
+                                                <td class="text-center align-middle">
+                                                    @if($pi->is_confirmed)
+                                                        <span class="badge badge-success px-2 py-1"><i class="fa fa-check mr-1"></i> Confirmed</span>
+                                                    @else
+                                                        <span class="badge badge-secondary px-2 py-1"><i class="fa fa-times mr-1"></i> Not Confirmed</span>
+                                                    @endif
+                                                </td>
+                                            @endif
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">No items recorded.</td>
+                                            <td colspan="{{ !$isCompleted ? 7 : 7 }}" class="text-center text-muted">No items recorded.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                                 <tfoot class="bg-light font-weight-bold">
                                     <tr>
-                                        <td colspan="4" class="text-right">Total Weight:</td>
+                                        <td colspan="{{ !$isCompleted ? 5 : 5 }}" class="text-right">Total Weight:</td>
                                         <td class="text-right text-primary font-medium-1">{{ number_format($totalWeight, 2) }} kg</td>
+                                        @if($isCompleted)
+                                            <td></td>
+                                        @endif
                                     </tr>
                                 </tfoot>
                             </table>
@@ -121,10 +171,10 @@
                     </div>
                 </div>
 
-                {{-- Remarks & Creator --}}
+                {{-- Inspection Remarks & Creator --}}
                 <div class="row border-bottom pb-2 mb-3">
                     <div class="col-md-8">
-                        <div class="info-label">Remarks:</div>
+                        <div class="info-label">Inspection Remarks:</div>
                         <div class="info-value text-muted font-italic">{{ $inspection->remarks ?: 'No remarks provided.' }}</div>
                     </div>
                     <div class="col-md-4">
@@ -145,23 +195,28 @@
                             <span class="badge badge-success">
                                 Completed by {{ $conf->completedBy?->name ?? 'User' }} on {{ $conf->completed_at ? \Carbon\Carbon::parse($conf->completed_at)->format('d M Y, h:i A') : '' }}
                             </span>
+                        @elseif($isReverted)
+                            <span class="badge badge-warning">Pending (Reverted for Revision)</span>
                         @else
-                            <span class="badge badge-warning">Pending Completion</span>
+                            <span class="badge badge-secondary">Pending Completion</span>
                         @endif
                     </div>
                     <div class="card-body p-3">
                         @if(!$isCompleted)
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <p class="mb-0 text-muted">
-                                        Once the Dekh inspection is fully verified on ground, mark this Dekh as complete to initiate the confirmation approval cycle.
-                                    </p>
+                            <div class="row">
+                                <div class="col-md-7 mb-2">
+                                    <label class="form-label font-weight-bold text-dark">
+                                        Confirmation Remarks:
+                                    </label>
+                                    <textarea id="completionRemarks" class="form-control" rows="2"
+                                        placeholder="Enter observations or remarks regarding confirmed items...">{{ $conf?->remarks }}</textarea>
+                                    <small class="text-muted">Ensure at least one item is checked in the table above before completing.</small>
                                 </div>
-                                <div class="col-md-4 text-right">
+                                <div class="col-md-5 d-flex flex-column justify-content-center align-items-md-end mb-2">
                                     @canAccess('dekh-confirmation-complete')
                                         <button type="button" class="btn btn-success btn-lg font-weight-bold" id="btnMarkComplete"
                                             onclick="markDekhComplete({{ $inspection->id }})">
-                                            <i class="ft-check-circle mr-1"></i> Mark as Complete
+                                            <i class="ft-check-circle mr-1"></i> {{ $isReverted ? 'Re-submit as Complete' : 'Mark as Complete' }}
                                         </button>
                                     @else
                                         <span class="badge badge-light border text-muted p-2" title="Permission required: dekh-confirmation-complete">
@@ -171,11 +226,17 @@
                                 </div>
                             </div>
                         @else
-                            <div class="alert alert-success mb-0 py-2">
+                            <div class="alert alert-success mb-2 py-2">
                                 <strong>Completed!</strong> This Pre Sale Dekh was marked as complete by 
                                 <strong>{{ $conf->completedBy?->name ?? 'Authorized User' }}</strong> on 
                                 <strong>{{ $conf->completed_at ? \Carbon\Carbon::parse($conf->completed_at)->format('d M Y, h:i A') : '' }}</strong>.
                             </div>
+                            @if(!empty($conf->remarks))
+                                <div class="p-2 border rounded bg-white mt-2">
+                                    <strong class="text-dark"><i class="ft-message-square mr-1"></i> Completion Remarks:</strong>
+                                    <p class="mb-0 text-muted font-italic">{{ $conf->remarks }}</p>
+                                </div>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -196,7 +257,12 @@
                     </div>
                 @else
                     <div class="alert alert-secondary border py-2 mb-3 text-muted">
-                        <i class="ft-info mr-1"></i> <strong>Approval Notice:</strong> Dekh confirmation approval will be automatically initiated once this inspection is marked as complete.
+                        <i class="ft-info mr-1"></i> <strong>Approval Notice:</strong>
+                        @if($isReverted)
+                            Dekh confirmation was reverted. It will return to the approval workflow once re-submitted as complete.
+                        @else
+                            Dekh confirmation approval will be automatically initiated once this inspection is marked as complete.
+                        @endif
                     </div>
                 @endif
 
@@ -283,10 +349,39 @@
 </div>
 
 <script>
+    $(document).ready(function() {
+        $('#selectAllItems').on('change', function() {
+            $('.confirm-item-checkbox').prop('checked', $(this).is(':checked'));
+        });
+
+        $('.confirm-item-checkbox').on('change', function() {
+            let total = $('.confirm-item-checkbox').length;
+            let checked = $('.confirm-item-checkbox:checked').length;
+            $('#selectAllItems').prop('checked', total === checked);
+        });
+    });
+
     function markDekhComplete(inspectionId) {
+        let selectedItemIds = [];
+        $('.confirm-item-checkbox:checked').each(function() {
+            selectedItemIds.push($(this).val());
+        });
+
+        if (selectedItemIds.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Item Selection Required',
+                text: 'Please select at least one item to confirm before proceeding.',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+
+        let remarks = $('#completionRemarks').val() ? $('#completionRemarks').val().trim() : '';
+
         Swal.fire({
             title: 'Mark as Complete?',
-            text: 'Are you sure you want to mark this Dekh as complete? This will initiate the confirmation approval cycle.',
+            text: `Are you sure you want to mark this Dekh as complete with ${selectedItemIds.length} item(s) confirmed? This will initiate confirmation approval.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Yes, Mark Complete',
@@ -300,7 +395,9 @@
                     url: `{{ url('sales/dekh-confirmation') }}/${inspectionId}/mark-complete`,
                     method: 'POST',
                     data: {
-                        _token: '{{ csrf_token() }}'
+                        _token: '{{ csrf_token() }}',
+                        confirmed_item_ids: selectedItemIds,
+                        remarks: remarks
                     },
                     success: function(res) {
                         Swal.fire({
@@ -310,7 +407,13 @@
                             confirmButtonColor: '#3085d6',
                             confirmButtonText: 'OK'
                         }).then(() => {
-                            location.reload();
+                            if (typeof getAjaxRequests === 'function') {
+                                getAjaxRequests();
+                            }
+                            $('.modal-sidebar-close').click();
+                            if ($('#general_bootstrap_ajax_modal').length) {
+                                $('#general_bootstrap_ajax_modal').modal('hide');
+                            }
                         });
                     },
                     error: function(xhr) {

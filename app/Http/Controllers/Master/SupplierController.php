@@ -86,17 +86,51 @@ class SupplierController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
+            $companyId = $request->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
+            $companyName = trim($request->company_name);
+            $ownerName = trim($request->owner_name);
+
+            // Double-check duplicate supplier: same company_name AND same owner_name
+            $duplicateSupplier = Supplier::where('company_id', $companyId)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                ->exists();
+
+            if ($duplicateSupplier) {
+                return response()->json([
+                    'error' => "A supplier with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.",
+                    'errors' => ['company_name' => ["A supplier with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists."]],
+                ], 422);
+            }
+
+            $requestData['company_id'] = $companyId;
             $requestData['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
-            $requestData['name'] = $request->company_name;
+            $requestData['name'] = $companyName;
+            $requestData['company_name'] = $companyName;
+            $requestData['owner_name'] = $ownerName;
             $requestData['company_location_ids'] = $request->company_location_ids;
             $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
             $isSupplier = $requestData['is_gate_buying_supplier'] == 'Yes';
 
-            if ($request->account_id) {
+            // COA Account Deduplication / Reuse for Suppliers (Hierarchy Path: 2-2)
+            if (!empty($request->account_id)) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
-                $requestData['account_id'] = $account->id;
+                $existingAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'suppliers')
+                          ->orWhere('hierarchy_path', 'like', '2-2-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
+
+                if ($existingAccount && !Supplier::where('account_id', $existingAccount->id)->exists()) {
+                    $requestData['account_id'] = $existingAccount->id;
+                } else {
+                    $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-2', 'suppliers'));
+                    $requestData['account_id'] = $account->id;
+                }
             }
 
             $supplier = Supplier::create($requestData);
@@ -136,23 +170,71 @@ class SupplierController extends Controller
             }
 
             if ($request->has('create_as_broker') && $request->create_as_broker) {
+                $existingBroker = Broker::where('company_id', $companyId)
+                    ->where(function ($q) use ($companyName, $ownerName) {
+                        $q->where(function ($sq) use ($companyName, $ownerName) {
+                            $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                        })
+                        ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                            $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                        })
+                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)]);
+                    })
+                    ->first();
 
-                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
+                $existingBrokerAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'brokers')
+                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
 
-                $brokerData = [
-                    'company_id' => $supplier->company_id ?? null,
-                    'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
-                    'name' => $supplier->company_name,
-                    'account_id' => $Brokeraccount->id,
-                    'email' => $supplier->email ?? null,
-                    'phone' => $supplier->phone ?? null,
-                    'address' => $supplier->address ?? null,
-                    'ntn' => $supplier->ntn ?? null,
-                    'stn' => $supplier->stn ?? null,
-                    'status' => $supplier->status,
-                ];
+                if ($existingBroker) {
+                    $updateData = [
+                        'name' => $companyName,
+                        'company_name' => $companyName,
+                        'owner_name' => $ownerName,
+                        'email' => $supplier->email ?? $existingBroker->email,
+                        'phone' => $supplier->phone ?? $existingBroker->phone,
+                        'address' => $supplier->address ?? $existingBroker->address,
+                        'ntn' => $supplier->ntn ?? $existingBroker->ntn,
+                        'stn' => $supplier->stn ?? $existingBroker->stn,
+                        'status' => $supplier->status ?? $existingBroker->status,
+                    ];
+                    if (empty($existingBroker->account_id) && $existingBrokerAccount) {
+                        $updateData['account_id'] = $existingBrokerAccount->id;
+                    }
+                    $existingBroker->update($updateData);
+                } else {
+                    if ($existingBrokerAccount && !Broker::where('account_id', $existingBrokerAccount->id)->exists()) {
+                        $brokerAccountId = $existingBrokerAccount->id;
+                    } else {
+                        $accountName = $existingBrokerAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                        $Brokeraccount = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-3', 'brokers'));
+                        $brokerAccountId = $Brokeraccount->id;
+                    }
 
-                $broker = Broker::create($brokerData);
+                    $brokerData = [
+                        'company_id' => $supplier->company_id ?? null,
+                        'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
+                        'name' => $supplier->company_name,
+                        'company_name' => $supplier->company_name,
+                        'owner_name' => $ownerName,
+                        'account_id' => $brokerAccountId,
+                        'email' => $supplier->email ?? null,
+                        'phone' => $supplier->phone ?? null,
+                        'address' => $supplier->address ?? null,
+                        'ntn' => $supplier->ntn ?? null,
+                        'stn' => $supplier->stn ?? null,
+                        'status' => $supplier->status,
+                        'is_for_sales' => 0,
+                    ];
+
+                    Broker::create($brokerData);
+                }
             }
 
             DB::commit();
@@ -161,6 +243,12 @@ class SupplierController extends Controller
                 'success' => 'Supplier created successfully.',
                 'data' => [],
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->validator->errors()->first(),
+                'errors' => $e->validator->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -206,20 +294,56 @@ class SupplierController extends Controller
         try {
             $data = $request->validated();
             $requestData = $request->all();
+
+            $companyId = $request->company_id ?: ($supplier->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1));
+            $companyName = trim($request->company_name);
+            $ownerName = trim($request->owner_name);
+
+            // Double check duplicate supplier: same company_name AND same owner_name (ignoring current supplier)
+            $duplicateSupplier = Supplier::where('company_id', $companyId)
+                ->where('id', '!=', $supplier->id)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)])
+                ->exists();
+
+            if ($duplicateSupplier) {
+                return response()->json([
+                    'error' => "A supplier with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.",
+                    'errors' => ['company_name' => ["A supplier with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists."]],
+                ], 422);
+            }
+
+            $requestData['company_id'] = $companyId;
+            $requestData['name'] = $companyName;
+            $requestData['company_name'] = $companyName;
+            $requestData['owner_name'] = $ownerName;
             $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
             $requestData['defaulter'] = $request->defaulter ?? 0;
 
             if ($supplier->account) {
                 // Existing account update
                 $supplier->account->update([
-                    'name' => $request->company_name,
+                    'name' => $companyName,
                 ]);
-            } elseif ($request->account_id) {
+            } elseif (!empty($request->account_id)) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-                // New account create
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-2', 'suppliers'));
-                $requestData['account_id'] = $account->id;
+                // Check if unlinked COA exists before creating new
+                $existingAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'suppliers')
+                          ->orWhere('hierarchy_path', 'like', '2-2-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
+
+                if ($existingAccount && !Supplier::where('account_id', $existingAccount->id)->where('id', '!=', $supplier->id)->exists()) {
+                    $requestData['account_id'] = $existingAccount->id;
+                } else {
+                    $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-2', 'suppliers'));
+                    $requestData['account_id'] = $account->id;
+                }
             }
 
             if ($supplier->defaulter == 1 && $request->defaulter != 1) {
@@ -250,28 +374,75 @@ class SupplierController extends Controller
             );
 
             if ($request->has('create_as_broker')) {
-                $brokerData = [
-                    'company_id' => $supplier->company_id ?? null,
-                    'name' => $supplier->company_name,
-                    'email' => $supplier->email ?? null,
-                    'phone' => $supplier->phone ?? null,
-                    'address' => $supplier->address ?? null,
-                    'ntn' => $supplier->ntn ?? null,
-                    'stn' => $supplier->stn ?? null,
-                    'status' => $supplier->status,
-                ];
+                $existingBroker = $supplier->broker ?? Broker::where('company_id', $companyId)
+                    ->where(function ($q) use ($companyName, $ownerName) {
+                        $q->where(function ($sq) use ($companyName, $ownerName) {
+                            $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
+                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                        })
+                        ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                            $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                        })
+                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)]);
+                    })
+                    ->first();
 
-                if ($supplier->broker) {
+                $existingBrokerAccount = Account::where('company_id', $companyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'brokers')
+                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                    ->first();
+
+                if ($existingBroker) {
+                    $updateData = [
+                        'name' => $companyName,
+                        'company_name' => $companyName,
+                        'owner_name' => $ownerName,
+                        'email' => $supplier->email ?? $existingBroker->email,
+                        'phone' => $supplier->phone ?? $existingBroker->phone,
+                        'address' => $supplier->address ?? $existingBroker->address,
+                        'ntn' => $supplier->ntn ?? $existingBroker->ntn,
+                        'stn' => $supplier->stn ?? $existingBroker->stn,
+                        'status' => $supplier->status ?? $existingBroker->status,
+                    ];
                     if ($request->account_id) {
-                        $brokerData['account_id'] = $request->account_id;
-                    } elseif (empty($supplier->broker->account_id)) {
-                        $brokerData['account_id'] = $supplier->account_id;
+                        $updateData['account_id'] = $request->account_id;
+                    } elseif (empty($existingBroker->account_id) && $existingBrokerAccount) {
+                        $updateData['account_id'] = $existingBrokerAccount->id;
                     }
-                    $supplier->broker->update($brokerData);
+                    $existingBroker->update($updateData);
+                    if ($existingBroker->account) {
+                        $existingBroker->account->update(['name' => $companyName]);
+                    }
                 } else {
-                    $brokerData['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
-                    $brokerData['account_id'] = $request->account_id ?: $supplier->account_id;
-                    $supplier->broker()->create($brokerData);
+                    if ($existingBrokerAccount && !Broker::where('account_id', $existingBrokerAccount->id)->exists()) {
+                        $brokerAccountId = $existingBrokerAccount->id;
+                    } else {
+                        $accountName = $existingBrokerAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                        $Brokeraccount = Account::create(getParamsForAccountCreationByPath($companyId, $accountName, '2-3', 'brokers'));
+                        $brokerAccountId = $Brokeraccount->id;
+                    }
+
+                    $brokerData = [
+                        'company_id' => $supplier->company_id ?? null,
+                        'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
+                        'name' => $supplier->company_name,
+                        'company_name' => $supplier->company_name,
+                        'owner_name' => $ownerName,
+                        'account_id' => $request->account_id ?: $brokerAccountId,
+                        'email' => $supplier->email ?? null,
+                        'phone' => $supplier->phone ?? null,
+                        'address' => $supplier->address ?? null,
+                        'ntn' => $supplier->ntn ?? null,
+                        'stn' => $supplier->stn ?? null,
+                        'status' => $supplier->status,
+                        'is_for_sales' => 0,
+                    ];
+
+                    Broker::create($brokerData);
                 }
             } elseif ($supplier->broker) {
                 $supplier->broker->delete();
@@ -283,6 +454,12 @@ class SupplierController extends Controller
                 'success' => 'Supplier updated successfully.',
                 'data' => [],
             ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->validator->errors()->first(),
+                'errors' => $e->validator->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -335,37 +512,31 @@ class SupplierController extends Controller
         DB::beginTransaction();
         try {
             $rowData = $request->row_data;
-            $meskeyCompanyId = $request->company_id; // Injected by CheckCurrentCompany middleware
+            $meskeyCompanyId = $request->company_id ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
             // Location Selection (Index 22, optional, pipe-separated names like Location A|Location B)
+            $locationIds = null;
             $csvLocations = trim($rowData[22] ?? '');
             if (!empty($csvLocations)) {
                 $locationNames = array_map('trim', explode('|', $csvLocations));
                 $locationNames = array_filter($locationNames); // Remove empty values
 
-                // Fetch all active locations to map names to IDs (Case-Insensitive)
-                $allLocations = CompanyLocation::where('status', 'active')->get();
-                $locationMap = [];
-                foreach ($allLocations as $loc) {
-                    $locationMap[strtolower($loc->name)] = $loc->id;
-                }
-
-                $locationIds = [];
-                foreach ($locationNames as $name) {
-                    $lowerName = strtolower($name);
-                    if (isset($locationMap[$lowerName])) {
-                        $locationIds[] = (string) $locationMap[$lowerName];
+                if (!empty($locationNames)) {
+                    $allLocations = CompanyLocation::where('status', 'active')->get();
+                    $locationMap = [];
+                    foreach ($allLocations as $loc) {
+                        $locationMap[strtolower($loc->name)] = $loc->id;
                     }
+
+                    $matchedIds = [];
+                    foreach ($locationNames as $name) {
+                        $lowerName = strtolower($name);
+                        if (isset($locationMap[$lowerName])) {
+                            $matchedIds[] = (string) $locationMap[$lowerName];
+                        }
+                    }
+
+                    $locationIds = !empty($matchedIds) ? array_values(array_unique($matchedIds)) : null;
                 }
-
-                $locationIds = array_values(array_unique($locationIds));
-
-
-                // If names are provided but none matched, you might want to throw an error or fallback
-                if (empty($locationIds)) {
-                    $locationIds = getUserCurrentCompanyLocations();
-                }
-            } else {
-                $locationIds = getUserCurrentCompanyLocations();
             }
 
 
@@ -427,28 +598,36 @@ class SupplierController extends Controller
                 throw new \Exception(implode(', ', $validator->errors()->all()));
             }
 
-            // Check if supplier exists by company_name OR owner_name for this Meskey company
-            $supplier = Supplier::where('company_id', $meskeyCompanyId)
-                ->where(function ($q) use ($companyName, $ownerName) {
-                    $q->where('company_name', $companyName)
-                        ->orWhere('owner_name', $ownerName);
-                })
+            // Strict duplicate supplier check: same company_name AND same owner_name
+            $duplicateSupplier = Supplier::where('company_id', $meskeyCompanyId)
+                ->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim($companyName))])
+                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))])
                 ->first();
 
-            if ($supplier) {
-                // Update existing supplier
-                $supplier->update($data);
-                if ($supplier->account) {
-                    $supplier->account->update(['name' => $companyName]);
-                }
-            } else {
-                // Create new supplier
-                $account = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $companyName, '2-2', 'suppliers'));
-                $data['account_id'] = $account->id;
-                $data['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
-                $data['name'] = $companyName;
-                $supplier = Supplier::create($data);
+            if ($duplicateSupplier) {
+                throw new \Exception("Duplicate Supplier: A supplier with Company Name '{$companyName}' and Owner Name '{$ownerName}' already exists.");
             }
+
+            // Create new supplier with COA Account (check for unlinked existing account first to avoid duplicates)
+            $existingAccount = Account::where('company_id', $meskeyCompanyId)
+                ->where(function ($q) {
+                    $q->where('table_name', 'suppliers')
+                      ->orWhere('hierarchy_path', 'like', '2-2-%');
+                })
+                ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
+                ->first();
+
+            if ($existingAccount && !Supplier::where('account_id', $existingAccount->id)->exists()) {
+                $data['account_id'] = $existingAccount->id;
+            } else {
+                $accountName = $existingAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                $account = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $accountName, '2-2', 'suppliers'));
+                $data['account_id'] = $account->id;
+            }
+
+            $data['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
+            $data['name'] = $companyName;
+            $supplier = Supplier::create($data);
 
             // Company Bank Detail (Columns 12-16: Name, Branch, Code, Title, Acc)
             if (!empty($rowData[12])) {
@@ -479,19 +658,72 @@ class SupplierController extends Controller
 
             // Broker creation if requested
             if ($data['create_as_broker']) {
-                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $data['company_name'], '2-3', 'brokers'));
-                Broker::create([
-                    'company_id' => $meskeyCompanyId,
-                    'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
-                    'name' => $data['company_name'],
-                    'account_id' => $Brokeraccount->id,
-                    'email' => $data['email'],
-                    'phone' => $data['phone'],
-                    'address' => $data['address'],
-                    'ntn' => $data['ntn'],
-                    'stn' => $data['stn'],
-                    'status' => $data['status'],
-                ]);
+                $broker = Broker::where('company_id', $meskeyCompanyId)
+                    ->where(function ($q) use ($companyName, $ownerName) {
+                        $q->where(function ($sq) use ($companyName, $ownerName) {
+                            $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim($companyName))])
+                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))]);
+                        })
+                        ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                            $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
+                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))]);
+                        })
+                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))]);
+                    })
+                    ->first();
+
+                $existingBrokerAccount = Account::where('company_id', $meskeyCompanyId)
+                    ->where(function ($q) {
+                        $q->where('table_name', 'brokers')
+                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                    })
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
+                    ->first();
+
+                if ($broker) {
+                    $updateData = [
+                        'name' => $companyName,
+                        'company_name' => $companyName,
+                        'owner_name' => $ownerName,
+                        'email' => $data['email'],
+                        'phone' => $data['phone'],
+                        'address' => $data['address'],
+                        'ntn' => $data['ntn'],
+                        'stn' => $data['stn'],
+                        'status' => $data['status'],
+                    ];
+                    if (empty($broker->account_id) && $existingBrokerAccount) {
+                        $updateData['account_id'] = $existingBrokerAccount->id;
+                    }
+                    $broker->update($updateData);
+                    if ($broker->account) {
+                        $broker->account->update(['name' => $companyName]);
+                    }
+                } else {
+                    if ($existingBrokerAccount && !Broker::where('account_id', $existingBrokerAccount->id)->exists()) {
+                        $brokerAccountId = $existingBrokerAccount->id;
+                    } else {
+                        $accountName = $existingBrokerAccount ? "{$companyName} - {$ownerName}" : $companyName;
+                        $Brokeraccount = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $accountName, '2-3', 'brokers'));
+                        $brokerAccountId = $Brokeraccount->id;
+                    }
+
+                    Broker::create([
+                        'company_id' => $meskeyCompanyId,
+                        'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
+                        'name' => $companyName,
+                        'company_name' => $companyName,
+                        'owner_name' => $ownerName,
+                        'account_id' => $brokerAccountId,
+                        'email' => $data['email'],
+                        'phone' => $data['phone'],
+                        'address' => $data['address'],
+                        'ntn' => $data['ntn'],
+                        'stn' => $data['stn'],
+                        'status' => $data['status'],
+                        'is_for_sales' => 0,
+                    ]);
+                }
             }
 
             DB::commit();

@@ -77,13 +77,14 @@ Brokers
                             <table class="table m-0" style="table-layout: fixed; width: 100%;">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10%;">S No.</th>
-                                        <th style="width: 18%;">Broker</th>
-                                        <th style="width: 18%;">Company</th>
-                                        <th style="width: 20%;">Address</th>
-                                        <th style="width: 12%;">Type</th>
-                                        <th style="width: 12%;">Created</th>
-                                        <th style="width: 10%;">Action</th>
+                                        <th style="width: 8%;">S No.</th>
+                                        <th style="width: 17%;">Broker</th>
+                                        <th style="width: 17%;">Company</th>
+                                        <th style="width: 18%;">Address</th>
+                                        <th style="width: 10%;">Type</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 11%;">Created</th>
+                                        <th style="width: 9%;">Action</th>
                                     </tr>
                                 </thead>
 

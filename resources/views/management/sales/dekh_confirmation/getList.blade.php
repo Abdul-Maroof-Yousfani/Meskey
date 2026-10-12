@@ -49,6 +49,15 @@
                     @else
                         <span class="text-muted">-</span>
                     @endif
+                    @php
+                        $factoryName = $row->factory?->name ?: $row->items->first()?->factory?->name;
+                    @endphp
+                    @if($factoryName)
+                        <br>
+                        <span class="badge badge-info mt-1 font-weight-bold" style="font-size: 11px;" title="Factory Location">
+                            <i class="ft-map-pin"></i> {{ $factoryName }}
+                        </span>
+                    @endif
                 </td>
                 <td class="align-middle">
                     <strong>{{ $row->party_name }}</strong>
@@ -66,6 +75,13 @@
                             <span class="badge badge-light text-primary font-weight-bold border" style="font-size: 11px;">
                                 {{ number_format($it->weight, 2) }} kg
                             </span>
+                            @if($isCompleted)
+                                @if($it->is_confirmed)
+                                    <span class="badge badge-success ml-1" style="font-size: 10px;" title="Confirmed"><i class="fa fa-check"></i></span>
+                                @else
+                                    <span class="badge badge-secondary ml-1" style="font-size: 10px;" title="Not Confirmed"><i class="fa fa-times"></i></span>
+                                @endif
+                            @endif
                         </div>
                     @empty
                         <span class="text-muted">-</span>
@@ -81,27 +97,35 @@
                         <small class="text-muted" style="font-size: 10px;">
                             {{ $conf->completed_at ? \Carbon\Carbon::parse($conf->completed_at)->format('d M, h:i A') : '' }}
                         </small>
-                    @else
+                    @elseif($appStatus === 'reverted' || strtolower($row->confirmation_approval_status ?? '') === 'reverted')
                         <span class="badge badge-warning">
+                            Pending (Reverted)
+                        </span>
+                    @else
+                        <span class="badge badge-secondary">
                             Pending
                         </span>
                     @endif
                 </td>
                 {{-- Confirmation Approval Status --}}
                 <td class="align-middle text-center">
-                    @if(!$isCompleted)
+                    @php
+                        $rawStatus = $appStatus ?: strtolower($row->confirmation_approval_status ?? '');
+                    @endphp
+                    @if($rawStatus === 'reverted')
+                        <span class="badge badge-warning">Reverted</span>
+                    @elseif(!$isCompleted)
                         <span class="badge badge-light border text-muted">Awaiting Completion</span>
                     @else
                         @php
-                            $badgeClass = match($appStatus) {
+                            $badgeClass = match($rawStatus) {
                                 'approved' => 'badge-success',
                                 'rejected' => 'badge-danger',
-                                'reverted' => 'badge-secondary',
                                 default => 'badge-info',
                             };
                         @endphp
                         <span class="badge {{ $badgeClass }}">
-                            {{ ucfirst($appStatus ?: 'Pending') }}
+                            {{ ucfirst($rawStatus ?: 'Pending') }}
                         </span>
                     @endif
                 </td>

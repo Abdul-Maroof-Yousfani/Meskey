@@ -74,6 +74,11 @@ class Customer extends Model
         return $this->belongsTo(Account::class, 'account_id');
     }
 
+    public function broker()
+    {
+        return $this->hasOne(Broker::class, 'name', 'company_name');
+    }
+
     public function scopeForUserLocation($query, $user)
     {
         $companyLocation = $user->companyLocation;

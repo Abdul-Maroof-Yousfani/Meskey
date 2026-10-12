@@ -44,6 +44,7 @@
                                         <tr>
                                             <th>JV No</th>
                                             <th>Date</th>
+                                            <th>Customer</th>
                                             <th>Description</th>
                                             <th>Status</th>
                                             <th>Created By</th>

@@ -35,6 +35,25 @@ class Account extends Model
         'account_type' => 'string'
     ];
 
+    /**
+     * Human readable account type (Customer / Supplier / Broker ...) based on table_name.
+     */
+    public function getTypeLabelAttribute(): ?string
+    {
+        return match (strtolower($this->table_name ?? '')) {
+            'customers' => 'Customer',
+            'suppliers' => 'Supplier',
+            'brokers' => 'Broker',
+            'vendors' => 'Vendor',
+            'transporters' => 'Transporter',
+            'banks' => 'Bank',
+            'users' => 'User',
+            'arrival_locations' => 'Arrival Location',
+            'inventory' => 'Inventory',
+            default => null,
+        };
+    }
+
     public function parent()
     {
         return $this->belongsTo(Account::class, 'parent_id');

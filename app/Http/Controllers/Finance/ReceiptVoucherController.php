@@ -843,7 +843,14 @@ class ReceiptVoucherController extends Controller
 
     public function show($id)
     {
-        $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items.account', 'advances.customer', 'bankDetails.account'])->findOrFail($id);
+        $receiptVoucher = ReceiptVoucher::with([
+            'account',
+            'customer.account',
+            'items.account',
+            'items.customer',
+            'advances.customer',
+            'bankDetails.account'
+        ])->findOrFail($id);
 
         if ($receiptVoucher->is_direct) {
             abort_if(!canAccess('direct-receipt-voucher-list') && !auth()->user()->can('direct-receipt-voucher-list'), 403);
@@ -852,33 +859,46 @@ class ReceiptVoucherController extends Controller
         }
 
         // resolve items
-        $standardItems = $receiptVoucher->items->map(function ($item) {
+        $standardItems = $receiptVoucher->items->map(function ($item) use ($receiptVoucher) {
             $docNo = '';
             $customer = '';
+            $type = 'Direct RV';
+
             if ($item->reference_type === 'sale_order') {
+                $type = 'Sale Order';
                 $so = SalesOrder::with('customer')->find($item->reference_id);
                 $docNo = $so->reference_no ?? ('SO-' . $item->reference_id);
-                $customer = $so->customer->name ?? '';
+                $customer = $so->customer->name ?? ($item->customer->name ?? ($receiptVoucher->customer->name ?? 'N/A'));
             } elseif ($item->reference_type === 'sales_invoice') {
+                $type = 'Sale Invoice';
                 $inv = SalesInvoice::with('customer')->find($item->reference_id);
                 $docNo = $inv->si_no ?? ('INV-' . $item->reference_id);
                 if ($inv && $inv->reference_number) {
                     $docNo .= ' | Ref: ' . $inv->reference_number;
                 }
-                $customer = $inv->customer->name ?? '';
+                $customer = $inv->customer->name ?? ($item->customer->name ?? ($receiptVoucher->customer->name ?? 'N/A'));
+            } elseif ($item->reference_type === 'not-allocated') {
+                $type = 'Excess Amount';
+                $docNo = 'Excess Amount';
+                $customer = $item->customer->name ?? ($receiptVoucher->customer->name ?? 'N/A');
             } elseif ($item->reference_type === 'direct') {
+                $type = 'Direct RV';
                 $docNo = 'Direct';
                 $customer = $item->account->name ?? 'N/A';
+            } else {
+                $type = ucwords(str_replace(['_', '-'], ' ', $item->reference_type));
+                $docNo = $item->reference_id ? (string) $item->reference_id : '—';
+                $customer = $item->customer->name ?? ($receiptVoucher->customer->name ?? 'N/A');
             }
 
             return [
-                'type' => $item->reference_type === 'sale_order' ? 'Sale Order' : ($item->reference_type === 'sales_invoice' ? 'Sale Invoice' : 'Direct RV'),
+                'type' => $type,
                 'doc_no' => $docNo,
-                'customer' => $customer,
+                'customer' => $customer ?: ($receiptVoucher->customer->name ?? 'N/A'),
                 'amount' => $item->amount,
                 'tax_amount' => $item->tax_amount,
                 'net_amount' => $item->amount + $item->tax_amount,
-                'line_desc' => $item->line_desc,
+                'line_desc' => $item->line_desc ?? ($item->reference_type === 'not-allocated' ? 'Excess Amount' : ''),
             ];
         });
 

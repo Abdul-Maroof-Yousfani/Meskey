@@ -43,6 +43,11 @@ class ReceiptVoucherItem extends Model
     {
         return $this->belongsTo(\App\Models\Master\Account\Account::class, 'account_id');
     }
+
+    public function customer()
+    {
+        return $this->belongsTo(\App\Models\Master\Customer::class, 'customer_id');
+    }
 }
 
 
