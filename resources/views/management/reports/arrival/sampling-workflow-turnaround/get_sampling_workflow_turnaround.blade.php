@@ -58,6 +58,23 @@
     }
 @endphp
 
+<style>
+    .sticky-table-scroller {
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+    .sticky-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f8f9fa !important;
+        box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+    }
+    .sticky-table thead th.sticky-col-left {
+        z-index: 15 !important;
+    }
+</style>
+
 <x-sticky-table :items="$tickets" :leftSticky="1" :rightSticky="0" :emptyMessage="'No records found'" :pagination="false">
     @slot('head')
         <th>Ticket #</th>
@@ -166,6 +183,6 @@
                 <td>{{ $durAccountsToHo }}</td>
                 <td>{{ $durTotal }}</td>
             </tr>
-        @endforeach
+            @endforeach
     @endslot
 </x-sticky-table>
