@@ -95,7 +95,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th style="width: 28%;">Item (Product) <span class="text-danger">*</span></th>
-                                    <th style="width: 25%;">Factory</th>
+                                    <th style="width: 25%;">Factory <span class="text-danger">*</span></th>
                                     <th style="width: 25%;">Section</th>
                                     <th style="width: 14%;">Weight sample in (kg) <span class="text-danger">*</span></th>
                                     <th style="width: 8%;" class="text-center">Action</th>
@@ -115,14 +115,11 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="arrival_location_id[]" class="form-control select2 psi-factory-select">
-                                                <option value="">Select Factory</option>
+                                            <select name="arrival_location_id[]" class="form-control select2 psi-factory-select" required>
                                                 @foreach ($arrivalLocations as $factory)
-                                                    @if (!$pre_sale_inspection->location_id || $factory->company_location_id == $pre_sale_inspection->location_id)
-                                                        <option value="{{ $factory->id }}" @selected($rowItem->arrival_location_id == $factory->id)>
-                                                            {{ $factory->name }}
-                                                        </option>
-                                                    @endif
+                                                    <option value="{{ $factory->id }}" @selected($rowItem->arrival_location_id == $factory->id || $pre_sale_inspection->arrival_location_id == $factory->id)>
+                                                        {{ $factory->name }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -130,7 +127,7 @@
                                             <select name="arrival_sub_location_id[]" class="form-control select2 psi-section-select">
                                                 <option value="">Select Section</option>
                                                 @foreach ($arrivalSubLocations as $section)
-                                                    @if (!$rowItem->arrival_location_id || $section->arrival_location_id == $rowItem->arrival_location_id)
+                                                    @if (!$rowItem->arrival_location_id || $section->arrival_location_id == $rowItem->arrival_location_id || $section->arrival_location_id == $pre_sale_inspection->arrival_location_id)
                                                         <option value="{{ $section->id }}" @selected($rowItem->arrival_sub_location_id == $section->id)>
                                                             {{ $section->name }}
                                                         </option>
@@ -159,18 +156,18 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="arrival_location_id[]" class="form-control select2 psi-factory-select">
-                                                <option value="">Select Factory</option>
+                                            <select name="arrival_location_id[]" class="form-control select2 psi-factory-select" required>
                                                 @foreach ($arrivalLocations as $factory)
-                                                    @if (!$pre_sale_inspection->location_id || $factory->company_location_id == $pre_sale_inspection->location_id)
-                                                        <option value="{{ $factory->id }}">{{ $factory->name }}</option>
-                                                    @endif
+                                                    <option value="{{ $factory->id }}" selected>{{ $factory->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
                                         <td>
                                             <select name="arrival_sub_location_id[]" class="form-control select2 psi-section-select">
                                                 <option value="">Select Section</option>
+                                                @foreach ($arrivalSubLocations as $section)
+                                                    <option value="{{ $section->id }}">{{ $section->name }}</option>
+                                                @endforeach
                                             </select>
                                         </td>
                                         <td>
@@ -224,13 +221,18 @@
                 </select>
             </td>
             <td>
-                <select name="arrival_location_id[]" class="form-control psi-factory-select">
-                    <option value="">Select Factory</option>
+                <select name="arrival_location_id[]" class="form-control psi-factory-select" required>
+                    @foreach ($arrivalLocations as $factory)
+                        <option value="{{ $factory->id }}" selected>{{ $factory->name }}</option>
+                    @endforeach
                 </select>
             </td>
             <td>
                 <select name="arrival_sub_location_id[]" class="form-control psi-section-select">
                     <option value="">Select Section</option>
+                    @foreach ($arrivalSubLocations as $section)
+                        <option value="{{ $section->id }}">{{ $section->name }}</option>
+                    @endforeach
                 </select>
             </td>
             <td>
@@ -280,8 +282,12 @@
                 $factorySelect.append(`<option value="${f.id}">${f.name}</option>`);
             });
 
-            if (prevVal && filtered.some(f => String(f.id) === String(prevVal))) {
+            if (allFactories.length === 1) {
+                $factorySelect.val(allFactories[0].id);
+            } else if (prevVal && filtered.some(f => String(f.id) === String(prevVal))) {
                 $factorySelect.val(prevVal);
+            } else if (filtered.length > 0) {
+                $factorySelect.val(filtered[0].id);
             } else {
                 $factorySelect.val('');
             }

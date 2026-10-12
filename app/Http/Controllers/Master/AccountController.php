@@ -24,7 +24,7 @@ class AccountController extends Controller
      */
     public function getList(Request $request)
     {
-        $accounts = Account::with('children')
+        $accounts = Account::with(['children', 'parent'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -74,6 +74,14 @@ class AccountController extends Controller
     public function edit($id)
     {
         $account = Account::findOrFail($id);
+
+        if (!empty($account->table_name)) {
+            $label = $account->type_label ?? ucfirst($account->table_name);
+            return response()->json([
+                'message' => "This account is linked to {$label} and cannot be edited from Chart of Accounts."
+            ], 422);
+        }
+
         return view('management.master.account.edit', ['account' => $account, 'parentAccounts' => Account::where('is_operational', 'no')->get()]);
     }
 
@@ -82,11 +90,19 @@ class AccountController extends Controller
      */
     public function update(AccountRequest $request, $id)
     {
-        $data = $request->validated();
-        $broker = Account::findOrFail($id);
-        $broker->update($data);
+        $account = Account::findOrFail($id);
 
-        return response()->json(['success' => 'Account updated successfully.', 'data' => $broker], 200);
+        if (!empty($account->table_name)) {
+            $label = $account->type_label ?? ucfirst($account->table_name);
+            return response()->json([
+                'message' => "This account is linked to {$label} and cannot be edited from Chart of Accounts."
+            ], 422);
+        }
+
+        $data = $request->validated();
+        $account->update($data);
+
+        return response()->json(['success' => 'Account updated successfully.', 'data' => $account], 200);
     }
 
     /**
@@ -94,9 +110,16 @@ class AccountController extends Controller
      */
     public function destroy($id)
     {
-        $broker = Account::findOrFail($id);
+        $account = Account::findOrFail($id);
 
-        $broker->delete();
+        if (!empty($account->table_name)) {
+            $label = $account->type_label ?? ucfirst($account->table_name);
+            return response()->json([
+                'message' => "This account is linked to {$label} and cannot be deleted from Chart of Accounts."
+            ], 422);
+        }
+
+        $account->delete();
         return response()->json(['success' => 'Account deleted successfully.'], 200);
     }
 }

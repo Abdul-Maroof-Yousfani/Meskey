@@ -120,6 +120,7 @@ Route::post('/product-slab-type-order/update', [ProductSlabTypeController::class
 Route::resource('product-slab-type', ProductSlabTypeController::class);
 Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getList'])->name('get.product-slab-type');
 
+Route::get('/product-slab/get-reference-slabs/{productId?}', [ProductSlabController::class, 'getReferenceSlabs'])->name('product-slab.get-reference-slabs');
 Route::resource('product-slab', ProductSlabController::class);
 Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->name('get.product-slab');
 Route::post('/product-slab/store-multiple', [ProductSlabController::class, 'storeMultiple'])->name('product-slab.store-multiple');

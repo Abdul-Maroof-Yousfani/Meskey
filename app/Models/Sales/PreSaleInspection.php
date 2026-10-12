@@ -3,6 +3,7 @@
 namespace App\Models\Sales;
 
 use App\Models\Acl\Company;
+use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
 use App\Models\User;
 use App\Traits\HasApproval;
@@ -49,6 +50,16 @@ class PreSaleInspection extends Model
     public function location()
     {
         return $this->belongsTo(CompanyLocation::class, 'location_id');
+    }
+
+    public function arrivalLocation()
+    {
+        return $this->belongsTo(ArrivalLocation::class, 'arrival_location_id');
+    }
+
+    public function factory()
+    {
+        return $this->belongsTo(ArrivalLocation::class, 'arrival_location_id');
     }
 
     public function items()

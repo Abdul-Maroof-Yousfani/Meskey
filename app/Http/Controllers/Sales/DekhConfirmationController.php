@@ -3,22 +3,81 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
-use App\Models\ApprovalsModule\ApprovalModuleRole;
 use App\Models\Product;
 use App\Models\Sales\DekhConfirmation;
 use App\Models\Sales\PreSaleInspection;
+use App\Models\Sales\PreSaleInspectionItem;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
 
 class DekhConfirmationController extends Controller
 {
+    /**
+     * Fetch user's assigned factory (arrival) locations.
+     * Uses getUserCurrentCompanyArrivalLocations(), $user->arrival_location_ids, and $user->arrival_location_id.
+     */
+    private function getUserFactoryLocations($user = null): array
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return [];
+        }
+
+        $locs = [];
+
+        // 1. Current Company pivot arrival_locations (primary in Meskey for current company)
+        if (function_exists('getUserCurrentCompanyArrivalLocations')) {
+            try {
+                $companyLocs = getUserCurrentCompanyArrivalLocations();
+                if (!empty($companyLocs) && is_array($companyLocs)) {
+                    $locs = array_merge($locs, $companyLocs);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 2. Direct arrival_location_ids on users table (keyed by company_id) if pivot was empty
+        if (empty($locs) && !empty($user->arrival_location_ids)) {
+            $arrIds = is_array($user->arrival_location_ids)
+                ? $user->arrival_location_ids
+                : (json_decode($user->arrival_location_ids, true) ?: []);
+
+            $currentCompanyId = $user->current_company_id;
+            if ($currentCompanyId && isset($arrIds[$currentCompanyId])) {
+                $compLocs = is_array($arrIds[$currentCompanyId]) ? $arrIds[$currentCompanyId] : [$arrIds[$currentCompanyId]];
+                $locs = array_merge($locs, $compLocs);
+            }
+        }
+
+        // 3. Direct arrival_location_id on users table if still empty
+        if (empty($locs) && !empty($user->arrival_location_id)) {
+            $locs[] = (int)$user->arrival_location_id;
+        }
+
+        return array_values(array_unique(array_filter(array_map('intval', $locs))));
+    }
+
+    /**
+     * Fetch user's assigned company locations (Port Qasim, Shikarpur, etc.).
+     */
+    private function getUserCompanyLocations($user = null): array
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return [];
+        }
+        return get_locations($user->id)->pluck('id')->map(fn($id) => (int)$id)->toArray();
+    }
+
     public function index()
     {
         abort_if(!canAccess('dekh-confirmation-list') && !auth()->user()?->can('dekh-confirmation-list'), 403);
 
+        $user = auth()->user();
+        $isSuperAdmin = $user->user_type === 'super-admin' || $user->hasRole('Admin') || $user->hasRole('admin');
+
         $items = Product::all();
-        $locations = get_locations();
+        $locations = $isSuperAdmin ? get_locations() : get_locations($user->id);
 
         return view('management.sales.dekh_confirmation.index', compact('items', 'locations'));
     }
@@ -33,23 +92,21 @@ class DekhConfirmationController extends Controller
         $isSuperAdmin = $user->user_type === 'super-admin' || $user->hasRole('Admin') || $user->hasRole('admin');
         $canComplete = canAccess('dekh-confirmation-complete') || $user->can('dekh-confirmation-complete');
         $canVehicle = canAccess('dekh-confirmation-vehicle') || $user->can('dekh-confirmation-vehicle');
+        $isApprover = $isSuperAdmin || canAccess('dekh-confirmation-approval') || $user->can('dekh-confirmation-approval');
 
-        $userRoleIds = array_filter(array_unique(array_merge(
-            $user->roles->pluck('id')->toArray(),
-            [$user->companies()->where('company_id', $user->current_company_id)->first()?->pivot->role_id]
-        )));
-
-        $isApprover = false;
+        // Location restrictions for non-super-admin
+        $userCompanyLocationIds = [];
+        $userFactoryLocationIds = [];
         if (!$isSuperAdmin) {
-            $isApprover = ApprovalModuleRole::where('module_id', 43)
-                ->whereIn('role_id', $userRoleIds)
-                ->exists();
+            $userCompanyLocationIds = $this->getUserCompanyLocations($user);
+            $userFactoryLocationIds = $this->getUserFactoryLocations($user);
         }
 
         // Only show Dekh records that are Stage-1 approved
         $inspections = PreSaleInspection::where('am_approval_status', 'approved')
             ->with([
                 'location',
+                'factory',
                 'items.item',
                 'items.factory',
                 'items.section',
@@ -60,22 +117,50 @@ class DekhConfirmationController extends Controller
                 'salesInquiries',
                 'salesOrders'
             ])
-            // Permission-based visibility scope
-            ->when(!$isSuperAdmin && !($canComplete && $canVehicle), function ($query) use ($canComplete, $canVehicle, $isApprover) {
-                return $query->where(function ($q) use ($canComplete, $canVehicle, $isApprover) {
+            // 1. MANDATORY COMPANY LOCATION FILTER (Port Qasim, Shikarpur, etc.):
+            // Super Admin sees all. Non-super-admin ONLY sees their assigned company locations.
+            // Shikarpur user NEVER sees Port Qasim! Port Qasim user NEVER sees Shikarpur!
+            ->when(!$isSuperAdmin, function ($query) use ($userCompanyLocationIds) {
+                if (!empty($userCompanyLocationIds)) {
+                    return $query->whereIn('location_id', $userCompanyLocationIds);
+                }
+                return $query->whereRaw('1 = 0');
+            })
+            // 2. STAGE, ROLE & FACTORY LOCATION SCOPE:
+            ->when(!$isSuperAdmin, function ($query) use ($canComplete, $canVehicle, $isApprover, $userFactoryLocationIds) {
+                return $query->where(function ($q) use ($canComplete, $canVehicle, $isApprover, $userFactoryLocationIds) {
                     $hasCondition = false;
 
-                    // 1. Mark as Complete user: sees pending completion records (and completed ones)
+                    // A. Completion User:
+                    // MUST ONLY see records matching their FACTORY location (e.g. A-45 user only sees A-45)!
+                    // Uncompleted records or records of other factory locations (A-43, etc.) will NEVER show.
                     if ($canComplete) {
-                        $q->where(function ($cq) {
-                            $cq->where('is_completed', 0)
-                               ->orWhereNull('is_completed')
-                               ->orWhere('is_completed', 1);
+                        $q->where(function ($cq) use ($userFactoryLocationIds, $isApprover) {
+                            if (!empty($userFactoryLocationIds)) {
+                                $cq->where(function ($fq) use ($userFactoryLocationIds) {
+                                    $fq->whereIn('arrival_location_id', $userFactoryLocationIds)
+                                       ->orWhereHas('items', function ($iq) use ($userFactoryLocationIds) {
+                                           $iq->whereIn('arrival_location_id', $userFactoryLocationIds);
+                                       });
+                                });
+                                // If user is also an approver, completion stage applies to pending records only
+                                if ($isApprover) {
+                                    $cq->where(function($sub) {
+                                        $sub->where('is_completed', 0)
+                                            ->orWhereNull('is_completed');
+                                    });
+                                }
+                            } else {
+                                // No factory assigned to completion user => cannot see completion records
+                                $cq->whereRaw('1 = 0');
+                            }
                         });
                         $hasCondition = true;
                     }
 
-                    // 2. Approver: sees completed records awaiting/processed for approval (does not see pending completion)
+                    // B. Approver (Stage 2 Approval):
+                    // Once marked complete (is_completed = 1), approval goes to COMPANY LOCATION approver!
+                    // Approver sees completed records for their company location (e.g. Port Qasim).
                     if ($isApprover) {
                         if ($hasCondition) {
                             $q->orWhere('is_completed', 1);
@@ -85,13 +170,23 @@ class DekhConfirmationController extends Controller
                         }
                     }
 
-                    // 3. Vehicle user: ONLY sees records after Dekh Confirmation has been APPROVED
+                    // C. Vehicle User: ONLY sees approved records
                     if ($canVehicle) {
-                        $vehicleScope = function ($vq) {
-                            $vq->where('confirmation_approval_status', 'approved')
-                               ->orWhereHas('confirmation', function ($sub) {
-                                   $sub->where('am_approval_status', 'approved');
-                               });
+                        $vehicleScope = function ($vq) use ($userFactoryLocationIds) {
+                            $vq->where(function($sub) {
+                                $sub->where('confirmation_approval_status', 'approved')
+                                    ->orWhereHas('confirmation', function ($c) {
+                                        $c->where('am_approval_status', 'approved');
+                                    });
+                            });
+                            if (!empty($userFactoryLocationIds)) {
+                                $vq->where(function ($fq) use ($userFactoryLocationIds) {
+                                    $fq->whereIn('arrival_location_id', $userFactoryLocationIds)
+                                       ->orWhereHas('items', function ($iq) use ($userFactoryLocationIds) {
+                                           $iq->whereIn('arrival_location_id', $userFactoryLocationIds);
+                                       });
+                                });
+                            }
                         };
 
                         if ($hasCondition) {
@@ -102,9 +197,9 @@ class DekhConfirmationController extends Controller
                         }
                     }
 
-                    // Fallback: If only dekh-confirmation-list is held, show only approved records
+                    // Fallback: If user only has dekh-confirmation-list without complete, approver or vehicle
                     if (!$hasCondition) {
-                        $q->where('confirmation_approval_status', 'approved');
+                        $q->whereRaw('1 = 0');
                     }
                 });
             })
@@ -119,6 +214,9 @@ class DekhConfirmationController extends Controller
                         ->orWhereHas('location', function ($lq) use ($search) {
                             $lq->whereRaw('LOWER(name) LIKE ?', [$search]);
                         })
+                        ->orWhereHas('factory', function ($fq) use ($search) {
+                            $fq->whereRaw('LOWER(name) LIKE ?', [$search]);
+                        })
                         ->orWhereHas('items.item', function ($iq) use ($search) {
                             $iq->whereRaw('LOWER(name) LIKE ?', [$search]);
                         });
@@ -130,7 +228,13 @@ class DekhConfirmationController extends Controller
             ->when($request->filled('party_name'), function ($q) use ($request) {
                 return $q->where('party_name', 'like', '%' . $request->party_name . '%');
             })
-            ->when($request->filled('location_id') && $request->location_id != 'all', function ($q) use ($request) {
+            ->when($request->filled('location_id') && $request->location_id != 'all', function ($q) use ($request, $isSuperAdmin, $userCompanyLocationIds) {
+                if (!$isSuperAdmin && !empty($userCompanyLocationIds)) {
+                    if (in_array((int)$request->location_id, $userCompanyLocationIds)) {
+                        return $q->where('location_id', $request->location_id);
+                    }
+                    return $q->whereRaw('1 = 0');
+                }
                 return $q->where('location_id', $request->location_id);
             })
             ->when($request->filled('completion_status') && $request->completion_status != 'all', function ($q) use ($request) {
@@ -163,6 +267,7 @@ class DekhConfirmationController extends Controller
 
         $inspection = PreSaleInspection::with([
             'location',
+            'factory',
             'items.item',
             'items.factory',
             'items.section',
@@ -180,15 +285,32 @@ class DekhConfirmationController extends Controller
         $isSuperAdmin = $user->user_type === 'super-admin' || $user->hasRole('Admin') || $user->hasRole('admin');
         $canComplete = canAccess('dekh-confirmation-complete') || $user->can('dekh-confirmation-complete');
         $canVehicle = canAccess('dekh-confirmation-vehicle') || $user->can('dekh-confirmation-vehicle');
+        $isApprover = $isSuperAdmin || canAccess('dekh-confirmation-approval') || $user->can('dekh-confirmation-approval');
 
         if (!$isSuperAdmin) {
-            $userRoleIds = array_filter(array_unique(array_merge(
-                $user->roles->pluck('id')->toArray(),
-                [$user->companies()->where('company_id', $user->current_company_id)->first()?->pivot->role_id]
-            )));
-            $isApprover = ApprovalModuleRole::where('module_id', 43)
-                ->whereIn('role_id', $userRoleIds)
-                ->exists();
+            // STRICT Company Location validation:
+            // User can ONLY view Dekh if its location_id matches their assigned company location!
+            $userCompanyLocationIds = $this->getUserCompanyLocations($user);
+            if (empty($userCompanyLocationIds) || !in_array((int)$inspection->location_id, $userCompanyLocationIds)) {
+                abort(403, 'You do not have access to Dekh records for this company location.');
+            }
+
+            // Factory location check for completion stage (A-45 user cannot open A-43 record)
+            $isCompleted = (bool)$inspection->is_completed;
+            if (!$isApprover || !$isCompleted) {
+                $userFactoryLocationIds = $this->getUserFactoryLocations($user);
+                if (!empty($userFactoryLocationIds)) {
+                    $inspectionFactoryId = (int)($inspection->arrival_location_id ?: $inspection->items->first()?->arrival_location_id);
+                    $itemFactoryIds = $inspection->items->pluck('arrival_location_id')->map(fn($id) => (int)$id)->toArray();
+                    $allInspectionFactories = array_unique(array_filter(array_merge([$inspectionFactoryId], $itemFactoryIds)));
+
+                    if (empty(array_intersect($allInspectionFactories, $userFactoryLocationIds))) {
+                        abort(403, 'You do not have access to Dekh records for this factory location.');
+                    }
+                } else {
+                    abort(403, 'You do not have any assigned factory location.');
+                }
+            }
 
             $isApproved = strtolower($inspection->confirmation_approval_status ?? '') === 'approved'
                 || strtolower($inspection->confirmation?->am_approval_status ?? '') === 'approved';
@@ -211,7 +333,40 @@ class DekhConfirmationController extends Controller
     {
         abort_if(!canAccess('dekh-confirmation-complete') && !auth()->user()?->can('dekh-confirmation-complete'), 403);
 
-        $inspection = PreSaleInspection::findOrFail($id);
+        $inspection = PreSaleInspection::with('items')->findOrFail($id);
+
+        $user = auth()->user();
+        $isSuperAdmin = $user->user_type === 'super-admin' || $user->hasRole('Admin') || $user->hasRole('admin');
+        if (!$isSuperAdmin) {
+            // STRICT Company location check
+            $userCompanyLocationIds = $this->getUserCompanyLocations($user);
+            if (empty($userCompanyLocationIds) || !in_array((int)$inspection->location_id, $userCompanyLocationIds)) {
+                return response()->json([
+                    'error' => 'You do not have permission to mark completion for this company location.',
+                    'message' => 'You do not have permission to mark completion for this company location.'
+                ], 403);
+            }
+
+            // Factory location check
+            $userFactoryLocationIds = $this->getUserFactoryLocations($user);
+            if (!empty($userFactoryLocationIds)) {
+                $inspectionFactoryId = (int)($inspection->arrival_location_id ?: $inspection->items->first()?->arrival_location_id);
+                $itemFactoryIds = $inspection->items->pluck('arrival_location_id')->map(fn($id) => (int)$id)->toArray();
+                $allInspectionFactories = array_unique(array_filter(array_merge([$inspectionFactoryId], $itemFactoryIds)));
+
+                if (empty(array_intersect($allInspectionFactories, $userFactoryLocationIds))) {
+                    return response()->json([
+                        'error' => 'You do not have permission to mark completion for this factory location.',
+                        'message' => 'You do not have permission to mark completion for this factory location.'
+                    ], 403);
+                }
+            } else {
+                return response()->json([
+                    'error' => 'You do not have any assigned factory location.',
+                    'message' => 'You do not have any assigned factory location.'
+                ], 403);
+            }
+        }
 
         if (strtolower($inspection->am_approval_status ?? '') !== 'approved') {
             return response()->json([
@@ -220,15 +375,52 @@ class DekhConfirmationController extends Controller
             ], 422);
         }
 
-        if ($inspection->is_completed) {
+        $isReverted = strtolower($inspection->confirmation_approval_status ?? '') === 'reverted';
+
+        if ($inspection->is_completed && !$isReverted) {
             return response()->json([
                 'error' => 'This Dekh has already been marked as complete.',
                 'message' => 'This Dekh has already been marked as complete.'
             ], 422);
         }
 
+        // Validate items selection: at least 1 item must be selected
+        $confirmedItemIds = $request->input('confirmed_item_ids', []);
+        if (is_string($confirmedItemIds)) {
+            $confirmedItemIds = json_decode($confirmedItemIds, true) ?: [];
+        }
+
+        if (empty($confirmedItemIds) || !is_array($confirmedItemIds)) {
+            return response()->json([
+                'error' => 'Please select at least one item to confirm.',
+                'message' => 'Please select at least one item to confirm.'
+            ], 422);
+        }
+
+        // Verify that submitted item IDs belong to this inspection
+        $validInspectionItemIds = $inspection->items->pluck('id')->toArray();
+        $validConfirmedIds = array_values(array_intersect(array_map('intval', $confirmedItemIds), $validInspectionItemIds));
+
+        if (empty($validConfirmedIds)) {
+            return response()->json([
+                'error' => 'Selected items are invalid for this Dekh inspection.',
+                'message' => 'Selected items are invalid for this Dekh inspection.'
+            ], 422);
+        }
+
+        $remarks = trim($request->input('remarks', ''));
+
         try {
             DB::beginTransaction();
+
+            // Update items is_confirmed status
+            PreSaleInspectionItem::where('pre_sale_inspection_id', $inspection->id)
+                ->whereIn('id', $validConfirmedIds)
+                ->update(['is_confirmed' => 1]);
+
+            PreSaleInspectionItem::where('pre_sale_inspection_id', $inspection->id)
+                ->whereNotIn('id', $validConfirmedIds)
+                ->update(['is_confirmed' => 0]);
 
             $confirmation = DekhConfirmation::updateOrCreate(
                 ['pre_sale_inspection_id' => $inspection->id],
@@ -238,13 +430,12 @@ class DekhConfirmationController extends Controller
                     'completed_by' => auth()->user()->id ?? 1,
                     'am_approval_status' => 'pending',
                     'am_change_made' => 1,
+                    'remarks' => $remarks ?: null,
                 ]
             );
 
-            // Ensure approval rows exist for Dekh Confirmation module
-            if ($confirmation->approvalRows()->where('module_id', 43)->count() == 0) {
-                $confirmation->createApprovalRows();
-            }
+            // Ensure approval rows exist for Dekh Confirmation
+            $confirmation->createApprovalRows();
 
             $inspection->update([
                 'is_completed' => 1,
@@ -273,8 +464,41 @@ class DekhConfirmationController extends Controller
             'vehicle_no' => 'required|string|max:100',
         ]);
 
-        $inspection = PreSaleInspection::with('confirmation')->findOrFail($id);
+        $inspection = PreSaleInspection::with('confirmation', 'items')->findOrFail($id);
         $confirmation = $inspection->confirmation;
+
+        $user = auth()->user();
+        $isSuperAdmin = $user->user_type === 'super-admin' || $user->hasRole('Admin') || $user->hasRole('admin');
+        if (!$isSuperAdmin) {
+            // STRICT Company location check
+            $userCompanyLocationIds = $this->getUserCompanyLocations($user);
+            if (empty($userCompanyLocationIds) || !in_array((int)$inspection->location_id, $userCompanyLocationIds)) {
+                return response()->json([
+                    'error' => 'You do not have permission to assign vehicle for this company location.',
+                    'message' => 'You do not have permission to assign vehicle for this company location.'
+                ], 403);
+            }
+
+            // Factory location check
+            $userFactoryLocationIds = $this->getUserFactoryLocations($user);
+            if (!empty($userFactoryLocationIds)) {
+                $inspectionFactoryId = (int)($inspection->arrival_location_id ?: $inspection->items->first()?->arrival_location_id);
+                $itemFactoryIds = $inspection->items->pluck('arrival_location_id')->map(fn($id) => (int)$id)->toArray();
+                $allInspectionFactories = array_unique(array_filter(array_merge([$inspectionFactoryId], $itemFactoryIds)));
+
+                if (empty(array_intersect($allInspectionFactories, $userFactoryLocationIds))) {
+                    return response()->json([
+                        'error' => 'You do not have permission to assign vehicle for this factory location.',
+                        'message' => 'You do not have permission to assign vehicle for this factory location.'
+                    ], 403);
+                }
+            } else {
+                return response()->json([
+                    'error' => 'You do not have any assigned factory location.',
+                    'message' => 'You do not have any assigned factory location.'
+                ], 403);
+            }
+        }
 
         if (!$confirmation || strtolower($confirmation->am_approval_status ?? '') !== 'approved') {
             return response()->json([

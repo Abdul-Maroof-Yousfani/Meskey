@@ -17,19 +17,27 @@
             <div class="card-body">
                 {{-- General Info --}}
                 <div class="row border-bottom pb-2 mb-3">
-                    <div class="col-md-4">
-                        <div class="info-label">Location:</div>
+                    <div class="col-md-3">
+                        <div class="info-label">Company Location:</div>
                         <div class="info-value">
                             <span class="badge badge-light border text-dark font-medium-1">
                                 <i class="ft-map-pin text-primary"></i> {{ $pre_sale_inspection->location?->name ?? 'N/A' }}
                             </span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="info-label">Factory Location:</div>
+                        <div class="info-value">
+                            <span class="badge badge-primary font-medium-1">
+                                <i class="ft-home"></i> {{ $pre_sale_inspection->factory?->name ?? $pre_sale_inspection->arrivalLocation?->name ?? 'N/A' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="info-label">Dekh Number:</div>
                         <div class="info-value font-weight-bold text-primary">#{{ $pre_sale_inspection->inspection_no }}</div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="info-label">Dekh Date:</div>
                         <div class="info-value">{{ $pre_sale_inspection->date ? $pre_sale_inspection->date->format('d M Y') : 'N/A' }}</div>
                     </div>

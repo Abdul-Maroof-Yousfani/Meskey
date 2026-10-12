@@ -3,8 +3,8 @@
         <tr>
             <th width="13%">Dekh #</th>
             <th width="10%">Date</th>
-            <th width="11%">Location</th>
-            <th width="16%">Party Name & Contact</th>
+            <th width="12%">Location & Factory</th>
+            <th width="15%">Party Name & Contact</th>
             <th width="30%">Items, Factory, Section & Weight</th>
             <th width="10%" class="text-center">Status</th>
             <th width="10%" class="text-center">Action</th>
@@ -35,10 +35,21 @@
                 </td>
                 <td class="align-middle">
                     @if($row->location)
-                        <span class="badge badge-light border text-dark">
+                        <span class="badge badge-light border text-dark d-inline-block mb-1">
                             <i class="ft-map-pin text-primary"></i> {{ $row->location->name }}
                         </span>
-                    @else
+                    @endif
+                    @if($row->factory)
+                        <br>
+                        <span class="badge badge-primary font-weight-bold" title="Factory Location">
+                            <i class="ft-home"></i> {{ $row->factory->name }}
+                        </span>
+                    @elseif($row->arrivalLocation)
+                        <br>
+                        <span class="badge badge-primary font-weight-bold" title="Factory Location">
+                            <i class="ft-home"></i> {{ $row->arrivalLocation->name }}
+                        </span>
+                    @elseif(!$row->location)
                         <span class="text-muted">-</span>
                     @endif
                 </td>

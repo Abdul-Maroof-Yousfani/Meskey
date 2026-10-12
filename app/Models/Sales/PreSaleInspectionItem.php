@@ -17,6 +17,7 @@ class PreSaleInspectionItem extends Model
 
     protected $casts = [
         'weight' => 'float',
+        'is_confirmed' => 'boolean',
     ];
 
     public function item()

@@ -47,10 +47,26 @@
 
     </td>
     <td>
-        <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', false)"
-            class="info p-1 text-center mr-2 position-relative">
-            <i class="ft-edit font-medium-3"></i>
-        </a>
+        @if(!empty($account->table_name))
+            @php
+                $refLabel = $account->type_label ?? ucfirst($account->table_name);
+            @endphp
+            <span class="secondary text-muted p-1 text-center mr-2 position-relative d-inline-block"
+                style="cursor: not-allowed; opacity: 0.45;"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="This account is linked to {{ $refLabel }} and cannot be edited.">
+                <i class="ft-edit font-medium-3"></i>
+            </span>
+        @else
+            <a onclick="openModal(this,'{{ route('account.edit', $account->id) }}','Edit Account', false)"
+                class="info p-1 text-center mr-2 position-relative"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Edit Account">
+                <i class="ft-edit font-medium-3"></i>
+            </a>
+        @endif
     </td>
 </tr>
 <script>
