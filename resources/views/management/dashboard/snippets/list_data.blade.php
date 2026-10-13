@@ -28,7 +28,7 @@
                     @endif
                     <th>Bilty No</th>
                     <th>Station</th>
-                    @if(canAccess('arrival-stats-show-accounts'))
+                    @if(canAccess('arrival-stats-show-confidential'))
                         <th>Accounts Of</th>
                     @endif
                     <th>Bags</th>
@@ -116,7 +116,7 @@
                         @endif
                         <td>{{ $item->bilty_no ?? 'N/A' }}</td>
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
-                        @if(canAccess('arrival-stats-show-accounts'))
+                        @if(canAccess('arrival-stats-show-confidential'))
                             <td>{{ $item->accountsOf->name ?? 'N/A' }}</td>
                         @endif
                         <td>{{ $item->bags ?? 'N/A' }}</td>
@@ -202,8 +202,8 @@
                 </tr>
             @empty
                 <!-- <tr>
-                                                                                                                <td colspan="10" class="text-center">No data found for the selected criteria.</td>
-                                                                                                            </tr> -->
+                                                                                                                        <td colspan="10" class="text-center">No data found for the selected criteria.</td>
+                                                                                                                    </tr> -->
             @endforelse
         </tbody>
     </table>
