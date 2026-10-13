@@ -61,9 +61,14 @@
 @if (!isset($source) || $source != 'contract')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                    <h2 class="page-title"> Arrival Summary: {{ $arrivalTicket->unique_no }}</h2>
+            <div class="row w-100 mx-auto align-items-center mb-2">
+                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                    <h2 class="page-title mb-0"> Arrival Summary: {{ $arrivalTicket->unique_no }}</h2>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 text-right">
+                    <button type="button" class="btn btn-info btn-sm shadow-sm" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=all&exclude_create=1', 'Audit Logs: #{{ $arrivalTicket->unique_no }}', false, '55%')">
+                        <i class="fa fa-history mr-1"></i> View All Audit Logs
+                    </button>
                 </div>
             </div>
 
@@ -80,10 +85,13 @@
                         <div class="card-content">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
+                                    <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                        <h6 class="mb-0">
                                             Ticket Detail
                                         </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=ticket_detail&exclude_create=1', 'Audit Logs - Ticket Detail (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                            <i class="fa fa-history mr-1"></i> Audit Logs
+                                        </button>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
@@ -329,10 +337,13 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
+                                    <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                        <h6 class="mb-0">
                                             Loading Weight Detail
                                         </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=loading_weight&exclude_create=1', 'Audit Logs - Loading Weight (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                            <i class="fa fa-history mr-1"></i> Audit Logs
+                                        </button>
                                     </div>
                                     <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
@@ -375,10 +386,13 @@
                         <div class="card-content">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
+                                    <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                        <h6 class="mb-0">
                                             Location Transfer
                                         </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=location_transfer&exclude_create=1', 'Audit Logs - Location Transfer (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                            <i class="fa fa-history mr-1"></i> Audit Logs
+                                        </button>
                                     </div>
                                     @if (isset($arrivalTicket->unloadingLocation))
                                         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -429,10 +443,13 @@
                         <div class="card-content">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
+                                    <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                        <h6 class="mb-0">
                                             First Weighbridge Detail
                                         </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=first_weighbridge&exclude_create=1', 'Audit Logs - First Weighbridge (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                            <i class="fa fa-history mr-1"></i> Audit Logs
+                                        </button>
                                     </div>
                                     @if (isset($arrivalTicket->firstWeighbridge))
                                         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -482,10 +499,13 @@
                             <div class="card-body">
 
                                 <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="header-heading-sepration">
+                                    <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                        <h6 class="mb-0">
                                             Half / Full Approved
                                         </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=half_full_approved&exclude_create=1', 'Audit Logs - Half / Full Approved (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                            <i class="fa fa-history mr-1"></i> Audit Logs
+                                        </button>
                                     </div>
                                     @if (isset($arrivalTicket->approvals))
                                         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -644,10 +664,13 @@
                                     <div class="card-body">
 
                                         <div class="row">
-                                            <div class="col-12">
-                                                <h6 class="header-heading-sepration">
+                                            <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                                <h6 class="mb-0">
                                                     Second Weighbridge Detail
                                                 </h6>
+                                                <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=second_weighbridge&exclude_create=1', 'Audit Logs - Second Weighbridge (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                                    <i class="fa fa-history mr-1"></i> Audit Logs
+                                                </button>
                                             </div>
                                             @if (isset($arrivalTicket->secondWeighbridge))
                                                 <div class="col-xs-6 col-sm-6 col-md-4">
@@ -736,10 +759,13 @@
                                 <div class="card-content">
                                     <div class="card-body">
                                         <div class="row">
-                                            <div class="col-12">
-                                                <h6 class="header-heading-sepration">
+                                            <div class="col-12 d-flex justify-content-between align-items-center mb-2 header-heading-sepration">
+                                                <h6 class="mb-0">
                                                     Arrival Freight
                                                 </h6>
+                                                <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this, '{{ route('ticket.revert-test-audit-logs', $arrivalTicket->id) }}?section=freight&exclude_create=1', 'Audit Logs - Arrival Freight (#{{ $arrivalTicket->unique_no }})', false, '55%')">
+                                                    <i class="fa fa-history mr-1"></i> Audit Logs
+                                                </button>
                                             </div>
                                             @if (isset($arrivalTicket->freight))
                                                 <div class="col-md-4">
@@ -2181,6 +2207,7 @@
                 </section>
             </div>
         @endif
+
 <script>
 
     function calculateNetWeight() {

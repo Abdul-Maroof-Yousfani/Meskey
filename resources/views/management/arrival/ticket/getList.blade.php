@@ -103,12 +103,16 @@
                     <a href="{{ route('ticket.arrival-revert', $row->id) }}" class="badge badge-danger border-0 mr-2">
                         Master Control
                     </a>
-                    @if (auth()->user()->user_type == 'super-admin')
                     <a href="{{ route('ticket.arrival-revert-test', $row->id) }}" class="badge badge-danger border-0 mr-2">
                         Master Control (Maund)
                     </a>
-                    @endif
+                    <a onclick="openModal(this,'{{ route('ticket.audit-logs', $row->id) }}?section=ticket_detail','Audit Logs: #{{ $row->unique_no }}', false, '55%')"
+                        class="badge badge-info text-white border-0 mr-2" title="View Audit Logs" style="cursor: pointer;">
+                        <i class="fa fa-history"></i>
+                    </a>
                     @endcanAccess
+
+                    
 
                     @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)
                         <button onclick="confirmBiltyReturn({{ $row->id }})" class="badge badge-warning border-0 mr-2">
