@@ -3,7 +3,7 @@
     @csrf
     <input type="hidden" name="arrival_ticket_id" value="{{ $ticket->id }}" />
     <input type="hidden" id="listRefresh" value="{{ route('get.freight') }}" />
-    <a onclick="openModal(this,'{{ route('arrival-slip.edit', 0) }}','View Arrival Slip', true, '100%')"
+    <a onclick="openModal(this,'{{ route('arrival-slip.edit', 0) }}','View Arrival Slip', true, '100%',{reload_on_close:true})"
         data-variable="slip" id="afterAjax" class="d-none">
     </a>
 
@@ -255,7 +255,8 @@
 
     <div class="row bottom-button-bar">
         <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+            <a href="{{ route('freight.index') }}"
+                class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             @if (!$isNotGeneratable)
                 <button type="submit" class="btn btn-primary submitbutton">Save</button>
             @endif

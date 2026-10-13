@@ -36,14 +36,14 @@
 </head>
 
 <body
-    class="horizontal-layout horizontal-menu horizontal-menu-padding 1-column auth-page navbar-sticky blank-page {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
+    class="horizontal-layout horizontal-menu horizontal-menu-padding h-100 1-column auth-page navbar-sticky blank-page {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="1-column">
-    <div class="wrapper p-0">
-        <div class="main-panel">
+    <div class="wrapper p-0 h-100vh">
+        <div class="main-panel h-100">
             <!-- BEGIN : Main Content-->
-            <div class="main-content">
+            <div class="main-content h-100">
                 <div class="content-overlay"></div>
-                <div class="content-wrapper">
+                <div class="content-wrapper h-100">
                     <!--Login Page Starts-->
                     <section id="login" class="auth-height">
                         <div class="row full-height-vh m-0">
