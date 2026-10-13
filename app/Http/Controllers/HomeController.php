@@ -233,6 +233,12 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
+                    ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                        return $q->where(function ($sq) use ($authUser) {
+                            $sq->where('decision_id', $authUser->id)
+                                ->orWhere('decision_id', $authUser->parent_user_id);
+                        });
+                    })
                     ->where(function ($q) {
                         $q->whereNull('arrival_slip_status')
                             ->orWhere('arrival_slip_status', '!=', 'generated');
@@ -248,6 +254,12 @@ class HomeController extends Controller
                     // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                     //     return $q->where('location_id', auth()->user()->company_location_id);
                     // })
+                    ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                        return $q->where(function ($sq) use ($authUser) {
+                            $sq->where('decision_id', $authUser->id)
+                                ->orWhere('decision_id', $authUser->parent_user_id);
+                        });
+                    })
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
