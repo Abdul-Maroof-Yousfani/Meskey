@@ -59,6 +59,7 @@
                                         <tr>
                                             <th>PV No</th>
                                             <th>Date</th>
+                                            <th>Status</th>
                                             <th>Type</th>
                                             <th>Account</th>
                                             <th>Bill/Ref No</th>

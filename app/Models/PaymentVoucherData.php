@@ -16,10 +16,15 @@ class PaymentVoucherData extends Model
         'payment_request_id',
         'amount',
         'description',
-        "account_id",
-        "tax_id",
-        "tax_amount",
-        "net_amount"
+        'account_id',
+        'tax_id',
+        'tax_amount',
+        'net_amount',
+        'reference_type',
+        'reference_id',
+        'customer_advance_id',
+        'sales_order_id',
+        'delivery_order_id',
     ];
 
     public function paymentVoucher()
@@ -30,5 +35,25 @@ class PaymentVoucherData extends Model
     public function paymentRequest()
     {
         return $this->belongsTo(PaymentRequest::class, 'payment_request_id');
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(\App\Models\Master\Account\Account::class, 'account_id');
+    }
+
+    public function customerAdvance()
+    {
+        return $this->belongsTo(\App\Models\CustomerAdvance::class, 'customer_advance_id');
+    }
+
+    public function salesOrder()
+    {
+        return $this->belongsTo(\App\Models\Sales\SalesOrder::class, 'sales_order_id');
+    }
+
+    public function deliveryOrder()
+    {
+        return $this->belongsTo(\App\Models\Sales\DeliveryOrder::class, 'delivery_order_id');
     }
 }

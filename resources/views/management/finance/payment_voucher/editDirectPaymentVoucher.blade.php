@@ -120,9 +120,12 @@
                                                         <select name="account[]" class="form-control select2 account-select" required>
                                                             <option value="">Select Account</option>
                                                             @foreach ($accounts as $account)
-                                                                <option value="{{ $account->id }}"
+                                                                @php
+                                                                    $typeLabel = $account->type_label ?? (!empty($account->table_name) ? ucfirst(rtrim($account->table_name, 's')) : '');
+                                                                @endphp
+                                                                <option value="{{ $account->id }}" data-table-name="{{ strtolower($account->table_name ?? '') }}"
                                                                     {{ $item->account_id == $account->id ? 'selected' : '' }}>
-                                                                    {{ $account->name }} ({{ $account->unique_no }})
+                                                                    {{ $account->name }} ({{ $account->unique_no }}){{ $typeLabel ? " - [{$typeLabel}]" : "" }}
                                                                 </option>
                                                             @endforeach
                                                         </select>
@@ -337,7 +340,12 @@ $(document).ready(function() {
                     <select name="account[]" class="form-control select2 account-select" required>
                         <option value="">Select Account</option>
                         @foreach ($accounts as $account)
-                            <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                            @php
+                                $typeLabel = $account->type_label ?? (!empty($account->table_name) ? ucfirst(rtrim($account->table_name, 's')) : '');
+                            @endphp
+                            <option value="{{ $account->id }}" data-table-name="{{ strtolower($account->table_name ?? '') }}">
+                                {{ $account->name }} ({{ $account->unique_no }}){{ $typeLabel ? " - [{$typeLabel}]" : "" }}
+                            </option>
                         @endforeach
                     </select>
                 </td>

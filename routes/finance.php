@@ -32,6 +32,17 @@ Route::post('/payment-voucher/generate-pv-number', [PaymentVoucherController::cl
 Route::get("/direct-payment-voucher/{payment_voucher}/edit", [PaymentVoucherController::class, "edit_direct"])->name("direct.payment-voucher.edit");
 Route::put("/direct-payment-voucher/{payment_voucher}", [PaymentVoucherController::class, "update_direct"])->name("direct.payment-voucher.update");
 
+// Direct Payment Voucher For Sale (Tab 2)
+Route::prefix('direct-payment-voucher')->group(function () {
+    Route::get('customer-advances/{accountId}', [PaymentVoucherController::class, 'getCustomerExcessAdvances'])->name('direct.payment-voucher.customer-advances');
+    Route::get('customer-banks/{accountId}', [PaymentVoucherController::class, 'getCustomerBankAccounts'])->name('direct.payment-voucher.customer-banks');
+    Route::get('customer-sos/{accountId}', [PaymentVoucherController::class, 'getCustomerSalesOrders'])->name('direct.payment-voucher.customer-sos');
+    Route::get('so-dos/{soId}', [PaymentVoucherController::class, 'getSoDeliveryOrders'])->name('direct.payment-voucher.so-dos');
+    Route::get('do-stats/{doId}', [PaymentVoucherController::class, 'getDoStatsForPayment'])->name('direct.payment-voucher.do-stats');
+    Route::post('sale/store', [PaymentVoucherController::class, 'direct_payment_voucher_sale_store'])->name('direct.payment-voucher-sale.store');
+    Route::put('sale/{payment_voucher}', [PaymentVoucherController::class, 'update_direct_sale'])->name('direct.payment-voucher-sale.update');
+});
+
 Route::prefix('receipt-voucher')->group(function () {
     Route::post('generate-rv-number', [ReceiptVoucherController::class, 'generateRvNumber'])->name('receipt-voucher.generate-rv-number');
     Route::post('reference-details', [ReceiptVoucherController::class, 'getReferenceDetails'])->name('receipt-voucher.reference-details');

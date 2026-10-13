@@ -28,6 +28,16 @@ use App\Models\TransporterCompanyBankDetail;
 use App\Models\TransporterOwnerBankDetail;
 use App\Models\VendorCompanyBankDetail;
 use App\Models\VendorOwnerBankDetail;
+use App\Models\CustomerAdvance;
+use App\Models\CustomerAdvanceAdjustment;
+use App\Models\Sales\SalesOrder;
+use App\Models\Sales\SalesOrderData;
+use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\DeliveryOrderData;
+use App\Models\Sales\DeliveryChallanData;
+use App\Models\Master\Customer;
+use App\Models\CustomerCompanyBankDetail;
+use App\Models\CustomerOwnerBankDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -80,7 +90,7 @@ class PaymentVoucherController extends Controller
      */
     public function getList(Request $request)
     {
-        $paymentVouchers = PaymentVoucher::with(['account'])
+        $paymentVouchers = PaymentVoucher::with(['account', 'bank_account'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
 
@@ -132,10 +142,11 @@ class PaymentVoucherController extends Controller
 
     public function directPaymentVoucher()
     {
-        $accounts = Account::all();
+        $accounts = Account::orderBy('name')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+        $customerAccounts = $accounts;
 
-        return view('management.finance.payment_voucher.directPaymentVoucher', compact('taxes', 'accounts'));
+        return view('management.finance.payment_voucher.directPaymentVoucher', compact('taxes', 'accounts', 'customerAccounts'));
     }
 
     public function direct_payment_voucher_store(Request $request)
@@ -197,37 +208,8 @@ class PaymentVoucherController extends Controller
                     'reference_id' => null,
                 ]);
 
-                // Credit the supplier/expense account
-                createTransaction(
-                    $netAmount,
-                    $accountId,
-                    1, // adjust if you have different transaction type for payments
-                    $uniqueNo,
-                    'debit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-{$paymentVoucher->id}",
-                        'counter_account_id' => $request->account_id,
-                        'remarks' => "Direct payment - {$desc}",
-                    ]
-                );
-
                 $totalAmount += $netAmount;
             }
-
-            // Debit the cash/bank account
-            createTransaction(
-                $totalAmount,
-                $request->account_id,
-                1,
-                $uniqueNo,
-                'credit',
-                'no',
-                [
-                    'purpose' => "$prefix-{$paymentVoucher->id}",
-                    'remarks' => 'Direct payment voucher',
-                ]
-            );
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
 
@@ -250,8 +232,51 @@ class PaymentVoucherController extends Controller
             abort(404);
         }
 
-        $accounts = Account::all();
+        $accounts = Account::orderBy('name')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
+
+        if ($payment_voucher->module_type === 'dpv_for_sale') {
+            $customerAccounts = $accounts;
+            $items = $payment_voucher->paymentVoucherData()->with(['customerAdvance', 'salesOrder', 'deliveryOrder'])->get();
+
+            $firstItem = $items->first();
+            $saleMode = ($firstItem && $firstItem->reference_type === 'customer_advance') ? 'excess_amount' : 'delivery_order';
+            $customerAccountId = $payment_voucher->request_account_id ?? ($firstItem?->account_id);
+
+            $customer = $this->resolveCustomerFromAccountId($customerAccountId);
+            $customerBankAccounts = collect();
+            if ($customer) {
+                $customer->load(['companyBankDetails', 'ownerBankDetails']);
+                foreach ($customer->companyBankDetails as $bank) {
+                    $customerBankAccounts->push([
+                        'id' => $bank->id,
+                        'type' => 'company',
+                        'title' => $customer->name ?? '',
+                        'account_title' => $bank->account_title ?? '',
+                        'account_number' => $bank->account_number ?? '',
+                        'bank_name' => $bank->bank_name ?? '',
+                        'branch_name' => $bank->branch_name ?? '',
+                        'branch_code' => $bank->branch_code ?? '',
+                    ]);
+                }
+                foreach ($customer->ownerBankDetails as $bank) {
+                    $customerBankAccounts->push([
+                        'id' => $bank->id,
+                        'type' => 'owner',
+                        'title' => $customer->name ?? '',
+                        'account_title' => $bank->account_title ?? '',
+                        'account_number' => $bank->account_number ?? '',
+                        'bank_name' => $bank->bank_name ?? '',
+                        'branch_name' => $bank->branch_name ?? '',
+                        'branch_code' => $bank->branch_code ?? '',
+                    ]);
+                }
+            }
+
+            return view("management.finance.payment_voucher.editDirectPaymentVoucherSale", compact(
+                "payment_voucher", "accounts", "taxes", "customerAccounts", "items", "saleMode", "customerAccountId", "customerBankAccounts"
+            ));
+        }
 
         // Load line items
         $items = $payment_voucher->paymentVoucherData; // assuming relation name
@@ -337,6 +362,905 @@ class PaymentVoucherController extends Controller
         }
     }
 
+    private function resolveCustomerFromAccountId($accountId)
+    {
+        if (!$accountId) {
+            return null;
+        }
+
+        $customer = Customer::where('account_id', $accountId)->first();
+        if ($customer) {
+            return $customer;
+        }
+
+        $customer = Customer::find($accountId);
+        if ($customer) {
+            return $customer;
+        }
+
+        $account = Account::find($accountId);
+        if ($account) {
+            if ($account->model_id) {
+                $customer = Customer::find($account->model_id);
+                if ($customer) {
+                    return $customer;
+                }
+            }
+
+            $customer = Customer::where('name', $account->name)->first();
+            if ($customer) {
+                return $customer;
+            }
+
+            $cleanName = trim(preg_replace('/[0-9]+$/', '', $account->name));
+            if ($cleanName) {
+                $customer = Customer::where('name', 'like', $cleanName . '%')->first();
+                if ($customer) {
+                    return $customer;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function getCustomerExcessAdvances(Request $request, $accountId)
+    {
+        $customer = $this->resolveCustomerFromAccountId($accountId);
+        if (!$customer) {
+            return response()->json([
+                'success' => true,
+                'customer_advances' => []
+            ]);
+        }
+
+        $excludeVoucherNo = $request->query('exclude_voucher_no');
+
+        $customerAdvances = CustomerAdvance::where('customer_id', $customer->id)
+            ->where(function ($q) {
+                $q->where('source_type', '!=', 'excess_payment')
+                  ->orWhereExists(function ($sub) {
+                      $sub->select(DB::raw(1))
+                          ->from('receipt_vouchers')
+                          ->whereColumn('receipt_vouchers.unique_no', 'customer_advances.voucher_no')
+                          ->whereNull('receipt_vouchers.deleted_at')
+                          ->where('receipt_vouchers.am_approval_status', 'approved');
+                  });
+            })
+            ->where(function ($q) use ($excludeVoucherNo) {
+                $q->whereIn('status', ['pending', 'partial_payment']);
+                if ($excludeVoucherNo) {
+                    $q->orWhereHas('adjustments', function ($adjQuery) use ($excludeVoucherNo) {
+                        $adjQuery->where('voucher_no', $excludeVoucherNo);
+                    });
+                }
+            })
+            ->get()
+            ->map(function ($adv) use ($excludeVoucherNo) {
+                $remaining = (float) $adv->remaining_amount;
+                if ($excludeVoucherNo) {
+                    $adjustment = CustomerAdvanceAdjustment::where('customer_advance_id', $adv->id)
+                        ->where('voucher_no', $excludeVoucherNo)
+                        ->sum('amount');
+                    $remaining += (float) $adjustment;
+                }
+
+                return [
+                    'id' => $adv->id,
+                    'voucher_no' => $adv->voucher_no,
+                    'source_type' => $adv->source_type,
+                    'amount' => (float) $adv->amount,
+                    'used_amount' => (float) $adv->used_amount,
+                    'remaining_amount' => round($remaining, 2),
+                    'formatted_remaining' => number_format($remaining, 2),
+                    'text' => $adv->voucher_no . ' (Remaining: Rs. ' . number_format($remaining, 2) . ')'
+                ];
+            })
+            ->filter(function ($item) {
+                return $item['remaining_amount'] > 0.01;
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'customer_advances' => $customerAdvances
+        ]);
+    }
+
+    public function getCustomerSalesOrders(Request $request, $accountId)
+    {
+        $customer = $this->resolveCustomerFromAccountId($accountId);
+        if (!$customer) {
+            return response()->json([
+                'success' => true,
+                'sales_orders' => []
+            ]);
+        }
+
+        $salesOrders = SalesOrder::where('customer_id', $customer->id)
+            ->where('am_approval_status', 'approved')
+            ->select('id', 'reference_no', 'status')
+            ->latest('id')
+            ->get()
+            ->map(function ($so) {
+                $statusLabel = $so->status ? ' (' . ucfirst($so->status) . ')' : '';
+                return [
+                    'id' => $so->id,
+                    'reference_no' => $so->reference_no,
+                    'status' => $so->status,
+                    'text' => $so->reference_no . $statusLabel
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'sales_orders' => $salesOrders
+        ]);
+    }
+
+    public function getSalesOrderRemainingAdvance($salesOrder, $excludeVoucherNo = null, $excludePvId = null)
+    {
+        $soId = is_object($salesOrder) ? $salesOrder->id : $salesOrder;
+
+        // 1. Total advance received for this SO from approved RVs
+        $soRvAdvance = (float) DB::table('receipt_voucher_items')
+            ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
+            ->whereNull('receipt_vouchers.deleted_at')
+            ->where('receipt_vouchers.am_approval_status', 'approved')
+            ->where('receipt_voucher_items.reference_type', 'sale_order')
+            ->where('receipt_voucher_items.reference_id', $soId)
+            ->sum('receipt_voucher_items.net_amount');
+
+        // 2. Advance attached/consumed by Delivery Orders for this SO
+        $soDoAdvanceConsumed = (float) DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
+            ->where('do_tbl.so_id', $soId)
+            ->where('do_tbl.am_approval_status', '!=', 'rejected')
+            ->sum('dorv.amount');
+
+        // 3. Adjustments against this SO or its RVs from approved Journal Vouchers
+        $rvIdsForSo = DB::table('receipt_voucher_items')
+            ->where('reference_type', 'sale_order')
+            ->where('reference_id', $soId)
+            ->pluck('receipt_voucher_id')
+            ->toArray();
+
+        $soJvAdjusted = (float) DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', 'approved')
+            ->where(function ($q) use ($soId, $rvIdsForSo) {
+                $q->where('journal_voucher_details.sales_order_id', $soId);
+                if (!empty($rvIdsForSo)) {
+                    $q->orWhere(function ($sub) use ($rvIdsForSo) {
+                        $sub->whereIn('journal_voucher_details.receipt_voucher_id', $rvIdsForSo)
+                            ->whereNull('journal_voucher_details.sales_order_id');
+                    });
+                }
+            })
+            ->sum('journal_voucher_details.debit_amount');
+
+        // 4. Previous direct DPV refunds for this SO
+        $alreadyRefundedSo = (float) PaymentVoucherData::where('sales_order_id', $soId)
+            ->whereNull('delivery_order_id')
+            ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo, $excludePvId) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+                if ($excludeVoucherNo) {
+                    $q->where('unique_no', '!=', $excludeVoucherNo);
+                }
+                if ($excludePvId) {
+                    $q->where('id', '!=', $excludePvId);
+                }
+            })
+            ->sum('amount');
+
+        $soRemainingAdvance = max(0, $soRvAdvance - $soDoAdvanceConsumed - $soJvAdjusted - $alreadyRefundedSo);
+        return round($soRemainingAdvance, 2);
+    }
+
+    public function getSoDeliveryOrders(Request $request, $soId)
+    {
+        $salesOrder = SalesOrder::with(['sales_order_data.item'])->findOrFail($soId);
+        $excludeVoucherNo = $request->query('exclude_voucher_no');
+
+        // Fetch real DOs for this SO (both active and closed, where not rejected)
+        $deliveryOrders = DeliveryOrder::with(['delivery_order_data.item'])
+            ->where('so_id', $soId)
+            ->where('am_approval_status', '!=', 'rejected')
+            ->where(function ($q) {
+                $q->whereNull('is_auto_created_from_so')
+                    ->orWhere('is_auto_created_from_so', '!=', 1);
+            })
+            ->get();
+
+        $dos = [];
+        foreach ($deliveryOrders as $do) {
+            $totalDoQty = 0;
+            $totalDcQty = 0;
+            $totalRemainingQty = 0;
+            $totalRemainingAmount = 0;
+            $totalDispatchedValue = 0;
+
+            foreach ($do->delivery_order_data as $itemData) {
+                $iDoQty = (float) $itemData->qty;
+                $iDcQty = (float) DeliveryChallanData::where('do_data_id', $itemData->id)
+                    ->whereHas('deliveryChallan', function ($q) {
+                        $q->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('qty');
+
+                $iRemQty = max(0, $iDoQty - $iDcQty);
+                $iRate = (float) $itemData->rate;
+                $iRemAmt = $iRemQty * $iRate;
+
+                $totalDoQty += $iDoQty;
+                $totalDcQty += $iDcQty;
+                $totalRemainingQty += $iRemQty;
+                $totalRemainingAmount += $iRemAmt;
+                $totalDispatchedValue += $iDcQty * $iRate;
+            }
+
+            // Attached cash advance to this DO from approved RVs
+            $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher as dorv')
+                ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+                ->whereNull('rv.deleted_at')
+                ->where('rv.am_approval_status', 'approved')
+                ->where('dorv.delivery_order_id', $do->id)
+                ->sum('dorv.amount');
+
+            if ($attachedRvAmount > 0) {
+                $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+                // Returnable cash advance takes precedence if higher than discrete bag rounding
+                $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
+            }
+
+            // Deduct previous DPV refunds for this DO
+            $alreadyRefunded = (float) PaymentVoucherData::where('delivery_order_id', $do->id)
+                ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                    if ($excludeVoucherNo) {
+                        $q->where('unique_no', '!=', $excludeVoucherNo);
+                    }
+                })
+                ->sum('amount');
+
+            $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
+            $refundedQty = $firstRate > 0 ? ($alreadyRefunded / $firstRate) : 0;
+
+            $totalRemainingAmount = max(0, $totalRemainingAmount - $alreadyRefunded);
+            $totalRemainingQty = max(0, $totalRemainingQty - $refundedQty);
+
+            if ($totalRemainingQty > 0 || $totalRemainingAmount > 0.01) {
+                $statusText = $do->do_status === 'closed' ? ' [Closed]' : ($do->am_approval_status === 'pending' ? ' [Pending Approval]' : '');
+                $dos[] = [
+                    'id' => $do->id,
+                    'reference_no' => $do->reference_no ?: ('DO #' . $do->id),
+                    'do_status' => $do->do_status,
+                    'am_approval_status' => $do->am_approval_status,
+                    'do_qty' => $totalDoQty,
+                    'dc_qty' => $totalDcQty,
+                    'remaining_qty' => round($totalRemainingQty, 2),
+                    'remaining_amount' => round($totalRemainingAmount, 2),
+                    'formatted_remaining' => number_format($totalRemainingAmount, 2),
+                    'text' => ($do->reference_no ?: ('DO #' . $do->id)) . " (Rem: " . round($totalRemainingQty, 2) . " Qty | Rs. " . number_format($totalRemainingAmount, 2) . "){$statusText}"
+                ];
+            }
+        }
+
+        // Calculate SO direct returnable advance (taking into account approved RV advance, DO consumption, JV deductions, and previous DPV refunds)
+        $soTotalQty = 0;
+        foreach ($salesOrder->sales_order_data as $soItem) {
+            $soTotalQty += (float) $soItem->qty;
+        }
+
+        $firstSoRate = (float) ($salesOrder->sales_order_data->first()->rate ?? 1);
+        $soRemainingAmount = $this->getSalesOrderRemainingAdvance($salesOrder, $excludeVoucherNo);
+        $soRemainingQty = $firstSoRate > 0 ? round($soRemainingAmount / $firstSoRate, 2) : 0;
+
+        return response()->json([
+            'success' => true,
+            'so_id' => $salesOrder->id,
+            'so_reference_no' => $salesOrder->reference_no,
+            'so_status' => $salesOrder->status,
+            'so_total_qty' => $soTotalQty,
+            'so_remaining_qty' => round($soRemainingQty, 2),
+            'so_remaining_amount' => round($soRemainingAmount, 2),
+            'so_formatted_remaining' => number_format($soRemainingAmount, 2),
+            'has_dos' => count($dos) > 0,
+            'delivery_orders' => $dos
+        ]);
+    }
+
+    public function getDoStatsForPayment(Request $request, $doId)
+    {
+        $do = DeliveryOrder::with(['delivery_order_data.item'])->findOrFail($doId);
+        $excludeVoucherNo = $request->query('exclude_voucher_no');
+
+        $totalDoQty = 0;
+        $totalDcQty = 0;
+        $totalRemainingQty = 0;
+        $totalRemainingAmount = 0;
+        $totalDispatchedValue = 0;
+
+        foreach ($do->delivery_order_data as $itemData) {
+            $iDoQty = (float) $itemData->qty;
+            $iDcQty = (float) DeliveryChallanData::where('do_data_id', $itemData->id)
+                ->whereHas('deliveryChallan', function ($q) {
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('qty');
+
+            $iRemQty = max(0, $iDoQty - $iDcQty);
+            $iRate = (float) $itemData->rate;
+            $iRemAmt = $iRemQty * $iRate;
+
+            $totalDoQty += $iDoQty;
+            $totalDcQty += $iDcQty;
+            $totalRemainingQty += $iRemQty;
+            $totalRemainingAmount += $iRemAmt;
+            $totalDispatchedValue += ($iDcQty * $iRate);
+        }
+
+        // Attached cash advance to this DO from approved RVs
+        $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+            ->whereNull('rv.deleted_at')
+            ->where('rv.am_approval_status', 'approved')
+            ->where('dorv.delivery_order_id', $do->id)
+            ->sum('dorv.amount');
+
+        if ($attachedRvAmount > 0) {
+            $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+            // Returnable cash advance takes precedence if higher than discrete bag rounding
+            $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
+        }
+
+        // Deduct previous DPV refunds for this DO
+        $alreadyRefunded = (float) PaymentVoucherData::where('delivery_order_id', $do->id)
+            ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+                if ($excludeVoucherNo) {
+                    $q->where('unique_no', '!=', $excludeVoucherNo);
+                }
+            })
+            ->sum('amount');
+
+        $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
+        $refundedQty = $firstRate > 0 ? ($alreadyRefunded / $firstRate) : 0;
+
+        $totalRemainingAmount = max(0, $totalRemainingAmount - $alreadyRefunded);
+        $totalRemainingQty = max(0, $totalRemainingQty - $refundedQty);
+
+        return response()->json([
+            'success' => true,
+            'id' => $do->id,
+            'reference_no' => $do->reference_no ?: ('DO #' . $do->id),
+            'do_status' => $do->do_status,
+            'do_qty' => $totalDoQty,
+            'dc_qty' => $totalDcQty,
+            'remaining_qty' => round($totalRemainingQty, 2),
+            'remaining_amount' => round($totalRemainingAmount, 2),
+            'formatted_remaining' => number_format($totalRemainingAmount, 2)
+        ]);
+    }
+
+    public function getCustomerBankAccounts($accountId)
+    {
+        $customer = $this->resolveCustomerFromAccountId($accountId);
+        if (!$customer) {
+            return response()->json(['success' => true, 'bank_accounts' => []]);
+        }
+
+        $customer->load(['companyBankDetails', 'ownerBankDetails']);
+        $bankAccounts = collect();
+
+        foreach ($customer->companyBankDetails as $bank) {
+            $bankAccounts->push([
+                'id' => $bank->id,
+                'type' => 'company',
+                'title' => $customer->name ?? '',
+                'account_title' => $bank->account_title ?? '',
+                'account_number' => $bank->account_number ?? '',
+                'bank_name' => $bank->bank_name ?? '',
+                'branch_name' => $bank->branch_name ?? '',
+                'branch_code' => $bank->branch_code ?? '',
+            ]);
+        }
+
+        foreach ($customer->ownerBankDetails as $bank) {
+            $bankAccounts->push([
+                'id' => $bank->id,
+                'type' => 'owner',
+                'title' => $customer->name ?? '',
+                'account_title' => $bank->account_title ?? '',
+                'account_number' => $bank->account_number ?? '',
+                'bank_name' => $bank->bank_name ?? '',
+                'branch_name' => $bank->branch_name ?? '',
+                'branch_code' => $bank->branch_code ?? '',
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'bank_accounts' => $bankAccounts
+        ]);
+    }
+
+    public function direct_payment_voucher_sale_store(Request $request)
+    {
+        $request->validate([
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'pv_date' => 'required|date',
+            'account_id' => 'required|exists:accounts,id',
+            'customer_account_id' => 'required|exists:accounts,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string|max:255',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'bank_account_id' => 'nullable',
+            'bank_account_type' => 'nullable|string',
+            'row_type.*' => 'required|in:excess_amount,delivery_order',
+            'amount.*' => 'required|numeric|min:0.01',
+            'tax_id.*' => 'nullable|exists:taxes,id',
+            'description.*' => 'nullable|string',
+        ]);
+
+        if (empty($request->row_type)) {
+            return response()->json(['message' => 'Please add at least one line item.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
+            $datePrefix = $prefix . '-' . date('m-d-Y', strtotime($request->pv_date)) . '-';
+            $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
+
+            $paymentVoucher = PaymentVoucher::create([
+                'unique_no' => $uniqueNo,
+                'pv_date' => $request->pv_date,
+                'voucher_type' => $request->voucher_type,
+                'account_id' => $request->account_id,
+                'request_account_id' => $request->customer_account_id,
+                'bank_account_id' => $request->bank_account_id ?: null,
+                'bank_account_type' => $request->bank_account_type ?: null,
+                'ref_bill_no' => $request->ref_bill_no,
+                'bill_date' => $request->bill_date,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'remarks' => $request->remarks ?? null,
+                'total_amount' => 0,
+                'is_direct' => 1,
+                'module_type' => 'dpv_for_sale',
+            ]);
+
+            $totalAmount = 0;
+
+            foreach ($request->row_type as $index => $rowType) {
+                $amount = (float) $request->amount[$index];
+                $taxId = $request->tax_id[$index] ?? null;
+                $taxAmount = (float) ($request->tax_amount[$index] ?? 0);
+                $netAmount = (float) ($request->net_amount[$index] ?? ($amount + $taxAmount));
+                $desc = $request->description[$index] ?? '';
+
+                if ($rowType === 'excess_amount') {
+                    $advId = $request->customer_advance_id[$index] ?? null;
+                    if (!$advId) {
+                        throw new \Exception("Please select an Excess Payment voucher for row #" . ($index + 1));
+                    }
+
+                    $adv = CustomerAdvance::lockForUpdate()->find($advId);
+                    if (!$adv) {
+                        throw new \Exception("Excess Payment voucher not found for row #" . ($index + 1));
+                    }
+
+                    if ($netAmount > (float) $adv->remaining_amount + 0.001) {
+                        throw new \Exception("Amount cannot exceed the remaining balance of Excess Payment ({$adv->voucher_no}) which is Rs. " . number_format($adv->remaining_amount, 2));
+                    }
+
+                    $adv->used_amount += $netAmount;
+                    $adv->remaining_amount -= $netAmount;
+                    $adv->status = ($adv->remaining_amount <= 0.01) ? 'completed' : 'partial_payment';
+                    $adv->save();
+
+                    CustomerAdvanceAdjustment::create([
+                        'customer_advance_id' => $adv->id,
+                        'voucher_no' => $uniqueNo,
+                        'amount' => $netAmount,
+                    ]);
+
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $paymentVoucher->id,
+                        'account_id' => $request->customer_account_id,
+                        'amount' => $amount,
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'net_amount' => $netAmount,
+                        'description' => $desc ?: "Refund of Excess Payment ({$adv->voucher_no})",
+                        'reference_type' => 'customer_advance',
+                        'reference_id' => $adv->id,
+                        'customer_advance_id' => $adv->id,
+                        'sales_order_id' => null,
+                        'delivery_order_id' => null,
+                    ]);
+                } else { // delivery_order
+                    $soId = $request->sales_order_id[$index] ?? null;
+                    if (!$soId) {
+                        throw new \Exception("Please select a Sales Order for row #" . ($index + 1));
+                    }
+                    $doId = !empty($request->delivery_order_id[$index]) ? $request->delivery_order_id[$index] : null;
+
+                    $maxAllowed = 0;
+                    if ($doId) {
+                        $do = DeliveryOrder::with(['delivery_order_data'])->findOrFail($doId);
+                        $totalDispatchedValue = 0;
+                        foreach ($do->delivery_order_data as $dod) {
+                            $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
+                                ->whereHas('deliveryChallan', function ($q) {
+                                    $q->where('am_approval_status', '!=', 'rejected');
+                                })
+                                ->sum('qty');
+                            $maxAllowed += max(0, (float)$dod->qty - $dcQty) * (float)$dod->rate;
+                            $totalDispatchedValue += $dcQty * (float)$dod->rate;
+                        }
+
+                        $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher')
+                            ->where('delivery_order_id', $do->id)
+                            ->sum('amount');
+                        if ($attachedRvAmount > 0) {
+                            $remAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+                            $maxAllowed = max($maxAllowed, $remAttachedAdvance);
+                        }
+
+                        $alreadyRefunded = (float) PaymentVoucherData::where('delivery_order_id', $do->id)
+                            ->whereHas('paymentVoucher', function ($q) {
+                                $q->whereNull('deleted_at');
+                            })
+                            ->sum('amount');
+                        $maxAllowed = max(0, $maxAllowed - $alreadyRefunded);
+
+                        $refType = 'delivery_order';
+                        $refId = $do->id;
+                    } else {
+                        $so = SalesOrder::with(['sales_order_data'])->findOrFail($soId);
+                        $maxAllowed = $this->getSalesOrderRemainingAdvance($so);
+                        $refType = 'sales_order';
+                        $refId = $so->id;
+                    }
+
+                    if ($netAmount > $maxAllowed + 0.01) {
+                        $label = $doId ? "Delivery Order" : "Sales Order";
+                        throw new \Exception("Row #" . ($index + 1) . ": Amount cannot exceed the remaining returnable amount of {$label} which is Rs. " . number_format($maxAllowed, 2));
+                    }
+
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $paymentVoucher->id,
+                        'account_id' => $request->customer_account_id,
+                        'amount' => $amount,
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'net_amount' => $netAmount,
+                        'description' => $desc ?: "Sale Return for " . ($doId ? "DO #$doId" : "SO #$soId"),
+                        'reference_type' => $refType,
+                        'reference_id' => $refId,
+                        'customer_advance_id' => null,
+                        'sales_order_id' => $soId,
+                        'delivery_order_id' => $doId,
+                    ]);
+
+                    // Auto-close DO if remaining balance is fully refunded
+                    if ($doId) {
+                        $doObj = DeliveryOrder::with('delivery_order_data')->find($doId);
+                        if ($doObj) {
+                            $doRemAmt = 0;
+                            $totalDispatchedVal = 0;
+                            foreach ($doObj->delivery_order_data as $dod) {
+                                $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
+                                    ->whereHas('deliveryChallan', function ($q) {
+                                        $q->where('am_approval_status', '!=', 'rejected');
+                                    })
+                                    ->sum('qty');
+                                $doRemAmt += max(0, (float)$dod->qty - $dcQty) * (float)$dod->rate;
+                                $totalDispatchedVal += $dcQty * (float)$dod->rate;
+                            }
+                            $attRv = (float) DB::table('delivery_order_receipt_voucher')
+                                ->where('delivery_order_id', $doId)
+                                ->sum('amount');
+                            if ($attRv > 0) {
+                                $doRemAmt = max($doRemAmt, max(0, $attRv - $totalDispatchedVal));
+                            }
+                            $totRef = (float) PaymentVoucherData::where('delivery_order_id', $doId)
+                                ->whereHas('paymentVoucher', function($q) { $q->whereNull('deleted_at'); })
+                                ->sum('amount');
+                            if ($totRef >= $doRemAmt - 0.01) {
+                                $doObj->update(['do_status' => 'closed']);
+                            }
+                        }
+                    }
+
+                    // Auto-close SO if all items are fully consumed
+                    if ($soId) {
+                        $soObj = SalesOrder::with('sales_order_data')->find($soId);
+                        if ($soObj) {
+                            $allConsumed = true;
+                            foreach ($soObj->sales_order_data as $sod) {
+                                if (delivery_order_qty_balance($sod->id) > 0.01) {
+                                    $allConsumed = false;
+                                    break;
+                                }
+                            }
+                            if ($allConsumed) {
+                                $soObj->update(['status' => 'closed', 'contract_status' => 'closed']);
+                            }
+                        }
+                    }
+                }
+
+                $totalAmount += $netAmount;
+            }
+
+            $paymentVoucher->update(['total_amount' => $totalAmount]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Direct Payment Voucher (Sale) created successfully!',
+                'redirect' => route('payment-voucher.index'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update_direct_sale(Request $request, PaymentVoucher $payment_voucher)
+    {
+        if (!$payment_voucher->is_direct || $payment_voucher->module_type !== 'dpv_for_sale') {
+            abort(404);
+        }
+
+        $request->validate([
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'pv_date' => 'required|date',
+            'account_id' => 'required|exists:accounts,id',
+            'customer_account_id' => 'required|exists:accounts,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string|max:255',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'bank_account_id' => 'nullable',
+            'bank_account_type' => 'nullable|string',
+            'row_type.*' => 'required|in:excess_amount,delivery_order',
+            'amount.*' => 'required|numeric|min:0.01',
+            'tax_id.*' => 'nullable|exists:taxes,id',
+            'description.*' => 'nullable|string',
+        ]);
+
+        if (empty($request->row_type)) {
+            return response()->json(['message' => 'Please add at least one line item.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $payment_voucher->update([
+                'pv_date' => $request->pv_date,
+                'voucher_type' => $request->voucher_type,
+                'account_id' => $request->account_id,
+                'request_account_id' => $request->customer_account_id,
+                'bank_account_id' => $request->bank_account_id ?: null,
+                'bank_account_type' => $request->bank_account_type ?: null,
+                'ref_bill_no' => $request->ref_bill_no,
+                'bill_date' => $request->bill_date,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'remarks' => $request->remarks ?? null,
+            ]);
+
+            // Revert previous CustomerAdvanceAdjustment records
+            $prevAdjustments = CustomerAdvanceAdjustment::where('voucher_no', $payment_voucher->unique_no)->get();
+            foreach ($prevAdjustments as $adj) {
+                $adv = CustomerAdvance::find($adj->customer_advance_id);
+                if ($adv) {
+                    $adv->used_amount -= $adj->amount;
+                    $adv->remaining_amount += $adj->amount;
+                    $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                    $adv->save();
+                }
+                $adj->delete();
+            }
+
+            // Delete old items
+            $payment_voucher->paymentVoucherData()->delete();
+
+            $totalAmount = 0;
+
+            foreach ($request->row_type as $index => $rowType) {
+                $amount = (float) $request->amount[$index];
+                $taxId = $request->tax_id[$index] ?? null;
+                $taxAmount = (float) ($request->tax_amount[$index] ?? 0);
+                $netAmount = (float) ($request->net_amount[$index] ?? ($amount + $taxAmount));
+                $desc = $request->description[$index] ?? '';
+
+                if ($rowType === 'excess_amount') {
+                    $advId = $request->customer_advance_id[$index] ?? null;
+                    if (!$advId) {
+                        throw new \Exception("Please select an Excess Payment voucher for row #" . ($index + 1));
+                    }
+
+                    $adv = CustomerAdvance::lockForUpdate()->find($advId);
+                    if (!$adv) {
+                        throw new \Exception("Excess Payment voucher not found for row #" . ($index + 1));
+                    }
+
+                    if ($netAmount > (float) $adv->remaining_amount + 0.001) {
+                        throw new \Exception("Amount cannot exceed the remaining balance of Excess Payment ({$adv->voucher_no}) which is Rs. " . number_format($adv->remaining_amount, 2));
+                    }
+
+                    $adv->used_amount += $netAmount;
+                    $adv->remaining_amount -= $netAmount;
+                    $adv->status = ($adv->remaining_amount <= 0.01) ? 'completed' : 'partial_payment';
+                    $adv->save();
+
+                    CustomerAdvanceAdjustment::create([
+                        'customer_advance_id' => $adv->id,
+                        'voucher_no' => $payment_voucher->unique_no,
+                        'amount' => $netAmount,
+                    ]);
+
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $payment_voucher->id,
+                        'account_id' => $request->customer_account_id,
+                        'amount' => $amount,
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'net_amount' => $netAmount,
+                        'description' => $desc ?: "Refund of Excess Payment ({$adv->voucher_no})",
+                        'reference_type' => 'customer_advance',
+                        'reference_id' => $adv->id,
+                        'customer_advance_id' => $adv->id,
+                        'sales_order_id' => null,
+                        'delivery_order_id' => null,
+                    ]);
+                } else { // delivery_order
+                    $soId = $request->sales_order_id[$index] ?? null;
+                    if (!$soId) {
+                        throw new \Exception("Please select a Sales Order for row #" . ($index + 1));
+                    }
+                    $doId = !empty($request->delivery_order_id[$index]) ? $request->delivery_order_id[$index] : null;
+
+                    $maxAllowed = 0;
+                    if ($doId) {
+                        $do = DeliveryOrder::with(['delivery_order_data'])->findOrFail($doId);
+                        $totalDispatchedValue = 0;
+                        foreach ($do->delivery_order_data as $dod) {
+                            $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
+                                ->whereHas('deliveryChallan', function ($q) {
+                                    $q->where('am_approval_status', '!=', 'rejected');
+                                })
+                                ->sum('qty');
+                            $maxAllowed += max(0, (float)$dod->qty - $dcQty) * (float)$dod->rate;
+                            $totalDispatchedValue += $dcQty * (float)$dod->rate;
+                        }
+
+                        $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher')
+                            ->where('delivery_order_id', $do->id)
+                            ->sum('amount');
+                        if ($attachedRvAmount > 0) {
+                            $remAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+                            $maxAllowed = max($maxAllowed, $remAttachedAdvance);
+                        }
+
+                        $alreadyRefunded = (float) PaymentVoucherData::where('delivery_order_id', $do->id)
+                            ->where('payment_voucher_id', '!=', $payment_voucher->id)
+                            ->whereHas('paymentVoucher', function ($q) {
+                                $q->whereNull('deleted_at');
+                            })
+                            ->sum('amount');
+                        $maxAllowed = max(0, $maxAllowed - $alreadyRefunded);
+
+                        $refType = 'delivery_order';
+                        $refId = $do->id;
+                    } else {
+                        $so = SalesOrder::with(['sales_order_data'])->findOrFail($soId);
+                        $maxAllowed = $this->getSalesOrderRemainingAdvance($so, $payment_voucher->unique_no, $payment_voucher->id);
+                        $refType = 'sales_order';
+                        $refId = $so->id;
+                    }
+
+                    if ($netAmount > $maxAllowed + 0.01) {
+                        $label = $doId ? "Delivery Order" : "Sales Order";
+                        throw new \Exception("Row #" . ($index + 1) . ": Amount cannot exceed the remaining returnable amount of {$label} which is Rs. " . number_format($maxAllowed, 2));
+                    }
+
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $payment_voucher->id,
+                        'account_id' => $request->customer_account_id,
+                        'amount' => $amount,
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'net_amount' => $netAmount,
+                        'description' => $desc ?: "Sale Return for " . ($doId ? "DO #$doId" : "SO #$soId"),
+                        'reference_type' => $refType,
+                        'reference_id' => $refId,
+                        'customer_advance_id' => null,
+                        'sales_order_id' => $soId,
+                        'delivery_order_id' => $doId,
+                    ]);
+
+                    // Auto-close DO if remaining balance is fully refunded
+                    if ($doId) {
+                        $doObj = DeliveryOrder::with('delivery_order_data')->find($doId);
+                        if ($doObj) {
+                            $doRemAmt = 0;
+                            $totalDispatchedVal = 0;
+                            foreach ($doObj->delivery_order_data as $dod) {
+                                $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
+                                    ->whereHas('deliveryChallan', function ($q) {
+                                        $q->where('am_approval_status', '!=', 'rejected');
+                                    })
+                                    ->sum('qty');
+                                $doRemAmt += max(0, (float)$dod->qty - $dcQty) * (float)$dod->rate;
+                                $totalDispatchedVal += $dcQty * (float)$dod->rate;
+                            }
+                            $attRv = (float) DB::table('delivery_order_receipt_voucher')
+                                ->where('delivery_order_id', $doId)
+                                ->sum('amount');
+                            if ($attRv > 0) {
+                                $doRemAmt = max($doRemAmt, max(0, $attRv - $totalDispatchedVal));
+                            }
+                            $totRef = (float) PaymentVoucherData::where('delivery_order_id', $doId)
+                                ->whereHas('paymentVoucher', function($q) { $q->whereNull('deleted_at'); })
+                                ->sum('amount');
+                            if ($totRef >= $doRemAmt - 0.01) {
+                                $doObj->update(['do_status' => 'closed']);
+                            }
+                        }
+                    }
+
+                    // Auto-close SO if all items are fully consumed
+                    if ($soId) {
+                        $soObj = SalesOrder::with('sales_order_data')->find($soId);
+                        if ($soObj) {
+                            $allConsumed = true;
+                            foreach ($soObj->sales_order_data as $sod) {
+                                if (delivery_order_qty_balance($sod->id) > 0.01) {
+                                    $allConsumed = false;
+                                    break;
+                                }
+                            }
+                            if ($allConsumed) {
+                                $soObj->update(['status' => 'closed', 'contract_status' => 'closed']);
+                            }
+                        }
+                    }
+                }
+
+                $totalAmount += $netAmount;
+            }
+
+            $payment_voucher->update(['total_amount' => $totalAmount]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Direct Payment Voucher (Sale) updated successfully!',
+                'redirect' => route('payment-voucher.index'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Show the specified payment voucher.
      */
@@ -378,6 +1302,12 @@ class PaymentVoucherController extends Controller
                 $bankAccount = TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
             } elseif ($paymentVoucher->bank_account_type === 'owner') {
                 $bankAccount = TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        } elseif ($table_name == 'customers') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id);
             }
         } else {
             $bankAccount = null;
@@ -427,6 +1357,12 @@ class PaymentVoucherController extends Controller
                 $bankAccount = TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
             } elseif ($paymentVoucher->bank_account_type === 'owner') {
                 $bankAccount = TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        } elseif ($table_name == 'customers') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id);
             }
         } else {
             $bankAccount = null;
@@ -1194,59 +2130,6 @@ class PaymentVoucherController extends Controller
             $paymentAgainstStr = implode(', ', $allPaymentAgainst);
             $referenceNosStr = implode(', ', $allReferenceNos);
 
-            // --- ONE credit on bank/cash account (total amount) ---
-            createTransaction(
-                $totalAmount,
-                $request->account_id,
-                1,
-                $uniqueNo,
-                'credit',
-                'no',
-                [
-                    'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
-                    'payment_against' => $paymentAgainstStr,
-                    'against_reference_no' => $referenceNosStr,
-                    'counter_account_id' => $request->request_account_id,
-                    'remarks' => $bankRemarks,
-                ]
-            );
-
-            // --- Per-request DEBIT on supplier/broker account (individual amounts) ---
-            foreach ($perRequestData as $item) {
-                // if ($pay) {
-                //     $supplierRemarks .= " against bank '{$bankName}'";
-                // }
-                // if ($accountNumber) {
-                //     $supplierRemarks .= " with account number '{$accountNumber}'";
-                // }
-
-
-                $supplierRemarks = "A payment of Rs. " . number_format($item['amount'], 2) . " has been made.";
-                if ($bankName) {
-                    $supplierRemarks .= " against bank '{$bankName}'";
-                }
-                if ($accountNumber) {
-                    $supplierRemarks .= " with account number '{$accountNumber}'";
-                }
-                $supplierRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.';
-
-                createTransaction(
-                    $item['amount'],
-                    $request->request_account_id,
-                    1,
-                    $uniqueNo,
-                    'debit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
-                        'payment_against' => $item['request_type'],
-                        'against_reference_no' => "{$item['truckNo']}/{$item['biltyNo']}",
-                        'counter_account_id' => $request->account_id,
-                        'remarks' => $supplierRemarks,
-                    ]
-                );
-            }
-
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
 
@@ -1591,62 +2474,6 @@ class PaymentVoucherController extends Controller
             $allJvNarrations = array_filter(array_column($perRequestData, 'jv_narration'));
             $combinedJvNarration = !empty($allJvNarrations) ? implode('; ', array_unique($allJvNarrations)) : null;
 
-            // Create credit transaction (only if totalAmount > 0)
-            if ($totalAmount > 0) {
-                createTransaction(
-                    $totalAmount,
-                    $request->account_id,
-                    1,
-                    $uniqueNo,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
-                        'payment_against' => implode(', ', $allPaymentAgainst),
-                        'against_reference_no' => implode(', ', $allReferenceNos),
-                        'counter_account_id' => $request->request_account_id,
-                        'remarks' => $bankRemarks,
-                        'jv_narration' => $combinedJvNarration ? substr($combinedJvNarration, 0, 255) : null,
-                    ]
-                );
-            }
-
-            // Create debit transactions with full ticket details (only if amount > 0)
-            foreach ($perRequestData as $item) {
-                if ($item['amount'] > 0) {
-                    $supplierRemarks = "A payment of Rs. " . number_format($item['amount'], 2) . " has been made for: " . $item['ticket_details'];
-                    if (!empty($item['applied_adj']) && $item['applied_adj'] > 0) {
-                        $supplierRemarks .= " (Gross: Rs. " . number_format($item['gross_amount'], 2) . ", JV Adj: Rs. " . number_format($item['applied_adj'], 2) . ", Net: Rs. " . number_format($item['amount'], 2) . ($item['jv_nos'] ? " against JV# {$item['jv_nos']}" : "") . ")";
-                    }
-                    if ($bankName) {
-                        $supplierRemarks .= " against bank '{$bankName}'";
-                    }
-                    if ($accountNumber) {
-                        $supplierRemarks .= " with account number '{$accountNumber}'";
-                    }
-                    $supplierRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.';
-
-                    createTransaction(
-                        $item['amount'],
-                        $request->request_account_id,
-                        1,
-                        $uniqueNo,
-                        'debit',
-                        'no',
-                        [
-                            'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
-                            'payment_against' => $item['request_type'],
-                            'against_reference_no' => "{$item['truckNo']}/{$item['biltyNo']}",
-                            'counter_account_id' => $request->account_id,
-                            'remarks' => $supplierRemarks,
-                            'jv_narration' => !empty($item['jv_narration']) ? substr($item['jv_narration'], 0, 255) : null,
-                            'reference_no' => $item['grn_no'] ?? null,
-                            'grn_no' => $item['grn_no'] ?? null,
-                        ]
-                    );
-                }
-            }
-
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
 
@@ -1807,44 +2634,6 @@ class PaymentVoucherController extends Controller
                 if ($accountNumber) {
                     $remarks .= " with account number '{$accountNumber}'";
                 }
-                if ($request->voucher_type === 'bank_payment_voucher') {
-                    $remarks .= ' through bank transfer.';
-                } else {
-                    $remarks .= ' in cash.';
-                }
-
-                createTransaction(
-                    $request->amounts[$index],
-                    $request->bank_account_id,
-                    1,
-                    $uniqueNo,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ref_no",
-                        'against_reference_no' => purchase_bill($request->purchase_bill_id[$index])->reference_no,
-                        'counter_account_id' => $request->supplier_id,
-                        'remarks' => $remarks,
-                    ]
-                );
-
-                createTransaction(
-                    $request->amounts[$index],
-                    $request->supplier_id,
-                    1,
-                    $uniqueNo,
-                    'debit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ref_no",
-                        'counter_account_id' => $request->bank_account_id,
-                        'against_reference_no' => purchase_bill($request->purchase_bill_id[$index])->reference_no,
-                        'remarks' => $remarks,
-                    ]
-                );
-
                 $purchase_bill = PurchaseBill::find($request->purchase_bill_id[$index]);
                 $remaining_balance = getPaymentVoucherBillBalance($purchase_bill);
                 if ($request->amounts[$index] > $remaining_balance) {
@@ -2027,6 +2816,19 @@ class PaymentVoucherController extends Controller
 
         // Delete linked settlement adjustments to restore JV available balance
         DB::table('settlement_adjustments')->where('voucher_no', $paymentVoucher->unique_no)->delete();
+
+        // Revert any customer advance adjustments made by this voucher
+        $prevAdjustments = CustomerAdvanceAdjustment::where('voucher_no', $paymentVoucher->unique_no)->get();
+        foreach ($prevAdjustments as $adj) {
+            $adv = CustomerAdvance::find($adj->customer_advance_id);
+            if ($adv) {
+                $adv->used_amount -= $adj->amount;
+                $adv->remaining_amount += $adj->amount;
+                $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                $adv->save();
+            }
+            $adj->delete();
+        }
 
         $paymentVoucher->delete();
 

@@ -321,6 +321,7 @@ class DeliveryOrderController extends Controller
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                                 ->whereNull('journal_vouchers.deleted_at')
                                 ->whereNull('journal_voucher_details.deleted_at')
+                                ->where('journal_vouchers.am_approval_status', 'approved')
                                 ->where('receipt_voucher_id', $adv->receipt_voucher_id)
                                 ->sum('debit_amount');
                                 
@@ -368,12 +369,22 @@ class DeliveryOrderController extends Controller
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                                 ->whereNull('journal_vouchers.deleted_at')
                                 ->whereNull('journal_voucher_details.deleted_at')
+                                ->where('journal_vouchers.am_approval_status', 'approved')
                                 ->where('receipt_voucher_id', $rv->id)
                                 ->sum('debit_amount');
 
                             $spent += $jv_spent;
 
-                            $remaining = doubleval($linked_amount) - doubleval($spent);
+                            $dpv_refunded = (float) DB::table('payment_voucher_data')
+                                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                                ->whereNull('payment_vouchers.deleted_at')
+                                ->whereNull('payment_voucher_data.deleted_at')
+                                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                                ->where('payment_voucher_data.sales_order_id', $request->sale_order_id)
+                                ->whereNull('payment_voucher_data.delivery_order_id')
+                                ->sum('payment_voucher_data.net_amount');
+
+                            $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded));
 
                             if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();
@@ -407,6 +418,7 @@ class DeliveryOrderController extends Controller
                         ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                         ->whereNull('journal_vouchers.deleted_at')
                         ->whereNull('journal_voucher_details.deleted_at')
+                        ->where('journal_vouchers.am_approval_status', 'approved')
                         ->where('journal_voucher_id', $jv_id)
                         ->where('acc_id', function($q) use ($request) {
                             $q->select('account_id')->from('customers')->where('id', $request->customer_id);
@@ -840,6 +852,7 @@ class DeliveryOrderController extends Controller
                     ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                     ->whereNull('journal_vouchers.deleted_at')
                     ->whereNull('journal_voucher_details.deleted_at')
+                    ->where('journal_vouchers.am_approval_status', 'approved')
                     ->where('receipt_voucher_id', $adv->receipt_voucher_id)
                     ->sum('debit_amount');
                     
@@ -876,11 +889,20 @@ class DeliveryOrderController extends Controller
 
 
 
+            $dpvRefunded = (float) DB::table('payment_voucher_data')
+                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                ->whereNull('payment_vouchers.deleted_at')
+                ->whereNull('payment_voucher_data.deleted_at')
+                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                ->where('payment_voucher_data.sales_order_id', $sale_order_id)
+                ->sum('payment_voucher_data.net_amount');
+
+            $remainingDpvToDeduct = $dpvRefunded;
+
             foreach ($receipt_vouchers as $rv) {
                 $linked_amount = $rv->items->where("reference_type", "sale_order")
                     ->where("reference_id", $sale_order_id)
                     ->sum("net_amount");
-
 
                 $spent = DB::table('delivery_order_receipt_voucher')
                     ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
@@ -890,19 +912,20 @@ class DeliveryOrderController extends Controller
                     ->where('delivery_order.am_approval_status', '!=', 'rejected')
                     ->sum('delivery_order_receipt_voucher.amount');
 
-
-
                 $jv_spent = DB::table('journal_voucher_details')
                     ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                     ->whereNull('journal_vouchers.deleted_at')
                     ->whereNull('journal_voucher_details.deleted_at')
+                    ->where('journal_vouchers.am_approval_status', 'approved')
                     ->where('receipt_voucher_id', $rv->id)
                     ->sum('debit_amount');
 
                 $spent += $jv_spent;
 
-                $remaining = doubleval($linked_amount) - doubleval($spent);
-
+                $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent));
+                $deductDpv = min($rvAvailableBeforeDpv, $remainingDpvToDeduct);
+                $remaining = $rvAvailableBeforeDpv - $deductDpv;
+                $remainingDpvToDeduct -= $deductDpv;
 
                 if ($remaining > 0) {
                     $data[] = [
@@ -940,6 +963,7 @@ class DeliveryOrderController extends Controller
             ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
             ->whereNull('journal_vouchers.deleted_at')
             ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', 'approved')
             ->where('journal_voucher_details.acc_id', $customer->account_id)
             ->where('journal_voucher_details.credit_amount', '>', 0)
             ->where(function ($q) use ($sale_order_id) {
@@ -1078,6 +1102,15 @@ class DeliveryOrderController extends Controller
         // 2. Fetch Regular RVs linked to the Sale Order of this DO
         $rvsList = collect();
         if ($delivery_order->so_id) {
+            $dpvRefunded = (float) DB::table('payment_voucher_data')
+                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                ->whereNull('payment_vouchers.deleted_at')
+                ->whereNull('payment_voucher_data.deleted_at')
+                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                ->where('payment_voucher_data.sales_order_id', $delivery_order->so_id)
+                ->whereNull('payment_voucher_data.delivery_order_id')
+                ->sum('payment_voucher_data.net_amount');
+
             $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
                 ->whereHas("items", function ($query) use ($delivery_order) {
                     $query->where("reference_type", "sale_order")
@@ -1085,7 +1118,7 @@ class DeliveryOrderController extends Controller
                 })
                 ->where("customer_id", $delivery_order->customer_id)
                 ->get()
-                ->map(function ($rv) use ($delivery_order) {
+                ->map(function ($rv) use ($delivery_order, $dpvRefunded) {
                     $linked_amount = $rv->items->where("reference_type", "sale_order")
                         ->where("reference_id", $delivery_order->so_id)
                         ->sum("net_amount");
@@ -1103,12 +1136,13 @@ class DeliveryOrderController extends Controller
                         ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                         ->whereNull('journal_vouchers.deleted_at')
                         ->whereNull('journal_voucher_details.deleted_at')
+                        ->where('journal_vouchers.am_approval_status', 'approved')
                         ->where('receipt_voucher_id', $rv->id)
                         ->sum('debit_amount');
 
                     $spent += $jv_spent;
 
-                    $rv->remaining_amount = doubleval($linked_amount) - doubleval($spent);
+                    $rv->remaining_amount = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpvRefunded));
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
                     $rv->date = $rv->rv_date->format('Y-m-d');
@@ -1140,6 +1174,7 @@ class DeliveryOrderController extends Controller
                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                 ->whereNull('journal_vouchers.deleted_at')
                 ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_vouchers.am_approval_status', 'approved')
                 ->where('journal_voucher_details.acc_id', $customer->account_id)
                 ->where('journal_voucher_details.credit_amount', '>', 0)
                 ->where(function ($q) use ($so_id, $linked_jv_ids) {
@@ -1337,12 +1372,22 @@ class DeliveryOrderController extends Controller
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                                 ->whereNull('journal_vouchers.deleted_at')
                                 ->whereNull('journal_voucher_details.deleted_at')
+                                ->where('journal_vouchers.am_approval_status', 'approved')
                                 ->where('receipt_voucher_id', $rv->id)
                                 ->sum('debit_amount');
 
                             $spent += $jv_spent;
 
-                            $remaining = doubleval($linked_amount) - doubleval($spent);
+                            $dpv_refunded = (float) DB::table('payment_voucher_data')
+                                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                                ->whereNull('payment_vouchers.deleted_at')
+                                ->whereNull('payment_voucher_data.deleted_at')
+                                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                                ->where('payment_voucher_data.sales_order_id', $request->sale_order_id)
+                                ->whereNull('payment_voucher_data.delivery_order_id')
+                                ->sum('payment_voucher_data.net_amount');
+
+                            $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded));
 
                             if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();
@@ -1381,6 +1426,7 @@ class DeliveryOrderController extends Controller
                         ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                         ->whereNull('journal_vouchers.deleted_at')
                         ->whereNull('journal_voucher_details.deleted_at')
+                        ->where('journal_vouchers.am_approval_status', 'approved')
                         ->where('journal_voucher_id', $jv_id)
                         ->where('acc_id', function($q) use ($request) {
                             $q->select('account_id')->from('customers')->where('id', $request->customer_id);

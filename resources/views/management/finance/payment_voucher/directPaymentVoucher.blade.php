@@ -11,7 +11,24 @@
                     <h4 class="mb-0">Create Direct Payment Voucher</h4>
                 </div>
                 <div class="card-body">
-                    <form id="ajaxSubmit" action="{{ route('direct.payment-voucher.store') }}" method="POST">
+                    <!-- Navigation Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="dpvTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active font-weight-bold" id="tab-direct-pv-nav" data-toggle="tab" href="#tab-direct-pv-pane" role="tab" aria-controls="tab-direct-pv-pane" aria-selected="true">
+                                <i class="ft-file-text mr-1"></i> Direct Payment Voucher
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-weight-bold" id="tab-dpv-sale-nav" data-toggle="tab" href="#tab-dpv-sale-pane" role="tab" aria-controls="tab-dpv-sale-pane" aria-selected="false">
+                                <i class="ft-shopping-cart mr-1"></i> DPV For Sale
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="dpvTabsContent">
+                        <!-- Tab 1: Standard Direct Payment Voucher (Exact original form) -->
+                        <div class="tab-pane fade show active" id="tab-direct-pv-pane" role="tabpanel" aria-labelledby="tab-direct-pv-nav">
+                            <form id="ajaxSubmit" action="{{ route('direct.payment-voucher.store') }}" method="POST">
                         @csrf
 
                         <div class="row">
@@ -106,7 +123,12 @@
                                                     <select name="account[]" class="form-control select2 account-select" required>
                                                         <option value="">Select Account</option>
                                                         @foreach ($accounts as $account)
-                                                            <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                                                            @php
+                                                                $typeLabel = $account->type_label ?? (!empty($account->table_name) ? ucfirst(rtrim($account->table_name, 's')) : '');
+                                                            @endphp
+                                                            <option value="{{ $account->id }}" data-table-name="{{ strtolower($account->table_name ?? '') }}">
+                                                                {{ $account->name }} ({{ $account->unique_no }}){{ $typeLabel ? " - [{$typeLabel}]" : "" }}
+                                                            </option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -152,6 +174,13 @@
                             <button type="submit" class="btn btn-primary">Create Direct Payment Voucher</button>
                         </div>
                     </form>
+                </div>
+
+                        <!-- Tab 2: DPV For Sale -->
+                        <div class="tab-pane fade" id="tab-dpv-sale-pane" role="tabpanel" aria-labelledby="tab-dpv-sale-nav">
+                            @include('management.finance.payment_voucher.tabs.dpv_for_sale')
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -263,7 +292,12 @@ $(document).ready(function() {
                     <select name="account[]" class="form-control select2 account-select" required>
                         <option value="">Select Account</option>
                         @foreach ($accounts as $account)
-                            <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                            @php
+                                $typeLabel = $account->type_label ?? (!empty($account->table_name) ? ucfirst(rtrim($account->table_name, 's')) : '');
+                            @endphp
+                            <option value="{{ $account->id }}" data-table-name="{{ strtolower($account->table_name ?? '') }}">
+                                {{ $account->name }} ({{ $account->unique_no }}){{ $typeLabel ? " - [{$typeLabel}]" : "" }}
+                            </option>
                         @endforeach
                     </select>
                 </td>
@@ -303,6 +337,13 @@ $(document).ready(function() {
     updateRemoveButtons();
     calculateRow($('#voucherEntriesBody tr:first'));
     calculateTotals();
+
+    // Ensure select2 adjusts correctly when switching tabs
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $('.select2').select2({ width: '100%' });
+    });
 });
 </script>
+
+@include('management.finance.payment_voucher.tabs.dpv_for_sale_script')
 @endsection

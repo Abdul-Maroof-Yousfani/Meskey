@@ -138,6 +138,16 @@ class ApprovalController extends Controller
             ], 422);
         }
 
+        if (method_exists($record, 'validateBeforeApproval')) {
+            $validationError = $record->validateBeforeApproval();
+            if ($validationError) {
+                return response()->json([
+                    'error' => $validationError,
+                    'message' => $validationError
+                ], 422);
+            }
+        }
+
         $approved = $record->approve($request->comments);
 
         if ($approved) {
