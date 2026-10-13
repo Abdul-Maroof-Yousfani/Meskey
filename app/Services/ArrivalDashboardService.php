@@ -13,13 +13,15 @@ class ArrivalDashboardService
     {
 
         $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
         $dateRange = [Carbon::parse($fromDate)->startOfDay(), Carbon::parse($toDate)->endOfDay()];
 
         $oldpendingtrucks = ArrivalTicket::where('company_id', $companyId)
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -43,7 +45,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -66,7 +68,7 @@ class ArrivalDashboardService
                 $q->whereNull('arrival_slip_status')
                     ->orWhere('arrival_slip_status', '!=', 'generated');
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -84,7 +86,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -97,7 +99,7 @@ class ArrivalDashboardService
 
 
         $newTickets = ArrivalTicket::where('company_id', $companyId)
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -124,7 +126,7 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -157,7 +159,7 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -188,7 +190,7 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -220,7 +222,7 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -254,7 +256,7 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -279,7 +281,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -295,7 +297,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -315,7 +317,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -337,7 +339,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -380,7 +382,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -404,7 +406,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('arrival_tickets.location_id', $request->location_id);
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -498,7 +500,7 @@ class ArrivalDashboardService
             ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations())
             ->where('arrival_tickets.first_weighbridge_status', 'completed')
             ->whereNull('arrival_tickets.document_approval_status')
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -541,7 +543,7 @@ class ArrivalDashboardService
             //         $sq->where('location_id', auth()->user()->company_location_id);
             //     });
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -572,7 +574,7 @@ class ArrivalDashboardService
             //         $sq->where('location_id', auth()->user()->company_location_id);
             //     });
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -607,7 +609,7 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
                     $sq->where(function ($subQuery) use ($authUser) {
                         $subQuery->where('decision_id', $authUser->id)
@@ -625,7 +627,7 @@ class ArrivalDashboardService
 
         $decisionOnAverageEnabled = ArrivalTicket::where('company_id', $companyId)
             ->where('decision_making', 1)
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -641,7 +643,7 @@ class ArrivalDashboardService
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
             })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -665,7 +667,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -685,7 +687,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -704,7 +706,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -724,7 +726,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -742,7 +744,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
@@ -760,7 +762,7 @@ class ArrivalDashboardService
             ->where('arrival_slip_status', 'generated')
             ->whereNotNull('arrival_purchase_order_id')
             ->where('is_ticket_verified', 0)
-            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
                 return $q->where(function ($sq) use ($authUser) {
                     $sq->where('decision_id', $authUser->id)
                         ->orWhere('decision_id', $authUser->parent_user_id);
