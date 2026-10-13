@@ -2,7 +2,7 @@
     :pagination="false">
     @slot('head')
     <th>Ticket #</th>
-    <th>Contact No</th>
+    <th>Contract No</th>
     <th>Status</th>
 
     <th>Miller</th>
