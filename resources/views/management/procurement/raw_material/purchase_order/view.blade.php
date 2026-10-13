@@ -2,6 +2,11 @@
     $bagWeight = $arrivalPurchaseOrder->product->bag_weight_for_purchasing ?: 1;
 @endphp
 <div class="view-only">
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('raw-material.purchase-order.audit-logs', $arrivalPurchaseOrder->id) }}','Audit Logs: Contract #{{ $arrivalPurchaseOrder->contract_no }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
     <div class="row form-mar">
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
