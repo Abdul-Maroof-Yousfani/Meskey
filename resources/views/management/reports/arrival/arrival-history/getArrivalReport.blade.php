@@ -2,6 +2,7 @@
     :pagination="false">
     @slot('head')
     <th>Ticket #</th>
+    <th>Contact No</th>
     <th>Status</th>
 
     <th>Miller</th>
@@ -143,7 +144,7 @@
         <tr>
             <!-- Ticket # -->
             <td>#{{ $row->unique_no ?? '' }}</td>
-
+            <td>{{$row->purchaseOrder->contract_no ?? ''}}</td>
             <!-- Status -->
             <td>
                 @if ($row->first_qc_status == 'rejected')
