@@ -58,6 +58,11 @@
                                 onclick="openModal(this, '{{ route('sales.receiving-request.view', $request->id) }}', 'View Receiving Request', false, '80%')">
                                 <i class="fa fa-eye"></i> View
                             </button>
+                            <button type="button" class="btn btn-sm btn-info"
+                                onclick="openModal(this, '{{ route('sales.receiving-request.audit-logs', $request->id) }}', 'Audit Logs: Receiving Request #{{ $request->dc_no }}', false, '55%')"
+                                title="Audit Logs" style="background-color: #17a2b8; border-color: #17a2b8; color: #fff; margin-left: 5px; margin-right: 5px;">
+                                <i class="fa fa-history"></i> Logs
+                            </button>
                         @endcanAccess
                         @canAccess('receiving-request-create')
                             @if($request->am_approval_status !== "approved")

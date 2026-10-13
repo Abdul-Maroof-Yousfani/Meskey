@@ -22,6 +22,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Master\Vendor;
 use App\Models\ApprovalsModule\ApprovalModuleRole;
+use App\Services\AuditLogService;
+use App\Models\AuditLog;
+use App\Models\User;
 
 class DeliveryChallanController extends Controller
 {
@@ -470,6 +473,16 @@ class DeliveryChallanController extends Controller
                 $createdItems[] = $dcData;
             }
 
+            $delivery_challan->refresh();
+            $newValues = $this->buildDeliveryChallanAuditValues($delivery_challan);
+            AuditLogService::log(
+                $delivery_challan,
+                'delivery_challan_created',
+                "Delivery Challan #{$delivery_challan->dc_no} created.",
+                null,
+                $newValues
+            );
+
             DB::commit();
         } catch(\Exception $e) {
             DB::rollBack();
@@ -494,6 +507,15 @@ class DeliveryChallanController extends Controller
                 'message' => "This Delivery Challan has already been {$delivery_challan->am_approval_status}. Changes or deletion are no longer allowed."
             ], 422);
         }
+        $deletedValues = $this->buildDeliveryChallanAuditValues($delivery_challan);
+        AuditLogService::log(
+            $delivery_challan,
+            'delivery_challan_deleted',
+            "Delivery Challan #{$delivery_challan->dc_no} deleted.",
+            $deletedValues,
+            null
+        );
+
         $delivery_challan->receivingRequest()->delete();
         $delivery_challan->delete();
 
@@ -513,6 +535,7 @@ class DeliveryChallanController extends Controller
             ], 422);
         }
 
+        $oldAuditValues = $this->buildDeliveryChallanAuditValues($delivery_challan);
         DB::beginTransaction();
         $do_id = $request->delivery_order_id;
 
@@ -784,6 +807,29 @@ class DeliveryChallanController extends Controller
                     "bag_type" => $request->bag_type[$index]
                 ]);
                 $createdItems[] = $dcData;
+            }
+
+            $delivery_challan->refresh();
+            $newAuditValues = $this->buildDeliveryChallanAuditValues($delivery_challan);
+
+            $changedOld = [];
+            $changedNew = [];
+            foreach ($newAuditValues as $k => $v) {
+                $o = $oldAuditValues[$k] ?? null;
+                if ($o != $v) {
+                    $changedOld[$k] = $o;
+                    $changedNew[$k] = $v;
+                }
+            }
+
+            if (!empty($changedOld) || !empty($changedNew)) {
+                AuditLogService::log(
+                    $delivery_challan,
+                    'delivery_challan_updated',
+                    "Delivery Challan #{$delivery_challan->dc_no} updated.",
+                    $changedOld,
+                    $changedNew
+                );
             }
 
             DB::commit();
@@ -1522,5 +1568,336 @@ class DeliveryChallanController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+    /**
+     * Build standard audit log snapshot for a delivery challan.
+     */
+    public function buildDeliveryChallanAuditValues(DeliveryChallan $deliveryChallan): array
+    {
+        $deliveryChallan->loadMissing(['customer', 'delivery_order', 'delivery_challan_data.product', 'delivery_challan_data.loadingProgramItem']);
+
+        $factoryNames = [];
+        if ($deliveryChallan->arrival_id) {
+            $fIds = array_filter(explode(',', $deliveryChallan->arrival_id));
+            if (!empty($fIds)) {
+                $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $fIds)->pluck('name')->toArray();
+            }
+        }
+
+        $sectionNames = [];
+        if ($deliveryChallan->section_id) {
+            $sIds = array_filter(explode(',', $deliveryChallan->section_id));
+            if (!empty($sIds)) {
+                $sectionNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', $sIds)->pluck('name')->toArray();
+            }
+        }
+
+        $companyLoc = $deliveryChallan->location_id ? \App\Models\Master\CompanyLocation::find($deliveryChallan->location_id)?->name : null;
+        $labourVendor = $deliveryChallan->labour ? \App\Models\Master\Vendor::find($deliveryChallan->labour)?->name : null;
+        $transporterName = $deliveryChallan->transporter ? \App\Models\Master\Transporter::find($deliveryChallan->transporter)?->name : null;
+
+        $doList = $deliveryChallan->delivery_order->pluck('reference_no')->filter()->toArray();
+
+        $itemProducts = [];
+        $itemQtys = [];
+        $itemRates = [];
+        $itemBags = [];
+        $itemBagWeights = [];
+        $itemTotalBagWeights = [];
+        $itemBilledQtys = [];
+        $itemBagSizes = [];
+        $itemBagTypes = [];
+        $itemBrands = [];
+        $itemTrucks = [];
+        $itemContainers = [];
+        $itemTickets = [];
+        $totalQty = 0;
+        $totalBilledQty = 0;
+        $totalBags = 0;
+
+        foreach ($deliveryChallan->delivery_challan_data as $row) {
+            $prodName = $row->product?->name ?? ($row->item_id ? \App\Models\Product::find($row->item_id)?->name : '-');
+            $itemProducts[] = $prodName;
+            $itemQtys[] = (float) $row->qty;
+            $itemRates[] = (float) $row->rate;
+            $itemBags[] = (int) $row->no_of_bags;
+            $itemBagWeights[] = (float) $row->bag_weight;
+            $itemTotalBagWeights[] = (float) $row->total_bag_weight;
+            $itemBilledQtys[] = (float) $row->billed_qty;
+            $itemBagSizes[] = $row->bag_size ?? '-';
+            
+            $bagTypeName = $row->bag_type ? (\App\Models\BagType::find($row->bag_type)?->name ?? $row->bag_type) : '-';
+            $itemBagTypes[] = $bagTypeName;
+
+            $brandName = $row->brand_id ? (getBrandById($row->brand_id)?->name ?? $row->brand_id) : '-';
+            $itemBrands[] = $brandName;
+
+            $itemTrucks[] = $row->truck_no ?? '-';
+            $itemContainers[] = $row->container_number ?? ($row->loadingProgramItem?->container_number ?? '-');
+
+            $ticketNo = $row->loadingProgramItem?->transaction_number ?? ($row->ticket_id ? \App\Models\Sales\LoadingProgramItem::find($row->ticket_id)?->transaction_number : '-');
+            $itemTickets[] = $ticketNo ?? '-';
+
+            $totalQty += (float) $row->qty;
+            $totalBilledQty += (float) $row->billed_qty;
+            $totalBags += (int) $row->no_of_bags;
+        }
+
+        return [
+            'dc_no'                  => $deliveryChallan->dc_no,
+            'reference_number'       => $deliveryChallan->reference_number,
+            'dispatch_date'          => $deliveryChallan->dispatch_date ? Carbon::parse($deliveryChallan->dispatch_date)->format('Y-m-d') : null,
+            'customer'               => $deliveryChallan->customer?->name,
+            'delivery_orders'        => !empty($doList) ? implode(', ', $doList) : null,
+            'sauda_type'             => $deliveryChallan->sauda_type,
+            'is_bardana'             => $deliveryChallan->is_bardana ? 'Yes' : 'No',
+            'location'               => $companyLoc,
+            'factory'                => !empty($factoryNames) ? implode(', ', $factoryNames) : null,
+            'section'                => !empty($sectionNames) ? implode(', ', $sectionNames) : null,
+            'labour'                 => $labourVendor,
+            'labour_status'          => $deliveryChallan->labour_status,
+            'labour_rate'            => (float) ($deliveryChallan->labour_rate ?? 0),
+            'labour_amount'          => (float) ($deliveryChallan->labour_amount ?? 0),
+            'transporter'            => $transporterName,
+            'transporter_amount'     => (float) ($deliveryChallan->transporter_amount ?? 0),
+            'inhouse_weighbridge'    => $deliveryChallan->getAttribute('inhouse-weighbridge'),
+            'weighbridge_amount'     => (float) ($deliveryChallan->getAttribute('weighbridge-amount') ?? 0),
+            'am_approval_status'     => $deliveryChallan->am_approval_status,
+            'remarks'                => $deliveryChallan->remarks,
+            'items_product'          => !empty($itemProducts) ? implode(', ', $itemProducts) : null,
+            'items_qty'              => !empty($itemQtys) ? implode(', ', $itemQtys) : null,
+            'items_rate'             => !empty($itemRates) ? implode(', ', $itemRates) : null,
+            'items_bags'             => !empty($itemBags) ? implode(', ', $itemBags) : null,
+            'items_bag_weight'       => !empty($itemBagWeights) ? implode(', ', $itemBagWeights) : null,
+            'items_total_bag_weight' => !empty($itemTotalBagWeights) ? implode(', ', $itemTotalBagWeights) : null,
+            'items_billed_qty'       => !empty($itemBilledQtys) ? implode(', ', $itemBilledQtys) : null,
+            'items_bag_size'         => !empty($itemBagSizes) ? implode(', ', $itemBagSizes) : null,
+            'items_bag_type'         => !empty($itemBagTypes) ? implode(', ', $itemBagTypes) : null,
+            'items_brand'            => !empty($itemBrands) ? implode(', ', $itemBrands) : null,
+            'items_truck_no'         => !empty($itemTrucks) ? implode(', ', $itemTrucks) : null,
+            'items_container'        => !empty($itemContainers) ? implode(', ', $itemContainers) : null,
+            'items_ticket'           => !empty($itemTickets) ? implode(', ', $itemTickets) : null,
+            'total_qty'              => (float) $totalQty,
+            'total_billed_qty'       => (float) $totalBilledQty,
+            'total_bags'             => (int) $totalBags,
+            'items_count'            => $deliveryChallan->delivery_challan_data->count(),
+        ];
+    }
+
+    /**
+     * Get audit logs for a delivery challan.
+     */
+    public function getAuditLogs(Request $request, $id)
+    {
+        $deliveryChallan = DeliveryChallan::with(['customer', 'delivery_order'])->findOrFail($id);
+
+        $logs = AuditLog::with('user')
+            ->where(function ($q) use ($deliveryChallan) {
+                $q->where(function ($sq) use ($deliveryChallan) {
+                    $sq->whereIn('model_type', [DeliveryChallan::class, 'DeliveryChallan', 'App\Models\Sales\DeliveryChallan'])
+                        ->where('model_id', $deliveryChallan->id);
+                })
+                ->orWhere('old_values', 'like', '%"delivery_challan_id":' . $deliveryChallan->id . '%')
+                ->orWhere('old_values', 'like', '%"delivery_challan_id":"' . $deliveryChallan->id . '"%')
+                ->orWhere('new_values', 'like', '%"delivery_challan_id":' . $deliveryChallan->id . '%')
+                ->orWhere('new_values', 'like', '%"delivery_challan_id":"' . $deliveryChallan->id . '"%');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $hasCreateLog = $logs->contains(function ($l) {
+            return str_contains($l->action, 'create') || str_contains($l->action, 'store');
+        });
+
+        if (!$hasCreateLog) {
+            $virtualValues = $this->buildDeliveryChallanAuditValues($deliveryChallan);
+            $virtualCreateLog = new AuditLog([
+                'action' => 'delivery_challan_created',
+                'description' => "Delivery Challan #{$deliveryChallan->dc_no} created.",
+                'user_id' => $deliveryChallan->created_by_id,
+                'created_at' => $deliveryChallan->created_at,
+                'old_values' => null,
+                'new_values' => $virtualValues,
+            ]);
+            $creator = User::find($deliveryChallan->created_by_id);
+            $virtualCreateLog->setRelation('user', $creator);
+            $logs->push($virtualCreateLog);
+        }
+
+        $fieldLabels = [
+            'dc_no'                  => 'DC No',
+            'reference_number'       => 'Reference No',
+            'dispatch_date'          => 'Dispatch Date',
+            'customer'               => 'Customer',
+            'customer_id'            => 'Customer',
+            'delivery_orders'        => 'Linked Delivery Orders',
+            'sauda_type'             => 'Sauda Type',
+            'is_bardana'             => 'Bardana Deduction Applied',
+            'location'               => 'Company Location',
+            'location_id'            => 'Company Location',
+            'factory'                => 'Factory / Arrival Location',
+            'arrival_id'             => 'Factory / Arrival Location',
+            'section'                => 'Section / Storage Location',
+            'section_id'             => 'Section / Storage Location',
+            'labour'                 => 'Labour Vendor',
+            'labour_status'          => 'Labour Status',
+            'labour_rate'            => 'Labour Rate',
+            'labour_amount'          => 'Labour Amount',
+            'transporter'            => 'Transporter',
+            'transporter_id'         => 'Transporter',
+            'transporter_amount'     => 'Transporter Amount',
+            'inhouse_weighbridge'    => 'Weighbridge',
+            'inhouse-weighbridge'    => 'Weighbridge',
+            'weighbridge_amount'     => 'Weighbridge Amount',
+            'weighbridge-amount'     => 'Weighbridge Amount',
+            'am_approval_status'     => 'Approval Status',
+            'remarks'                => 'Remarks',
+            'items_product'          => 'Products',
+            'items_qty'              => 'Quantities (Kgs)',
+            'items_rate'             => 'Rates',
+            'items_bags'             => 'No of Bags',
+            'items_bag_weight'       => 'Bag Weights',
+            'items_total_bag_weight' => 'Total Bag Weights',
+            'items_billed_qty'       => 'Billed Quantities (Kgs)',
+            'items_bag_size'         => 'Bag Sizes',
+            'items_bag_type'         => 'Bag Types',
+            'items_brand'            => 'Brands',
+            'items_truck_no'         => 'Truck Numbers',
+            'items_container'        => 'Container Numbers',
+            'items_ticket'           => 'Tickets',
+            'total_qty'              => 'Total Qty (Kgs)',
+            'total_billed_qty'       => 'Total Billed Qty (Kgs)',
+            'total_bags'             => 'Total Bags',
+            'items_count'            => 'Items Count',
+        ];
+
+        $relationCache = [];
+        $resolveRelationValue = function ($key, $val) use (&$relationCache) {
+            if ($val === null || $val === '') {
+                return null;
+            }
+            if (is_array($val)) {
+                return json_encode($val);
+            }
+
+            if (in_array($key, ['customer_id', 'customer']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "customer_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $c = Customer::find($val);
+                $res = $c ? $c->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['transporter', 'transporter_id']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "transporter_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $t = \App\Models\Master\Transporter::find($val);
+                $res = $t ? $t->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if ($key === 'labour' && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "labour_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $v = \App\Models\Master\Vendor::find($val);
+                $res = $v ? $v->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if ($key === 'am_approval_status') {
+                return ucfirst($val);
+            }
+
+            if ($key === 'is_bardana') {
+                return ($val == 1 || $val === '1' || $val === 'Yes' || $val === true) ? 'Yes' : 'No';
+            }
+
+            if (in_array($key, ['labour_amount', 'transporter_amount', 'weighbridge_amount']) && is_numeric($val)) {
+                return 'Rs. ' . number_format((float) $val, 2);
+            }
+
+            if (in_array($key, ['total_qty', 'total_billed_qty']) && is_numeric($val)) {
+                return number_format((float) $val, 2) . ' Kgs';
+            }
+
+            return $val;
+        };
+
+        $flattenArray = function ($arr, $prefix = '') use (&$flattenArray) {
+            $result = [];
+            if (!is_array($arr)) return $result;
+            foreach ($arr as $key => $value) {
+                $newKey = $prefix === '' ? $key : "{$prefix}.{$key}";
+                if (is_array($value) && !empty($value) && !isset($value[0])) {
+                    $result = array_merge($result, $flattenArray($value, $newKey));
+                } else {
+                    $result[$newKey] = $value;
+                }
+            }
+            return $result;
+        };
+
+        $filteredLogs = [];
+        $skipKeys = ['id', 'deleted_at', 'created_at', 'updated_at', 'company_id', 'am_change_made'];
+
+        foreach ($logs as $log) {
+            $rawOld = is_array($log->old_values) ? $log->old_values : (!empty($log->old_values) ? json_decode($log->old_values, true) : []);
+            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+
+            $rawNew = is_array($log->new_values) ? $log->new_values : (!empty($log->new_values) ? json_decode($log->new_values, true) : []);
+            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+
+            $old = $flattenArray($rawOld);
+            $new = $flattenArray($rawNew);
+
+            $parsedChanges = [];
+            $allKeys = array_unique(array_merge(array_keys($old ?? []), array_keys($new ?? [])));
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, $skipKeys)) continue;
+
+                $oldVal = $old[$key] ?? null;
+                $newVal = $new[$key] ?? null;
+
+                if ($oldVal != $newVal) {
+                    // If single item and total_bags is identical to items_bags, omit duplicate total_bags row
+                    if ($key === 'total_bags' && isset($new['items_bags']) && (string) $new['items_bags'] === (string) $newVal && (!isset($old['items_bags']) || (string) $old['items_bags'] === (string) $oldVal)) {
+                        continue;
+                    }
+                    // If single item and total_billed_qty is identical to items_billed_qty, omit duplicate
+                    if ($key === 'total_billed_qty' && isset($new['items_billed_qty']) && (float) $new['items_billed_qty'] === (float) $newVal && (!isset($old['items_billed_qty']) || (float) $old['items_billed_qty'] === (float) $oldVal)) {
+                        continue;
+                    }
+
+                    $oldResolved = $resolveRelationValue($key, $oldVal);
+                    $newResolved = $resolveRelationValue($key, $newVal);
+
+                    $parsedChanges[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace('_', ' ', $key)),
+                        'old'     => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
+                        'new'     => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
+                    ];
+                }
+            }
+
+            if (count($parsedChanges) > 1) {
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => !in_array($c['key'], ['updated_at', 'created_at'])));
+            }
+
+            $log->parsed_changes = $parsedChanges;
+            $filteredLogs[] = $log;
+        }
+
+        $logs = $filteredLogs;
+        $title = "Audit Logs: Delivery Challan #" . ($deliveryChallan->dc_no ?? $deliveryChallan->reference_number);
+
+        return view('management.sales.delivery-challan.partials.audit_logs_content', compact('deliveryChallan', 'logs', 'title'));
     }
 }

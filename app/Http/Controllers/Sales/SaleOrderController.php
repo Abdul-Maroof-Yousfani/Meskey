@@ -26,6 +26,7 @@ use Illuminate\Http\Request;
 use App\Models\ReceiptVoucher;
 use App\Models\Master\Account\Transaction;
 use App\Services\AuditLogService;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Cache;
 use App\Models\User;
 
@@ -473,6 +474,15 @@ class SaleOrderController extends Controller
                     ]);
             }
 
+            $newValues = $this->buildSalesOrderAuditValues($sales_order);
+            AuditLogService::log(
+                $sales_order,
+                'sales_order_created',
+                "Sale Order #{$sales_order->reference_no} created.",
+                null,
+                $newValues
+            );
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -537,6 +547,8 @@ class SaleOrderController extends Controller
             if (!$sales_order) {
                 return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
             }
+
+            $oldAuditValues = $this->buildSalesOrderAuditValues($sales_order);
 
             if ($sales_order->so_approval_stage === 'headoffice_pending') {
                 return response()->json([
@@ -926,6 +938,29 @@ class SaleOrderController extends Controller
                 $sales_order->resubmitAfterEdit();
             }
 
+            $sales_order->refresh();
+            $newAuditValues = $this->buildSalesOrderAuditValues($sales_order);
+
+            $changedOld = [];
+            $changedNew = [];
+            foreach ($newAuditValues as $k => $v) {
+                $o = $oldAuditValues[$k] ?? null;
+                if ($o != $v) {
+                    $changedOld[$k] = $o;
+                    $changedNew[$k] = $v;
+                }
+            }
+
+            if (!empty($changedOld) || !empty($changedNew)) {
+                AuditLogService::log(
+                    $sales_order,
+                    'sales_order_updated',
+                    "Sale Order #{$sales_order->reference_no} updated.",
+                    $changedOld,
+                    $changedNew
+                );
+            }
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -968,6 +1003,15 @@ class SaleOrderController extends Controller
                 'reference_type' => 'not-allocated',
                 'reference_id' => null
             ]);
+
+        $deletedValues = $this->buildSalesOrderAuditValues($sales_order);
+        AuditLogService::log(
+            $sales_order,
+            'sales_order_deleted',
+            "Sale Order #{$sales_order->reference_no} deleted.",
+            $deletedValues,
+            null
+        );
 
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
@@ -1251,5 +1295,310 @@ class SaleOrderController extends Controller
         }
 
         return $so_no;
+    }
+
+    /**
+     * Build structured representation of Sales Order for audit logging.
+     */
+    protected function buildSalesOrderAuditValues(SalesOrder $salesOrder)
+    {
+        $salesOrder->loadMissing([
+            'customer',
+            'broker',
+            'pay_type',
+            'parent_user',
+            'sales_order_data.item',
+            'sales_order_data.brand',
+            'locations.locationable',
+            'factories.factoryable',
+            'sections.sectionable'
+        ]);
+
+        $itemProducts = [];
+        $itemQtys = [];
+        $itemRates = [];
+        $itemBags = [];
+        $itemPackSizes = [];
+        $itemMaundRates = [];
+        $totalAmount = 0;
+        $totalQty = 0;
+
+        foreach ($salesOrder->sales_order_data as $row) {
+            $pName = $row->item ? $row->item->name : "Item #{$row->item_id}";
+            $q = (float) $row->qty;
+            $r = (float) $row->rate;
+            $lineAmt = round($q * $r, 2);
+            $totalAmount += $lineAmt;
+            $totalQty += $q;
+
+            $itemProducts[] = $pName;
+            $itemQtys[] = number_format($q, 2);
+            $itemRates[] = number_format($r, 2);
+            $itemBags[] = $row->no_of_bags ?? '-';
+            $itemPackSizes[] = $row->pack_size ?? '-';
+            $itemMaundRates[] = $row->rate_per_mond ? number_format((float) $row->rate_per_mond, 2) : '-';
+        }
+
+        // Locations
+        $companyLocs = [];
+        foreach ($salesOrder->locations as $loc) {
+            $companyLocs[] = $loc->locationable?->name ?? "Loc #{$loc->location_id}";
+        }
+        $factoryLocs = [];
+        foreach ($salesOrder->factories as $fac) {
+            $factoryLocs[] = $fac->factoryable?->name ?? "Factory #{$fac->arrival_location_id}";
+        }
+        $sectionLocs = [];
+        foreach ($salesOrder->sections as $sec) {
+            $sectionLocs[] = $sec->sectionable?->name ?? "Section #{$sec->arrival_sub_location_id}";
+        }
+
+        $term = $salesOrder->payment_term_id ? PaymentTerm::find($salesOrder->payment_term_id) : null;
+
+        return [
+            'reference_no'             => $salesOrder->reference_no,
+            'so_reference_no'          => $salesOrder->so_reference_no,
+            'order_date'               => $salesOrder->order_date ? Carbon::parse($salesOrder->order_date)->format('Y-m-d') : null,
+            'delivery_date'            => $salesOrder->delivery_date ? Carbon::parse($salesOrder->delivery_date)->format('Y-m-d') : null,
+            'customer'                 => $salesOrder->customer?->name,
+            'broker'                   => $salesOrder->broker?->name,
+            'seller'                   => $salesOrder->parent_user?->name,
+            'pay_type'                 => $salesOrder->pay_type?->name,
+            'payment_term'             => $term?->name,
+            'sauda_type'               => $salesOrder->sauda_type,
+            'contract_status'          => $salesOrder->contract_status,
+            'commission_per_kg'        => (float) ($salesOrder->commission_per_kg ?? 0),
+            'seller_commission_per_kg' => (float) ($salesOrder->seller_commission_per_kg ?? 0),
+            'contact_person'           => $salesOrder->contact_person,
+            'transporter_used'         => $salesOrder->transporter_used,
+            'payment_on_kaanta'        => $salesOrder->payment_on_kaanta ? 'Yes' : 'No',
+            'is_bardana'               => $salesOrder->is_bardana ? 'Yes' : 'No',
+            'remarks'                  => $salesOrder->remarks,
+            'company_locations'        => !empty($companyLocs) ? implode(', ', $companyLocs) : null,
+            'factory_locations'        => !empty($factoryLocs) ? implode(', ', $factoryLocs) : null,
+            'section_locations'        => !empty($sectionLocs) ? implode(', ', $sectionLocs) : null,
+            'items_product'            => !empty($itemProducts) ? implode(', ', $itemProducts) : null,
+            'items_qty'                => !empty($itemQtys) ? implode(', ', $itemQtys) : null,
+            'items_rate'               => !empty($itemRates) ? implode(', ', $itemRates) : null,
+            'items_bags'               => !empty($itemBags) ? implode(', ', $itemBags) : null,
+            'items_pack_size'          => !empty($itemPackSizes) ? implode(', ', $itemPackSizes) : null,
+            'items_maund_rate'         => !empty($itemMaundRates) ? implode(', ', $itemMaundRates) : null,
+            'total_qty'                => (float) $totalQty,
+            'total_amount'             => (float) $totalAmount,
+            'items_count'              => $salesOrder->sales_order_data->count(),
+        ];
+    }
+
+    /**
+     * Get audit logs for a sale order.
+     */
+    public function getAuditLogs(Request $request, $id)
+    {
+        $salesOrder = SalesOrder::with(['customer'])->findOrFail($id);
+
+        $logs = AuditLog::with('user')
+            ->where(function ($q) use ($salesOrder) {
+                $q->where(function ($sq) use ($salesOrder) {
+                    $sq->whereIn('model_type', [SalesOrder::class, 'SalesOrder', 'App\Models\Sales\SalesOrder'])
+                        ->where('model_id', $salesOrder->id);
+                })
+                ->orWhere('old_values', 'like', '%"sale_order_id":' . $salesOrder->id . '%')
+                ->orWhere('old_values', 'like', '%"sales_order_id":' . $salesOrder->id . '%')
+                ->orWhere('new_values', 'like', '%"sale_order_id":' . $salesOrder->id . '%')
+                ->orWhere('new_values', 'like', '%"sales_order_id":' . $salesOrder->id . '%');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $hasCreateLog = $logs->contains(function ($l) {
+            return str_contains($l->action, 'create') || str_contains($l->action, 'store');
+        });
+
+        if (!$hasCreateLog) {
+            $virtualValues = $this->buildSalesOrderAuditValues($salesOrder);
+            $virtualCreateLog = new AuditLog([
+                'action' => 'sales_order_created',
+                'description' => "Sale Order #{$salesOrder->reference_no} created.",
+                'user_id' => $salesOrder->created_by,
+                'created_at' => $salesOrder->created_at,
+                'old_values' => null,
+                'new_values' => $virtualValues,
+            ]);
+            $creator = User::find($salesOrder->created_by);
+            $virtualCreateLog->setRelation('user', $creator);
+            $logs->push($virtualCreateLog);
+        }
+
+        $fieldLabels = [
+            'reference_no'             => 'SO Reference No',
+            'so_reference_no'          => 'Client Ref No / PO No',
+            'order_date'               => 'Order Date',
+            'delivery_date'            => 'Delivery Date',
+            'customer'                 => 'Customer',
+            'customer_id'              => 'Customer',
+            'broker'                   => 'Broker',
+            'broker_id'                => 'Broker',
+            'seller'                   => 'Seller',
+            'parent_user_id'           => 'Seller',
+            'pay_type'                 => 'Payment Type',
+            'pay_type_id'              => 'Payment Type',
+            'payment_term'             => 'Payment Term',
+            'payment_term_id'          => 'Payment Term',
+            'sauda_type'               => 'Sauda Type',
+            'contract_status'          => 'Contract Status',
+            'status'                   => 'Order Status',
+            'commission_per_kg'        => 'Broker Commission / Kg',
+            'seller_commission_per_kg' => 'Seller Commission / Kg',
+            'contact_person'           => 'Contact Person',
+            'transporter_used'         => 'Transporter Used',
+            'payment_on_kaanta'        => 'Payment on Kaanta',
+            'is_bardana'               => 'Bardana Included',
+            'remarks'                  => 'Remarks',
+            'company_locations'        => 'Company Locations',
+            'factory_locations'        => 'Factory Locations',
+            'section_locations'        => 'Section Locations',
+            'items_product'            => 'Products',
+            'items_qty'                => 'Quantities (Kgs)',
+            'items_rate'               => 'Rates',
+            'items_bags'               => 'Total Bags',
+            'items_pack_size'          => 'Pack Sizes',
+            'items_maund_rate'         => 'Rate / Maund',
+            'total_qty'                => 'Total Qty (Kgs)',
+            'total_amount'             => 'Total Amount',
+            'items_count'              => 'Items Count',
+        ];
+
+        $relationCache = [];
+        $resolveRelationValue = function ($key, $val) use (&$relationCache) {
+            if ($val === null || $val === '') {
+                return null;
+            }
+            if (is_array($val)) {
+                return json_encode($val);
+            }
+
+            if (in_array($key, ['customer_id', 'customer']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "customer_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $c = Customer::find($val);
+                $res = $c ? $c->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['broker_id', 'broker']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "broker_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $b = Broker::find($val);
+                $res = $b ? $b->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['pay_type_id', 'pay_type']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "pay_type_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $pt = PayType::find($val);
+                $res = $pt ? $pt->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['payment_term_id', 'payment_term']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "payment_term_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $term = PaymentTerm::find($val);
+                $res = $term ? $term->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['parent_user_id', 'seller']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "user_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $u = User::find($val);
+                $res = $u ? $u->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if ($key === 'contract_status') {
+                return ucfirst(str_replace('-', ' ', $val));
+            }
+
+            if ($key === 'total_amount' && is_numeric($val)) {
+                return 'Rs. ' . number_format((float) $val, 2);
+            }
+
+            if ($key === 'total_qty' && is_numeric($val)) {
+                return number_format((float) $val, 2) . ' Kgs';
+            }
+
+            return $val;
+        };
+
+        $flattenArray = function ($arr, $prefix = '') use (&$flattenArray) {
+            $result = [];
+            if (!is_array($arr)) return $result;
+            foreach ($arr as $key => $value) {
+                $newKey = $prefix === '' ? $key : "{$prefix}.{$key}";
+                if (is_array($value) && !empty($value) && !isset($value[0])) {
+                    $result = array_merge($result, $flattenArray($value, $newKey));
+                } else {
+                    $result[$newKey] = $value;
+                }
+            }
+            return $result;
+        };
+
+        $filteredLogs = [];
+        $skipKeys = ['id', 'deleted_at', 'created_at', 'updated_at', 'company_id', 'am_change_made'];
+
+        foreach ($logs as $log) {
+            $rawOld = is_array($log->old_values) ? $log->old_values : (!empty($log->old_values) ? json_decode($log->old_values, true) : []);
+            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+
+            $rawNew = is_array($log->new_values) ? $log->new_values : (!empty($log->new_values) ? json_decode($log->new_values, true) : []);
+            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+
+            $old = $flattenArray($rawOld);
+            $new = $flattenArray($rawNew);
+
+            $parsedChanges = [];
+            $allKeys = array_unique(array_merge(array_keys($old ?? []), array_keys($new ?? [])));
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, $skipKeys)) continue;
+
+                $oldVal = $old[$key] ?? null;
+                $newVal = $new[$key] ?? null;
+
+                if ($oldVal != $newVal) {
+                    $oldResolved = $resolveRelationValue($key, $oldVal);
+                    $newResolved = $resolveRelationValue($key, $newVal);
+
+                    $parsedChanges[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace('_', ' ', $key)),
+                        'old'     => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
+                        'new'     => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
+                    ];
+                }
+            }
+
+            if (count($parsedChanges) > 1) {
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => !in_array($c['key'], ['updated_at', 'created_at'])));
+            }
+
+            $log->parsed_changes = $parsedChanges;
+            $filteredLogs[] = $log;
+        }
+
+        $logs = $filteredLogs;
+        $title = "Audit Logs: Sale Order #{$salesOrder->reference_no}";
+
+        return view('management.sales.orders.partials.audit_logs_content', compact('salesOrder', 'logs', 'title'));
     }
 }

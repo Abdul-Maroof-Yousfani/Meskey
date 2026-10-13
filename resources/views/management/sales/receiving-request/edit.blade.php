@@ -441,6 +441,10 @@
 
     <div class="row bottom-button-bar mt-3">
         <div class="col-12">
+            <button type="button" class="btn btn-info mr-2 me-2"
+                onclick="openModal(this,'{{ route('sales.receiving-request.audit-logs', ['id' => $receivingRequest->id]) }}','Audit Logs: Receiving Request #{{ $receivingRequest->dc_no }}', false, '55%')">
+                <i class="fa fa-history mr-1 me-1"></i> Audit Logs
+            </button>
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>

@@ -602,6 +602,10 @@
 
     <div class="row bottom-button-bar text-right">
         <div class="col-12">
+            <button type="button" class="btn btn-info mr-2 me-2"
+                onclick="openModal(this,'{{ route('sales.delivery-challan.audit-logs', ['id' => $delivery_challan->id]) }}','Audit Logs: Delivery Challan #{{ $delivery_challan->dc_no ?? $delivery_challan->reference_number }}', false, '55%')">
+                <i class="fa fa-history mr-1 me-1"></i> Audit Logs
+            </button>
             <a type="button" class="btn btn-danger modal-sidebar-close me-2">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Update Delivery Challan</button>
         </div>
