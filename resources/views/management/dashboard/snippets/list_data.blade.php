@@ -171,7 +171,9 @@
                     @elseif($type == 'first_weighbridge_pending')
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
-                        <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @if(canAccess('arrival-stats-show-confidential'))
+                            <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @endif
                         <td>{{ $item->unloadingLocation?->arrivalLocation?->name ?? 'N/A' }}</td>
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
                         <td>{{ $item->bags ?? 'N/A' }}</td>
@@ -179,7 +181,9 @@
                     @elseif($type == 'half_full_approve_pending')
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
-                        <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @if(canAccess('arrival-stats-show-confidential'))
+                            <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @endif
                         <td>{{ $item->firstWeighbridge->first_weight ?? 'N/A' }}</td>
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
                         <td>{{ $item->bags ?? 'N/A' }}</td>
@@ -187,7 +191,9 @@
                     @elseif($type == 'second_weighbridge_pending')
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
-                        <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @if(canAccess('arrival-stats-show-confidential'))
+                            <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @endif
                         <td>{{ $item->unloadingLocation?->arrivalLocation?->name ?? 'N/A' }}</td>
                         <td>
                             <span
@@ -202,8 +208,8 @@
                 </tr>
             @empty
                 <!-- <tr>
-                                                                                                                        <td colspan="10" class="text-center">No data found for the selected criteria.</td>
-                                                                                                                    </tr> -->
+                                                                                                                                        <td colspan="10" class="text-center">No data found for the selected criteria.</td>
+                                                                                                                                    </tr> -->
             @endforelse
         </tbody>
     </table>
