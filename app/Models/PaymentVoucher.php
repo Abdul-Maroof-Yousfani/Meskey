@@ -572,6 +572,23 @@ class PaymentVoucher extends Model
             return $this->supplier->name;
         }
 
+        // Check first payment request
+        $this->loadMissing(['paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder.supplier', 'paymentVoucherData.paymentRequest.deliveryChallan']);
+        $firstItem = $this->paymentVoucherData->first();
+        if ($firstItem && $firstItem->paymentRequest) {
+            $pr = $firstItem->paymentRequest;
+            if ($pr->paymentRequestData?->supplier_name) {
+                return $pr->paymentRequestData->supplier_name;
+            }
+            if ($pr->paymentRequestData?->purchaseOrder?->supplier?->name) {
+                return $pr->paymentRequestData->purchaseOrder->supplier->name;
+            }
+            if ($pr->account_id) {
+                $acc = Account::find($pr->account_id);
+                if ($acc) return $acc->name;
+            }
+        }
+
         return 'N/A';
     }
 

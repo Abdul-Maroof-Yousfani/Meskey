@@ -1305,44 +1305,7 @@ class PaymentVoucherController extends Controller
             $transactions = $paymentVoucher->getPreviewTransactions();
         }
 
-        $table_name = $paymentVoucher->requestAccount->table_name ?? null;
-        if (!$table_name) {
-            $table_name = $paymentVoucher->paymentVoucherData->first()?->account?->table_name ?? null;
-        }
-        $bankAccount = null;
-        if ($table_name == 'suppliers') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'brokers') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = BrokerCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'vendors') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = VendorCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = VendorOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'transporters') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'customers') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } else {
-            $bankAccount = null;
-        }
+        $bankAccount = $this->resolveVoucherBankAccount($paymentVoucher);
 
         return view('management.finance.payment_voucher.show', [
             'paymentVoucher' => $paymentVoucher,
@@ -1372,44 +1335,7 @@ class PaymentVoucherController extends Controller
             $transactions = $paymentVoucher->getPreviewTransactions();
         }
 
-        $table_name = $paymentVoucher->requestAccount->table_name ?? null;
-        if (!$table_name) {
-            $table_name = $paymentVoucher->paymentVoucherData->first()?->account?->table_name ?? null;
-        }
-        $bankAccount = null;
-        if ($table_name == 'suppliers') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'brokers') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = BrokerCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'vendors') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = VendorCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = VendorOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'transporters') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } elseif ($table_name == 'customers') {
-            if ($paymentVoucher->bank_account_type === 'company') {
-                $bankAccount = CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id);
-            } elseif ($paymentVoucher->bank_account_type === 'owner') {
-                $bankAccount = CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id);
-            }
-        } else {
-            $bankAccount = null;
-        }
+        $bankAccount = $this->resolveVoucherBankAccount($paymentVoucher);
 
         return view('management.finance.payment_voucher.approvalCanvas', [
             'paymentVoucher' => $paymentVoucher,
@@ -1417,6 +1343,80 @@ class PaymentVoucherController extends Controller
             'transactions' => $transactions,
             'bankAccount' => $bankAccount,
         ]);
+    }
+
+    /**
+     * Resolve payee bank details across all voucher types and linked party tables.
+     */
+    private function resolveVoucherBankAccount(PaymentVoucher $paymentVoucher)
+    {
+        if (!$paymentVoucher->bank_account_id) {
+            return null;
+        }
+
+        $table_name = $paymentVoucher->requestAccount->table_name ?? null;
+        if (!$table_name) {
+            $table_name = $paymentVoucher->paymentVoucherData->first()?->account?->table_name ?? null;
+        }
+        if (!$table_name) {
+            $accId = $paymentVoucher->paymentVoucherData->first()?->paymentRequest?->account_id;
+            if ($accId) {
+                $table_name = Account::find($accId)?->table_name;
+            }
+        }
+        if (!$table_name && $paymentVoucher->supplier_id) {
+            $table_name = 'suppliers';
+        }
+        if (!$table_name && $paymentVoucher->paymentVoucherData->first()?->paymentRequest?->paymentRequestData?->purchaseOrder?->supplier_id) {
+            $table_name = 'suppliers';
+        }
+
+        $type = $paymentVoucher->bank_account_type ?: 'company';
+        $bankAccount = null;
+
+        if ($table_name == 'suppliers') {
+            $bankAccount = ($type === 'owner') ? SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id) : SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        } elseif ($table_name == 'brokers') {
+            $bankAccount = ($type === 'owner') ? BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id) : BrokerCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        } elseif ($table_name == 'vendors') {
+            $bankAccount = ($type === 'owner') ? VendorOwnerBankDetail::find($paymentVoucher->bank_account_id) : VendorCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        } elseif ($table_name == 'transporters') {
+            $bankAccount = ($type === 'owner') ? TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id) : TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        } elseif ($table_name == 'customers') {
+            $bankAccount = ($type === 'owner') ? CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id) : CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id);
+        }
+
+        // Universal fallback if table_name did not match or find record
+        if (!$bankAccount) {
+            if ($type === 'owner') {
+                $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? VendorOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            } else {
+                $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? BrokerCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                    ?? VendorCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        }
+
+        if (!$bankAccount) {
+            $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                ?? SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                ?? BrokerCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                ?? BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                ?? TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                ?? TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                ?? CustomerCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                ?? CustomerOwnerBankDetail::find($paymentVoucher->bank_account_id)
+                ?? VendorCompanyBankDetail::find($paymentVoucher->bank_account_id)
+                ?? VendorOwnerBankDetail::find($paymentVoucher->bank_account_id);
+        }
+
+        return $bankAccount;
     }
 
     /**
