@@ -1364,7 +1364,7 @@ class SaleOrderController extends Controller
             'broker'                   => $salesOrder->broker?->name,
             'seller'                   => $salesOrder->parent_user?->name,
             'pay_type'                 => $salesOrder->pay_type?->name,
-            'payment_term'             => $term?->name,
+            'payment_term'             => $term ? ($term->desc ?? $term->title ?? $term->name) : null,
             'sauda_type'               => $salesOrder->sauda_type,
             'contract_status'          => $salesOrder->contract_status,
             'commission_per_kg'        => (float) ($salesOrder->commission_per_kg ?? 0),
@@ -1442,8 +1442,9 @@ class SaleOrderController extends Controller
             'parent_user_id'           => 'Seller',
             'pay_type'                 => 'Payment Type',
             'pay_type_id'              => 'Payment Type',
-            'payment_term'             => 'Payment Term',
-            'payment_term_id'          => 'Payment Term',
+            'payment_term'             => 'Payment Terms',
+            'payment_term_id'          => 'Payment Terms',
+            'payment_terms'            => 'Payment Terms',
             'sauda_type'               => 'Sauda Type',
             'contract_status'          => 'Contract Status',
             'status'                   => 'Order Status',
@@ -1504,11 +1505,11 @@ class SaleOrderController extends Controller
                 return $res;
             }
 
-            if (in_array($key, ['payment_term_id', 'payment_term']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+            if (in_array($key, ['payment_term_id', 'payment_term', 'payment_terms']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
                 $cacheKey = "payment_term_{$val}";
                 if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
                 $term = PaymentTerm::find($val);
-                $res = $term ? $term->name : $val;
+                $res = $term ? ($term->desc ?? $term->title ?? $term->name) : $val;
                 $relationCache[$cacheKey] = $res;
                 return $res;
             }
@@ -1599,6 +1600,19 @@ class SaleOrderController extends Controller
         $logs = $filteredLogs;
         $title = "Audit Logs: Sale Order #{$salesOrder->reference_no}";
 
-        return view('management.sales.orders.partials.audit_logs_content', compact('salesOrder', 'logs', 'title'));
+        $subtitleParts = ['SO #' . $salesOrder->reference_no];
+        if (isset($salesOrder->customer)) {
+            $subtitleParts[] = 'Customer: ' . ($salesOrder->customer->name ?? 'N/A');
+        }
+        if (isset($salesOrder->order_date)) {
+            $subtitleParts[] = 'Date: ' . \Carbon\Carbon::parse($salesOrder->order_date)->format('d M Y');
+        }
+        if (isset($salesOrder->contract_status) || isset($salesOrder->am_approval_status)) {
+            $subtitleParts[] = 'Status: ' . ucfirst(str_replace('-', ' ', $salesOrder->contract_status ?? $salesOrder->am_approval_status));
+        }
+        $subtitle = implode(' | ', $subtitleParts);
+        $emptyMessage = 'No edits or updates have been recorded for this sale order yet.';
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 }

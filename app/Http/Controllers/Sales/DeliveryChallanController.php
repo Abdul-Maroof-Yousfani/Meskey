@@ -1898,6 +1898,22 @@ class DeliveryChallanController extends Controller
         $logs = $filteredLogs;
         $title = "Audit Logs: Delivery Challan #" . ($deliveryChallan->dc_no ?? $deliveryChallan->reference_number);
 
-        return view('management.sales.delivery-challan.partials.audit_logs_content', compact('deliveryChallan', 'logs', 'title'));
+        $subtitleParts = ['DC #' . ($deliveryChallan->dc_no ?? $deliveryChallan->reference_number)];
+        if (isset($deliveryChallan->customer)) {
+            $subtitleParts[] = 'Customer: ' . ($deliveryChallan->customer->name ?? 'N/A');
+        }
+        if ($deliveryChallan->delivery_order && $deliveryChallan->delivery_order->isNotEmpty()) {
+            $subtitleParts[] = 'DO: ' . $deliveryChallan->delivery_order->pluck('reference_no')->implode(', ');
+        }
+        if (isset($deliveryChallan->dispatch_date)) {
+            $subtitleParts[] = 'Date: ' . \Carbon\Carbon::parse($deliveryChallan->dispatch_date)->format('d M Y');
+        }
+        if (isset($deliveryChallan->am_approval_status)) {
+            $subtitleParts[] = 'Status: ' . ucfirst($deliveryChallan->am_approval_status);
+        }
+        $subtitle = implode(' | ', $subtitleParts);
+        $emptyMessage = 'No edits or updates have been recorded for this delivery challan yet.';
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 }

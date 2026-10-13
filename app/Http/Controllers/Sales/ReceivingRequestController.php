@@ -508,6 +508,22 @@ class ReceivingRequestController extends Controller
         $logs = $filteredLogs;
         $title = "Audit Logs: Receiving Request #{$receivingRequest->dc_no}";
 
-        return view('management.sales.receiving-request.partials.audit_logs_content', compact('receivingRequest', 'logs', 'title'));
+        $subtitleParts = ['DC #' . $receivingRequest->dc_no];
+        if (isset($receivingRequest->deliveryChallan?->customer)) {
+            $subtitleParts[] = 'Customer: ' . ($receivingRequest->deliveryChallan->customer->name ?? 'N/A');
+        }
+        if (isset($receivingRequest->truck_number)) {
+            $subtitleParts[] = 'Truck: ' . $receivingRequest->truck_number;
+        }
+        if (isset($receivingRequest->dc_date)) {
+            $subtitleParts[] = 'Date: ' . \Carbon\Carbon::parse($receivingRequest->dc_date)->format('d M Y');
+        }
+        if (isset($receivingRequest->am_approval_status)) {
+            $subtitleParts[] = 'Status: ' . ucfirst($receivingRequest->am_approval_status);
+        }
+        $subtitle = implode(' | ', $subtitleParts);
+        $emptyMessage = 'No edits or updates have been recorded for this receiving request yet.';
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 }
