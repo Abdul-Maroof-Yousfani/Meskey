@@ -54,6 +54,12 @@ class ArrivalDashboardService
                 $q->whereNull('arrival_slip_status')
                     ->orWhere('arrival_slip_status', '!=', 'generated');
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->count();
