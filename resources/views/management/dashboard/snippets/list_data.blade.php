@@ -110,7 +110,7 @@
                             ])
                         )
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
-                        <td>{{ $item->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->qcProduct->name ?? 'N/A' }}</td>
                         @if(canAccess('arrival-stats-show-confidential'))
                             <td>{{ $item->truck_no ?? 'N/A' }}</td>
                         @endif
@@ -158,7 +158,7 @@
                             ])
                         )
                         <td>{{ $item->arrivalTicket->unique_no ?? 'N/A' }}</td>
-                        <td>{{ $item->arrivalTicket->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->arrivalTicket->qcProduct->name ?? 'N/A' }}</td>
                         <td>{{ $item->arrivalTicket->truck_no ?? 'N/A' }}</td>
                         <td>{{ ucfirst($item->sampling_type) ?? 'N/A' }}</td>
                         <td>
@@ -170,7 +170,7 @@
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>
                     @elseif($type == 'first_weighbridge_pending')
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
-                        <td>{{ $item->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->qcProduct->name ?? 'N/A' }}</td>
                         @if(canAccess('arrival-stats-show-confidential'))
                             <td>{{ $item->truck_no ?? 'N/A' }}</td>
                         @endif
@@ -180,7 +180,7 @@
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>
                     @elseif($type == 'half_full_approve_pending')
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
-                        <td>{{ $item->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->qcProduct->name ?? 'N/A' }}</td>
                         @if(canAccess('arrival-stats-show-confidential'))
                             <td>{{ $item->truck_no ?? 'N/A' }}</td>
                         @endif
@@ -190,7 +190,7 @@
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>
                     @elseif($type == 'second_weighbridge_pending')
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
-                        <td>{{ $item->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->qcProduct->name ?? 'N/A' }}</td>
                         @if(canAccess('arrival-stats-show-confidential'))
                             <td>{{ $item->truck_no ?? 'N/A' }}</td>
                         @endif
@@ -208,8 +208,8 @@
                 </tr>
             @empty
                 <!-- <tr>
-                                                                                                                                        <td colspan="10" class="text-center">No data found for the selected criteria.</td>
-                                                                                                                                    </tr> -->
+                                                                                                                                                                                    <td colspan="10" class="text-center">No data found for the selected criteria.</td>
+                                                                                                                                                                                </tr> -->
             @endforelse
         </tbody>
     </table>
