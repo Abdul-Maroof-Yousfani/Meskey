@@ -19,6 +19,12 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->where(function ($q) {
                 $q->whereNull('arrival_slip_status')
