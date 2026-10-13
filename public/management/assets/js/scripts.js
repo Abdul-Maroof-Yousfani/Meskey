@@ -40,9 +40,31 @@ $(document).on("keydown", function (e) {
   }
 });
 
+// Upper cross button click handler (reloads page if reload parameter was set to true)
+$(document).on(
+  "click",
+  "#modal-sidebar .modal-sidebar-close.top-wala, #modal-sidebar .top-wala",
+  function () {
+    var shouldReload =
+      $("#modal-sidebar").data("reload") === true ||
+      $("#modal-sidebar").attr("data-reload") === "true";
+
+    if (shouldReload) {
+      $("#modal-sidebar").data("reload", false).attr("data-reload", "false");
+      window.location.reload();
+    }
+  },
+);
+
 // Clear content when clicking the close button
 $(document).on("click", ".modal-sidebar-close", function () {
   $(".modal-sidebar .modal-tab-content").html("");
+  if (
+    !$("#modal-sidebar").data("reload") &&
+    $("#modal-sidebar").attr("data-reload") !== "true"
+  ) {
+    $("#modal-sidebar").data("reload", false).attr("data-reload", "false");
+  }
 });
 
 function filterationCommonoldat12Dec2025(
@@ -1340,7 +1362,17 @@ function openImageModal(
   });
 }
 
-function openModal(button, url, title, viewonly = false, drawerWidth = null) {
+function openModal(button, url, title, viewonly = false, drawerWidth = null, others = {}) {
+  var reloadVal = false;
+  if (others && typeof others === "object") {
+    reloadVal = others.reload_on_close !== undefined ? others.reload_on_close : others.realod_on_close;
+  } else if (typeof others === "boolean") {
+    reloadVal = others;
+  }
+  var shouldReload = Boolean(reloadVal && reloadVal !== "false" && reloadVal !== 0);
+  $("#modal-sidebar").data("reload", shouldReload).attr("data-reload", shouldReload ? "true" : "false");
+  $("#modal-sidebar").data("others", others);
+
   // Auto responsive width if not provided manually
   if (!drawerWidth) {
     if (window.innerWidth <= 576) {
