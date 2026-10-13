@@ -171,6 +171,7 @@
                                     <thead>
                                         <tr>
                                             <th>Ticket #</th>
+                                            <th>Contract No</th>
                                             <th>Status</th>
 
                                             <th>Miller</th>
