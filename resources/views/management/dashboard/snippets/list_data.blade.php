@@ -4,27 +4,33 @@
         <thead class="thead-dark">
             <tr>
                 <th>S.No</th>
-                @if (in_array($type, [
-                        'new_tickets',
-                        'total_tickets',
-                        'completed_tickets',
-                        'location_transfer_pending',
-                        'rejected_tickets',
-                        'freight_ready',
-                        'truck_out',
-                        'half_rejected_tickets',
-                        'truck_at_ho',
-                        'truck_for_built_return',
-                        'old_pending_trucks',
-                        'total_tickets_kgs',
+                @if (
+                        in_array($type, [
+                            'new_tickets',
+                            'total_tickets',
+                            'completed_tickets',
+                            'location_transfer_pending',
+                            'rejected_tickets',
+                            'freight_ready',
+                            'truck_out',
+                            'half_rejected_tickets',
+                            'truck_at_ho',
+                            'truck_for_built_return',
+                            'old_pending_trucks',
+                            'total_tickets_kgs',
 
-                    ]))
+                        ])
+                    )
                     <th>Ticket #</th>
                     <th>Product</th>
-                    <th>Truck No</th>
+                    @if(canAccess('arrival-stats-show-confidential'))
+                        <th>Truck No</th>
+                    @endif
                     <th>Bilty No</th>
                     <th>Station</th>
-                    <th>Accounts Of</th>
+                    @if(canAccess('arrival-stats-show-accounts'))
+                        <th>Accounts Of</th>
+                    @endif
                     <th>Bags</th>
                     @if ($type == 'freight_ready')
                         <th>Is Decision Making</th>
@@ -32,15 +38,17 @@
                         <th>Type</th>
                     @endif
                     <th>Created</th>
-                @elseif(in_array($type, [
-                        'initial_sampling_done',
-                        'resampling_required',
-                        'initial_sampling_requested',
-                        'initial_re_sampling_requested',
-                        'inner_sampling_requested',
-                        'inner_re_sampling_requested',
-                        'inner_sampling_pending_approval',
-                    ]))
+                @elseif(
+                        in_array($type, [
+                            'initial_sampling_done',
+                            'resampling_required',
+                            'initial_sampling_requested',
+                            'initial_re_sampling_requested',
+                            'inner_sampling_requested',
+                            'inner_re_sampling_requested',
+                            'inner_sampling_pending_approval',
+                        ])
+                    )
                     <th>Ticket #</th>
                     <th>Product</th>
                     <th>Truck No</th>
@@ -50,7 +58,9 @@
                 @elseif($type == 'first_weighbridge_pending')
                     <th>Ticket #</th>
                     <th>Product</th>
-                    <th>Truck No</th>
+                    @if(canAccess('arrival-stats-show-confidential'))
+                        <th>Truck No</th>
+                    @endif
                     <th>Location</th>
                     <th>Station</th>
                     <th>Bags</th>
@@ -58,7 +68,9 @@
                 @elseif($type == 'half_full_approve_pending')
                     <th>Ticket #</th>
                     <th>Product</th>
-                    <th>Truck No</th>
+                    @if(canAccess('arrival-stats-show-confidential'))
+                        <th>Truck No</th>
+                    @endif
                     <th>First Weight</th>
                     <th>Station</th>
                     <th>Bags</th>
@@ -66,7 +78,9 @@
                 @elseif($type == 'second_weighbridge_pending')
                     <th>Ticket #</th>
                     <th>Product</th>
-                    <th>Truck No</th>
+                    @if(canAccess('arrival-stats-show-confidential'))
+                        <th>Truck No</th>
+                    @endif
                     <th>Approval Status</th>
                     <th>Arrival Location</th>
                     <th>Station</th>
@@ -79,26 +93,32 @@
             @forelse($data as $key => $item)
                 <tr>
                     <td>{{ $key + 1 }}</td>
-                    @if (in_array($type, [
-                            'new_tickets',
-                            'total_tickets',
-                            'location_transfer_pending',
-                            'completed_tickets',
-                            'rejected_tickets',
-                            'freight_ready',
-                            'truck_out',
-                            'half_rejected_tickets',
-                            'truck_at_ho',
-                            'truck_for_built_return',
-                            'old_pending_trucks',
-                            'total_tickets_kgs',
-                        ]))
+                    @if (
+                            in_array($type, [
+                                'new_tickets',
+                                'total_tickets',
+                                'location_transfer_pending',
+                                'completed_tickets',
+                                'rejected_tickets',
+                                'freight_ready',
+                                'truck_out',
+                                'half_rejected_tickets',
+                                'truck_at_ho',
+                                'truck_for_built_return',
+                                'old_pending_trucks',
+                                'total_tickets_kgs',
+                            ])
+                        )
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
-                        <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @if(canAccess('arrival-stats-show-confidential'))
+                            <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        @endif
                         <td>{{ $item->bilty_no ?? 'N/A' }}</td>
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
-                        <td>{{ $item->accountsOf->name ?? 'N/A' }}</td>
+                        @if(canAccess('arrival-stats-show-accounts'))
+                            <td>{{ $item->accountsOf->name ?? 'N/A' }}</td>
+                        @endif
                         <td>{{ $item->bags ?? 'N/A' }}</td>
                         @if ($type == 'freight_ready')
                             <td>
@@ -109,8 +129,7 @@
                         @else
                             <td>
                                 @if ($item->first_qc_status == 'rejected')
-                                    <span
-                                        class="badge badge-{{ $item->first_qc_status === 'pending' ? 'warning' : 'danger' }}">
+                                    <span class="badge badge-{{ $item->first_qc_status === 'pending' ? 'warning' : 'danger' }}">
                                         {{ ucwords($item->first_qc_status) }}
                                     </span>
                                 @else
@@ -127,15 +146,17 @@
                             </td>
                         @endif
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>
-                    @elseif(in_array($type, [
-                            'initial_sampling_done',
-                            'resampling_required',
-                            'inner_sampling_requested',
-                            'inner_re_sampling_requested',
-                            'initial_sampling_requested',
-                            'initial_re_sampling_requested',
-                            'inner_sampling_pending_approval',
-                        ]))
+                    @elseif(
+                            in_array($type, [
+                                'initial_sampling_done',
+                                'resampling_required',
+                                'inner_sampling_requested',
+                                'inner_re_sampling_requested',
+                                'initial_sampling_requested',
+                                'initial_re_sampling_requested',
+                                'inner_sampling_pending_approval',
+                            ])
+                        )
                         <td>{{ $item->arrivalTicket->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->arrivalTicket->product->name ?? 'N/A' }}</td>
                         <td>{{ $item->arrivalTicket->truck_no ?? 'N/A' }}</td>
@@ -181,8 +202,8 @@
                 </tr>
             @empty
                 <!-- <tr>
-                    <td colspan="10" class="text-center">No data found for the selected criteria.</td>
-                </tr> -->
+                                                                                                                <td colspan="10" class="text-center">No data found for the selected criteria.</td>
+                                                                                                            </tr> -->
             @endforelse
         </tbody>
     </table>
@@ -195,29 +216,29 @@
 @endif
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#myTable').DataTable({
             "paging": false,   // No pagination
             "searching": true,  // Search enabled
-                "ordering": false,
-                        "dom": '<"top"i>frt',  // i = info, f = search filter, r = processing, t = table
+            "ordering": false,
+            "dom": '<"top"i>frt',  // i = info, f = search filter, r = processing, t = table
 
-                   "language": {
-            "emptyTable": "No data found for the selected criteria",
-            "zeroRecords": "No matching records found",
-            "search": "Search:",
-            "info": "Total Entries: _TOTAL_",
-            "infoEmpty": "Total Entries: 0",
-            "infoFiltered": "(filtered from _MAX_ total records)"
-        }
+            "language": {
+                "emptyTable": "No data found for the selected criteria",
+                "zeroRecords": "No matching records found",
+                "search": "Search:",
+                "info": "Total Entries: _TOTAL_",
+                "infoEmpty": "Total Entries: 0",
+                "infoFiltered": "(filtered from _MAX_ total records)"
+            }
 
         });
     });
 </script>
 <style>
     a.modal-sidebar-close.top-wala {
-    position: fixed !important;
-    right: 35px;
-    top: 15px;
-}
+        position: fixed !important;
+        right: 35px;
+        top: 15px;
+    }
 </style>
