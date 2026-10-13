@@ -24,7 +24,8 @@ class JournalVoucherController extends Controller
      */
     public function index()
     {
-        return view('management.finance.journal_voucher.index');
+        $customers = \App\Models\Master\Customer::orderBy('name')->get(['id', 'name']);
+        return view('management.finance.journal_voucher.index', compact('customers'));
     }
 
     /**
@@ -39,8 +40,55 @@ class JournalVoucherController extends Controller
                 'journalVoucherDetails.salesOrder.customer',
                 'createdBy'
             ])
+            ->when($request->filled('jv_no'), function ($q) use ($request) {
+                $q->where('jv_no', 'like', '%' . trim($request->jv_no) . '%');
+            })
+            ->when($request->filled('daterange') || $request->filled('date'), function ($q) use ($request) {
+                $rawDate = trim($request->daterange ?: $request->date);
+                if (str_contains($rawDate, ' - ')) {
+                    $parts = explode(' - ', $rawDate);
+                    if (count($parts) == 2) {
+                        try {
+                            $start = \Carbon\Carbon::parse(trim($parts[0]))->format('Y-m-d');
+                            $end = \Carbon\Carbon::parse(trim($parts[1]))->format('Y-m-d');
+                            $q->whereDate('jv_date', '>=', $start)
+                              ->whereDate('jv_date', '<=', $end);
+                        } catch (\Exception $e) {}
+                    }
+                } else {
+                    try {
+                        $single = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                        $q->whereDate('jv_date', $single);
+                    } catch (\Exception $e) {}
+                }
+            })
+            ->when($request->filled('customer_id') && $request->customer_id !== 'all', function ($q) use ($request) {
+                $customerId = $request->customer_id;
+                $customer = \App\Models\Master\Customer::find($customerId);
+                $custAccId = $customer?->account_id;
+
+                $q->whereHas('journalVoucherDetails', function ($dq) use ($customerId, $custAccId) {
+                    $dq->where(function ($sq) use ($customerId, $custAccId) {
+                        $sq->whereHas('receiptVoucher', function ($rq) use ($customerId) {
+                            $rq->where('customer_id', $customerId);
+                        })
+                        ->orWhereHas('customerAdvance', function ($caq) use ($customerId) {
+                            $caq->where('customer_id', $customerId);
+                        })
+                        ->orWhereHas('salesOrder', function ($soq) use ($customerId) {
+                            $soq->where('customer_id', $customerId);
+                        });
+                        if ($custAccId) {
+                            $sq->orWhere('acc_id', $custAccId);
+                        }
+                    });
+                });
+            })
+            ->when($request->filled('status') && $request->status !== 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status);
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . $request->search . '%';
+                $searchTerm = '%' . trim($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('jv_no', 'like', $searchTerm)
                         ->orWhere('description', 'like', $searchTerm)
@@ -129,12 +177,24 @@ class JournalVoucherController extends Controller
                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                 ->whereNull('journal_vouchers.deleted_at')
                 ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_vouchers.am_approval_status', 'approved')
                 ->when($excludeJvId, function ($q) use ($excludeJvId) {
                     $q->where('journal_vouchers.id', '!=', $excludeJvId);
                 })
                 ->select('receipt_voucher_id', DB::raw('SUM(debit_amount) as consumed_amount'))
                 ->whereNotNull('receipt_voucher_id')
                 ->groupBy('receipt_voucher_id');
+
+            $dpvRefunds = DB::table('payment_voucher_data')
+                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                ->whereNull('payment_vouchers.deleted_at')
+                ->whereNull('payment_voucher_data.deleted_at')
+                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                ->whereNotNull('payment_voucher_data.sales_order_id')
+                ->select('payment_voucher_data.sales_order_id', DB::raw('SUM(payment_voucher_data.net_amount) as total_refunded'))
+                ->groupBy('payment_voucher_data.sales_order_id')
+                ->pluck('total_refunded', 'sales_order_id')
+                ->toArray();
 
             $receiptVouchers = ReceiptVoucher::leftJoinSub($doConsumedSum, 'do_consumption', function ($join) {
                     $join->on('receipt_vouchers.id', '=', 'do_consumption.receipt_voucher_id');
@@ -143,23 +203,37 @@ class JournalVoucherController extends Controller
                     $join->on('receipt_vouchers.id', '=', 'jv_consumption.receipt_voucher_id');
                 })
                 ->where('receipt_vouchers.customer_id', $customer->id)
+                ->where('receipt_vouchers.am_approval_status', 'approved')
                 ->whereNull('receipt_vouchers.deleted_at')
                 ->select('receipt_vouchers.*', 
                     DB::raw('COALESCE(do_consumption.consumed_amount, 0) as do_consumed'),
                     DB::raw('COALESCE(jv_consumption.consumed_amount, 0) as jv_consumed')
                 )
                 ->get()
-                ->map(function($rv) {
+                ->map(function($rv) use (&$dpvRefunds) {
                     // Use the SO-linked net_amount as the base (not total_amount which may include excess)
-                    $soLinkedAmount = DB::table('receipt_voucher_items')
+                    $rvItems = DB::table('receipt_voucher_items')
                         ->where('receipt_voucher_id', $rv->id)
                         ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
-                        ->sum('net_amount');
+                        ->get();
+
+                    $soLinkedAmount = $rvItems->sum('net_amount');
 
                     // If no items found, fall back to total_amount
                     $baseAmount = $soLinkedAmount > 0 ? $soLinkedAmount : (float) $rv->total_amount;
 
-                    $remaining = round($baseAmount - ($rv->do_consumed + $rv->jv_consumed), 2);
+                    $rvDpvConsumed = 0;
+                    foreach ($rvItems as $item) {
+                        $soId = $item->reference_id;
+                        $soNet = (float) $item->net_amount;
+                        if (isset($dpvRefunds[$soId]) && $dpvRefunds[$soId] > 0) {
+                            $deduct = min($soNet, (float)$dpvRefunds[$soId]);
+                            $dpvRefunds[$soId] -= $deduct;
+                            $rvDpvConsumed += $deduct;
+                        }
+                    }
+
+                    $remaining = round(max(0, $baseAmount - ($rv->do_consumed + $rv->jv_consumed + $rvDpvConsumed)), 2);
                     return [
                         'id' => $rv->id,
                         'unique_no' => $rv->unique_no,
@@ -181,6 +255,16 @@ class JournalVoucherController extends Controller
             }
 
             $customerAdvances = \App\Models\CustomerAdvance::where('customer_id', $customer->id)
+                ->where(function ($q) {
+                    $q->where('source_type', '!=', 'excess_payment')
+                      ->orWhereExists(function ($sub) {
+                          $sub->select(DB::raw(1))
+                              ->from('receipt_vouchers')
+                              ->whereColumn('receipt_vouchers.unique_no', 'customer_advances.voucher_no')
+                              ->whereNull('receipt_vouchers.deleted_at')
+                              ->where('receipt_vouchers.am_approval_status', 'approved');
+                      });
+                })
                 ->where(function ($q) use ($excludeJvNo) {
                     $q->whereIn('status', ['pending', 'partial_payment']);
                     if ($excludeJvNo) {
@@ -215,6 +299,7 @@ class JournalVoucherController extends Controller
                 ->values();
 
             $salesOrders = SalesOrder::where('customer_id', $customer->id)
+                ->where('am_approval_status', 'approved')
                 ->select('id', 'reference_no')
                 ->latest('id')
                 ->get()
@@ -427,6 +512,7 @@ class JournalVoucherController extends Controller
         $rvTotalUsage = [];
         $seenRvIds = [];
         $advTotalUsage = [];
+        $soTotalUsage = [];
 
         foreach ($request->details as $index => $detail) {
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
@@ -520,6 +606,8 @@ class JournalVoucherController extends Controller
                 if (!$customer || $so->customer_id != $customer->id) {
                     return "Line " . ($index + 1) . ": Sales Order {$so->reference_no} does not belong to the selected account.";
                 }
+
+                $soTotalUsage[$soId] = ($soTotalUsage[$soId] ?? 0) + $lineAmount;
             }
         }
 
@@ -535,15 +623,28 @@ class JournalVoucherController extends Controller
                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                 ->whereNull('journal_vouchers.deleted_at')
                 ->whereNull('journal_voucher_details.deleted_at')
-                ->where(function ($q) {
-                    $q->whereNull('journal_vouchers.am_approval_status')
-                      ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
-                })
+                ->where('journal_vouchers.am_approval_status', 'approved')
                 ->when($excludeJvId, function ($q) use ($excludeJvId) {
                     $q->where('journal_vouchers.id', '!=', $excludeJvId);
                 })
                 ->where('receipt_voucher_id', $rvId)
                 ->sum('debit_amount');
+
+            $dpvConsumed = 0;
+            $rvSoIds = DB::table('receipt_voucher_items')
+                ->where('receipt_voucher_id', $rvId)
+                ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
+                ->pluck('reference_id');
+
+            if ($rvSoIds->isNotEmpty()) {
+                $dpvConsumed = (float) DB::table('payment_voucher_data')
+                    ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                    ->whereNull('payment_vouchers.deleted_at')
+                    ->whereNull('payment_voucher_data.deleted_at')
+                    ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                    ->whereIn('payment_voucher_data.sales_order_id', $rvSoIds)
+                    ->sum('payment_voucher_data.net_amount');
+            }
 
             // Use SO-linked net_amount as base (consistent with fetchAccountRelatedData)
             $soLinkedAmount = DB::table('receipt_voucher_items')
@@ -552,7 +653,7 @@ class JournalVoucherController extends Controller
                 ->sum('net_amount');
             $baseAmount = $soLinkedAmount > 0 ? $soLinkedAmount : (float) $rv->total_amount;
 
-            $remainingAmount = round($baseAmount - ($doConsumed + $jvConsumed), 2);
+            $remainingAmount = round(max(0, $baseAmount - ($doConsumed + $jvConsumed + $dpvConsumed)), 2);
             if (round($totalEntered, 2) > round($remainingAmount + 0.01, 2)) {
                 return "The entered amount (" . number_format($totalEntered, 2) . ") for Receipt Voucher {$rv->unique_no} exceeds its remaining balance of " . number_format($remainingAmount, 2) . ".";
             }
@@ -572,6 +673,64 @@ class JournalVoucherController extends Controller
             }
             if (round($totalEntered, 2) > round($available + 0.01, 2)) {
                 return "The entered amount (" . number_format($totalEntered, 2) . ") for Excess Payment {$adv->voucher_no} exceeds its available balance of " . number_format($available, 2) . ".";
+            }
+        }
+
+        foreach ($soTotalUsage as $soId => $totalEntered) {
+            $so = SalesOrder::find($soId);
+            if (!$so) continue;
+
+            $soRvAdvance = (float) DB::table('receipt_voucher_items')
+                ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
+                ->whereNull('receipt_vouchers.deleted_at')
+                ->where('receipt_vouchers.am_approval_status', 'approved')
+                ->where('receipt_voucher_items.reference_type', 'sale_order')
+                ->where('receipt_voucher_items.reference_id', $soId)
+                ->sum('receipt_voucher_items.net_amount');
+
+            $soDoAdvanceConsumed = (float) DB::table('delivery_order_receipt_voucher as dorv')
+                ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
+                ->where('do_tbl.so_id', $soId)
+                ->where('do_tbl.am_approval_status', '!=', 'rejected')
+                ->sum('dorv.amount');
+
+            $rvIdsForSo = DB::table('receipt_voucher_items')
+                ->where('reference_type', 'sale_order')
+                ->where('reference_id', $soId)
+                ->pluck('receipt_voucher_id')
+                ->toArray();
+
+            $soOtherJvAdjusted = (float) DB::table('journal_voucher_details')
+                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                ->whereNull('journal_vouchers.deleted_at')
+                ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_vouchers.am_approval_status', 'approved')
+                ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                    $q->where('journal_vouchers.id', '!=', $excludeJvId);
+                })
+                ->where(function ($q) use ($soId, $rvIdsForSo) {
+                    $q->where('journal_voucher_details.sales_order_id', $soId);
+                    if (!empty($rvIdsForSo)) {
+                        $q->orWhere(function ($sub) use ($rvIdsForSo) {
+                            $sub->whereIn('journal_voucher_details.receipt_voucher_id', $rvIdsForSo)
+                                ->whereNull('journal_voucher_details.sales_order_id');
+                        });
+                    }
+                })
+                ->sum('journal_voucher_details.debit_amount');
+
+            $soDpvRefunded = (float) \App\Models\PaymentVoucherData::where('sales_order_id', $soId)
+                ->whereNull('delivery_order_id')
+                ->whereHas('paymentVoucher', function ($q) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('amount');
+
+            $remSoAdvance = max(0, $soRvAdvance - $soDoAdvanceConsumed - $soOtherJvAdjusted - $soDpvRefunded);
+
+            if (round($totalEntered, 2) > round($remSoAdvance + 0.01, 2)) {
+                return "The entered amount (" . number_format($totalEntered, 2) . ") for Sales Order {$so->reference_no} exceeds its remaining advance balance of " . number_format($remSoAdvance, 2) . ".";
             }
         }
 
@@ -1255,6 +1414,16 @@ class JournalVoucherController extends Controller
             return response()->json([
                 'error' => 'You are not authorized to approve this journal voucher or it cannot be approved.'
             ], 422);
+        }
+
+        if (method_exists($journalVoucher, 'validateBeforeApproval')) {
+            $validationError = $journalVoucher->validateBeforeApproval();
+            if ($validationError) {
+                return response()->json([
+                    'error' => $validationError,
+                    'message' => $validationError
+                ], 422);
+            }
         }
 
         $result = $journalVoucher->approve($request->comments ?? 'Approved');

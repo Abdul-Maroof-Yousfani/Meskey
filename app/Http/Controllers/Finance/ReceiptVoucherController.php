@@ -29,7 +29,8 @@ class ReceiptVoucherController extends Controller
             !canAccess('direct-receipt-voucher-list') && !auth()->user()->can('direct-receipt-voucher-list'),
             403
         );
-        return view('management.finance.receipt_voucher.index');
+        $accounts = Account::where('is_operational', 'yes')->orderBy('name')->get(['id', 'name', 'unique_no']);
+        return view('management.finance.receipt_voucher.index', compact('accounts'));
     }
 
     public function getitems(Request $request)
@@ -170,12 +171,79 @@ class ReceiptVoucherController extends Controller
             ->when(!$canNormal && $canDirect, function ($q) {
                 $q->where('is_direct', 1);
             })
+            // 1. rv_no filter
+            ->when($request->filled('rv_no'), function ($q) use ($request) {
+                $q->where('unique_no', 'like', '%' . trim($request->rv_no) . '%');
+            })
+            // 2. date filter (supports single date & daterange)
+            ->when($request->filled('daterange') || $request->filled('date'), function ($q) use ($request) {
+                $rawDate = trim($request->daterange ?: $request->date);
+                if (str_contains($rawDate, ' - ')) {
+                    $parts = explode(' - ', $rawDate);
+                    if (count($parts) == 2) {
+                        try {
+                            $start = Carbon::parse(trim($parts[0]))->format('Y-m-d');
+                            $end = Carbon::parse(trim($parts[1]))->format('Y-m-d');
+                            $q->whereDate('rv_date', '>=', $start)
+                              ->whereDate('rv_date', '<=', $end);
+                        } catch (\Exception $e) {}
+                    }
+                } else {
+                    try {
+                        $single = Carbon::parse($rawDate)->format('Y-m-d');
+                        $q->whereDate('rv_date', $single);
+                    } catch (\Exception $e) {}
+                }
+            })
+            // 3. type filter (bank_payment_voucher vs cash_payment_voucher)
+            ->when($request->filled('type') && $request->type !== 'all', function ($q) use ($request) {
+                $q->where('voucher_type', $request->type);
+            })
+            // 4. account filter (by account_id)
+            ->when($request->filled('account_id') && $request->account_id !== 'all', function ($q) use ($request) {
+                $accId = $request->account_id;
+                $q->where(function ($sq) use ($accId) {
+                    $sq->where('account_id', $accId)
+                       ->orWhereHas('bankDetails', function ($bq) use ($accId) {
+                           $bq->where('account_id', $accId);
+                       })
+                       ->orWhereHas('items', function ($iq) use ($accId) {
+                           $iq->where('account_id', $accId);
+                       });
+                });
+            })
+            // 5. bill filter (ref_bill_no)
+            ->when($request->filled('bill'), function ($q) use ($request) {
+                $q->where('ref_bill_no', 'like', '%' . trim($request->bill) . '%');
+            })
+            // 6. ref_no filter (cheque_no, ref_bill_no, or item reference)
+            ->when($request->filled('ref_no'), function ($q) use ($request) {
+                $term = '%' . trim($request->ref_no) . '%';
+                $q->where(function ($sq) use ($term) {
+                    $sq->where('cheque_no', 'like', $term)
+                       ->orWhere('ref_bill_no', 'like', $term)
+                       ->orWhereHas('items', function ($iq) use ($term) {
+                           $iq->where('reference_id', 'like', $term);
+                       });
+                });
+            })
+            // 7. status filter (am_approval_status)
+            ->when($request->filled('status') && $request->status !== 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status);
+            })
+            // General search
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . $request->search . '%';
+                $searchTerm = '%' . trim($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('unique_no', 'like', $searchTerm)
                         ->orWhere('ref_bill_no', 'like', $searchTerm)
-                        ->orWhere('cheque_no', 'like', $searchTerm);
+                        ->orWhere('cheque_no', 'like', $searchTerm)
+                        ->orWhereHas('account', function ($aq) use ($searchTerm) {
+                            $aq->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('customer', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm);
+                        });
                 });
             })
             ->latest()
@@ -184,8 +252,6 @@ class ReceiptVoucherController extends Controller
                 $item->is_advance = $item->items->where("reference_type", "sale_order")->isNotEmpty();
                 return $item;
             });
-
-
 
         return view('management.finance.receipt_voucher.getList', compact('receiptVouchers'));
     }

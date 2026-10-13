@@ -491,3 +491,14 @@ Route::get('/seeder-specific/{id}', function ($id) {
 
     return 'Migration executed successfully.';
 });
+
+// Fallback direct-payment-voucher routes (without finance prefix)
+Route::middleware(['auth', 'web', 'check.company'])->prefix('direct-payment-voucher')->group(function () {
+    Route::get('customer-advances/{accountId}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'getCustomerExcessAdvances']);
+    Route::get('customer-banks/{accountId}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'getCustomerBankAccounts']);
+    Route::get('customer-sos/{accountId}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'getCustomerSalesOrders']);
+    Route::get('so-dos/{soId}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'getSoDeliveryOrders']);
+    Route::get('do-stats/{doId}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'getDoStatsForPayment']);
+    Route::post('sale/store', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'direct_payment_voucher_sale_store']);
+    Route::put('sale/{payment_voucher}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'update_direct_sale']);
+});

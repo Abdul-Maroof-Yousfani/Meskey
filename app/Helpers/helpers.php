@@ -2513,7 +2513,17 @@ function delivery_order_qty_used($sale_order_data_id)
         }
     }
 
-    return $spent;
+    // Add quantity refunded via Direct Payment Voucher for Sale so it cannot be re-ordered
+    $refundedAmount = (float) \App\Models\PaymentVoucherData::where('sales_order_id', $soData->sale_order_id)
+        ->whereHas('paymentVoucher', function ($q) {
+            $q->whereNull('deleted_at');
+        })
+        ->sum('amount');
+
+    $rate = (float) $soData->rate;
+    $refundedQty = ($rate > 0) ? ($refundedAmount / $rate) : 0;
+
+    return $spent + $refundedQty;
 }
 
 function delivery_order_qty_balance($sale_order_data_id)

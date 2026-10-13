@@ -17,17 +17,40 @@
             @foreach ($paymentVouchers as $voucher)
                 <tr>
                     <td>{{ $voucher->unique_no }}</td>
-                    <td>{{ $voucher->pv_date->format('d-m-Y') }}</td>
+                    <td>{{ $voucher->pv_date ? $voucher->pv_date->format('d-m-Y') : 'N/A' }}</td>
                     <td>
-                        @if($voucher->module_type == 'bill_payment_voucher')
-                            <span class="badge badge-pill">
-                                Bill Payment Voucher
+                        @php
+                            $approvalStatus = strtolower($voucher->am_approval_status ?? 'pending');
+                            $approvalBadge = match ($approvalStatus) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'pending' => 'badge-warning',
+                                'reverted' => 'badge-secondary',
+                                default => 'badge-secondary'
+                            };
+                        @endphp
+                        <div class="d-flex flex-column align-items-start" style="gap: 3px;">
+                            <span class="badge {{ $approvalBadge }}" style="font-size: 82%;">
+                                {{ ucfirst($approvalStatus) }}
                             </span>
-                        @else
-                            <span class="badge badge-pill {{ $voucher->is_direct ? 'badge-success' : 'badge-info' }}">
-                                {{ $voucher->is_direct ? 'Direct' : 'From Request' }}
-                            </span>
-                        @endif
+                            @if($voucher->module_type == 'dpv_for_sale')
+                                <span class="badge badge-pill badge-primary" style="font-size: 80%;">
+                                    Direct (Sale)
+                                </span>
+                            @elseif($voucher->module_type == 'bill_payment_voucher')
+                                <span class="badge badge-pill badge-secondary" style="font-size: 80%;">
+                                    Bill Payment Voucher
+                                </span>
+                            @elseif($voucher->is_direct)
+                                <span class="badge badge-pill badge-primary" style="font-size: 80%;">
+                                    Direct
+                                </span>
+                            @else
+                                <span class="badge badge-pill badge-info" style="font-size: 80%;">
+                                    From Request
+                                </span>
+                            @endif
+                        </div>
                     </td>
                     <td>{{ ucfirst(str_replace('_', ' ', $voucher->voucher_type)) }}</td>
                     
