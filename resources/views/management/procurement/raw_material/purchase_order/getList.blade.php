@@ -138,8 +138,13 @@
             </td>
             <td>
                 <a onclick="openModal(this,'{{ route('raw-material.purchase-order.view', $row->id) }}','View Purchase Order')"
-                    class="success p-1 text-center mr-2 position-relative">
+                    class="success p-1 text-center mr-2 position-relative" title="View Details">
                     <i class="ft-eye font-medium-3"></i>
+                </a>
+
+                <a onclick="openModal(this,'{{ route('raw-material.purchase-order.audit-logs', $row->id) }}','Audit Logs: Contract #{{ $row->contract_no }}', false, '55%')"
+                    class="primary p-1 text-center mr-2 position-relative" title="View Audit Logs" style="cursor: pointer;">
+                    <i class="fa fa-history font-medium-3"></i>
                 </a>
 
 

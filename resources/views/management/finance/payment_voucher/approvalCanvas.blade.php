@@ -1,5 +1,8 @@
 @php
     use App\Models\Procurement\PaymentRequestData;
+    if (!isset($transactions) || $transactions->isEmpty()) {
+        $transactions = $paymentVoucher->getPreviewTransactions();
+    }
 @endphp
 <div class="payment-voucher-print pri" id="printSection">
     <!-- Header Section -->
@@ -20,7 +23,7 @@
         <div class="row" style=" width: 100% !important;">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Paid to:</h5>
-                <p><strong>Supplier:</strong> {{ $paymentVoucher->supplier->name ?? 'N/A' }}</p>
+                <p><strong>Paid to:</strong> {{ $paymentVoucher->paid_to_name ?? ($paymentVoucher->requestAccount->name ?? ($paymentVoucher->supplier->name ?? 'N/A')) }}</p>
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Reference Information</h5>
@@ -30,25 +33,36 @@
             </div>
         </div>
 
-        {{-- @dd($paymentVoucher->voucher_type == 'bank_payment_voucher', $bankAccount) --}}
-        @if ($paymentVoucher->voucher_type == 'bank_payment_voucher' && $bankAccount)
+        @if ($paymentVoucher->voucher_type == 'bank_payment_voucher')
             <div class="row">
                 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
                     <h5 class="font-weight-bold">Bank Details</h5>
-                    <p>
-                        <strong>Bank / Branch:</strong>
-                        {{ trim(
-                            ($bankAccount->bank_name ?? '') .
-                                ($bankAccount->branch_name ?? '' ? ' / ' . $bankAccount->branch_name : '') .
-                                ($bankAccount->branch_code ?? '' ? ' / ' . $bankAccount->branch_code : ''),
-                        ) ?:
-                            'N/A' }}
-                    </p>
-                    <p><strong>Account Title:</strong> {{ $bankAccount->account_title ?? 'N/A' }}</p>
-                    <p><strong>Account Number:</strong> {{ $bankAccount->account_number ?? 'N/A' }}</p>
+                    @if ($bankAccount)
+                        <p><strong>Paying Bank:</strong> {{ $paymentVoucher->account->name ?? ($paymentVoucher->bank_account->name ?? 'N/A') }}</p>
+                        <p>
+                            <strong>Beneficiary Bank / Branch:</strong>
+                            {{ trim(
+                                ($bankAccount->bank_name ?? '') .
+                                    ($bankAccount->branch_name ?? '' ? ' / ' . $bankAccount->branch_name : '') .
+                                    ($bankAccount->branch_code ?? '' ? ' / ' . $bankAccount->branch_code : ''),
+                            ) ?:
+                                'N/A' }}
+                        </p>
+                        <p><strong>Account Title:</strong> {{ $bankAccount->account_title ?? 'N/A' }}</p>
+                        <p><strong>Account Number:</strong> {{ $bankAccount->account_number ?? 'N/A' }}</p>
+                    @else
+                        <p><strong>Bank / Branch:</strong> {{ $paymentVoucher->account->name ?? ($paymentVoucher->bank_account->name ?? 'N/A') }}</p>
+                    @endif
                     <p><strong>Cheque No.:</strong> {{ $paymentVoucher->cheque_no ?? 'N/A' }}</p>
                     <p><strong>Cheque Date:</strong>
                         {{ $paymentVoucher->cheque_date ? $paymentVoucher->cheque_date->format('d-M-Y') : 'N/A' }}</p>
+                </div>
+            </div>
+        @elseif ($paymentVoucher->voucher_type == 'cash_payment_voucher')
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <h5 class="font-weight-bold">Cash Details</h5>
+                    <p><strong>Paid From (Cash Account):</strong> {{ $paymentVoucher->account->name ?? 'N/A' }}</p>
                 </div>
             </div>
         @endif
@@ -63,7 +77,7 @@
                 @php
                     $poNumbers = [];
                     foreach ($paymentVoucher->paymentVoucherData as $voucherData) {
-                        $po = $voucherData->paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? null;
+                        $po = $voucherData->paymentRequest?->paymentRequestData?->purchaseOrder?->contract_no ?? null;
                         if ($po) {
                             $poNumbers[] = $po;
                         }
@@ -96,14 +110,14 @@
                         @php
                             $request = $voucherData->paymentRequest;
                             if(!$request) continue;
-                            $purchaseOrder = $request->paymentRequestData->purchaseOrder ?? null;
+                            $purchaseOrder = $request->paymentRequestData?->purchaseOrder ?? null;
                         @endphp
                         <tr>
                             <td>{{ $index + 1 }}</td>
-                            <td>{{ $request->deliveryChallan->dc_no ?? ($request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A') }}</td>
+                            <td>{{ $request->deliveryChallan->dc_no ?? ($request->paymentRequestData?->purchaseOrder?->contract_no ?? 'N/A') }}</td>
                             <td>{{ $request?->created_at?->format('d-M-Y') }}</td>
                             <td class="text-right">{{ number_format($request->amount, 2) }}</td>
-                            <td>{{ $request->paymentRequestData->notes ?? 'No description' }}</td>
+                            <td>{{ $request->paymentRequestData?->notes ?? 'No description' }}</td>
                             <td>
                                 <span
                                     class="badge badge-{{ $request->request_type == 'Payment' ? 'success' : 'warning' }}">
@@ -131,7 +145,7 @@
                 <thead class="thead-light">
                     <tr>
                         {{-- <th class="text-center">Date</th> --}}
-                        <th style="width: 28%;">Contract No</th>
+                        <th style="width: 28%;">Account</th>
                         <th style="width: 44%;">Description</th>
                         <th class="text-right" style="width: 14%;">Debit</th>
                         <th class="text-right" style="width: 14%;">Credit</th>
@@ -151,12 +165,13 @@
                                 $balance -= $transaction->amount;
                             }
 
-                            $parts = explode('-', $transaction->payment_against);
+                            $parts = explode('-', $transaction->payment_against ?? '');
                             $lastPart = trim(end($parts)) ?? null;
+                            $purchaseOrder = null;
 
-                            if ($lastPart) {
+                            if ($lastPart && is_numeric($lastPart)) {
                                 $paymentRequestData = PaymentRequestData::find($lastPart);
-                                $purchaseOrder = $paymentRequestData->purchaseOrder;
+                                $purchaseOrder = $paymentRequestData?->purchaseOrder ?? null;
                             }
                         @endphp
                         <tr>
@@ -197,7 +212,11 @@
                             <strong>Total in Words: </strong>
                             {{ numberToWords($paymentVoucher->total_amount) }}.
                         </td>
-                        <td class="text-right"></td>
+                        <td class="text-right">
+                            <strong>
+                                {{ number_format($paymentVoucher->total_amount, 2) }}
+                            </strong>
+                        </td>
                         <td class="text-right">
                             <strong>
                                 {{ number_format($paymentVoucher->total_amount, 2) }}
@@ -212,7 +231,7 @@
 
     <div class="voucher-remarkss p-3 border">
         <h5 class="">Remarks</h5>
-        <p class="mb-0">{{ $paymentVoucher->remarks ?? 'N/A' }}</p>
+        <p class="mb-0">{{ $paymentVoucher->remarks ?: ($paymentVoucher->default_remarks ?? 'N/A') }}</p>
     </div>
 
     <div class="voucher-footer mt-4 pt-3 border-top">
@@ -226,9 +245,11 @@
 <div class="row bottom-button-bar">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-        <button type="button" class="btn btn-info mr-2" id="printButton">
-            <i class="ft-printer mr-1"></i> Print
-        </button>
+        @if (strtolower($paymentVoucher->am_approval_status ?? '') === 'approved')
+            <button type="button" class="btn btn-info mr-2" id="printButton">
+                <i class="ft-printer mr-1"></i> Print
+            </button>
+        @endif
     </div>
 </div>
 

@@ -16,6 +16,8 @@ use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\Supplier;
 use App\Models\SaudaType;
 use App\Models\TruckSizeRange;
+use App\Models\AuditLog;
+use App\Services\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -175,10 +177,19 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
+            $oldStatus = $purchaseOrder->status;
             $purchaseOrder->update([
                 'status' => 'completed',
                 'completed_at' => now()
             ]);
+
+            AuditLogService::log(
+                $purchaseOrder,
+                'purchase_order_completed',
+                "Purchase Order #{$purchaseOrder->contract_no} marked as completed.",
+                ['status' => $oldStatus],
+                ['status' => 'completed', 'completed_at' => now()->toDateTimeString()]
+            );
 
             return response()->json([
                 'success' => true,
@@ -233,7 +244,7 @@ class PurchaseOrderController extends Controller
 
         $data['contract_no'] = self::getContractNumber($request, $request->company_location_id, $request->contract_date);
 
-        DB::transaction(function () use ($data, $request) {
+        DB::transaction(function () use ($data, $request, &$arrivalPurchaseOrder) {
             $arrivalPOData = collect($data)->except(['slabs', 'quantity_range', 'truck_size_range'])->toArray();
 
             $arrivalPOData['is_replacement'] = $request->is_replacement == '1';
@@ -281,6 +292,16 @@ class PurchaseOrderController extends Controller
                 }
             }
         });
+
+        if ($arrivalPurchaseOrder) {
+            AuditLogService::log(
+                $arrivalPurchaseOrder,
+                'purchase_order_created',
+                "Purchase Order #{$arrivalPurchaseOrder->contract_no} created.",
+                null,
+                $arrivalPurchaseOrder->getAttributes()
+            );
+        }
 
         return response()->json([
             'success' => 'Purchase Order Created Successfully.',
@@ -429,6 +450,7 @@ class PurchaseOrderController extends Controller
                 ], 400);
             }
 
+            $oldAttributes = $arrivalPurchaseOrder->getOriginal();
             DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
                 $isReopen = isset($data['contract_status']) && in_array($data['contract_status'], ['reopen-contract-closed-by-mistake', 'reopen', 'open']);
                 $isCloseContract = isset($data['contract_status']) && ($data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty');
@@ -452,12 +474,23 @@ class PurchaseOrderController extends Controller
                 }
             });
 
+            $newAttributes = $arrivalPurchaseOrder->getChanges();
+            $changedOld = array_intersect_key($oldAttributes, $newAttributes);
+            AuditLogService::log(
+                $arrivalPurchaseOrder,
+                'purchase_order_updated',
+                "Purchase Order #{$arrivalPurchaseOrder->contract_no} updated.",
+                $changedOld,
+                $newAttributes
+            );
+
             return response()->json([
                 'success' => 'Purchase Order Specific Fields Updated Successfully.',
                 'data' => $arrivalPurchaseOrder
             ], 200);
         }
 
+        $oldAttributes = $arrivalPurchaseOrder->getOriginal();
         DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
             $isReopen = isset($data['contract_status']) && in_array($data['contract_status'], ['reopen-contract-closed-by-mistake', 'reopen', 'open']);
             $isCloseContract = isset($data['contract_status']) && ($data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty');
@@ -549,6 +582,16 @@ class PurchaseOrderController extends Controller
             }
         });
 
+        $newAttributes = $arrivalPurchaseOrder->getChanges();
+        $changedOld = array_intersect_key($oldAttributes, $newAttributes);
+        AuditLogService::log(
+            $arrivalPurchaseOrder,
+            'purchase_order_updated',
+            "Purchase Order #{$arrivalPurchaseOrder->contract_no} updated.",
+            $changedOld,
+            $newAttributes
+        );
+
         return response()->json([
             'success' => 'Purchase Order Updated Successfully.',
             'data' => $arrivalPurchaseOrder
@@ -568,8 +611,243 @@ class PurchaseOrderController extends Controller
             ], 400);
         }
 
+        AuditLogService::log(
+            $arrival_location,
+            'purchase_order_deleted',
+            "Purchase Order #{$arrival_location->contract_no} deleted.",
+            $arrival_location->getAttributes(),
+            null
+        );
+
         $arrival_location->delete();
         return response()->json(['success' => 'Purchase Order deleted successfully.'], 200);
+    }
+
+    /**
+     * Get audit logs for a purchase order.
+     */
+    public function getAuditLogs(Request $request, $id)
+    {
+        $purchaseOrder = ArrivalPurchaseOrder::with(['product', 'supplier', 'location', 'saudaType', 'createdByUser'])->findOrFail($id);
+
+        $logs = AuditLog::with('user')
+            ->where(function ($q) use ($purchaseOrder) {
+                $q->where(function ($sq) use ($purchaseOrder) {
+                    $sq->whereIn('model_type', [ArrivalPurchaseOrder::class, 'ArrivalPurchaseOrder'])
+                        ->where('model_id', $purchaseOrder->id);
+                })
+                ->orWhere('old_values', 'like', '%"arrival_purchase_order_id":' . $purchaseOrder->id . '%')
+                ->orWhere('old_values', 'like', '%"arrival_purchase_order_id":"' . $purchaseOrder->id . '"%')
+                ->orWhere('new_values', 'like', '%"arrival_purchase_order_id":' . $purchaseOrder->id . '%')
+                ->orWhere('new_values', 'like', '%"arrival_purchase_order_id":"' . $purchaseOrder->id . '"%');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Synthesize an initial creation record if none exists yet for an older PO
+        $hasCreateLog = $logs->contains(function ($l) {
+            return str_contains($l->action, 'create') || str_contains($l->action, 'store') || empty($l->old_values);
+        });
+
+        if (!$hasCreateLog) {
+            $virtualCreateLog = new AuditLog([
+                'action' => 'purchase_order_created',
+                'description' => "Purchase Order #{$purchaseOrder->contract_no} created.",
+                'user_id' => $purchaseOrder->created_by,
+                'created_at' => $purchaseOrder->created_at,
+                'old_values' => null,
+                'new_values' => $purchaseOrder->getAttributes(),
+            ]);
+            $virtualCreateLog->setRelation('user', $purchaseOrder->createdByUser);
+            $logs->push($virtualCreateLog);
+        }
+
+        $fieldLabels = [
+            'contract_no'                   => 'Contract #',
+            'contract_date'                 => 'Contract Date',
+            'delivery_date'                 => 'Delivery Date',
+            'company_location_id'           => 'Location',
+            'supplier_id'                   => 'Supplier',
+            'supplier_name'                 => 'Supplier Name',
+            'purchaser_name'                => 'Purchaser Name',
+            'decision_of_id'                => 'Decision Of',
+            'created_by'                    => 'Created By',
+            'product_id'                    => 'Commodity / Product',
+            'qc_product'                    => 'QC Product',
+            'sauda_type_id'                 => 'Sauda Type',
+            'division_id'                   => 'Division',
+            'broker_one_id'                 => 'Broker 1',
+            'broker_one_name'               => 'Broker 1 Name',
+            'broker_one_commission'         => 'Broker 1 Commission',
+            'broker_one_calculation_type'   => 'Broker 1 Calc Type',
+            'broker_two_id'                 => 'Broker 2',
+            'broker_two_name'               => 'Broker 2 Name',
+            'broker_two_commission'         => 'Broker 2 Commission',
+            'broker_two_calculation_type'   => 'Broker 2 Calc Type',
+            'broker_three_id'               => 'Broker 3',
+            'broker_three_name'             => 'Broker 3 Name',
+            'broker_three_commission'       => 'Broker 3 Commission',
+            'broker_three_calculation_type' => 'Broker 3 Calc Type',
+            'rate_per_kg'                   => 'Rate (per Kg)',
+            'rate_per_mound'                => 'Rate (per Maund)',
+            'rate_per_100kg'                => 'Rate (per 100Kg)',
+            'line_type'                     => 'Line Type',
+            'bag_weight'                    => 'Bag Weight',
+            'bag_rate'                      => 'Bag Rate',
+            'credit_days'                   => 'Credit Days',
+            'calculation_type'              => 'Calculation Type',
+            'no_of_trucks'                  => 'No of Trucks',
+            'truck_size_range_id'           => 'Truck Size Range',
+            'total_quantity'                => 'Total Quantity',
+            'min_quantity'                  => 'Min Quantity',
+            'max_quantity'                  => 'Max Quantity',
+            'min_bags'                      => 'Min Bags',
+            'max_bags'                      => 'Max Bags',
+            'is_replacement'                => 'Replacement',
+            'weighbridge_from'              => 'Weighbridge From',
+            'delivery_address'              => 'Delivery Address',
+            'remarks'                       => 'Remarks',
+            'status'                        => 'Status',
+            'contract_status'               => 'Contract Status',
+            'am_approval_status'            => 'Approval Status',
+            'defaulter'                     => 'Defaulter',
+            'purchase_type'                 => 'Purchase Type',
+            'payment_term'                  => 'Payment Term',
+            'cnic_no'                       => 'CNIC No',
+            'mobile_no'                     => 'Mobile No',
+            'contact_person_name'           => 'Contact Person',
+            'moisture'                      => 'Moisture',
+            'chalky'                        => 'Chalky',
+            'mixing'                        => 'Mixing',
+            'red_rice'                      => 'Red Rice',
+            'other_params'                  => 'Other Params',
+            'truck_no'                      => 'Truck No',
+            'account_of'                    => 'Account Of',
+            'supplier_commission'           => 'Supplier Commission',
+        ];
+
+        $relationCache = [];
+        $resolveRelationValue = function ($key, $val) use (&$relationCache) {
+            if ($val === null || $val === '') {
+                return null;
+            }
+            if (is_array($val)) {
+                return json_encode($val);
+            }
+
+            $lookupMap = [
+                'company_location_id' => [CompanyLocation::class, 'name'],
+                'supplier_id'         => [Supplier::class, 'name'],
+                'decision_of_id'      => [User::class, 'name'],
+                'created_by'          => [User::class, 'name'],
+                'product_id'          => [Product::class, 'name'],
+                'sauda_type_id'       => [SaudaType::class, 'name'],
+                'division_id'         => [\App\Models\Master\Division::class, 'name'],
+                'broker_one_id'       => [Broker::class, 'name'],
+                'broker_two_id'       => [Broker::class, 'name'],
+                'broker_three_id'     => [Broker::class, 'name'],
+                'truck_size_range_id' => [TruckSizeRange::class, 'name'],
+            ];
+
+            if (isset($lookupMap[$key]) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                [$modelClass, $attr] = $lookupMap[$key];
+                $cacheKey = $modelClass . '_' . $val;
+                if (!array_key_exists($cacheKey, $relationCache)) {
+                    try {
+                        $record = $modelClass::find($val);
+                        $relationCache[$cacheKey] = $record ? ($record->{$attr} ?? null) : null;
+                    } catch (\Throwable $e) {
+                        $relationCache[$cacheKey] = null;
+                    }
+                }
+                if (!empty($relationCache[$cacheKey])) {
+                    return $relationCache[$cacheKey];
+                }
+            }
+
+            if (in_array($key, ['is_replacement', 'defaulter'])) {
+                return ($val == 1 || $val === true || $val === '1') ? 'Yes' : 'No';
+            }
+
+            if (in_array($key, ['status', 'contract_status', 'am_approval_status', 'purchase_type', 'calculation_type']) && is_string($val)) {
+                return ucwords(str_replace(['_', '-'], ' ', $val));
+            }
+
+            return $val;
+        };
+
+        $flattenArray = function ($data) use (&$flattenArray) {
+            $result = [];
+            if (!is_array($data)) return $result;
+            foreach ($data as $key => $val) {
+                if (is_array($val) && !empty($val)) {
+                    $isAssoc = array_keys($val) !== range(0, count($val) - 1);
+                    if ($isAssoc) {
+                        $nested = $flattenArray($val);
+                        foreach ($nested as $nKey => $nVal) {
+                            $result[$nKey] = $nVal;
+                        }
+                    } else {
+                        $result[$key] = json_encode($val);
+                    }
+                } else {
+                    $result[$key] = $val;
+                }
+            }
+            return $result;
+        };
+
+        $filteredLogs = [];
+        $skipKeys = ['id', 'company_id', 'deleted_at', 'ref_no', 'am_change_made'];
+
+        foreach ($logs as $log) {
+            $rawOld = is_array($log->old_values) ? $log->old_values : (!empty($log->old_values) ? json_decode($log->old_values, true) : []);
+            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+
+            $rawNew = is_array($log->new_values) ? $log->new_values : (!empty($log->new_values) ? json_decode($log->new_values, true) : []);
+            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+
+            $old = $flattenArray($rawOld);
+            $new = $flattenArray($rawNew);
+
+            $parsedChanges = [];
+            $allKeys = array_unique(array_merge(array_keys($old ?? []), array_keys($new ?? [])));
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, $skipKeys)) continue;
+
+                $oldVal = $old[$key] ?? null;
+                $newVal = $new[$key] ?? null;
+
+                if ($oldVal != $newVal) {
+                    $oldResolved = $resolveRelationValue($key, $oldVal);
+                    $newResolved = $resolveRelationValue($key, $newVal);
+
+                    $parsedChanges[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace(['_', '-'], ' ', $key)),
+                        'old'     => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
+                        'new'     => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
+                    ];
+                }
+            }
+
+            if (count($parsedChanges) > 1) {
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => !in_array($c['key'], ['updated_at', 'created_at'])));
+            }
+
+            $log->parsed_changes = $parsedChanges;
+            $filteredLogs[] = $log;
+        }
+
+        $logs = $filteredLogs;
+        $title = "Purchase Order Audit Logs";
+        $subtitle = 'Contract #' . ($purchaseOrder->contract_no ?? 'N/A');
+        $emptyMessage = 'No changes or updates have been recorded for this purchase order yet.';
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 
     public function getMainSlabByProduct(Request $request, $ids = [], $isView = false)

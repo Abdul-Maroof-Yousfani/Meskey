@@ -240,28 +240,17 @@ class PaymentVoucher extends Model
     }
 
     /**
-     * Post accounting ledger transactions upon full approval of the voucher.
+     * Build transaction entries definition for both ledger posting and preview.
      */
-    public function postLedgerTransactions()
+    public function buildTransactionEntries(): array
     {
-        // 1. Guard against duplicate posting
-        $existingTx = \App\Models\Master\Account\Transaction::where(function ($q) {
-            $q->where('voucher_no', $this->unique_no)
-              ->orWhere('purpose', 'like', "BPV-{$this->id}%")
-              ->orWhere('purpose', 'like', "CPV-{$this->id}%")
-              ->orWhere('purpose', 'like', "PV-{$this->id}%");
-        })->exists();
-
-        if ($existingTx) {
-            return;
-        }
-
         $prefix = $this->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
         $voucherDate = $this->pv_date ? $this->pv_date->format('Y-m-d') : now()->format('Y-m-d');
+        $entries = [];
 
         // CASE 1: Direct Payment Voucher for Sale (Sale Returns / Customer Excess Advances)
         if ($this->module_type === 'dpv_for_sale') {
-            $this->loadMissing(['paymentVoucherData.customerAdvance', 'paymentVoucherData.salesOrder', 'paymentVoucherData.deliveryOrder']);
+            $this->loadMissing(['paymentVoucherData.customerAdvance', 'paymentVoucherData.salesOrder', 'paymentVoucherData.deliveryOrder', 'paymentVoucherData.account']);
 
             $totalAmount = 0;
             foreach ($this->paymentVoucherData as $item) {
@@ -279,83 +268,73 @@ class PaymentVoucher extends Model
                     $itemRemarks = "DPV Sale Return - " . ($desc ?: $refStr);
                 }
 
-                createTransaction(
-                    $netAmount,
-                    $targetAccId,
-                    1,
-                    $this->unique_no,
-                    'debit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $netAmount,
+                    'account_id' => $targetAccId,
+                    'type' => 'debit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}",
                         'counter_account_id' => $this->account_id,
                         'remarks' => $itemRemarks,
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
 
                 $totalAmount += $netAmount;
             }
 
             if ($totalAmount > 0) {
-                createTransaction(
-                    $totalAmount,
-                    $this->account_id,
-                    1,
-                    $this->unique_no,
-                    'credit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $totalAmount,
+                    'account_id' => $this->account_id,
+                    'type' => 'credit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}",
                         'counter_account_id' => $this->request_account_id,
                         'remarks' => "Direct Payment Voucher (Sale)",
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
             }
         }
         // CASE 2: General Direct Payment Voucher (Expense / Direct)
         elseif ($this->is_direct) {
-            $this->loadMissing(['paymentVoucherData']);
+            $this->loadMissing(['paymentVoucherData.account']);
 
             $totalAmount = 0;
             foreach ($this->paymentVoucherData as $item) {
                 $netAmount = (float) ($item->net_amount ?: $item->amount);
                 if ($netAmount <= 0) continue;
 
-                createTransaction(
-                    $netAmount,
-                    $item->account_id,
-                    1,
-                    $this->unique_no,
-                    'debit',
-                    'no',
-                    [
+                $desc = $item->description ? "Direct payment - " . $item->description : "Direct payment - " . ($item->account?->name ?? 'Expense');
+
+                $entries[] = [
+                    'amount' => $netAmount,
+                    'account_id' => $item->account_id,
+                    'type' => 'debit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}",
                         'counter_account_id' => $this->account_id,
-                        'remarks' => "Direct payment - " . ($item->description ?? ''),
+                        'remarks' => $desc,
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
 
                 $totalAmount += $netAmount;
             }
 
             if ($totalAmount > 0) {
-                createTransaction(
-                    $totalAmount,
-                    $this->account_id,
-                    1,
-                    $this->unique_no,
-                    'credit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $totalAmount,
+                    'account_id' => $this->account_id,
+                    'type' => 'credit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}",
                         'counter_account_id' => $this->request_account_id,
                         'remarks' => 'Direct payment voucher',
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
             }
         }
         // CASE 3: Bill Payment Voucher via BillPaymentVoucherData (Purchase Bills)
@@ -372,40 +351,34 @@ class PaymentVoucher extends Model
                 $remarks = "A payment of Rs. " . number_format($amount, 2) . " has been made." . ($this->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.');
 
                 // Credit bank/cash
-                createTransaction(
-                    $amount,
-                    $this->account_id ?: $this->bank_account_id,
-                    1,
-                    $this->unique_no,
-                    'credit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $amount,
+                    'account_id' => $this->account_id ?: $this->bank_account_id,
+                    'type' => 'credit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}-{$this->unique_no}",
                         'payment_against' => (string) $item->purchase_bill_id,
                         'against_reference_no' => $refNo,
                         'counter_account_id' => $this->supplier_id,
                         'remarks' => $remarks,
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
 
                 // Debit supplier
-                createTransaction(
-                    $amount,
-                    $this->supplier_id,
-                    1,
-                    $this->unique_no,
-                    'debit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $amount,
+                    'account_id' => $this->supplier_id,
+                    'type' => 'debit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}-{$this->unique_no}",
                         'payment_against' => (string) $item->purchase_bill_id,
                         'against_reference_no' => $refNo,
                         'counter_account_id' => $this->account_id ?: $this->bank_account_id,
                         'remarks' => $remarks,
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
 
                 $totalAmount += $amount;
             }
@@ -464,14 +437,11 @@ class PaymentVoucher extends Model
 
                 $supplierRemarks = "A payment of Rs. " . number_format($payableAmount, 2) . " has been made" . ($ticketDetails ? " for: {$ticketDetails}" : "") . ($this->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.');
 
-                createTransaction(
-                    $payableAmount,
-                    $this->request_account_id,
-                    1,
-                    $this->unique_no,
-                    'debit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $payableAmount,
+                    'account_id' => $this->request_account_id,
+                    'type' => 'debit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}-{$this->unique_no}",
                         'payment_against' => $reqType,
                         'against_reference_no' => "{$truckNo}/{$biltyNo}",
@@ -480,32 +450,170 @@ class PaymentVoucher extends Model
                         'reference_no' => $grnNo,
                         'grn_no' => $grnNo,
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
 
                 $totalAmount += $payableAmount;
             }
 
             if ($totalAmount > 0) {
                 $bankRemarks = "A payment of Rs. " . number_format($totalAmount, 2) . " has been made" . ($this->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.');
-                createTransaction(
-                    $totalAmount,
-                    $this->account_id,
-                    1,
-                    $this->unique_no,
-                    'credit',
-                    'no',
-                    [
+                $entries[] = [
+                    'amount' => $totalAmount,
+                    'account_id' => $this->account_id,
+                    'type' => 'credit',
+                    'additional' => [
                         'purpose' => "$prefix-{$this->id}-{$this->unique_no}",
                         'payment_against' => implode(', ', $allPaymentAgainst),
                         'against_reference_no' => implode(', ', $allReferenceNos),
                         'counter_account_id' => $this->request_account_id,
                         'remarks' => $bankRemarks,
                         'voucher_date' => $voucherDate,
-                    ]
-                );
+                    ],
+                ];
             }
         }
+
+        return $entries;
+    }
+
+    /**
+     * Post accounting ledger transactions upon full approval of the voucher.
+     */
+    public function postLedgerTransactions()
+    {
+        // 1. Guard against duplicate posting
+        $existingTx = \App\Models\Master\Account\Transaction::where(function ($q) {
+            $q->where('voucher_no', $this->unique_no)
+              ->orWhere('purpose', 'like', "BPV-{$this->id}%")
+              ->orWhere('purpose', 'like', "CPV-{$this->id}%")
+              ->orWhere('purpose', 'like', "PV-{$this->id}%");
+        })->exists();
+
+        if ($existingTx) {
+            return;
+        }
+
+        $entries = $this->buildTransactionEntries();
+
+        foreach ($entries as $entry) {
+            createTransaction(
+                $entry['amount'],
+                $entry['account_id'],
+                1,
+                $this->unique_no,
+                $entry['type'],
+                'no',
+                $entry['additional'] ?? []
+            );
+        }
+    }
+
+    /**
+     * Get preview transaction objects before approval.
+     */
+    public function getPreviewTransactions()
+    {
+        $entries = $this->buildTransactionEntries();
+        $transactions = collect();
+
+        foreach ($entries as $entry) {
+            $account = Account::find($entry['account_id']);
+            $additional = $entry['additional'] ?? [];
+            $tx = new \App\Models\Master\Account\Transaction(array_merge([
+                'amount' => $entry['amount'],
+                'account_id' => $entry['account_id'],
+                'type' => $entry['type'],
+                'voucher_no' => $this->unique_no,
+                'status' => 'pending',
+            ], $additional));
+
+            if ($account) {
+                $tx->setRelation('account', $account);
+            }
+
+            $transactions->push($tx);
+        }
+
+        return $transactions;
+    }
+
+    /**
+     * Resolve Payee name across all payment voucher types.
+     */
+    public function getPaidToNameAttribute(): string
+    {
+        if ($this->module_type === 'bill_payment_voucher') {
+            if ($this->supplier) {
+                return $this->supplier->name;
+            }
+            if ($this->supplier_id) {
+                $acc = Account::find($this->supplier_id);
+                if ($acc) return $acc->name;
+            }
+        }
+
+        if ($this->requestAccount) {
+            return $this->requestAccount->name;
+        }
+
+        if ($this->request_account_id) {
+            $reqAcc = Account::find($this->request_account_id);
+            if ($reqAcc) return $reqAcc->name;
+        }
+
+        $this->loadMissing('paymentVoucherData.account');
+        $firstItemAcc = $this->paymentVoucherData->first()?->account;
+        if ($firstItemAcc) {
+            return $firstItemAcc->name;
+        }
+
+        if ($this->supplier) {
+            return $this->supplier->name;
+        }
+
+        // Check first payment request
+        $this->loadMissing(['paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder.supplier', 'paymentVoucherData.paymentRequest.deliveryChallan']);
+        $firstItem = $this->paymentVoucherData->first();
+        if ($firstItem && $firstItem->paymentRequest) {
+            $pr = $firstItem->paymentRequest;
+            if ($pr->paymentRequestData?->supplier_name) {
+                return $pr->paymentRequestData->supplier_name;
+            }
+            if ($pr->paymentRequestData?->purchaseOrder?->supplier?->name) {
+                return $pr->paymentRequestData->purchaseOrder->supplier->name;
+            }
+            if ($pr->account_id) {
+                $acc = Account::find($pr->account_id);
+                if ($acc) return $acc->name;
+            }
+        }
+
+        return 'N/A';
+    }
+
+    /**
+     * Get default remarks if remarks is empty.
+     */
+    public function getDefaultRemarksAttribute(): string
+    {
+        if (!empty($this->remarks)) {
+            return $this->remarks;
+        }
+
+        if ($this->module_type === 'dpv_for_sale') {
+            return 'Direct Payment Voucher (Sale Return / Customer Refund)';
+        }
+
+        if ($this->is_direct) {
+            return 'Direct Payment Voucher';
+        }
+
+        if ($this->module_type === 'bill_payment_voucher') {
+            return 'Bill Payment Voucher';
+        }
+
+        return 'Payment Voucher against Payment Request';
     }
 
     protected function onApprovalRejected()

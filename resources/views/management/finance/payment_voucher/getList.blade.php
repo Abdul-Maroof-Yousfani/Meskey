@@ -73,25 +73,27 @@
                             <i class="ft-eye font-medium-3"></i>
                         </a>
 
-                        <!-- Conditional Edit Link -->
-                        @if($voucher->module_type == 'bill_payment_voucher')
-                            <a class="info p-1 text-center mr-2 position-relative"
-                                href="{{ route('payment-voucher.bill-edit', $voucher->id) }}"
-                                title="Edit bill Payment Voucher">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @elseif($voucher->is_direct)
-                            <a class="info p-1 text-center mr-2 position-relative"
-                                href="{{ route('direct.payment-voucher.edit', $voucher->id) }}"
-                                title="Edit Direct Payment Voucher">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @else
-                            <a class="info p-1 text-center mr-2 position-relative"
-                                href="{{ route('payment-voucher.edit', $voucher->id) }}"
-                                title="Edit Payment Voucher">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                        <!-- Conditional Edit Link (Cannot edit once approved) -->
+                        @if(in_array($approvalStatus, ['pending', 'reverted']))
+                            @if($voucher->module_type == 'bill_payment_voucher')
+                                <a class="info p-1 text-center mr-2 position-relative"
+                                    href="{{ route('payment-voucher.bill-edit', $voucher->id) }}"
+                                    title="Edit bill Payment Voucher">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @elseif($voucher->is_direct)
+                                <a class="info p-1 text-center mr-2 position-relative"
+                                    href="{{ route('direct.payment-voucher.edit', $voucher->id) }}"
+                                    title="Edit Direct Payment Voucher">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @else
+                                <a class="info p-1 text-center mr-2 position-relative"
+                                    href="{{ route('payment-voucher.edit', $voucher->id) }}"
+                                    title="Edit Payment Voucher">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @endif
                         @endif
                     </td>
                 </tr>

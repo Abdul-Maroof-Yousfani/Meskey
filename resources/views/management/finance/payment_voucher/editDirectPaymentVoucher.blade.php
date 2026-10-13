@@ -209,6 +209,16 @@
                             </div>
                         </div>
 
+                        <!-- Remarks -->
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="remarks">Remarks</label>
+                                    <textarea name="remarks" id="remarks" rows="2" class="form-control" placeholder="Optional notes for this voucher">{{ $payment_voucher->remarks }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group text-right mt-4">
                             <button type="submit" class="btn btn-primary">Update Direct Payment Voucher</button>
                             <a href="{{ route('payment-voucher.index') }}" class="btn btn-secondary">Cancel</a>
