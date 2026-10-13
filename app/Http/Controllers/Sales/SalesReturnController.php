@@ -976,10 +976,25 @@ class SalesReturnController extends Controller
             $filteredLogs[] = $log;
         }
 
-        return view('management.sales.sales-return.partials.audit_logs_content', [
-            'saleReturn' => $saleReturn,
+        $title = "Audit Logs: Sales Return #{$saleReturn->sr_no}";
+        $subtitleParts = ['SR #' . $saleReturn->sr_no];
+        if (isset($saleReturn->customer)) {
+            $subtitleParts[] = 'Customer: ' . ($saleReturn->customer->name ?? 'N/A');
+        }
+        if (isset($saleReturn->date)) {
+            $subtitleParts[] = 'Date: ' . \Carbon\Carbon::parse($saleReturn->date)->format('d M Y');
+        }
+        if (isset($saleReturn->am_approval_status)) {
+            $subtitleParts[] = 'Status: ' . ucfirst($saleReturn->am_approval_status);
+        }
+        $subtitle = implode(' | ', $subtitleParts);
+        $emptyMessage = 'No edits or updates have been recorded for this sales return yet.';
+
+        return view('components.audit-logs', [
             'logs' => $filteredLogs,
-            'title' => "Audit Logs: Sales Return #{$saleReturn->sr_no}",
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'emptyMessage' => $emptyMessage,
         ]);
     }
 }

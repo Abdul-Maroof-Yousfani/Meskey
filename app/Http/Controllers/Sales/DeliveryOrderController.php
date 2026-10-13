@@ -1601,7 +1601,8 @@ class DeliveryOrderController extends Controller
         }
 
         $companyLoc = $deliveryOrder->location_id ? \App\Models\Master\CompanyLocation::find($deliveryOrder->location_id)?->name : null;
-        $term = $deliveryOrder->payment_term_id ? \App\Models\PaymentTerm::find($deliveryOrder->payment_term_id)?->name : null;
+        $pt = $deliveryOrder->payment_term_id ? \App\Models\PaymentTerm::find($deliveryOrder->payment_term_id) : null;
+        $term = $pt ? ($pt->desc ?? $pt->title ?? $pt->name) : null;
         $withholdRv = $deliveryOrder->withhold_for_rv_id ? \App\Models\ReceiptVoucher::find($deliveryOrder->withhold_for_rv_id)?->unique_no : null;
 
         return [
@@ -1700,8 +1701,9 @@ class DeliveryOrderController extends Controller
             'so_withhold_percentage' => 'SO Withhold %',
             'so_held_amount'         => 'SO Held Amount',
             'sauda_type'             => 'Sauda Type',
-            'payment_term'           => 'Payment Term',
-            'payment_term_id'        => 'Payment Term',
+            'payment_term'           => 'Payment Terms',
+            'payment_term_id'        => 'Payment Terms',
+            'payment_terms'          => 'Payment Terms',
             'am_approval_status'     => 'Approval Status',
             'do_status'              => 'DO Status',
             'remarks'                => 'Remarks',
@@ -1745,11 +1747,11 @@ class DeliveryOrderController extends Controller
                 return $res;
             }
 
-            if (in_array($key, ['payment_term_id', 'payment_term']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+            if (in_array($key, ['payment_term_id', 'payment_term', 'payment_terms']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
                 $cacheKey = "payment_term_{$val}";
                 if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
                 $term = PaymentTerm::find($val);
-                $res = $term ? $term->name : $val;
+                $res = $term ? ($term->desc ?? $term->title ?? $term->name) : $val;
                 $relationCache[$cacheKey] = $res;
                 return $res;
             }
@@ -1835,7 +1837,23 @@ class DeliveryOrderController extends Controller
         $logs = $filteredLogs;
         $title = "Audit Logs: Delivery Order #{$deliveryOrder->reference_no}";
 
-        return view('management.sales.delivery-order.partials.audit_logs_content', compact('deliveryOrder', 'logs', 'title'));
+        $subtitleParts = ['DO #' . $deliveryOrder->reference_no];
+        if (isset($deliveryOrder->customer)) {
+            $subtitleParts[] = 'Customer: ' . ($deliveryOrder->customer->name ?? 'N/A');
+        }
+        if (isset($deliveryOrder->salesOrder)) {
+            $subtitleParts[] = 'SO #' . $deliveryOrder->salesOrder->reference_no;
+        }
+        if (isset($deliveryOrder->dispatch_date)) {
+            $subtitleParts[] = 'Date: ' . \Carbon\Carbon::parse($deliveryOrder->dispatch_date)->format('d M Y');
+        }
+        if (isset($deliveryOrder->do_status) || isset($deliveryOrder->am_approval_status)) {
+            $subtitleParts[] = 'Status: ' . ucfirst($deliveryOrder->do_status ?? $deliveryOrder->am_approval_status);
+        }
+        $subtitle = implode(' | ', $subtitleParts);
+        $emptyMessage = 'No edits or updates have been recorded for this delivery order yet.';
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 }
 

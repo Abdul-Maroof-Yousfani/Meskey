@@ -1,21 +1,19 @@
+@props([
+    'logs' => [],
+    'title' => 'Audit Logs',
+    'subtitle' => null,
+    'emptyMessage' => 'No edits or updates have been recorded yet.',
+])
+
 <div class="audit-timeline-container p-3">
     <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
         <div>
             <h6 class="font-weight-bold mb-0 text-dark">
-                {{ $title }}
+                {{ $title ?? 'Audit Logs' }}
             </h6>
-            <small class="text-muted">
-                SO #{{ $salesOrder->reference_no }}
-                @if(isset($salesOrder->customer))
-                    | Customer: {{ $salesOrder->customer->name ?? 'N/A' }}
-                @endif
-                @if(isset($salesOrder->order_date))
-                    | Date: {{ \Carbon\Carbon::parse($salesOrder->order_date)->format('d M Y') }}
-                @endif
-                @if(isset($salesOrder->contract_status) || isset($salesOrder->am_approval_status))
-                    | Status: {{ ucfirst(str_replace('-', ' ', $salesOrder->contract_status ?? $salesOrder->am_approval_status)) }}
-                @endif
-            </small>
+            @if (!empty($subtitle))
+                <small class="text-muted d-block mt-1">{!! $subtitle !!}</small>
+            @endif
         </div>
         <div>
             <span class="badge badge-pill badge-primary px-2 py-1">
@@ -24,25 +22,26 @@
         </div>
     </div>
 
-    @if (count($logs) == 0)
+    @if (empty($logs) || count($logs) == 0)
         <div class="text-center py-5">
             <div class="mb-3">
                 <i class="fa fa-history fa-3x text-muted opacity-50"></i>
             </div>
             <h6 class="text-muted font-weight-bold">No Audit Logs Found</h6>
             <p class="text-muted small mb-0">
-                No edits or updates have been recorded for this sale order yet.
+                {{ $emptyMessage ?? 'No edits or updates have been recorded yet.' }}
             </p>
         </div>
     @else
         <div class="audit-timeline">
             @foreach ($logs as $log)
                 @php
-                    $isDelete = str_contains($log->action, 'deleted');
+                    $isDelete = str_contains($log->action, 'deleted') || str_contains($log->action, 'destroy');
+                    $isRevert = str_contains($log->action, 'revert');
                     $isCreate = str_contains($log->action, 'create') || str_contains($log->action, 'store');
-                    $borderClass = $isDelete ? 'border-danger' : ($isCreate ? 'border-success' : 'border-primary');
-                    $badgeClass = $isDelete ? 'badge-danger' : ($isCreate ? 'badge-success' : 'badge-primary');
-                    $iconClass = $isDelete ? 'fa-trash' : ($isCreate ? 'fa-plus' : 'fa-pencil');
+                    $borderClass = $isDelete || $isRevert ? 'border-danger' : ($isCreate ? 'border-success' : 'border-primary');
+                    $badgeClass = $isDelete || $isRevert ? 'badge-danger' : ($isCreate ? 'badge-success' : 'badge-primary');
+                    $iconClass = $isDelete ? 'fa-trash' : ($isRevert ? 'fa-undo' : ($isCreate ? 'fa-plus' : 'fa-pencil'));
                 @endphp
                 <div class="card mb-3 shadow-sm border-left-4 {{ $borderClass }}" style="border-radius: 6px;">
                     <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">

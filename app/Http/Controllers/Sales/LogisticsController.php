@@ -945,10 +945,28 @@ class LogisticsController extends Controller
             $filteredLogs[] = $log;
         }
 
-        return view('management.sales.logistics.partials.audit_logs_content', [
-            'logistics' => $logistics,
+        $title = "Audit Logs: Logistics #{$logistics->so_no}";
+        $subtitleParts = ['Doc #' . $logistics->so_no];
+        if (isset($logistics->customer)) {
+            $subtitleParts[] = 'Customer: ' . $logistics->customer;
+        }
+        if (isset($logistics->commodity)) {
+            $subtitleParts[] = 'Commodity: ' . $logistics->commodity;
+        }
+        if (isset($logistics->date)) {
+            $subtitleParts[] = 'Date: ' . \Carbon\Carbon::parse($logistics->date)->format('d M Y');
+        }
+        if (isset($logistics->am_approval_status)) {
+            $subtitleParts[] = 'Status: ' . ucfirst($logistics->am_approval_status);
+        }
+        $subtitle = implode(' | ', $subtitleParts);
+        $emptyMessage = 'No edits or updates have been recorded for this logistics entry yet.';
+
+        return view('components.audit-logs', [
             'logs' => $filteredLogs,
-            'title' => "Audit Logs: Logistics #{$logistics->so_no}",
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'emptyMessage' => $emptyMessage,
         ]);
     }
 }
