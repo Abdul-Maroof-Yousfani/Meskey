@@ -42,6 +42,7 @@ Route::name("sales.")->group(function () {
     Route::resource("sale-order", SaleOrderController::class);
     Route::get("/sales-order/{id}/view", [SaleOrderController::class, "view"])->name("sale-order.view");
     Route::get("/sales-order/{id}/do-stats", [SaleOrderController::class, "getDoStats"])->name("sale-order.do-stats");
+    Route::get("/sales-order/{id}/audit-logs", [SaleOrderController::class, "getAuditLogs"])->name("sale-order.audit-logs");
     Route::post("get-sale-orders", [SaleOrderController::class, "getList"])->name("get.sales-order.list");
     Route::get("/get/so-no", [SaleOrderController::class, "getNumber"])->name("get.sales-order.getnumber");
     Route::get("/get-unallocated-receipt-vouchers", [SaleOrderController::class, "getUnallocatedReceiptVouchers"])->name("get-unallocated-receipt-vouchers");
@@ -61,6 +62,7 @@ Route::name("sales.")->group(function () {
     Route::get("/get-so-details", [DeliveryOrderController::class, "getDetails"])->name("get.delivery-order.details");
     Route::get("/delivery-order/{id}/view", [DeliveryOrderController::class, "view"])->name("get.delivery-order.view");
     Route::get("/delivery-order/{id}/stats", [DeliveryOrderController::class, "getStats"])->name("delivery-order.stats");
+    Route::get("/delivery-order/{id}/audit-logs", [DeliveryOrderController::class, "getAuditLogs"])->name("delivery-order.audit-logs");
     Route::get("/get-arrival-locations-against-company-location", [DeliveryOrderController::class, "get_arrivals"])->name("get.arrival-locations");
     Route::get("/get-storage-locations-against-arrival-location", [DeliveryOrderController::class, "get_storages"])->name("get.storage-locations");
     Route::get("/get-delivery-order-balance-balance-against-second-weighbridge", [DeliveryOrderController::class, "get_balance_against_second_weighbridge"])->name("balance-against-second-weighbridge");
@@ -75,6 +77,7 @@ Route::name("sales.")->group(function () {
     Route::get("/delivery-challan/{delivery_challan}/view", [DeliveryChallanController::class, "view"])->name("get.delivery-challan.view");
     Route::get("/get-tickets-with-dispatch-qc", [DeliveryChallanController::class, "getTicketsWithDispatchQc"])->name("delivery-challan.get-tickets-with-dispatch-qc");
     Route::get("/get-ticket-data-for-dc", [DeliveryChallanController::class, "getTicketDataForDC"])->name("delivery-challan.get-ticket-data");
+    Route::get("/delivery-challan/{id}/audit-logs", [DeliveryChallanController::class, "getAuditLogs"])->name("delivery-challan.audit-logs");
 
 
     Route::resource("first-weighbridge", FirstWeighBridgeController::class);
@@ -101,6 +104,7 @@ Route::name("sales.")->group(function () {
     Route::resource("receiving-request", ReceivingRequestController::class)->only(['index', 'edit', 'update']);
     Route::post("get-receiving-request", [ReceivingRequestController::class, "getList"])->name("get.receiving-request.list");
     Route::get("/receiving-request/{id}/view", [ReceivingRequestController::class, "view"])->name("receiving-request.view");
+    Route::get("/receiving-request/{id}/audit-logs", [ReceivingRequestController::class, "getAuditLogs"])->name("receiving-request.audit-logs");
 
     // Logistics Bill Routes
     Route::resource("logistics-bill", LogisticsBillController::class)->only(['index', 'edit', 'update']);
@@ -121,6 +125,7 @@ Route::name("sales.")->group(function () {
     Route::get("/get/sr-no", [SalesReturnController::class, "getNumber"])->name("get.sales-return.getNumber");
     Route::post("get-sale-returns", [SalesReturnController::class, "getList"])->name("get.sales-return.list");
     Route::get("sales-return/{id}/view", [SalesReturnController::class, "view"])->name("sales-return.view");
+    Route::get("sales-return/{id}/audit-logs", [SalesReturnController::class, "getAuditLogs"])->name("sales-return.audit-logs");
   
     Route::resource("sales-qc", \App\Http\Controllers\Sales\SalesQcController::class);
     Route::post("get-sales-qc", [\App\Http\Controllers\Sales\SalesQcController::class, "getList"])->name("get.sales-qc");
@@ -134,6 +139,7 @@ Route::name("sales.")->group(function () {
     Route::resource("logistics", \App\Http\Controllers\Sales\LogisticsController::class);
     Route::post("get-logistics", [\App\Http\Controllers\Sales\LogisticsController::class, "getList"])->name("get.logistics.list");
     Route::get("logistics/get-order-details/{id}", [\App\Http\Controllers\Sales\LogisticsController::class, "getOrderDetails"])->name("logistics.getOrderDetails");
+    Route::get("logistics/{id}/audit-logs", [\App\Http\Controllers\Sales\LogisticsController::class, "getAuditLogs"])->name("logistics.audit-logs");
     Route::get("/get-logistics-so-against-customer", [\App\Http\Controllers\Sales\LogisticsController::class, "getSo"])->name("get.logistics.getSoAgainstCustomer");
 
     Route::resource("loading-slip", \App\Http\Controllers\Sales\LoadingSlipController::class);

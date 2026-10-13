@@ -350,6 +350,16 @@
     $rrApprovalLogs = $rrModule ? \App\Models\ApprovalsModule\ApprovalLog::where('record_id', $receivingRequest->id)->where('module_id', $rrModule->id)->with(['user', 'role'])->orderBy('created_at', 'desc')->get() : collect();
 @endphp
 
+<div class="row bottom-button-bar my-3">
+    <div class="col-12 text-end">
+        <button type="button" class="btn btn-info mr-2 me-2"
+            onclick="openModal(this,'{{ route('sales.receiving-request.audit-logs', ['id' => $receivingRequest->id]) }}','Audit Logs: Receiving Request #{{ $receivingRequest->dc_no }}', false, '55%')">
+            <i class="fa fa-history mr-1 me-1"></i> Audit Logs
+        </button>
+        <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
+    </div>
+</div>
+
 <div class="approval-view-wrapper">
     <div class="bottom-button-bar mt-3">
         <x-approval-status :model="$receivingRequest" :list-refresh="route('sales.get.receiving-request.list')"/>

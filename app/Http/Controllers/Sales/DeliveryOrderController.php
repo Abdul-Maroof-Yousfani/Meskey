@@ -19,6 +19,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\ApprovalsModule\ApprovalModuleRole;
+use App\Services\AuditLogService;
+use App\Models\AuditLog;
+use App\Models\User;
 
 class DeliveryOrderController extends Controller
 {
@@ -478,6 +481,15 @@ class DeliveryOrderController extends Controller
                     "description" => $request->desc[$key] ?? ""
                 ]);
             }
+
+            $newValues = $this->buildDeliveryOrderAuditValues($delivery_order);
+            AuditLogService::log(
+                $delivery_order,
+                'delivery_order_created',
+                "Delivery Order #{$delivery_order->reference_no} created.",
+                null,
+                $newValues
+            );
 
             DB::commit();
 
@@ -986,6 +998,15 @@ class DeliveryOrderController extends Controller
             ], 422);
         }
 
+        $deletedValues = $this->buildDeliveryOrderAuditValues($delivery_order);
+        AuditLogService::log(
+            $delivery_order,
+            'delivery_order_deleted',
+            "Delivery Order #{$delivery_order->reference_no} deleted.",
+            $deletedValues,
+            null
+        );
+
         if ($delivery_order) {
             $delivery_order->delivery_order_data()->delete();
         }
@@ -1190,6 +1211,7 @@ class DeliveryOrderController extends Controller
             ], 422);
         }
 
+        $oldAuditValues = $this->buildDeliveryOrderAuditValues($delivery_order);
         DB::beginTransaction();
         $withhold_rv_id = null;
 
@@ -1202,9 +1224,17 @@ class DeliveryOrderController extends Controller
                 ], 422);
             }
             
+            $oldStatus = $delivery_order->do_status;
             $delivery_order->update([
                 'do_status' => $request->do_status
             ]);
+            AuditLogService::log(
+                $delivery_order,
+                'delivery_order_status_updated',
+                "Delivery Order #{$delivery_order->reference_no} status changed from '{$oldStatus}' to '{$request->do_status}'.",
+                ['do_status' => $oldStatus],
+                ['do_status' => $request->do_status]
+            );
             DB::commit();
             return response()->json(["message" => "Delivery Order Status updated successfully.", "data" => "Delivery Order Status updated successfully."], 200);
         }
@@ -1429,6 +1459,29 @@ class DeliveryOrderController extends Controller
                 ]);
             }
 
+            $delivery_order->refresh();
+            $newAuditValues = $this->buildDeliveryOrderAuditValues($delivery_order);
+
+            $changedOld = [];
+            $changedNew = [];
+            foreach ($newAuditValues as $k => $v) {
+                $o = $oldAuditValues[$k] ?? null;
+                if ($o != $v) {
+                    $changedOld[$k] = $o;
+                    $changedNew[$k] = $v;
+                }
+            }
+
+            if (!empty($changedOld) || !empty($changedNew)) {
+                AuditLogService::log(
+                    $delivery_order,
+                    'delivery_order_updated',
+                    "Delivery Order #{$delivery_order->reference_no} updated.",
+                    $changedOld,
+                    $changedNew
+                );
+            }
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1485,6 +1538,304 @@ class DeliveryOrderController extends Controller
         $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order_id);
 
         return $balance;
+    }
+
+    /**
+     * Build structured representation of Delivery Order for audit logging.
+     */
+    protected function buildDeliveryOrderAuditValues(DeliveryOrder $deliveryOrder)
+    {
+        $deliveryOrder->loadMissing([
+            'customer',
+            'salesOrder',
+            'arrivalLocation',
+            'subArrivalLocation',
+            'delivery_order_data.item',
+            'delivery_order_data.brand',
+            'receipt_vouchers'
+        ]);
+
+        $itemProducts = [];
+        $itemQtys = [];
+        $itemRates = [];
+        $itemBags = [];
+        $itemBagTypes = [];
+        $itemBagSizes = [];
+        $itemBrands = [];
+        $totalAmount = 0;
+        $totalQty = 0;
+
+        foreach ($deliveryOrder->delivery_order_data as $row) {
+            $pName = $row->item ? $row->item->name : "Item #{$row->item_id}";
+            $q = (float) $row->qty;
+            $r = (float) $row->rate;
+            $lineAmt = round($q * $r, 2);
+            $totalAmount += $lineAmt;
+            $totalQty += $q;
+
+            $itemProducts[] = $pName;
+            $itemQtys[] = number_format($q, 2);
+            $itemRates[] = number_format($r, 2);
+            $itemBags[] = $row->no_of_bags ?? '-';
+            $itemBagTypes[] = $row->bag_type ?? '-';
+            $itemBagSizes[] = $row->bag_size ?? '-';
+            $itemBrands[] = $row->brand?->name ?? '-';
+        }
+
+        $rvList = [];
+        foreach ($deliveryOrder->receipt_vouchers as $rv) {
+            $amt = $rv->pivot->amount ?? 0;
+            $rvList[] = "{$rv->unique_no} (Rs. " . number_format((float) $amt, 2) . ")";
+        }
+
+        $factoryNames = [];
+        if ($deliveryOrder->arrival_location_id) {
+            $fIds = explode(',', $deliveryOrder->arrival_location_id);
+            $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $fIds)->pluck('name')->toArray();
+        }
+
+        $sectionNames = [];
+        if ($deliveryOrder->sub_arrival_location_id) {
+            $sIds = explode(',', $deliveryOrder->sub_arrival_location_id);
+            $sectionNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', $sIds)->pluck('name')->toArray();
+        }
+
+        $companyLoc = $deliveryOrder->location_id ? \App\Models\Master\CompanyLocation::find($deliveryOrder->location_id)?->name : null;
+        $term = $deliveryOrder->payment_term_id ? \App\Models\PaymentTerm::find($deliveryOrder->payment_term_id)?->name : null;
+        $withholdRv = $deliveryOrder->withhold_for_rv_id ? \App\Models\ReceiptVoucher::find($deliveryOrder->withhold_for_rv_id)?->unique_no : null;
+
+        return [
+            'reference_no'           => $deliveryOrder->reference_no,
+            'ref_no'                 => $deliveryOrder->ref_no,
+            'dispatch_date'          => $deliveryOrder->dispatch_date ? Carbon::parse($deliveryOrder->dispatch_date)->format('Y-m-d') : null,
+            'customer'               => $deliveryOrder->customer?->name,
+            'sales_order'            => $deliveryOrder->salesOrder?->reference_no,
+            'location'               => $companyLoc,
+            'factory'                => !empty($factoryNames) ? implode(', ', $factoryNames) : null,
+            'section'                => !empty($sectionNames) ? implode(', ', $sectionNames) : null,
+            'advance_amount'         => (float) ($deliveryOrder->advance_amount ?? 0),
+            'jv_amount'              => (float) ($deliveryOrder->jv_amount ?? 0),
+            'withhold_amount'        => (float) ($deliveryOrder->withhold_amount ?? 0),
+            'withhold_for_rv'        => $withholdRv,
+            'so_withhold_percentage' => (float) ($deliveryOrder->so_withhold_percentage ?? 0),
+            'so_held_amount'         => (float) ($deliveryOrder->so_held_amount ?? 0),
+            'sauda_type'             => $deliveryOrder->sauda_type,
+            'payment_term'           => $term,
+            'am_approval_status'     => $deliveryOrder->am_approval_status,
+            'do_status'              => $deliveryOrder->do_status,
+            'remarks'                => $deliveryOrder->remarks,
+            'receipt_vouchers'       => !empty($rvList) ? implode(', ', $rvList) : null,
+            'items_product'          => !empty($itemProducts) ? implode(', ', $itemProducts) : null,
+            'items_qty'              => !empty($itemQtys) ? implode(', ', $itemQtys) : null,
+            'items_rate'             => !empty($itemRates) ? implode(', ', $itemRates) : null,
+            'items_bags'             => !empty($itemBags) ? implode(', ', $itemBags) : null,
+            'items_bag_type'         => !empty($itemBagTypes) ? implode(', ', $itemBagTypes) : null,
+            'items_bag_size'         => !empty($itemBagSizes) ? implode(', ', $itemBagSizes) : null,
+            'items_brand'            => !empty($itemBrands) ? implode(', ', $itemBrands) : null,
+            'total_qty'              => (float) $totalQty,
+            'total_amount'           => (float) $totalAmount,
+            'items_count'            => $deliveryOrder->delivery_order_data->count(),
+        ];
+    }
+
+    /**
+     * Get audit logs for a delivery order.
+     */
+    public function getAuditLogs(Request $request, $id)
+    {
+        $deliveryOrder = DeliveryOrder::with(['customer', 'salesOrder'])->findOrFail($id);
+
+        $logs = AuditLog::with('user')
+            ->where(function ($q) use ($deliveryOrder) {
+                $q->where(function ($sq) use ($deliveryOrder) {
+                    $sq->whereIn('model_type', [DeliveryOrder::class, 'DeliveryOrder', 'App\Models\Sales\DeliveryOrder'])
+                        ->where('model_id', $deliveryOrder->id);
+                })
+                ->orWhere('old_values', 'like', '%"delivery_order_id":' . $deliveryOrder->id . '%')
+                ->orWhere('old_values', 'like', '%"delivery_order_id":"' . $deliveryOrder->id . '"%')
+                ->orWhere('new_values', 'like', '%"delivery_order_id":' . $deliveryOrder->id . '%')
+                ->orWhere('new_values', 'like', '%"delivery_order_id":"' . $deliveryOrder->id . '"%');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $hasCreateLog = $logs->contains(function ($l) {
+            return str_contains($l->action, 'create') || str_contains($l->action, 'store');
+        });
+
+        if (!$hasCreateLog) {
+            $virtualValues = $this->buildDeliveryOrderAuditValues($deliveryOrder);
+            $virtualCreateLog = new AuditLog([
+                'action' => 'delivery_order_created',
+                'description' => "Delivery Order #{$deliveryOrder->reference_no} created.",
+                'user_id' => $deliveryOrder->created_by,
+                'created_at' => $deliveryOrder->created_at,
+                'old_values' => null,
+                'new_values' => $virtualValues,
+            ]);
+            $creator = User::find($deliveryOrder->created_by);
+            $virtualCreateLog->setRelation('user', $creator);
+            $logs->push($virtualCreateLog);
+        }
+
+        $fieldLabels = [
+            'reference_no'           => 'DO Reference No',
+            'ref_no'                 => 'Ref / Manual No',
+            'dispatch_date'          => 'DO Date',
+            'customer'               => 'Customer',
+            'customer_id'            => 'Customer',
+            'sales_order'            => 'Sale Order',
+            'so_id'                  => 'Sale Order',
+            'location'               => 'Company Location',
+            'location_id'            => 'Company Location',
+            'factory'                => 'Factory / Arrival Location',
+            'arrival_location_id'    => 'Factory / Arrival Location',
+            'section'                => 'Section / Storage Location',
+            'sub_arrival_location_id'=> 'Section / Storage Location',
+            'advance_amount'         => 'Advance Consumed',
+            'jv_amount'              => 'JV Amount',
+            'withhold_amount'        => 'Withhold Amount',
+            'withhold_for_rv'        => 'Withhold For RV',
+            'withhold_for_rv_id'     => 'Withhold For RV',
+            'so_withhold_percentage' => 'SO Withhold %',
+            'so_held_amount'         => 'SO Held Amount',
+            'sauda_type'             => 'Sauda Type',
+            'payment_term'           => 'Payment Term',
+            'payment_term_id'        => 'Payment Term',
+            'am_approval_status'     => 'Approval Status',
+            'do_status'              => 'DO Status',
+            'remarks'                => 'Remarks',
+            'receipt_vouchers'       => 'Linked Receipt Vouchers',
+            'items_product'          => 'Products',
+            'items_qty'              => 'Quantities (Kgs)',
+            'items_rate'             => 'Rates',
+            'items_bags'             => 'No of Bags',
+            'items_bag_type'         => 'Bag Types',
+            'items_bag_size'         => 'Bag Sizes',
+            'items_brand'            => 'Brands',
+            'total_qty'              => 'Total Qty (Kgs)',
+            'total_amount'           => 'Total Amount',
+            'items_count'            => 'Items Count',
+        ];
+
+        $relationCache = [];
+        $resolveRelationValue = function ($key, $val) use (&$relationCache) {
+            if ($val === null || $val === '') {
+                return null;
+            }
+            if (is_array($val)) {
+                return json_encode($val);
+            }
+
+            if (in_array($key, ['customer_id', 'customer']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "customer_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $c = Customer::find($val);
+                $res = $c ? $c->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['so_id', 'sales_order']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "so_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $so = SalesOrder::find($val);
+                $res = $so ? $so->reference_no : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if (in_array($key, ['payment_term_id', 'payment_term']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+                $cacheKey = "payment_term_{$val}";
+                if (isset($relationCache[$cacheKey])) return $relationCache[$cacheKey];
+                $term = PaymentTerm::find($val);
+                $res = $term ? $term->name : $val;
+                $relationCache[$cacheKey] = $res;
+                return $res;
+            }
+
+            if ($key === 'do_status') {
+                return ucfirst($val);
+            }
+
+            if ($key === 'am_approval_status') {
+                return ucfirst($val);
+            }
+
+            if (in_array($key, ['advance_amount', 'jv_amount', 'withhold_amount', 'so_held_amount', 'total_amount']) && is_numeric($val)) {
+                return 'Rs. ' . number_format((float) $val, 2);
+            }
+
+            if ($key === 'total_qty' && is_numeric($val)) {
+                return number_format((float) $val, 2) . ' Kgs';
+            }
+
+            return $val;
+        };
+
+        $flattenArray = function ($arr, $prefix = '') use (&$flattenArray) {
+            $result = [];
+            if (!is_array($arr)) return $result;
+            foreach ($arr as $key => $value) {
+                $newKey = $prefix === '' ? $key : "{$prefix}.{$key}";
+                if (is_array($value) && !empty($value) && !isset($value[0])) {
+                    $result = array_merge($result, $flattenArray($value, $newKey));
+                } else {
+                    $result[$newKey] = $value;
+                }
+            }
+            return $result;
+        };
+
+        $filteredLogs = [];
+        $skipKeys = ['id', 'deleted_at', 'created_at', 'updated_at', 'company_id', 'am_change_made'];
+
+        foreach ($logs as $log) {
+            $rawOld = is_array($log->old_values) ? $log->old_values : (!empty($log->old_values) ? json_decode($log->old_values, true) : []);
+            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+
+            $rawNew = is_array($log->new_values) ? $log->new_values : (!empty($log->new_values) ? json_decode($log->new_values, true) : []);
+            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+
+            $old = $flattenArray($rawOld);
+            $new = $flattenArray($rawNew);
+
+            $parsedChanges = [];
+            $allKeys = array_unique(array_merge(array_keys($old ?? []), array_keys($new ?? [])));
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, $skipKeys)) continue;
+
+                $oldVal = $old[$key] ?? null;
+                $newVal = $new[$key] ?? null;
+
+                if ($oldVal != $newVal) {
+                    $oldResolved = $resolveRelationValue($key, $oldVal);
+                    $newResolved = $resolveRelationValue($key, $newVal);
+
+                    $parsedChanges[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace('_', ' ', $key)),
+                        'old'     => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
+                        'new'     => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
+                    ];
+                }
+            }
+
+            if (count($parsedChanges) > 1) {
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => !in_array($c['key'], ['updated_at', 'created_at'])));
+            }
+
+            $log->parsed_changes = $parsedChanges;
+            $filteredLogs[] = $log;
+        }
+
+        $logs = $filteredLogs;
+        $title = "Audit Logs: Delivery Order #{$deliveryOrder->reference_no}";
+
+        return view('management.sales.delivery-order.partials.audit_logs_content', compact('deliveryOrder', 'logs', 'title'));
     }
 }
 

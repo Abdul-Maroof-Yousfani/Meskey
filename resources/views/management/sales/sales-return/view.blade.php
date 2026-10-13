@@ -428,6 +428,10 @@
 
 <div class="row bottom-button-bar">
     <div class="col-12 text-end">
+        <button type="button" class="btn btn-info mr-2 me-2"
+            onclick="openModal(this,'{{ route('sales.sales-return.audit-logs', ['id' => $saleReturn->id]) }}','Audit Logs: Sales Return #{{ $saleReturn->sr_no }}', false, '55%')">
+            <i class="fa fa-history mr-1 me-1"></i> Audit Logs
+        </button>
         <a type="button"
             class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
     </div>

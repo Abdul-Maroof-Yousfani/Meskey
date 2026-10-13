@@ -59,6 +59,11 @@
                             type="button" class="btn btn-sm btn-info" title="View">
                             <i class="ft-eye"></i>
                         </button>
+                        <button type="button" class="btn btn-sm"
+                            onclick="openModal(this,'{{ route('logistics.logistics.audit-logs', ['id' => $logistic->id]) }}','Audit Logs: Logistics #{{ $logistic->so_no }}', false, '55%')"
+                            title="Audit Logs" style="background-color: #17a2b8; border-color: #17a2b8; color: #fff; margin-left: 2px;">
+                            <i class="fa fa-history"></i>
+                        </button>
                     @endcanAccess
                 </td>
             </tr>

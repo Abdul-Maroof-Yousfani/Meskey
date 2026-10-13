@@ -105,6 +105,11 @@
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm btn-info"
+                                    onclick="openModal(this,'{{ route('sales.delivery-order.audit-logs', ['id' => $group['id']]) }}','Audit Logs: Delivery Order #{{ $group['so_no'] }}', false, '55%')"
+                                    title="Audit Logs" style="margin-right: 10px; background-color: #17a2b8; border-color: #17a2b8; color: #fff;">
+                                    <i class="fa fa-history"></i>
+                                </button>
                                 <button type="button" class="btn btn-sm btn-secondary"
                                     onclick="openModal(this,'{{ route('sales.delivery-order.stats', ['id' => $group['id']]) }}','Delivery Order Stats - DO #{{ $group['so_no'] }}', false, '80%')"
                                     title="DO Stats" style="margin-right: 10px;">

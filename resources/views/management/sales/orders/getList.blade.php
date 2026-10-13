@@ -149,6 +149,11 @@
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm btn-info"
+                                    onclick="openModal(this,'{{ route('sales.sale-order.audit-logs', ['id' => $group['id']]) }}','Audit Logs: Sales Order #{{ $group['so_no'] }}', false, '55%')"
+                                    title="Audit Logs" style="margin-right: 10px; background-color: #17a2b8; border-color: #17a2b8; color: #fff;">
+                                    <i class="fa fa-history"></i>
+                                </button>
                                 @endif
                                 @canAccess('sale-order-list')
                                 <button type="button" class="btn btn-sm btn-secondary"

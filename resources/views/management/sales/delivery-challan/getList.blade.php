@@ -113,6 +113,11 @@
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm btn-info"
+                                    onclick="openModal(this,'{{ route('sales.delivery-challan.audit-logs', ['id' => $group['id']]) }}','Audit Logs: Delivery Challan #{{ $group['so_no'] }}', false, '55%')"
+                                    title="Audit Logs" style="margin-right: 10px; background-color: #17a2b8; border-color: #17a2b8; color: #fff;">
+                                    <i class="fa fa-history"></i>
+                                </button>
 
                                 {{-- Gate Out Pass Buttons for each item --}}
                                 @if(strtolower($group['status']) === 'approved')
