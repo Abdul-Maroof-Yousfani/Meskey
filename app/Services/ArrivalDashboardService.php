@@ -43,6 +43,12 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->count();
@@ -78,6 +84,12 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->where('arrival_slip_status', 'generated')
@@ -85,6 +97,12 @@ class ArrivalDashboardService
 
 
         $newTickets = ArrivalTicket::where('company_id', $companyId)
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('first_qc_status', ['pending', 'resampling'])
             ->whereBetween('created_at', $dateRange)
             ->count();
@@ -104,6 +122,14 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                     $sq->where('location_id', $request->location_id);
+                });
+            })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
                 });
             })
             ->whereHas('arrivalTicket', function ($q) {
@@ -131,6 +157,14 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
+                });
+            })
             ->whereHas('arrivalTicket', function ($q) {
                 $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
@@ -152,6 +186,14 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                     $sq->where('location_id', $request->location_id);
+                });
+            })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
                 });
             })
             ->whereHas('arrivalTicket', function ($q) {
@@ -176,6 +218,14 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                     $sq->where('location_id', $request->location_id);
+                });
+            })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
                 });
             })
             ->whereHas('arrivalTicket', function ($q) {
@@ -204,6 +254,14 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
+                });
+            })
             ->whereHas('arrivalTicket', function ($q) {
                 $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
@@ -221,6 +279,12 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             // ->whereBetween('created_at', $dateRange)
             ->count();
@@ -231,6 +295,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
@@ -245,6 +315,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
@@ -260,6 +336,12 @@ class ArrivalDashboardService
             ->whereBetween('created_at', $dateRange)
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
+            })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
             })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereHas('unloadingLocation', function ($q) {
@@ -282,6 +364,7 @@ class ArrivalDashboardService
         $firstWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'transfered')
             ->where('first_weighbridge_status', 'pending')
+
             //superadmin
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
@@ -296,6 +379,12 @@ class ArrivalDashboardService
             // )
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
+            })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
             })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereHas('unloadingLocation', function ($q) {
@@ -315,6 +404,12 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('arrival_tickets.location_id', $request->location_id);
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
             ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations())
             ->whereBetween('arrival_tickets.created_at', $dateRange)
@@ -330,6 +425,15 @@ class ArrivalDashboardService
                 // Agar location_id filter hai toh sirf woh location dikhao
                 return $q->where('company_location_id', $request->location_id);
             })
+            // ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+            //         $sq->where(function ($subQuery) use ($authUser) {
+            //             $subQuery->where('decision_id', $authUser->id)
+            //                 ->orWhere('decision_id', $authUser->parent_user_id);
+            //         });
+            //     });
+            // })
+
             ->select('id', 'name')
             ->get();
 
@@ -345,7 +449,13 @@ class ArrivalDashboardService
             // ->whereIn('arrival_tickets.document_approval_status', ['half_approved', 'fully_approved'])
             ->where('arrival_tickets.location_transfer_status', 'transfered')
             ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
-            ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations());
+            ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations())
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            });
         // ->whereBetween('arrival_tickets.created_at', $dateRange);
 
         // Apply location_id filter on arrival_tickets.location_id (original logic)
@@ -388,6 +498,12 @@ class ArrivalDashboardService
             ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations())
             ->where('arrival_tickets.first_weighbridge_status', 'completed')
             ->whereNull('arrival_tickets.document_approval_status')
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereDoesntHave('arrivalSamplingRequests', function ($q) {
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
@@ -425,6 +541,14 @@ class ArrivalDashboardService
             //         $sq->where('location_id', auth()->user()->company_location_id);
             //     });
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
+                });
+            })
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                     $sq->where('location_id', $request->location_id);
@@ -448,6 +572,14 @@ class ArrivalDashboardService
             //         $sq->where('location_id', auth()->user()->company_location_id);
             //     });
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
+                });
+            })
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                     $sq->where('location_id', $request->location_id);
@@ -475,6 +607,14 @@ class ArrivalDashboardService
                     $sq->where('location_id', $request->location_id);
                 });
             })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
+                    $sq->where(function ($subQuery) use ($authUser) {
+                        $subQuery->where('decision_id', $authUser->id)
+                            ->orWhere('decision_id', $authUser->parent_user_id);
+                    });
+                });
+            })
             ->whereHas('arrivalTicket', function ($q) {
                 $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
@@ -485,6 +625,12 @@ class ArrivalDashboardService
 
         $decisionOnAverageEnabled = ArrivalTicket::where('company_id', $companyId)
             ->where('decision_making', 1)
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -494,6 +640,12 @@ class ArrivalDashboardService
             ->whereDoesntHave('arrivalSamplingRequests', function ($q) {
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
+            })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
             })
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
@@ -513,6 +665,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
@@ -527,6 +685,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
@@ -540,6 +704,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
@@ -554,6 +724,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
@@ -566,6 +742,12 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
@@ -578,6 +760,12 @@ class ArrivalDashboardService
             ->where('arrival_slip_status', 'generated')
             ->whereNotNull('arrival_purchase_order_id')
             ->where('is_ticket_verified', 0)
+            ->when(canAccess('arrival-stats-only-mine-and-parent-data'), function ($q) use ($authUser) {
+                return $q->where(function ($sq) use ($authUser) {
+                    $sq->where('decision_id', $authUser->id)
+                        ->orWhere('decision_id', $authUser->parent_user_id);
+                });
+            })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
