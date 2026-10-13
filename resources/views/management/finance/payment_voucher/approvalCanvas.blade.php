@@ -1,5 +1,8 @@
 @php
     use App\Models\Procurement\PaymentRequestData;
+    if (!isset($transactions) || $transactions->isEmpty()) {
+        $transactions = $paymentVoucher->getPreviewTransactions();
+    }
 @endphp
 <div class="payment-voucher-print pri" id="printSection">
     <!-- Header Section -->
@@ -20,7 +23,7 @@
         <div class="row" style=" width: 100% !important;">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Paid to:</h5>
-                <p><strong>Supplier:</strong> {{ $paymentVoucher->supplier->name ?? 'N/A' }}</p>
+                <p><strong>Paid to:</strong> {{ $paymentVoucher->paid_to_name ?? ($paymentVoucher->supplier->name ?? 'N/A') }}</p>
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Reference Information</h5>
@@ -131,7 +134,7 @@
                 <thead class="thead-light">
                     <tr>
                         {{-- <th class="text-center">Date</th> --}}
-                        <th style="width: 28%;">Contract No</th>
+                        <th style="width: 28%;">Account</th>
                         <th style="width: 44%;">Description</th>
                         <th class="text-right" style="width: 14%;">Debit</th>
                         <th class="text-right" style="width: 14%;">Credit</th>
@@ -197,7 +200,11 @@
                             <strong>Total in Words: </strong>
                             {{ numberToWords($paymentVoucher->total_amount) }}.
                         </td>
-                        <td class="text-right"></td>
+                        <td class="text-right">
+                            <strong>
+                                {{ number_format($paymentVoucher->total_amount, 2) }}
+                            </strong>
+                        </td>
                         <td class="text-right">
                             <strong>
                                 {{ number_format($paymentVoucher->total_amount, 2) }}
@@ -212,7 +219,7 @@
 
     <div class="voucher-remarkss p-3 border">
         <h5 class="">Remarks</h5>
-        <p class="mb-0">{{ $paymentVoucher->remarks ?? 'N/A' }}</p>
+        <p class="mb-0">{{ $paymentVoucher->remarks ?: ($paymentVoucher->default_remarks ?? 'N/A') }}</p>
     </div>
 
     <div class="voucher-footer mt-4 pt-3 border-top">
@@ -226,9 +233,11 @@
 <div class="row bottom-button-bar">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-        <button type="button" class="btn btn-info mr-2" id="printButton">
-            <i class="ft-printer mr-1"></i> Print
-        </button>
+        @if (strtolower($paymentVoucher->am_approval_status ?? '') === 'approved')
+            <button type="button" class="btn btn-info mr-2" id="printButton">
+                <i class="ft-printer mr-1"></i> Print
+            </button>
+        @endif
     </div>
 </div>
 

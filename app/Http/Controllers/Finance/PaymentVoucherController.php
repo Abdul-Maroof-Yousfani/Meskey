@@ -66,7 +66,12 @@ class PaymentVoucherController extends Controller
     }
     public function editPaymentVoucher(int $id)
     {
-        $payment_voucher = PaymentVoucher::find($id);
+        $payment_voucher = PaymentVoucher::findOrFail($id);
+
+        $status = strtolower($payment_voucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return redirect()->route('payment-voucher.index')->with('error', "Cannot edit a Payment Voucher that has been {$status}.");
+        }
 
         if ($payment_voucher->module_type != 'bill_payment_voucher') {
             return back();
@@ -232,6 +237,11 @@ class PaymentVoucherController extends Controller
             abort(404);
         }
 
+        $status = strtolower($payment_voucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return redirect()->route('payment-voucher.index')->with('error', "Cannot edit a Payment Voucher that has been {$status}.");
+        }
+
         $accounts = Account::orderBy('name')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
 
@@ -288,6 +298,11 @@ class PaymentVoucherController extends Controller
     {
         if (!$payment_voucher->is_direct) {
             abort(404);
+        }
+
+        $status = strtolower($payment_voucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(['message' => "Cannot edit a Payment Voucher that has been {$status}."], 422);
         }
 
         $request->validate([
@@ -1028,6 +1043,11 @@ class PaymentVoucherController extends Controller
             abort(404);
         }
 
+        $status = strtolower($payment_voucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(['message' => "Cannot edit a Payment Voucher that has been {$status}."], 422);
+        }
+
         $request->validate([
             'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
             'pv_date' => 'required|date',
@@ -1267,8 +1287,12 @@ class PaymentVoucherController extends Controller
     public function show($id)
     {
         $paymentVoucher = PaymentVoucher::with([
-            'paymentVoucherData',
+            'paymentVoucherData.account',
             'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
+            'paymentVoucherData.customerAdvance',
+            'paymentVoucherData.salesOrder',
+            'paymentVoucherData.deliveryOrder',
+            'billPaymentVoucherData',
             'account',
             'supplier',
             'requestAccount',
@@ -1277,7 +1301,14 @@ class PaymentVoucherController extends Controller
         $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
             ->get();
 
+        if ($transactions->isEmpty()) {
+            $transactions = $paymentVoucher->getPreviewTransactions();
+        }
+
         $table_name = $paymentVoucher->requestAccount->table_name ?? null;
+        if (!$table_name) {
+            $table_name = $paymentVoucher->paymentVoucherData->first()?->account?->table_name ?? null;
+        }
         $bankAccount = null;
         if ($table_name == 'suppliers') {
             if ($paymentVoucher->bank_account_type === 'company') {
@@ -1323,16 +1354,28 @@ class PaymentVoucherController extends Controller
     public function manageApprovals($id)
     {
         $paymentVoucher = PaymentVoucher::with([
-            'paymentVoucherData',
+            'paymentVoucherData.account',
             'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
+            'paymentVoucherData.customerAdvance',
+            'paymentVoucherData.salesOrder',
+            'paymentVoucherData.deliveryOrder',
+            'billPaymentVoucherData',
             'account',
             'supplier',
+            'requestAccount',
         ])->findOrFail($id);
 
         $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
             ->get();
 
+        if ($transactions->isEmpty()) {
+            $transactions = $paymentVoucher->getPreviewTransactions();
+        }
+
         $table_name = $paymentVoucher->requestAccount->table_name ?? null;
+        if (!$table_name) {
+            $table_name = $paymentVoucher->paymentVoucherData->first()?->account?->table_name ?? null;
+        }
         $bankAccount = null;
         if ($table_name == 'suppliers') {
             if ($paymentVoucher->bank_account_type === 'company') {
@@ -2486,6 +2529,13 @@ class PaymentVoucherController extends Controller
 
     public function updateBillPaymentVoucher(Request $request, int $id)
     {
+        $payment_voucher = PaymentVoucher::findOrFail($id);
+
+        $status = strtolower($payment_voucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(['message' => "Cannot edit a Payment Voucher that has been {$status}."], 422);
+        }
+
         $request->validate([
             'unique_no' => 'required',
             'pv_date' => 'required|date',
@@ -2737,6 +2787,11 @@ class PaymentVoucherController extends Controller
     {
         $paymentVoucher = PaymentVoucher::with(['paymentVoucherData.paymentRequest.paymentRequestData'])->findOrFail($id);
 
+        $status = strtolower($paymentVoucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return redirect()->route('payment-voucher.index')->with('error', "Cannot edit a Payment Voucher that has been {$status}.");
+        }
+
         $data = [
             'paymentVoucher' => $paymentVoucher,
             'accounts' => Account::all(),
@@ -2753,6 +2808,11 @@ class PaymentVoucherController extends Controller
     public function update(Request $request, $id)
     {
         $paymentVoucher = PaymentVoucher::findOrFail($id);
+
+        $status = strtolower($paymentVoucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(['message' => "Cannot edit a Payment Voucher that has been {$status}."], 422);
+        }
 
         $request->validate([
             'pv_date' => 'required|date',
@@ -2813,6 +2873,11 @@ class PaymentVoucherController extends Controller
     public function destroy($id)
     {
         $paymentVoucher = PaymentVoucher::findOrFail($id);
+
+        $status = strtolower($paymentVoucher->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(['message' => "Cannot delete a Payment Voucher that has been {$status}."], 422);
+        }
 
         // Delete linked settlement adjustments to restore JV available balance
         DB::table('settlement_adjustments')->where('voucher_no', $paymentVoucher->unique_no)->delete();
