@@ -3,6 +3,7 @@
         <tr>
             <th>RV No</th>
             <th>Date</th>
+            <th>COA</th>
             <th>Creation Mode</th>
             <th>Type</th>
             <th>Document</th>
@@ -20,6 +21,11 @@
                 <tr>
                     <td>{{ $voucher->unique_no }}</td>
                     <td>{{ optional($voucher->rv_date)->format('d-m-Y') }}</td>
+                    @php
+                        $coaAccount = $voucher->customer->account ?? $voucher->account ?? null;
+                    @endphp
+                    
+                    <td>{{ $coaAccount ? $coaAccount->name . ' (' . $coaAccount->unique_no . ')' : 'N/A' }}</td>
                     <td>{{ $voucher->is_direct ? "Direct RV" : "Via" . (($voucher->is_advance) ? ' Sale Order' : ' Sale Invoice') }}
                     </td>
                     <td>{{ $voucher->voucher_type == 'bank_payment_voucher' ? 'Bank Receipt Voucher' : 'Cash Receipt Voucher'}}</td>
@@ -70,6 +76,12 @@
                             </a>
                             @endcanAccess
                         @endif
+
+                        <a onclick="openModal(this, '{{ route('receipt-voucher.audit-logs', $voucher->id) }}', 'Audit Logs: Receipt Voucher #{{ $voucher->unique_no }}', false, '55%')"
+                            class="info p-1 text-center mr-2 position-relative" title="Audit Logs" role="button">
+                            <i class="fa fa-history font-medium-3"></i>
+                        </a>
+
                         @php
                             $editRoute = $voucher->is_direct
                                 ? route('direct.receipt-voucher.edit', $voucher->id)
