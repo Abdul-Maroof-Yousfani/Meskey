@@ -4,7 +4,9 @@
         <thead class="thead-dark">
             <tr>
                 <th>S.No</th>
-                <th>Decision Of</th>
+                @if (canAccess('arrival-stats-show-confidential'))
+                    <th>Decision Of</th>
+                @endif
                 @if (in_array($type, [
                         'new_tickets',
                         'total_tickets',
@@ -91,9 +93,9 @@
             @forelse($data as $key => $item)
                 <tr>
                     <td>{{ $key + 1 }}</td>
-                    <td>
-                        {{ $item->decisionBy->name ?? 'N/A'  }}
-                    </td>
+                    @if (canAccess('arrival-stats-show-confidential'))
+                        <td>{{ $item?->decisionBy?->name ?? 'N/A'  }}</td>
+                    @endif
                     @if (in_array($type, [
                             'new_tickets',
                             'total_tickets',
