@@ -240,6 +240,62 @@ class PaymentVoucher extends Model
     }
 
     /**
+     * Auto-approve the voucher upon save/creation and post ledger transactions immediately.
+     */
+    public function autoApprove($comments = 'Auto-approved upon creation')
+    {
+        $this->refresh();
+
+        $module = $this->getApprovalModule();
+        $statusCol = ($module && isset($module->approval_column)) ? $module->approval_column : 'am_approval_status';
+
+        $this->update([
+            $statusCol => 'approved',
+            'am_change_made' => 1,
+        ]);
+
+        if ($module) {
+            $currentCycle = $this->getCurrentApprovalCycle();
+            $rows = $this->approvalRows()
+                ->where('module_id', $module->id)
+                ->where('approval_cycle', $currentCycle)
+                ->get();
+
+            if ($rows->isEmpty()) {
+                $this->createApprovalRows();
+                $rows = $this->approvalRows()
+                    ->where('module_id', $module->id)
+                    ->where('approval_cycle', $currentCycle)
+                    ->get();
+            }
+
+            foreach ($rows as $row) {
+                $row->update([
+                    'current_count' => $row->required_count,
+                    'status' => 'approved',
+                ]);
+            }
+
+            $userId = \Illuminate\Support\Facades\Auth::user()?->id ?? 1;
+            $roleId = $rows->first()?->role_id ?? 1;
+
+            \App\Models\ApprovalsModule\ApprovalLog::create([
+                'module_id' => $module->id,
+                'record_id' => $this->id,
+                'user_id' => $userId,
+                'role_id' => $roleId,
+                'action' => 'approved',
+                'status' => 'active',
+                'approval_cycle' => $currentCycle,
+                'comments' => $comments,
+            ]);
+        }
+
+        // Post accounting ledger transactions immediately
+        $this->postLedgerTransactions();
+    }
+
+    /**
      * Build transaction entries definition for both ledger posting and preview.
      */
     public function buildTransactionEntries(): array

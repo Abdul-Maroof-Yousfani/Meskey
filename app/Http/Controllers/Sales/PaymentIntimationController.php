@@ -171,6 +171,10 @@ class PaymentIntimationController extends Controller
             return response()->json(['error' => 'Failed to save payment intimation: ' . $e->getMessage()], 500);
         }
 
+        /*
+        // =========================================================================
+        // Previous Notification Code (Commented out as requested - Replaced with Pusher)
+        // =========================================================================
         $payment_intimation->load('sale_order', 'customer');
 
         $users = User::permission('payment-intimation')->get();
@@ -186,6 +190,10 @@ class PaymentIntimationController extends Controller
                 \Log::error('Failed to send notification: ' . $e->getMessage());
             }
         }
+        // =========================================================================
+        */
+
+        \App\Services\NotificationService::sendPaymentIntimationNotification($payment_intimation);
 
         return response()->json(['success' => 'Payment Intimation has been created successfully']);
     }
