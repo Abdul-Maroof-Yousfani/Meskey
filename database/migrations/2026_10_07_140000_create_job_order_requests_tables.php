@@ -210,8 +210,7 @@ return new class extends Migration
         if (Schema::hasTable('stocks')) {
             Schema::table('stocks', function (Blueprint $table) {
                 if (!Schema::hasColumn('stocks', 'company_id')) {
-                    $table->unsignedBigInteger('company_id')->nullable()->after('id');
-                    $table->foreign('company_id')->references('id')->on('companies')->nullOnDelete();
+                    $table->unsignedBigInteger('company_id')->nullable()->after('id')->index();
                 }
             });
 
@@ -242,7 +241,6 @@ return new class extends Migration
         if (Schema::hasTable('stocks')) {
             Schema::table('stocks', function (Blueprint $table) {
                 if (Schema::hasColumn('stocks', 'company_id')) {
-                    $table->dropForeign(['company_id']);
                     $table->dropColumn('company_id');
                 }
             });
