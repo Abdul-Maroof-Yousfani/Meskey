@@ -18,6 +18,8 @@ use App\Models\{Product, BagCondition, BagType};
 use Illuminate\Http\Request;
 use App\Models\User;
 use DB;
+use Carbon\Carbon;
+
 class JobOrderController extends Controller
 {
     public function index()
@@ -27,7 +29,7 @@ class JobOrderController extends Controller
 
     public function getList(Request $request)
     {
-        $job_orders = JobOrder::with(['product', 'productionOutputs.productionVoucher.location', 'packingItems'])
+        $job_orders = JobOrder::with(['product', 'companyLocation', 'productionOutputs.productionVoucher.location', 'packingItems.companyLocation'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -46,11 +48,11 @@ class JobOrderController extends Controller
             // First, get allocated quantities from packing items (grouped by location)
             $allocatedByLocation = [];
             foreach ($job_order->packingItems as $packingItem) {
-                if ($packingItem->company_location_id) {
-                    $locationId = $packingItem->company_location_id;
+                $locationId = $packingItem->company_location_id ?? $job_order->company_location_id;
+                if ($locationId) {
                     if (!isset($allocatedByLocation[$locationId])) {
                         $allocatedByLocation[$locationId] = [
-                            'location_name' => $packingItem->companyLocation->name ?? 'N/A',
+                            'location_name' => $packingItem->companyLocation->name ?? $job_order->companyLocation->name ?? 'N/A',
                             'allocated_qty' => 0
                         ];
                     }
@@ -106,6 +108,7 @@ class JobOrderController extends Controller
     public function printJobOrder($id)
     {
         $jobOrder = JobOrder::with([
+            'companyLocation',
             'product', 
             'packingItems.companyLocation',
             'packingItems.bagProduct',
@@ -167,7 +170,13 @@ class JobOrderController extends Controller
             ->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $user = auth()->user();
+        $locationIds = getUserCurrentCompanyLocations();
+        if ($user && ($user->user_type === 'super-admin' || empty($locationIds))) {
+            $companyLocations = CompanyLocation::where('status', 'active')->get();
+        } else {
+            $companyLocations = CompanyLocation::whereIn('id', $locationIds)->where('status', 'active')->get();
+        }
         $arrivalLocations = ArrivalLocation::where('status', 'active')->get();
         $cropYears = CropYear::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -177,8 +186,19 @@ class JobOrderController extends Controller
         $users = User::get(); // Users for attention_to
         $sizes = Size::get();
         $stitchings = Stitching::where('status', 'active')->get();
+        $selectedLocation = count($companyLocations) == 1 ? $companyLocations->first() : null;
+        $jobOrderNo = $selectedLocation ? self::generateUniqueNumber(date('Y-m-d'), $selectedLocation->id) : '';
+        $jobOrderRequests = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])
+            ->whereIn('status', ['pending', 'partial'])
+            ->latest()
+            ->get()
+            ->filter(function ($jor) {
+                return $jor->remaining_kgs > 0.001;
+            });
+
         return view('management.production.job_orders.create', compact(
             'exportOrders',
+            'jobOrderRequests',
             'products',
             'bagProducts',
             'containerProtectionProducts',
@@ -193,7 +213,8 @@ class JobOrderController extends Controller
             'users',
             'cropYears',
             'sizes',
-            'stitchings'
+            'stitchings',
+            'jobOrderNo'
         ));
     }
 
@@ -222,15 +243,35 @@ class JobOrderController extends Controller
                 }
             }
 
-            $uniqueJobNo = generateUniversalUniqueNo('job_orders', [
-                'prefix' => 'JOB',
-                // 'location' => $locationCode,
-                'column' => 'job_order_no',
-                'with_date' => 1,
-                'custom_date' => $request->job_order_date,
-                'date_format' => 'Y',
-                'serial_at_end' => 1,
-            ]);
+            if ($request->job_order_request_id) {
+                $jor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])->findOrFail($request->job_order_request_id);
+                $totalAllowedKg = (float) $jor->total_kgs;
+                $alreadyConsumedKg = (float) $jor->consumed_kgs;
+
+                $currentJobOrderKg = 0;
+                foreach ($request->packing_items as $item) {
+                    $subItems = $item['sub_items'] ?? [];
+                    if (!empty($subItems)) {
+                        $sizeMap = Size::whereIn('id', collect($subItems)->pluck('bag_size_id')->filter()->unique()->values())->pluck('size', 'id');
+                        $currentJobOrderKg += collect($subItems)->sum(function ($subItem) use ($sizeMap) {
+                            $packingSize = $subItem['packing_size'] ?? ($sizeMap[$subItem['bag_size_id'] ?? null] ?? 0);
+                            return ($subItem['no_of_bags'] ?? 0) * (float) $packingSize;
+                        });
+                    } else {
+                        $currentJobOrderKg += (float)($item['total_kgs'] ?? ($item['bag_size'] ?? 0));
+                    }
+                }
+
+                if (($alreadyConsumedKg + $currentJobOrderKg) > ($totalAllowedKg + 0.01)) {
+                    $remainingKg = max(0, $totalAllowedKg - $alreadyConsumedKg);
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "Total Quantity (" . round($currentJobOrderKg, 2) . " KG) exceeds the remaining capacity of Job Order Request (" . round($remainingKg, 2) . " KG)."
+                    ], 422);
+                }
+            }
+
+            $uniqueJobNo = self::generateUniqueNumber($request->job_order_date, $request->company_location_id);
 
             $jobOrderData = $request->only([
                 'job_order_no',
@@ -245,15 +286,16 @@ class JobOrderController extends Controller
                 'crop_year_id',
                 'other_specifications',
                 'export_order_id',
+                'job_order_request_id',
             ]);
 
             $jobOrderData['company_id'] = $request->company_id;
             $jobOrderData['job_order_no'] = $uniqueJobNo;
-            // $jobOrderData['company_location_id'] = $request->company_location_id;
-            $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []);
-            $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
+            $jobOrderData['company_location_id'] = $request->company_location_id;
+            $jobOrderData['attention_to'] = $request->attention_to ?? [];
+            $jobOrderData['inspection_company_id'] = $request->inspection_company_id ?? [];
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
-            $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
+            $jobOrderData['arrival_locations'] = $request->arrival_locations ?? [];
 
             $jobOrder = JobOrder::create($jobOrderData);
 
@@ -261,6 +303,9 @@ class JobOrderController extends Controller
             $locationDetails = $request->location_details ?? [];
 
             foreach ($request->packing_items as $item) {
+                // Ensure packing item has company_location_id
+                $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
+
                 // Extract sub-items if they exist
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
@@ -295,6 +340,10 @@ class JobOrderController extends Controller
 
                     $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
                     $item['total_kgs'] = $totalKgsFromSubItems;
+                    $item['metric_tons'] = $item['total_kgs'] / 1000;
+                } else {
+                    $item['total_bags'] = ($item['no_of_bags'] ?? 0) + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
+                    $item['total_kgs'] = (float) ($item['bag_size'] ?? 0);
                     $item['metric_tons'] = $item['total_kgs'] / 1000;
                 }
 
@@ -341,6 +390,16 @@ class JobOrderController extends Controller
                 }
                 if (!empty($containerProtectionData)) {
                     $jobOrder->containerProtectionItems()->sync($containerProtectionData);
+                }
+            }
+
+            if ($jobOrder->job_order_request_id) {
+                $jor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])->find($jobOrder->job_order_request_id);
+                if ($jor) {
+                    $totalAllowedKg = (float) $jor->total_kgs;
+                    $consumedKg = (float) $jor->consumed_kgs;
+                    $newStatus = ($consumedKg >= ($totalAllowedKg - 0.01)) ? 'converted' : ($consumedKg > 0.001 ? 'partial' : 'pending');
+                    $jor->update(['status' => $newStatus]);
                 }
             }
 
@@ -396,7 +455,13 @@ class JobOrderController extends Controller
         $products = Product::where('status', 1)->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $user = auth()->user();
+        $locationIds = getUserCurrentCompanyLocations();
+        if ($user && ($user->user_type === 'super-admin' || empty($locationIds))) {
+            $companyLocations = CompanyLocation::where('status', 'active')->get();
+        } else {
+            $companyLocations = CompanyLocation::whereIn('id', $locationIds)->where('status', 'active')->get();
+        }
         $arrivalLocations = ArrivalLocation::where('status', 'active')->get();
         $cropYears = CropYear::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -460,13 +525,15 @@ class JobOrderController extends Controller
                 'crop_year_id',
                 'other_specifications',
                 'export_order_id',
+                'job_order_request_id',
             ]);
 
             // $jobOrderData['location'] = $request->location;
-            $jobOrderData['attention_to'] = json_encode($request->attention_to ?? []);
-            $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
+            $jobOrderData['company_location_id'] = $request->company_location_id;
+            $jobOrderData['attention_to'] = $request->attention_to ?? [];
+            $jobOrderData['inspection_company_id'] = $request->inspection_company_id ?? [];
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
-            $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
+            $jobOrderData['arrival_locations'] = $request->arrival_locations ?? [];
 
             if ($request->export_order_id) {
                 $eo = \App\Models\Export\ExportOrder::with(['jobOrders.packingItems', 'packingItems'])->findOrFail($request->export_order_id);
@@ -486,6 +553,37 @@ class JobOrderController extends Controller
                 }
             }
 
+            $targetJobOrderRequestId = $request->job_order_request_id ?? $jobOrder->job_order_request_id;
+            if ($targetJobOrderRequestId) {
+                $jor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])->findOrFail($targetJobOrderRequestId);
+                $totalAllowedKg = (float) $jor->total_kgs;
+                $alreadyConsumedKg = (float) $jor->jobOrders->where('id', '!=', $jobOrder->id)->sum(function ($jo) {
+                    return $jo->packingItems->sum('total_kgs');
+                });
+
+                $currentJobOrderKg = 0;
+                foreach ($request->packing_items as $item) {
+                    $subItems = $item['sub_items'] ?? [];
+                    if (!empty($subItems)) {
+                        $sizeMap = Size::whereIn('id', collect($subItems)->pluck('bag_size_id')->filter()->unique()->values())->pluck('size', 'id');
+                        $currentJobOrderKg += collect($subItems)->sum(function ($subItem) use ($sizeMap) {
+                            $packingSize = $subItem['packing_size'] ?? ($sizeMap[$subItem['bag_size_id'] ?? null] ?? 0);
+                            return ($subItem['no_of_bags'] ?? 0) * (float) $packingSize;
+                        });
+                    } else {
+                        $currentJobOrderKg += (float)($item['total_kgs'] ?? ($item['bag_size'] ?? 0));
+                    }
+                }
+
+                if (($alreadyConsumedKg + $currentJobOrderKg) > ($totalAllowedKg + 0.01)) {
+                    $remainingKg = max(0, $totalAllowedKg - $alreadyConsumedKg);
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "Total Quantity (" . round($currentJobOrderKg, 2) . " KG) exceeds the remaining capacity of Job Order Request (" . round($remainingKg, 2) . " KG)."
+                    ], 422);
+                }
+            }
+
             $jobOrder->update($jobOrderData);
 
             // Delete existing packing items and their sub-items (cascade)
@@ -495,6 +593,9 @@ class JobOrderController extends Controller
             $locationDetails = $request->location_details ?? [];
 
             foreach ($request->packing_items as $item) {
+                // Ensure packing item has company_location_id
+                $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
+
                 // Extract sub-items if they exist
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
@@ -529,6 +630,10 @@ class JobOrderController extends Controller
 
                     $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
                     $item['total_kgs'] = $totalKgsFromSubItems;
+                    $item['metric_tons'] = $item['total_kgs'] / 1000;
+                } else {
+                    $item['total_bags'] = ($item['no_of_bags'] ?? 0) + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
+                    $item['total_kgs'] = (float) ($item['bag_size'] ?? 0);
                     $item['metric_tons'] = $item['total_kgs'] / 1000;
                 }
 
@@ -579,6 +684,16 @@ class JobOrderController extends Controller
             } else {
                 // If no items provided, remove all
                 $jobOrder->containerProtectionItems()->sync([]);
+            }
+
+            if ($jobOrder->job_order_request_id) {
+                $jor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])->find($jobOrder->job_order_request_id);
+                if ($jor) {
+                    $totalAllowedKg = (float) $jor->total_kgs;
+                    $consumedKg = (float) $jor->consumed_kgs;
+                    $newStatus = ($consumedKg >= ($totalAllowedKg - 0.01)) ? 'converted' : ($consumedKg > 0.001 ? 'partial' : 'pending');
+                    $jor->update(['status' => $newStatus]);
+                }
             }
 
             DB::commit();
@@ -693,7 +808,23 @@ class JobOrderController extends Controller
     public function destroy($id)
     {
         $jobOrder = JobOrder::findOrFail($id);
+        $jobOrderRequestId = $jobOrder->job_order_request_id;
         $jobOrder->delete();
+
+        if ($jobOrderRequestId) {
+            $jor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])->find($jobOrderRequestId);
+            if ($jor) {
+                $totalAllowedKg = (float) $jor->total_kgs;
+                $consumedKg = (float) $jor->consumed_kgs;
+                if ($consumedKg <= 0.001) {
+                    $jor->update(['status' => 'pending']);
+                } elseif ($consumedKg < ($totalAllowedKg - 0.01)) {
+                    $jor->update(['status' => 'partial']);
+                } else {
+                    $jor->update(['status' => 'converted']);
+                }
+            }
+        }
 
         return response()->json([
             'success' => 'Job Order deleted successfully.'
@@ -744,10 +875,22 @@ class JobOrderController extends Controller
 
     public function getArrivalLocations(Request $request)
     {
-        $locationIds = (array) $request->company_location_ids;
-        $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)
-            ->where('status', 'active')
+        $locationIds = array_filter((array) $request->company_location_ids);
+        $includeIds = array_filter((array) ($request->include_arrival_ids ?? $request->arrival_location_ids ?? []));
+
+        $arrivalLocations = ArrivalLocation::where('status', 'active')
+            ->when(!empty($locationIds) || !empty($includeIds), function ($query) use ($locationIds, $includeIds) {
+                $query->where(function ($q) use ($locationIds, $includeIds) {
+                    if (!empty($locationIds)) {
+                        $q->whereIn('company_location_id', $locationIds);
+                    }
+                    if (!empty($includeIds)) {
+                        $q->orWhereIn('id', $includeIds);
+                    }
+                });
+            })
             ->get();
+
         return response()->json($arrivalLocations);
     }
 
@@ -852,5 +995,79 @@ class JobOrderController extends Controller
             'consumed_mt'         => round($consumedMt, 3),
             'remaining_mt'        => round($remainingMt, 3),
         ]);
+    }
+
+    public static function generateUniqueNumber($dateParam = null, $locationParam = null)
+    {
+        try {
+            $datePart = $dateParam ? Carbon::parse($dateParam)->format('m-d-Y') : date('m-d-Y');
+        } catch (\Exception $e) {
+            $datePart = date('m-d-Y');
+        }
+
+        if (empty($locationParam)) {
+            $locationParam = request('company_location_id') ?? request('location_id') ?? auth()->user()?->company_location_id;
+        }
+
+        $locationCode = 'LOC';
+        if ($locationParam) {
+            if ($locationParam instanceof CompanyLocation) {
+                $locationCode = $locationParam->code ?: 'LOC';
+            } elseif (is_numeric($locationParam)) {
+                $loc = CompanyLocation::find($locationParam);
+                $locationCode = $loc?->code ?: 'LOC';
+            } elseif (is_string($locationParam)) {
+                $loc = CompanyLocation::where('code', $locationParam)->first();
+                $locationCode = $loc ? $loc->code : $locationParam;
+            }
+        }
+
+        $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
+        $prefix = $locationCode . '-JO-MIL';
+
+        $searchPattern = $prefix . '-%-' . $datePart;
+
+        $existing = JobOrder::withTrashed()
+            ->where('job_order_no', 'like', $searchPattern)
+            ->lockForUpdate()
+            ->pluck('job_order_no')
+            ->toArray();
+
+        $maxNumber = 0;
+        $regex = '/^' . preg_quote($prefix, '/') . '-(\d+)-' . preg_quote($datePart, '/') . '$/';
+        foreach ($existing as $no) {
+            if (preg_match($regex, $no, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNumber) {
+                    $maxNumber = $num;
+                }
+            }
+        }
+
+        $newNumber = $maxNumber + 1;
+        $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
+
+        while (in_array($candidate, $existing) || JobOrder::withTrashed()->where('job_order_no', $candidate)->exists()) {
+            $newNumber++;
+            $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
+        }
+
+        return $candidate;
+    }
+
+    public function getNumber(Request $request)
+    {
+        $dateParam = $request->job_order_date ?? $request->date ?? date('Y-m-d');
+        $locationParam = $request->company_location_id ?? $request->location_id ?? null;
+        $jobOrderNo = self::generateUniqueNumber($dateParam, $locationParam);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'job_order_no' => $jobOrderNo
+            ]);
+        }
+
+        return $jobOrderNo;
     }
 }

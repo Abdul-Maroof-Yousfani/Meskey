@@ -46,6 +46,12 @@
                             <tr class="section-header">
                                 <th colspan="2" class="text-center py-1">BASIC INFORMATION</th>
                             </tr>
+                            @if($jobOrder->companyLocation)
+                            <tr>
+                                <th class="text-uppercase bg-light">Location</th>
+                                <td class="font-weight-bold">{{ $jobOrder->companyLocation->name }}</td>
+                            </tr>
+                            @endif
                             @if($jobOrder->job_order_no)
                             <tr>
                                 <th width="30%" class="text-uppercase bg-light">Job Order No.</th>
@@ -176,9 +182,7 @@
                             <th class="text-uppercase bg-light">Location Instr.</th>
                         </tr>
                         <tr>
-                            @if($item->companyLocation)
-                                <td>{{ $item->companyLocation->name }}</td>
-                            @endif
+                            <td>{{ $item->companyLocation->name ?? $jobOrder->companyLocation->name ?? 'N/A' }}</td>
                             @if($item->brand)
                                 <td>{{ $item->brand->name }}</td>
                             @endif

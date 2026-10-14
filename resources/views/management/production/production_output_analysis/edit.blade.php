@@ -28,6 +28,8 @@
                                     data-plant-name="{{ $req->plant?->name }}"
                                     data-job-order-id="{{ $req->job_order_id }}"
                                     data-job-order-no="{{ $req->jobOrder?->job_order_no }}"
+                                    data-product-id="{{ $req->jobOrder?->product_id }}"
+                                    data-request-date="{{ $req->request_date?->format('Y-m-d') }}"
                                     @selected($item->analysis_request_id == $req->id)>
                                     {{ $req->request_no }} - {{ $req->companyLocation?->name }} (Plant: {{ $req->plant?->name ?? 'N/A' }}) - {{ $req->request_date->format('d-m-Y') }}
                                 </option>
@@ -37,15 +39,31 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Product (Commodity):</label>
-                        <select name="product_id" id="product_id" class="form-control select2" required>
+                        <label>Product (Commodity): <span class="text-danger">*</span>
+                            <span id="product_fixed_badge" class="badge badge-warning ml-1 {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}">
+                                <i class="ft-lock"></i> Fixed for this Run
+                            </span>
+                        </label>
+                        <select name="product_id" id="product_id" class="form-control select2" required {{ isset($fixedProduct) && $fixedProduct ? 'disabled' : '' }}>
                             <option value="">Select Product</option>
                             @foreach($products as $product)
-                                <option value="{{ $product->id }}" @selected($item->product_id == $product->id)>
+                                @php
+                                    $isSelected = false;
+                                    if (isset($fixedProduct) && $fixedProduct) {
+                                        $isSelected = ($fixedProduct->id == $product->id);
+                                    } else {
+                                        $isSelected = ($item->product_id == $product->id);
+                                    }
+                                @endphp
+                                <option value="{{ $product->id }}" @selected($isSelected)>
                                     {{ $product->name }}
                                 </option>
                             @endforeach
                         </select>
+                        <input type="hidden" name="hidden_product_id" id="hidden_product_id" value="{{ $fixedProduct?->id ?? '' }}" {{ isset($fixedProduct) && $fixedProduct ? '' : 'disabled' }}>
+                        <small id="product_fixed_help" class="form-text text-danger font-weight-bold {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}">
+                            <i class="ft-info mr-1"></i> Product is locked to match first analysis record for this Arrival, Plant & Date.
+                        </small>
                     </div>
                 </div>
 
@@ -100,8 +118,8 @@
                         <div class="d-flex flex-column" style="gap: 5px;">
                             @foreach(['silky polish', 'double polish', 'single mill polish', 'reasonably well milled'] as $degree)
                                 <div class="custom-control custom-radio">
-                                    <input type="radio" id="milling_{{ str_replace(' ', '_', $degree) }}" name="milling_degree" value="{{ $degree }}" class="custom-control-input" @checked($item->milling_degree == $degree)>
-                                    <label class="custom-control-label" for="milling_{{ str_replace(' ', '_', $degree) }}">{{ ucwords($degree) }}</label>
+                                    <input type="radio" id="poa_edit_milling_{{ str_replace(' ', '_', $degree) }}" name="milling_degree" value="{{ $degree }}" class="custom-control-input" @checked($item->milling_degree == $degree)>
+                                    <label class="custom-control-label" for="poa_edit_milling_{{ str_replace(' ', '_', $degree) }}">{{ ucwords($degree) }}</label>
                                 </div>
                             @endforeach
                         </div>
@@ -112,12 +130,12 @@
                         <label class="d-block">Stitching:</label>
                         <div class="d-flex flex-column" style="gap: 5px;">
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="stitch1" name="inner_stitching" value="double" class="custom-control-input" @checked($item->inner_stitching == 'double')>
-                                <label class="custom-control-label" for="stitch1">Double</label>
+                                <input type="radio" id="poa_edit_inner_stitch_double" name="inner_stitching" value="double" class="custom-control-input" @checked($item->inner_stitching == 'double')>
+                                <label class="custom-control-label" for="poa_edit_inner_stitch_double">Double</label>
                             </div>
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="stitch2" name="inner_stitching" value="single" class="custom-control-input" @checked($item->inner_stitching == 'single')>
-                                <label class="custom-control-label" for="stitch2">Single</label>
+                                <input type="radio" id="poa_edit_inner_stitch_single" name="inner_stitching" value="single" class="custom-control-input" @checked($item->inner_stitching == 'single')>
+                                <label class="custom-control-label" for="poa_edit_inner_stitch_single">Single</label>
                             </div>
                         </div>
                     </div>
@@ -127,12 +145,12 @@
                         <label class="d-block">Outer Stitching:</label>
                         <div class="d-flex flex-column" style="gap: 5px;">
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="outer_stitch1" name="outer_stitching" value="double" class="custom-control-input" @checked($item->outer_stitching == 'double')>
-                                <label class="custom-control-label" for="outer_stitch1">Double</label>
+                                <input type="radio" id="poa_edit_outer_stitch_double" name="outer_stitching" value="double" class="custom-control-input" @checked($item->outer_stitching == 'double')>
+                                <label class="custom-control-label" for="poa_edit_outer_stitch_double">Double</label>
                             </div>
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="outer_stitch2" name="outer_stitching" value="single" class="custom-control-input" @checked($item->outer_stitching == 'single')>
-                                <label class="custom-control-label" for="outer_stitch2">Single</label>
+                                <input type="radio" id="poa_edit_outer_stitch_single" name="outer_stitching" value="single" class="custom-control-input" @checked($item->outer_stitching == 'single')>
+                                <label class="custom-control-label" for="poa_edit_outer_stitch_single">Single</label>
                             </div>
                         </div>
                     </div>
@@ -140,58 +158,46 @@
             </div>
         </div>
 
-        <!-- Line Items Section -->
+        <!-- QC Checklist Section -->
         <div class="col-md-12 mt-4">
-            <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
-                Line Items
-                <div>
-                    <button type="button" class="btn btn-sm btn-success" id="addLineItem">Add Row</button>
-                </div>
+            <h6 class="header-heading-sepration font-weight-bold mb-3">
+                QC Checklist
             </h6>
-            <div class="table-responsive" style="overflow-x: auto;">
-                <table class="table table-bordered" id="lineItemsTable" style="min-width: 1200px;">
-                    <thead>
-                        <tr id="headerRow">
-                            <th style="min-width: 150px;">Time</th>
-                            <th style="min-width: 150px;">Unit</th>
-                            @foreach($productSlabTypes as $productSlabType)
-                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 150px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
-                            @endforeach
-                            <th style="width: 50px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lineItemsBody">
-                        @foreach($item->items as $index => $analysisItem)
-                            <tr>
-                                <td>
-                                    <input type="time" name="items[{{ $index }}][time]" class="form-control" value="{{ \Carbon\Carbon::parse($analysisItem->analysis_time)->format('H:i') }}">
-                                </td>
-                                <td>
-                                    <select name="items[{{ $index }}][unit_id]" class="form-control select2">
-                                        <option value="">Select Unit</option>
-                                        @foreach($units as $unit)
-                                            <option value="{{ $unit->id }}" @selected($analysisItem->unit_id == $unit->id)>
-                                                {{ $unit->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                @foreach($productSlabTypes as $productSlabType)
-                                    @php
-                                        $slabValue = $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first();
-                                    @endphp
-                                    <td class="dynamic-col">
-                                        <input type="text" name="items[{{ $index }}][params][{{ $productSlabType->id }}]" 
-                                               class="form-control" value="{{ $slabValue->production_analysis_value ?? '' }}">
-                                    </td>
-                                @endforeach
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+
+            @php
+                $firstItem = $item->items->first();
+                $existingTime = $firstItem ? \Carbon\Carbon::parse($firstItem->analysis_time)->format('H:i:s') : date('H:i:s');
+                $existingUnitId = $firstItem?->unit_id ?? $units->first()?->id ?? '';
+                $savedSlabsMap = $item->items->flatMap(fn($it) => $it->slabs)->pluck('production_analysis_value', 'slab_type_id');
+            @endphp
+
+            <input type="hidden" name="items[0][time]" value="{{ $existingTime }}">
+            <input type="hidden" name="items[0][unit_id]" value="{{ $existingUnitId }}">
+
+            <div class="striped-rows qc-checklist-container" id="qcChecklistContainer">
+                @forelse($productSlabTypes as $productSlabType)
+                    <div class="form-group row qc-slab-row">
+                        <label class="col-md-3 label-control">
+                            {{ $productSlabType->name }}
+                        </label>
+                        <div class="col-md-9">
+                            <div class="input-group">
+                                <input type="text" 
+                                       name="items[0][params][{{ $productSlabType->id }}]" 
+                                       class="form-control" 
+                                       value="{{ $savedSlabsMap[$productSlabType->id] ?? '' }}"
+                                       placeholder="{{ $productSlabType->qc_symbol }}">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">{{ $productSlabType->qc_symbol }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="alert alert-warning m-2">
+                        No Slabs Found
+                    </div>
+                @endforelse
             </div>
         </div>
 
@@ -212,6 +218,57 @@
     </div>
 </form>
 
+<style>
+    .qc-checklist-container .form-group {
+        margin: 0;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+    }
+    .qc-checklist-container .form-group:nth-child(even) {
+        background-color: #f7f7f8;
+    }
+    .qc-checklist-container .form-group:nth-child(odd) {
+        background-color: #ffffff;
+    }
+    .qc-checklist-container label.label-control {
+        margin-bottom: 0;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #2c3e50;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
+    .qc-checklist-container .input-group-text {
+        background-color: #f7f7f8;
+        border: 1px solid #dcdce0;
+        color: #6c757d;
+        min-width: 45px;
+        justify-content: center;
+    }
+    .layout-dark .qc-checklist-container .form-group:nth-child(even) {
+        background-color: #101010;
+    }
+    .layout-dark .qc-checklist-container .form-group:nth-child(odd) {
+        background-color: #1a1a1a;
+    }
+    .layout-dark .qc-checklist-container label.label-control {
+        color: #e2e8f0;
+    }
+    .layout-dark .qc-checklist-container .input-group-text {
+        background-color: #262626;
+        border-color: #404040;
+        color: #ffffff;
+    }
+    .custom-radio .custom-control-label {
+        cursor: pointer;
+        user-select: none;
+    }
+    .custom-radio .custom-control-input:checked ~ .custom-control-label::after {
+        background-color: transparent !important;
+    }
+</style>
+
 <script>
     $(document).ready(function() {
         function initSelect2(el) {
@@ -220,6 +277,39 @@
             }
         }
         initSelect2('.select2');
+
+        function renderQcChecklist(slabs) {
+            let container = $('#qcChecklistContainer');
+            container.empty();
+            if (!slabs || slabs.length === 0) {
+                container.html('<div class="alert alert-warning m-2">No Slabs Found</div>');
+                return;
+            }
+
+            let html = '';
+            slabs.forEach(function(slab) {
+                let symbol = slab.qc_symbol ? slab.qc_symbol : '%';
+                html += `
+                    <div class="form-group row qc-slab-row">
+                        <label class="col-md-3 label-control">
+                            ${slab.name}
+                        </label>
+                        <div class="col-md-9">
+                            <div class="input-group">
+                                <input type="text" 
+                                       name="items[0][params][${slab.id}]" 
+                                       class="form-control" 
+                                       placeholder="${symbol}">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">${symbol}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.html(html);
+        }
 
         $('#product_id').on('change', function() {
             let productId = $(this).val();
@@ -230,79 +320,28 @@
                 type: "GET",
                 data: { product_id: productId },
                 success: function(response) {
-                    let headerRow = $('#headerRow');
-                    headerRow.find('.dynamic-col').remove();
-                    
-                    let actionTh = headerRow.find('th:last-child');
-                    response.forEach(slab => {
-                        $(`<th class="dynamic-col" data-slab-id="${slab.id}" style="min-width: 150px;">${slab.name} ${slab.qc_symbol || ''}</th>`)
-                            .insertBefore(actionTh);
-                    });
-
-                    $('#lineItemsBody').html('');
-                    addRow(response);
+                    renderQcChecklist(response);
                 }
             });
         });
 
-        function addRow(slabs = null) {
-            let rowCount = $('#lineItemsBody tr').length;
-            let currentTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
-            
-            let newRow = `<tr>
-                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>
-                <td>
-                    <select name="items[${rowCount}][unit_id]" class="form-control select2-row">
-                        <option value="">Select Unit</option>
-                        @foreach($units as $unit)
-                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
-                        @endforeach
-                    </select>
-                </td>`;
-            
-            if (slabs) {
-                slabs.forEach(slab => {
-                    newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slab.id}]" class="form-control"></td>`;
-                });
-            } else {
-                $('#headerRow th.dynamic-col').each(function() {
-                    let slabId = $(this).data('slab-id');
-                    newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slabId}]" class="form-control"></td>`;
-                });
-            }
-            
-            newRow += `<td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button></td></tr>`;
-            
-            let $row = $(newRow);
-            $('#lineItemsBody').append($row);
-            initSelect2($row.find('.select2-row'));
-        }
-
-        $('#addLineItem').on('click', function() {
-            addRow();
-        });
-
-        $(document).on('click', '.remove-row', function() {
-            if ($('#lineItemsBody tr').length > 1) {
-                $(this).closest('tr').remove();
-            } else {
-                alert('At least one row is required.');
-            }
-        });
-
         // Handle Analysis Request Selection
         $('#analysis_request_id').on('change', function() {
-            let $opt = $(this).find(':selected');
-            let compLocId = $opt.data('company-location-id');
-            let arrivalLocId = $opt.data('arrival-location-id');
-            let plantId = $opt.data('plant-id');
-            let jobOrderId = $opt.data('job-order-id');
-            let compLocName = $opt.data('company-location-name');
-            let arrivalLocName = $opt.data('arrival-location-name');
-            let plantName = $opt.data('plant-name');
-            let jobOrderNo = $opt.data('job-order-no');
+            let reqId = $(this).val();
+            let dateVal = $('input[name="date"]').val();
 
-            if (compLocId) {
+            if (reqId) {
+                let $opt = $(this).find(':selected');
+                let compLocId = $opt.data('company-location-id');
+                let arrivalLocId = $opt.data('arrival-location-id');
+                let plantId = $opt.data('plant-id');
+                let jobOrderId = $opt.data('job-order-id');
+                let compLocName = $opt.data('company-location-name');
+                let arrivalLocName = $opt.data('arrival-location-name');
+                let plantName = $opt.data('plant-name');
+                let jobOrderNo = $opt.data('job-order-no');
+                let defaultProductId = $opt.data('product-id');
+
                 $('#location_id').val(compLocId);
                 $('#arrival_location_id').val(arrivalLocId);
                 $('#plant_id').val(plantId);
@@ -317,16 +356,49 @@
                     $('#req_disp_jo_wrapper').addClass('d-none');
                 }
                 $('#request_details_box').removeClass('d-none');
+
+                $.ajax({
+                    url: "{{ route('production-output-analysis.check-fixed-product') }}",
+                    type: "GET",
+                    data: {
+                        analysis_request_id: reqId,
+                        arrival_location_id: arrivalLocId,
+                        plant_id: plantId,
+                        date: dateVal,
+                        exclude_id: "{{ $item->id }}",
+                        exclude_type: 'analysis'
+                    },
+                    success: function(res) {
+                        if (res.is_fixed && res.product_id) {
+                            $('#product_id').val(res.product_id).trigger('change.select2');
+                            $('#product_id').prop('disabled', true);
+                            $('#hidden_product_id').val(res.product_id).prop('disabled', false);
+                            $('#product_fixed_badge').removeClass('d-none');
+                            $('#product_fixed_help').removeClass('d-none');
+                        } else {
+                            $('#product_id').prop('disabled', false);
+                            $('#hidden_product_id').val('').prop('disabled', true);
+                            $('#product_fixed_badge').addClass('d-none');
+                            $('#product_fixed_help').addClass('d-none');
+                        }
+                    }
+                });
             } else {
                 $('#location_id').val('');
                 $('#arrival_location_id').val('');
                 $('#plant_id').val('');
                 $('#request_details_box').addClass('d-none');
+                $('#product_id').prop('disabled', false);
+                $('#hidden_product_id').val('').prop('disabled', true);
+                $('#product_fixed_badge').addClass('d-none');
+                $('#product_fixed_help').addClass('d-none');
             }
         });
 
-        if ($('#analysis_request_id').val()) {
-            $('#analysis_request_id').trigger('change');
-        }
+        // Ensure product_id is sent on form submit even if disabled
+        $('#ajaxSubmit').on('submit', function() {
+            $('#product_id').prop('disabled', false);
+            $('#hidden_product_id').prop('disabled', true);
+        });
     });
 </script>

@@ -19,6 +19,10 @@
   margin-top: 2px;
 }
 
+.btn {
+  position: relative;
+}
+
 .spinnerforajax {
   position: absolute;
   width: 100%;

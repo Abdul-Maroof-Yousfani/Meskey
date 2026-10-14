@@ -75,6 +75,11 @@
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" 
+                                onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $voucher->id) }}', 'QC Checklist - {{ $voucher->prod_no }}', false, '85%')"
+                                class="btn btn-outline-info" title="View Performed Analysis / QC Checklist">
+                                <i class="ft-eye"></i>
+                            </button>
+                            <button type="button" 
                                 onclick="window.location.href='{{ route('production-voucher.edit', $voucher->id) }}'"
                                 class="btn btn-outline-primary" title="Edit">
                                 <i class="ft-edit"></i>

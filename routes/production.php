@@ -19,6 +19,15 @@ use App\Http\Controllers\Production\ProductionMachineAnalysisController;
 
 
 
+use App\Http\Controllers\Production\JobOrderRequestController;
+
+Route::get('job-order-requests/get-number', [JobOrderRequestController::class, 'getNumber'])->name('job-order-requests.get-number');
+Route::get('job-order-requests/get-details/{id}', [JobOrderRequestController::class, 'getRequestDetails'])->name('job-order-requests.get-details');
+Route::resource('job-order-requests', JobOrderRequestController::class);
+Route::post('get-job-order-requests', [JobOrderRequestController::class, 'getList'])->name('get.job_order_requests');
+Route::get('job-orders/get-request-details/{id}', [JobOrderRequestController::class, 'getRequestDetails'])->name('job-orders.get-request-details');
+
+Route::get('job-orders/get-number', [JobOrderController::class, 'getNumber'])->name('job-orders.get-number');
 Route::resource('job-orders', JobOrderController::class);
 Route::get('job-orders/{id}/print', [JobOrderController::class, 'printJobOrder'])->name('job-orders.print');
 Route::post('get-job-orders', [JobOrderController::class, 'getList'])->name('get.job_orders');
@@ -43,6 +52,7 @@ Route::get('load-qc-commodities-tables', [JobOrderRawMaterialQcController::class
 
 Route::resource('production-voucher', ProductionVoucherController::class);
 Route::post('get-production-voucher', [ProductionVoucherController::class, 'getList'])->name('get.production-voucher');
+Route::get('production-voucher/{id}/analysis-qc-view', [ProductionVoucherController::class, 'getAnalysisQcView'])->name('production-voucher.analysis-qc-view');
 Route::post('production-voucher-get-job-orders-by-location', [ProductionVoucherController::class, 'getJobOrdersByLocation'])->name('production-voucher.get-job-orders-by-location');
 Route::post('production-voucher-get-commodities-by-location', [ProductionVoucherController::class, 'getCommoditiesByLocation'])->name('production-voucher.get-commodities-by-location');
 Route::post('production-voucher-get-plants-by-location', [ProductionVoucherController::class, 'getPlantsByLocation'])->name('production-voucher.get-plants-by-location');
@@ -94,20 +104,27 @@ Route::get('/breakdowns-by-plant-date', [MachinePlanSettingController::class, 'g
 Route::resource('production-quality-check', ProductionQualityCheckController::class);
 Route::post('get-production-quality-check', [ProductionQualityCheckController::class, 'getList'])->name('get.production-quality-check');
 
+Route::get('production-input-analysis/check-fixed-product', [ProductionInputAnalysisController::class, 'checkFixedProduct'])->name('production-input-analysis.check-fixed-product');
+Route::get('production-input-analysis/get-slabs-by-product', [ProductionInputAnalysisController::class, 'getSlabsByProduct'])->name('production-input-analysis.get-slabs');
 Route::resource("production-input-analysis", ProductionInputAnalysisController::class);
 Route::post('get-production-input-analysis', [ProductionInputAnalysisController::class, 'getList'])->name('get.production-input-analysis');
 
-Route::resource("production-machine-analysis", ProductionMachineAnalysisController::class);
-Route::post('get-production-machine-analysis', [ProductionMachineAnalysisController::class, 'getList'])->name('get.production-machine-analysis');
+Route::get('production-machine-analysis/check-fixed-product', [ProductionMachineAnalysisController::class, 'checkFixedProduct'])->name('production-machine-analysis.check-fixed-product');
+Route::get('production-machine-analysis/get-slabs-by-product', [ProductionMachineAnalysisController::class, 'getSlabsByProduct'])->name('production-machine-analysis.get-slabs');
 Route::get('production-machine-analysis/get-arrival-locations/{id}', [ProductionMachineAnalysisController::class, 'getArrivalLocationsByCompanyLocation'])->name('production-machine-analysis.get-arrival-locations');
 Route::get('production-machine-analysis/get-plants/{companyId}/{arrivalId}', [ProductionMachineAnalysisController::class, 'getPlantsByArrivalLocation'])->name('production-machine-analysis.get-plants');
 Route::get('production-machine-analysis/get-machines/{arrivalId}/{plantId}', [ProductionMachineAnalysisController::class, 'getMachinesByPlant'])->name('production-machine-analysis.get-machines');
 Route::resource("production-machine-analysis", ProductionMachineAnalysisController::class);
+Route::post('get-production-machine-analysis', [ProductionMachineAnalysisController::class, 'getList'])->name('get.production-machine-analysis');
 
+Route::get('production-output-analysis/check-fixed-product', [ProductionOutputAnalysisController::class, 'checkFixedProduct'])->name('production-output-analysis.check-fixed-product');
 Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
 Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
 Route::get('get-slabs-by-product', [ProductionOutputAnalysisController::class, 'getSlabsByProduct'])->name('production-output-analysis.get-slabs');
 
+Route::get('production-drying-job-order/get-recipes/{productId}', [ProductionDryingController::class, 'getRecipesByProduct'])->name('production-drying-job-order.get-recipes');
+Route::get('production-drying-job-order/get-recipe-details/{recipeId}', [ProductionDryingController::class, 'getRecipeDetails'])->name('production-drying-job-order.get-recipe-details');
+Route::get('production-drying-job-order/get-number', [ProductionDryingController::class, 'getNumber'])->name('production-drying-job-order.get-number');
 Route::resource("production-drying-job-order",ProductionDryingController::class);
 Route::post('get-production-drying-job-order', [ProductionDryingController::class, 'getList'])->name('get.production-drying-job-order');
 
@@ -116,9 +133,9 @@ Route::resource("production-steam-parboiling-job-order", ProductionSteamParboili
 ]);
 Route::post('get-production-steam-parboiling-job-order', [ProductionSteamParboilingController::class, 'getList'])->name('get.production-steam-parboiling-job-order');
 
-Route::resource('production-analysis-request', ProductionAnalysisRequestController::class);
-Route::post('get-production-analysis-request', [ProductionAnalysisRequestController::class, 'getList'])->name('get.production-analysis-request');
 Route::get('production-analysis-request/get-number', [ProductionAnalysisRequestController::class, 'getNumber'])->name('production-analysis-request.get-number');
 Route::get('production-analysis-request/get-arrival-locations/{id}', [ProductionAnalysisRequestController::class, 'getArrivalLocationsByCompanyLocation'])->name('production-analysis-request.get-arrival-locations');
 Route::get('production-analysis-request/get-plants/{companyId}/{arrivalId}', [ProductionAnalysisRequestController::class, 'getPlantsByArrivalLocation'])->name('production-analysis-request.get-plants');
 Route::get('production-analysis-request/get-job-orders/{companyLocationId}', [ProductionAnalysisRequestController::class, 'getJobOrdersByCompanyLocation'])->name('production-analysis-request.get-job-orders');
+Route::post('get-production-analysis-request', [ProductionAnalysisRequestController::class, 'getList'])->name('get.production-analysis-request');
+Route::resource('production-analysis-request', ProductionAnalysisRequestController::class);

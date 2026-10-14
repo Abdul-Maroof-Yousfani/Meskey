@@ -64,10 +64,10 @@ class JobOrderPackingItem extends Model
                 $model->total_kgs = $totalKgsFromSubItems;
                 $model->metric_tons = $model->total_kgs / 1000;
             } else {
-                // Fallback to old calculation if sub-items don't exist
+                // Total KGs is bag_size directly (not multiplied by no_of_bags)
                 $model->total_bags = ($model->no_of_bags ?? 0) + ($model->extra_bags ?? 0) + ($model->empty_bags ?? 0);
-                $model->total_kgs = ($model->no_of_bags ?? 0) * ($model->bag_size ?? 0);
-            $model->metric_tons = $model->total_kgs / 1000;
+                $model->total_kgs = (float) ($model->bag_size ?? 0);
+                $model->metric_tons = $model->total_kgs / 1000;
             }
 
             // Ensure fumigation_company_id is properly formatted as array

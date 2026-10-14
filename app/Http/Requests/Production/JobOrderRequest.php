@@ -24,6 +24,14 @@ class JobOrderRequest extends FormRequest
     {
         $rules = [
             // Basic Information Validation
+            'job_order_request_id' => [
+                'nullable',
+                'exists:job_order_requests,id'
+            ],
+            'company_location_id' => [
+                'required',
+                'exists:company_locations,id'
+            ],
             'job_order_no' => [
                 'required',
                 'string',
@@ -221,7 +229,7 @@ class JobOrderRequest extends FormRequest
                 'min:0'
             ],
             'packing_items.*.company_location_id' => [
-                'required',
+                'nullable',
                 'exists:company_locations,id'
             ],
             'packing_items.*.no_of_containers' => [
@@ -327,9 +335,10 @@ class JobOrderRequest extends FormRequest
             'packing_items.*.sub_items.*.bag_size.min' => 'Bag size must be at least 0.1 kg',
             'packing_items.*.sub_items.*.no_of_bags.required' => 'Number of bags is required for master packing item',
             'packing_items.*.sub_items.*.no_of_bags.min' => 'Number of bags must be at least 1',
+            'company_location_id.required' => 'Company location is required',
+            'company_location_id.exists' => 'Selected company location does not exist',
             'packing_items.*.brand_id.required' => 'Brand is required for all packing items',
             'packing_items.*.bag_color_id.required' => 'Bag color is required for all packing items',
-            'packing_items.*.company_location_id.required' => 'Company location is required for all packing items',
             'packing_items.*.company_location_id.exists' => 'Selected company location does not exist',
             'packing_items.*.min_weight_empty_bags.required' => 'Minimum weight for empty bags is required',
             // New packing items messages for delivery_date and fumigation_company_id
@@ -352,6 +361,7 @@ class JobOrderRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'company_location_id' => 'company location',
             'job_order_no' => 'job order number',
             'job_order_date' => 'job order date',
             'crop_year_id' => 'crop year',
@@ -372,6 +382,24 @@ class JobOrderRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
+        // Auto-generate unique job order number on create if empty or already taken
+        if ($this->isMethod('post')) {
+            $currentNo = $this->input('job_order_no');
+            $alreadyExists = $currentNo && \App\Models\Production\JobOrder\JobOrder::withTrashed()
+                ->where('job_order_no', $currentNo)
+                ->exists();
+
+            if (empty($currentNo) || $alreadyExists) {
+                $newNo = \App\Http\Controllers\Production\JobOrderController::generateUniqueNumber(
+                    $this->input('job_order_date'),
+                    $this->input('company_location_id')
+                );
+                $this->merge([
+                    'job_order_no' => $newNo
+                ]);
+            }
+        }
+
         // Ensure arrays are properly formatted even if empty
         $this->merge([
             'attention_to' => $this->attention_to ?? [],

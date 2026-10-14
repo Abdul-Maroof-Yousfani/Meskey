@@ -9,6 +9,8 @@ use App\Models\Master\Plant;
 use App\Models\Master\ProductSlabType;
 use App\Models\Master\ProductionMachine;
 use App\Models\UnitOfMeasure;
+use App\Models\Product;
+use App\Models\Master\ProductSlab;
 use App\Models\Production\ProductionMachineAnalysis;
 use App\Models\Production\ProductionMachineAnalysisItem;
 use App\Models\Production\ProductionMachineAnalysisItemSlab;
@@ -40,7 +42,7 @@ class ProductionMachineAnalysisController extends Controller
                     $q->orWhere('id', $request->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product'])
             ->latest('id')
             ->get();
 
@@ -50,7 +52,7 @@ class ProductionMachineAnalysisController extends Controller
 
         if ($request->filled('analysis_request_id')) {
             $analysisRequest = $analysisRequests->firstWhere('id', $request->analysis_request_id)
-                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant'])->find($request->analysis_request_id);
+                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product'])->find($request->analysis_request_id);
 
             if ($analysisRequest) {
                 $preSelectedLocationId = $analysisRequest->company_location_id;
@@ -73,13 +75,26 @@ class ProductionMachineAnalysisController extends Controller
         }
         
         $units = UnitOfMeasure::all();
+        $products = Product::where('status', 'active')->get();
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
+
+        $fixedProduct = null;
+        if ($analysisRequest) {
+            $fixedProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
+                $analysisRequest->arrival_location_id,
+                $analysisRequest->plant_id,
+                now()->format('Y-m-d'),
+                $analysisRequest->request_date?->format('Y-m-d')
+            );
+        }
             
         return view('management.production.production_machine_analysis.create', compact(
             'companyLocations', 
             'units', 
+            'products',
+            'fixedProduct',
             'productSlabTypes', 
             'preSelectedLocationId',
             'analysisRequests',
@@ -99,6 +114,21 @@ class ProductionMachineAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
+            $matchingVoucherId = \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
+                ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
+                    $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
+                })
+                ->latest('id')
+                ->value('id');
+
+            $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
+                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                $request->plant_id ?: $analysisReq?->plant_id,
+                $request->date,
+                $analysisReq?->request_date?->format('Y-m-d')
+            );
+            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+
             // Create Parent Record
             $analysis = ProductionMachineAnalysis::create([
                 'analysis_date' => $request->date,
@@ -106,8 +136,10 @@ class ProductionMachineAnalysisController extends Controller
                 'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
                 'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
                 'production_machine_id' => $request->production_machine_id,
+                'product_id' => $finalProductId,
                 'remarks' => $request->remarks,
                 'analysis_request_id' => $request->analysis_request_id ?? null,
+                'production_voucher_id' => $matchingVoucherId,
             ]);
 
             // If created against an Analysis Request, mark it completed
@@ -153,27 +185,69 @@ class ProductionMachineAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'items.unit', 'items.slabs.slabType'])
+        $item = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'product', 'items.unit', 'items.slabs.slabType'])
             ->findOrFail($id);
             
-        $productSlabTypes = ProductSlabType::where('status', 'active')
-            ->where('for_general_item', 1)
-            ->get();
+        $productSlabTypes = collect();
+        if ($item->product_id) {
+            $productSlabTypes = ProductSlab::with('slabType')
+                ->where('product_id', $item->product_id)
+                ->get()
+                ->unique('product_slab_type_id')
+                ->pluck('slabType')
+                ->filter()
+                ->values();
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $slabTypeIds = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
+            if ($slabTypeIds->isNotEmpty()) {
+                $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
+            }
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where('status', 'active')
+                ->where('for_general_item', 1)
+                ->get();
+        }
 
         return view('management.production.production_machine_analysis.show', compact('item', 'productSlabTypes'));
     }
 
     public function edit($id)
     {
-        $item = ProductionMachineAnalysis::with(['items.slabs'])
-                                    ->findOrFail($id);
+        $item = ProductionMachineAnalysis::with(['items.slabs.slabType', 'product'])
+            ->findOrFail($id);
         
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
-        $productSlabTypes = ProductSlabType::where('status', 'active')
-            ->where('for_general_item', 1)
-            ->get();
+        $products = Product::where('status', 'active')->get();
+
+        $productSlabTypes = collect();
+        if ($item->product_id) {
+            $productSlabTypes = ProductSlab::with('slabType')
+                ->where('product_id', $item->product_id)
+                ->get()
+                ->unique('product_slab_type_id')
+                ->pluck('slabType')
+                ->filter()
+                ->values();
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $slabTypeIds = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
+            if ($slabTypeIds->isNotEmpty()) {
+                $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
+            }
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where('status', 'active')
+                ->where('for_general_item', 1)
+                ->get();
+        }
 
         $analysisRequests = \App\Models\Production\ProductionAnalysisRequest::where('type', \App\Models\Production\ProductionAnalysisRequest::TYPE_MACHINE)
             ->where(function ($q) use ($item) {
@@ -182,7 +256,7 @@ class ProductionMachineAnalysisController extends Controller
                     $q->orWhere('id', $item->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product'])
             ->latest('id')
             ->get();
 
@@ -195,10 +269,21 @@ class ProductionMachineAnalysisController extends Controller
             ->where('plant_id', $item->plant_id)
             ->get();
 
+        $fixedProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
+            $item->arrival_location_id,
+            $item->plant_id,
+            $item->analysis_date,
+            $item->analysisRequest?->request_date?->format('Y-m-d'),
+            $item->id,
+            'machine'
+        );
+
         return view('management.production.production_machine_analysis.edit', compact(
             'item',
             'companyLocations', 
             'units', 
+            'products',
+            'fixedProduct',
             'productSlabTypes',
             'analysisRequests',
             'arrivalLocations',
@@ -219,6 +304,16 @@ class ProductionMachineAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
+            $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
+                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                $request->plant_id ?: $analysisReq?->plant_id,
+                $request->date,
+                $analysisReq?->request_date?->format('Y-m-d'),
+                $analysis->id,
+                'machine'
+            );
+            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+
             // Update Parent Record
             $analysis->update([
                 'analysis_date' => $request->date,
@@ -226,6 +321,7 @@ class ProductionMachineAnalysisController extends Controller
                 'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
                 'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
                 'production_machine_id' => $request->production_machine_id,
+                'product_id' => $finalProductId,
                 'remarks' => $request->remarks,
                 'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
@@ -288,7 +384,7 @@ class ProductionMachineAnalysisController extends Controller
         $machineIdsFilter = $request->production_machine_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine'])
+        $items = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'product'])
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('company_location_id', $locationIdsFilter);
             })
@@ -313,6 +409,38 @@ class ProductionMachineAnalysisController extends Controller
         return view('management.production.production_machine_analysis.getList', compact('items'));
     }
 
+    public function getSlabsByProduct(Request $request)
+    {
+        $productId = $request->product_id;
+        $slabs = ProductSlab::with('slabType')
+            ->where('product_id', $productId)
+            ->get()
+            ->unique('product_slab_type_id')
+            ->values();
+
+        if ($slabs->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
+            $slabTypes = $productSlabTypes->map(function($type) {
+                return [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'qc_symbol' => $type->qc_symbol,
+                ];
+            });
+            return response()->json($slabTypes);
+        }
+            
+        $slabTypes = $slabs->map(function($slab) {
+            return [
+                'id' => $slab->slabType->id,
+                'name' => $slab->slabType->name,
+                'qc_symbol' => $slab->slabType->qc_symbol,
+            ];
+        });
+        
+        return response()->json($slabTypes);
+    }
+
     // Methods for dynamic population (will be used in the view's JS)
     public function getArrivalLocationsByCompanyLocation($companyLocationId)
     {
@@ -334,5 +462,45 @@ class ProductionMachineAnalysisController extends Controller
             ->where('plant_id', $plantId)
             ->get();
         return response()->json($machines);
+    }
+
+    public function checkFixedProduct(Request $request)
+    {
+        $analysisReq = null;
+        if ($request->filled('analysis_request_id')) {
+            $analysisReq = \App\Models\Production\ProductionAnalysisRequest::with('jobOrder')->find($request->analysis_request_id);
+        }
+
+        $arrivalLocationId = $request->arrival_location_id ?: $analysisReq?->arrival_location_id;
+        $plantId = $request->plant_id ?: $analysisReq?->plant_id;
+        $date = $request->date ?: now()->format('Y-m-d');
+        $requestDate = $analysisReq?->request_date?->format('Y-m-d');
+        $excludeId = $request->exclude_id;
+        $excludeType = $request->exclude_type ?? 'machine';
+
+        $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
+            $arrivalLocationId,
+            $plantId,
+            $date,
+            $requestDate,
+            $excludeId,
+            $excludeType
+        );
+
+        if ($firstProduct) {
+            return response()->json([
+                'status' => 'success',
+                'is_fixed' => true,
+                'product_id' => $firstProduct->id,
+                'product_name' => $firstProduct->name,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'is_fixed' => false,
+            'suggested_product_id' => $analysisReq?->jobOrder?->product_id,
+            'product_id' => null,
+        ]);
     }
 }

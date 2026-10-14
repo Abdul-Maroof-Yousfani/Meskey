@@ -74,11 +74,22 @@ class ProductionOutputAnalysisController extends Controller
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
+
+        $fixedProduct = null;
+        if ($analysisRequest) {
+            $fixedProduct = ProductionAnalysis::getFirstProductForRun(
+                $analysisRequest->arrival_location_id,
+                $analysisRequest->plant_id,
+                now()->format('Y-m-d'),
+                $analysisRequest->request_date?->format('Y-m-d')
+            );
+        }
             
         return view('management.production.production_output_analysis.create', compact(
             'companyLocations', 
             'units', 
             'products', 
+            'fixedProduct',
             'productSlabTypes', 
             'preSelectedLocationId',
             'analysisRequests',
@@ -98,6 +109,21 @@ class ProductionOutputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
+            $matchingVoucherId = \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
+                ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
+                    $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
+                })
+                ->latest('id')
+                ->value('id');
+
+            $firstProduct = ProductionAnalysis::getFirstProductForRun(
+                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                $request->plant_id ?: $analysisReq?->plant_id,
+                $request->date,
+                $analysisReq?->request_date?->format('Y-m-d')
+            );
+            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
                 'analysis_date' => $request->date,
@@ -108,13 +134,14 @@ class ProductionOutputAnalysisController extends Controller
                 'inner_stitching' => $request->inner_stitching,
                 'outer_stitching' => $request->outer_stitching,
                 'remarks' => $request->remarks,
-                'product_id' => $request->product_id,
+                'product_id' => $finalProductId,
                 'crop_year_id' => $request->crop_year_id,
                 'brand_id' => $request->brand_id,
                 'variety' => $request->variety,
                 'bag_packing_id' => $request->bag_packing_id,
                 'production_analysis_type' => 'output',
                 'analysis_request_id' => $request->analysis_request_id ?? null,
+                'production_voucher_id' => $matchingVoucherId,
             ]);
 
             // If created against an Analysis Request, mark it completed & link Job Order if present
@@ -227,11 +254,21 @@ class ProductionOutputAnalysisController extends Controller
             ->where('arrival_location_id', $item->arrival_location_id)
             ->get();
 
+        $fixedProduct = ProductionAnalysis::getFirstProductForRun(
+            $item->arrival_location_id,
+            $item->plant_id,
+            $item->analysis_date,
+            $item->analysisRequest?->request_date?->format('Y-m-d'),
+            $item->id,
+            'analysis'
+        );
+
         return view('management.production.production_output_analysis.edit', compact(
             'item', 
             'productSlabTypes',
             'companyLocations', 
             'products',
+            'fixedProduct',
             'units',
             'analysisRequests',
             'arrivalLocations',
@@ -251,6 +288,16 @@ class ProductionOutputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
+            $firstProduct = ProductionAnalysis::getFirstProductForRun(
+                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                $request->plant_id ?: $analysisReq?->plant_id,
+                $request->date,
+                $analysisReq?->request_date?->format('Y-m-d'),
+                $analysis->id,
+                'analysis'
+            );
+            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+
             $analysis->update([
                 'analysis_date' => $request->date,
                 'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
@@ -260,7 +307,7 @@ class ProductionOutputAnalysisController extends Controller
                 'inner_stitching' => $request->inner_stitching,
                 'outer_stitching' => $request->outer_stitching,
                 'remarks' => $request->remarks,
-                'product_id' => $request->product_id,
+                'product_id' => $finalProductId,
                 'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
 
@@ -361,5 +408,45 @@ class ProductionOutputAnalysisController extends Controller
         });
         
         return response()->json($slabTypes);
+    }
+
+    public function checkFixedProduct(Request $request)
+    {
+        $analysisReq = null;
+        if ($request->filled('analysis_request_id')) {
+            $analysisReq = \App\Models\Production\ProductionAnalysisRequest::with('jobOrder')->find($request->analysis_request_id);
+        }
+
+        $arrivalLocationId = $request->arrival_location_id ?: $analysisReq?->arrival_location_id;
+        $plantId = $request->plant_id ?: $analysisReq?->plant_id;
+        $date = $request->date ?: now()->format('Y-m-d');
+        $requestDate = $analysisReq?->request_date?->format('Y-m-d');
+        $excludeId = $request->exclude_id;
+        $excludeType = $request->exclude_type ?? 'analysis';
+
+        $firstProduct = ProductionAnalysis::getFirstProductForRun(
+            $arrivalLocationId,
+            $plantId,
+            $date,
+            $requestDate,
+            $excludeId,
+            $excludeType
+        );
+
+        if ($firstProduct) {
+            return response()->json([
+                'status' => 'success',
+                'is_fixed' => true,
+                'product_id' => $firstProduct->id,
+                'product_name' => $firstProduct->name,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'is_fixed' => false,
+            'suggested_product_id' => $analysisReq?->jobOrder?->product_id,
+            'product_id' => null,
+        ]);
     }
 }

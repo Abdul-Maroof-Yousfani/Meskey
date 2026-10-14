@@ -116,14 +116,24 @@
             margin-bottom: 0;
             line-height: 1.3;
         }
+
+        .btn {
+            position: relative;
+        }
     </style>
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                    <h2 class="page-title">Quality Check Production Voucher #{{ $productionVoucher->prod_no }}</h2>
+            <div class="row w-100 mx-auto align-items-center mb-2">
+                <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+                    <h2 class="page-title m-0">Quality Check Production Voucher #{{ $productionVoucher->prod_no }}</h2>
                 </div>
-
+                <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4 text-right">
+                    <button type="button" 
+                        onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $productionVoucher->id) }}', 'QC Checklist - {{ $productionVoucher->prod_no }}', false, '85%')"
+                        class="btn btn-info position-relative" title="View Performed Analysis / QC Checklist">
+                        <i class="ft-eye mr-1"></i> View QC Checklist
+                    </button>
+                </div>
             </div>
             <div class="row">
                 <div class="col-12">
@@ -467,17 +477,17 @@
                                                                         <td>
                                                                             <input type="text" name="output_storage_location[]"
                                                                                 readonly class="form-control"
-                                                                                value="{{ $headProductOutput ? $headProductOutput->storageLocation->name : '' }}">
+                                                                                value="{{ $headProductOutput ? ($headProductOutput->storageLocation->name ?? '') : '' }}">
                                                                         </td>
                                                                         <td>
                                                                             <input type="text" name="output_brand[]" readonly
                                                                                 class="form-control"
-                                                                                value="{{ $headProductOutput ? $headProductOutput->brand->name : '' }}">
+                                                                                value="{{ $headProductOutput ? ($headProductOutput->brand->name ?? '') : '' }}">
                                                                         </td>
                                                                         <td>
                                                                             <input type="text" name="output_job_order[]" readonly
                                                                                 class="form-control"
-                                                                                value="{{ $headProductOutput ? $headProductOutput->jobOrder->job_order_no : '' }}">
+                                                                                value="{{ $headProductOutput ? ($headProductOutput->jobOrder->job_order_no ?? '') : '' }}">
                                                                         </td>
                                                                         <td>
                                                                             <textarea name="output_remarks[]" readonly
@@ -615,7 +625,7 @@
                                                                         <td>
                                                                             <input type="text" name="output_storage_location[]"
                                                                                 readonly class="form-control"
-                                                                                value="{{ $byProductOutput ? $byProductOutput->storageLocation->name : '' }}">
+                                                                                value="{{ $byProductOutput ? ($byProductOutput->storageLocation->name ?? '') : '' }}">
                                                                         </td>
                                                                         <td>
                                                                             <input type="text" name="output_brand[]" readonly
@@ -750,8 +760,12 @@
 
                                         <div class="row bottom-button-bar mt-4 w-100 mx-auto">
                                             <div class="col-12 text-right">
-                                                <!-- <a href="{{ route('production-voucher.index') }}" class="btn btn-danger mr-2">Cancel</a> -->
-                                                <button type="submit" class="btn btn-primary submitbutton" {{ $productionVoucher->status === 'qc_completed' ? 'disabled' : '' }}>Save Quality
+                                                <button type="button" 
+                                                    onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $productionVoucher->id) }}', 'QC Checklist - {{ $productionVoucher->prod_no }}', false, '85%')"
+                                                    class="btn btn-outline-info mr-2 position-relative" title="View Performed Analysis / QC Checklist">
+                                                    <i class="ft-eye mr-1"></i> View QC Checklist
+                                                </button>
+                                                <button type="submit" class="btn btn-primary submitbutton position-relative" {{ $productionVoucher->status === 'qc_completed' ? 'disabled' : '' }}>Save Quality
                                                     Check
                                                     Results
                                                 </button>

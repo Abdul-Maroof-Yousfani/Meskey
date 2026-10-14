@@ -7,6 +7,8 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\CropYear;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\BagPacking;
+use App\Models\Production\ProductionAnalysisRequest;
+use App\Models\Production\ProductionMachineAnalysis;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,6 +34,7 @@ class ProductionAnalysis extends Model
         'arrival_location_id',
         'plant_id',
         'analysis_request_id',
+        'production_voucher_id',
     ];
 
     protected $casts = [
@@ -101,5 +104,98 @@ class ProductionAnalysis extends Model
     public function analysisRequest()
     {
         return $this->belongsTo(ProductionAnalysisRequest::class, 'analysis_request_id');
+    }
+
+    public function productionVoucher()
+    {
+        return $this->belongsTo(ProductionVoucher::class, 'production_voucher_id');
+    }
+
+    /**
+     * Check if a previous analysis record exists with the same Arrival Location, Plant and Date.
+     * Searches both production_analysis (input/output) and production_machine_analysis.
+     *
+     * @param int|null $arrivalLocationId
+     * @param int|null $plantId
+     * @param string|null $date
+     * @param string|null $requestDate
+     * @param int|null $excludeId
+     * @param string|null $excludeType ('analysis' or 'machine')
+     * @return \App\Models\Product|null
+     */
+    public static function getFirstProductForRun($arrivalLocationId, $plantId, $date, $requestDate = null, $excludeId = null, $excludeType = null)
+    {
+        if (!$arrivalLocationId || !$plantId) {
+            return null;
+        }
+
+        $dates = array_filter(array_unique([
+            $date ? \Carbon\Carbon::parse($date)->format('Y-m-d') : null,
+            $requestDate ? \Carbon\Carbon::parse($requestDate)->format('Y-m-d') : null,
+        ]));
+
+        if (empty($dates)) {
+            return null;
+        }
+
+        $matchingReqIds = ProductionAnalysisRequest::where('arrival_location_id', $arrivalLocationId)
+            ->where('plant_id', $plantId)
+            ->where(function($q) use ($dates) {
+                foreach ($dates as $d) {
+                    $q->orWhereDate('request_date', $d);
+                }
+            })
+            ->pluck('id');
+
+        // 1. Search in production_analysis (input and output)
+        $firstPA = self::where('arrival_location_id', $arrivalLocationId)
+            ->where('plant_id', $plantId)
+            ->whereNotNull('product_id')
+            ->where(function ($q) use ($dates, $matchingReqIds) {
+                $q->where(function($sub) use ($dates) {
+                    foreach ($dates as $d) {
+                        $sub->orWhereDate('analysis_date', $d);
+                    }
+                });
+                if ($matchingReqIds->isNotEmpty()) {
+                    $q->orWhereIn('analysis_request_id', $matchingReqIds);
+                }
+            })
+            ->when($excludeType === 'analysis' && $excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->orderBy('id', 'asc')
+            ->first();
+
+        // 2. Search in production_machine_analysis
+        $firstPMA = ProductionMachineAnalysis::where('arrival_location_id', $arrivalLocationId)
+            ->where('plant_id', $plantId)
+            ->whereNotNull('product_id')
+            ->where(function ($q) use ($dates, $matchingReqIds) {
+                $q->where(function($sub) use ($dates) {
+                    foreach ($dates as $d) {
+                        $sub->orWhereDate('analysis_date', $d);
+                    }
+                });
+                if ($matchingReqIds->isNotEmpty()) {
+                    $q->orWhereIn('analysis_request_id', $matchingReqIds);
+                }
+            })
+            ->when($excludeType === 'machine' && $excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($firstPA && $firstPMA) {
+            $earlier = ($firstPA->created_at <= $firstPMA->created_at) ? $firstPA : $firstPMA;
+            return $earlier->product;
+        }
+
+        if ($firstPA) {
+            return $firstPA->product;
+        }
+
+        if ($firstPMA) {
+            return $firstPMA->product;
+        }
+
+        return null;
     }
 }

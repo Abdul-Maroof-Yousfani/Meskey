@@ -29,6 +29,12 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
+                    <label>Product (Commodity):</label>
+                    <p class="form-control-static">{{ $item->product->name ?? 'N/A' }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
                     <label>Machine:</label>
                     <p class="form-control-static">{{ $item->machine->name ?? 'N/A' }}</p>
                 </div>
