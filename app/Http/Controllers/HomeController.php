@@ -214,6 +214,12 @@ class HomeController extends Controller
 
         $authUser = auth()->user();
         $isSuperAdmin = $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $request->company_id);
+        }
 
         $type = $request->get('type');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
@@ -235,10 +241,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->where(function ($q) {
@@ -256,10 +261,9 @@ class HomeController extends Controller
                     // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                     //     return $q->where('location_id', auth()->user()->company_location_id);
                     // })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
@@ -282,10 +286,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     // ->whereIn('first_qc_status', ['pending', 'resampling'])
@@ -308,10 +311,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->whereHas('unloadingLocation', function ($q) {
@@ -328,10 +330,9 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -355,10 +356,9 @@ class HomeController extends Controller
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -385,12 +385,9 @@ class HomeController extends Controller
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
-                            $sq->where(function ($sq) use ($authUser) {
-                                $sq->where('decision_id', $authUser->id)
-                                    ->orWhere('decision_id', $authUser->parent_user_id);
-                            });
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -417,12 +414,9 @@ class HomeController extends Controller
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
-                            $sq->where(function ($sq) use ($authUser) {
-                                $sq->where('decision_id', $authUser->id)
-                                    ->orWhere('decision_id', $authUser->parent_user_id);
-                            });
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -446,10 +440,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->whereHas('unloadingLocation', function ($q) {
@@ -473,12 +466,9 @@ class HomeController extends Controller
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
-                            $sq->where(function ($sq) use ($authUser) {
-                                $sq->where('decision_id', $authUser->id)
-                                    ->orWhere('decision_id', $authUser->parent_user_id);
-                            });
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -520,10 +510,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->latest()
@@ -540,10 +529,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     // ->whereHas('unloadingLocation', function ($q) {
@@ -564,10 +552,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->whereHas('unloadingLocation', function ($q) {
@@ -594,12 +581,9 @@ class HomeController extends Controller
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
-                            $sq->where(function ($sq) use ($authUser) {
-                                $sq->where('decision_id', $authUser->id)
-                                    ->orWhere('decision_id', $authUser->parent_user_id);
-                            });
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -625,12 +609,9 @@ class HomeController extends Controller
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
-                            $sq->where(function ($sq) use ($authUser) {
-                                $sq->where('decision_id', $authUser->id)
-                                    ->orWhere('decision_id', $authUser->parent_user_id);
-                            });
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -660,12 +641,9 @@ class HomeController extends Controller
                             $sq->where('location_id', $request->location_id);
                         });
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->whereHas('arrivalTicket', function ($sq) use ($authUser) {
-                            $sq->where(function ($sq) use ($authUser) {
-                                $sq->where('decision_id', $authUser->id)
-                                    ->orWhere('decision_id', $authUser->parent_user_id);
-                            });
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('purchaser_id') && $request->purchaser_id != '', function ($q) use ($request) {
@@ -707,10 +685,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('arrival_tickets.location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('arrival_tickets.decision_id', $authUser->id)
-                                ->orWhere('arrival_tickets.decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('arrival_tickets.decision_id', $decisionUserIds);
                         });
                     })
                     ->when($request->has('arrival_location_id') && $request->arrival_location_id != '', function ($q) use ($request) {
@@ -740,10 +717,9 @@ class HomeController extends Controller
                             $sq->where('arrival_location_id', $request->arrival_location_id);
                         });
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     // ->whereBetween('created_at', $dateRange)
@@ -761,10 +737,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
@@ -781,10 +756,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
@@ -801,10 +775,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
@@ -823,10 +796,9 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
-                    ->when(canAccess('arrival-stats-only-mine-and-parent-data') && !$isSuperAdmin, function ($q) use ($authUser) {
-                        return $q->where(function ($sq) use ($authUser) {
-                            $sq->where('decision_id', $authUser->id)
-                                ->orWhere('decision_id', $authUser->parent_user_id);
+                    ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                        return $q->where(function ($sq) use ($decisionUserIds) {
+                            $sq->whereIn('decision_id', $decisionUserIds);
                         });
                     })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
