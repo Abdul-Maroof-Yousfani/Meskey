@@ -90,7 +90,7 @@
                                 <th style="width: 18%;">Type</th>
                                 <th style="width: 26%;">Value</th>
                                 <th style="width: 18%;">Group</th>
-                                <th style="width: 12%; text-align: center;">Action</th>
+                                {{-- <th style="width: 12%; text-align: center;">Action</th> --}}
                             </tr>
                         </thead>
                         <tbody id="companySettingsTbody">
@@ -98,10 +98,10 @@
                                 <tr class="setting-row" data-id="{{ $setting->id }}">
                                     <td>
                                         <input type="hidden" name="settings[{{ $idx }}][id]" class="setting-id-input" value="{{ $setting->id }}">
-                                        <input type="text" name="settings[{{ $idx }}][key]" value="{{ $setting->key }}" class="form-control form-control-sm setting-key-input" placeholder="e.g. stock_check" required />
+                                        <input type="text" name="settings[{{ $idx }}][key]" value="{{ $setting->key }}" class="form-control form-control-sm setting-key-input" placeholder="e.g. stock_check" required readonly/>
                                     </td>
                                     <td>
-                                        <select name="settings[{{ $idx }}][type]" class="form-control form-control-sm setting-type-select">
+                                        <select name="settings[{{ $idx }}][type]" class="form-control form-control-sm setting-type-select" readonly disabled>
                                             <option value="string" {{ $setting->type === 'string' ? 'selected' : '' }}>string</option>
                                             <option value="boolean" {{ $setting->type === 'boolean' ? 'selected' : '' }}>boolean</option>
                                             <option value="integer" {{ $setting->type === 'integer' ? 'selected' : '' }}>integer</option>
@@ -141,20 +141,20 @@
                                     <td>
                                         <input type="text" name="settings[{{ $idx }}][group]" value="{{ $setting->group }}" class="form-control form-control-sm setting-group-input" placeholder="e.g. inventory" />
                                     </td>
-                                    <td class="text-center align-middle">
+                                     {{-- <td class="text-center align-middle">
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-success btn-save-setting" data-id="{{ $setting->id }}" title="Save Setting">
+                                           <button type="button" class="btn btn-sm btn-outline-success btn-save-setting" data-id="{{ $setting->id }}" title="Save Setting">
                                                 <i class="ft-check font-medium-1"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger btn-delete-setting" data-id="{{ $setting->id }}" title="Delete Setting">
                                                 <i class="ft-trash font-medium-1"></i>
                                             </button>
                                         </div>
-                                    </td>
+                                    </td> --}}
                                 </tr>
                             @empty
                                 <tr id="noSettingsRow">
-                                    <td colspan="5" class="text-center text-muted py-3">
+                                    <td colspan="4" class="text-center text-muted py-3">
                                         <em>No custom settings defined for this company yet. Click <strong>Add Setting</strong> to create one.</em>
                                     </td>
                                 </tr>
@@ -234,6 +234,16 @@ $(document).ready(function() {
         $valCell.html(renderValueInput(inputName, selectedType, currentVal));
     });
 
+    // <td class="text-center align-middle">
+    //     <div class="btn-group" role="group">
+    //         <button type="button" class="btn btn-sm btn-outline-success btn-save-setting" data-id="" title="Save Setting">
+    //             <i class="ft-check font-medium-1"></i>
+    //         </button>
+    //         <button type="button" class="btn btn-sm btn-outline-danger btn-delete-setting" data-id="" title="Delete Setting">
+    //             <i class="ft-trash font-medium-1"></i>
+    //         </button>
+    //     </div>
+    // </td>
     // Add new setting row
     $('#btnAddNewSetting').on('click', function() {
         $('#noSettingsRow').remove();
@@ -259,16 +269,6 @@ $(document).ready(function() {
                 </td>
                 <td>
                     <input type="text" name="settings[${rowIdx}][group]" value="general" class="form-control form-control-sm setting-group-input" placeholder="e.g. inventory" />
-                </td>
-                <td class="text-center align-middle">
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-success btn-save-setting" data-id="" title="Save Setting">
-                            <i class="ft-check font-medium-1"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-setting" data-id="" title="Delete Setting">
-                            <i class="ft-trash font-medium-1"></i>
-                        </button>
-                    </div>
                 </td>
             </tr>
         `;
