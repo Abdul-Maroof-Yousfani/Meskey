@@ -1,4 +1,4 @@
-<form method="POST" action="{{ route('company.update', $company->id) }}" id="ajaxSubmit" enctype="multipart/form-data"> 
+<form method="POST" action="{{ route('company.update', $company->id) }}" id="ajaxSubmit" enctype="multipart/form-data" novalidate> 
 @method('PUT')
 <input type="hidden" id="listRefresh" value="{{ route('get.company') }}" />
 <input type="hidden" name="deleted_settings" id="deletedSettingsInput" value="" />
@@ -174,7 +174,7 @@
                                                             <div class="input-group-prepend">
                                                                 <span class="input-group-text bg-light text-muted px-2" style="font-size: 0.75rem;"><i class="ft-hash"></i></span>
                                                             </div>
-                                                            <input type="text" name="settings[{{ $sIdx }}][key]" value="{{ $setting->key }}" class="form-control form-control-sm setting-key-input font-weight-bold" style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #f8fafc; font-size: 0.82rem;" placeholder="e.g. stock_check" required readonly />
+                                                            <input type="text" name="settings[{{ $sIdx }}][key]" value="{{ $setting->key }}" class="form-control form-control-sm setting-key-input font-weight-bold" style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #f8fafc; font-size: 0.82rem;" placeholder="e.g. stock_check" readonly />
                                                         </div>
                                                     </td>
                                                     <td class="align-middle">
@@ -272,6 +272,7 @@ $(document).ready(function() {
 
     // Unbind any previous event handlers to prevent duplicate execution when modal is reopened
     $(document).off('.companySettings');
+    $('#ajaxSubmit').off('.companySettings');
 
     // Helper to render type-specific input field
     function renderValueInput(inputName, type, currentVal) {
@@ -371,7 +372,7 @@ $(document).ready(function() {
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-light text-muted px-2" style="font-size: 0.75rem;"><i class="ft-hash"></i></span>
                         </div>
-                        <input type="text" name="settings[${rowIdx}][key]" value="" class="form-control form-control-sm setting-key-input font-weight-bold" style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem;" placeholder="e.g. setting_key" required />
+                        <input type="text" name="settings[${rowIdx}][key]" value="" class="form-control form-control-sm setting-key-input font-weight-bold" style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem;" placeholder="e.g. setting_key" autocomplete="off" />
                     </div>
                 </td>
                 <td class="align-middle">
@@ -416,7 +417,6 @@ $(document).ready(function() {
             <li class="nav-item">
                 <a class="nav-link py-1 px-3 btn-filter-group font-weight-bold" href="javascript:void(0);" data-group="${groupName}" style="font-size: 0.85rem; border-radius: 4px;">
                     <i class="ft-folder mr-1 text-primary"></i> ${displayName}
-                    <span class="badge badge-pill badge-primary ml-1 count-${groupName}">0</span>
                 </a>
             </li>
         `;
@@ -487,7 +487,9 @@ $(document).ready(function() {
         var $row = $(createNewSettingRowHtml(rowIdx, groupName));
         $tbody.append($row);
 
-        $row.find('.setting-key-input').focus();
+        setTimeout(function() {
+            $row.find('.setting-key-input').focus();
+        }, 50);
         updateGroupCounts();
     }
 
@@ -498,17 +500,44 @@ $(document).ready(function() {
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'New Settings Group',
-                input: 'text',
-                inputLabel: 'Enter Group Name (e.g. notifications, api, security, custom_portal)',
-                inputPlaceholder: 'Enter group name...',
+                title: '<div class="d-flex align-items-center justify-content-center text-dark"><i class="ft-folder-plus text-primary mr-1" style="font-size: 1.3rem;"></i> <span style="font-size: 1.15rem; font-weight: 600;">New Settings Group</span></div>',
+                html: `
+                    <div class="text-left px-2 pt-1" style="text-align: left !important;">
+                        <label class="font-weight-bold text-dark mb-1 d-block" style="font-size: 0.88rem; text-align: left;">
+                            Group Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="swalNewGroupName" class="form-control" placeholder="e.g. notifications, api, security, custom_portal" style="font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 4px;" autocomplete="off">
+                        <small class="form-text text-muted mt-1 d-block" style="font-size: 0.78rem; text-align: left; line-height: 1.4;">
+                            Enter a unique category name to group your company settings (e.g. <code>notifications</code>, <code>api</code>, <code>security</code>).
+                        </small>
+                    </div>
+                `,
                 showCancelButton: true,
-                confirmButtonText: 'Create Group',
+                confirmButtonText: '<i class="ft-check mr-1"></i> Create Group',
                 cancelButtonText: 'Cancel',
-                inputValidator: (value) => {
-                    if (!value || !value.trim()) {
-                        return 'Group name is required!';
+                confirmButtonColor: '#7367f0',
+                cancelButtonColor: '#82868b',
+                focusConfirm: false,
+                didOpen: () => {
+                    const input = document.getElementById('swalNewGroupName');
+                    if (input) {
+                        input.focus();
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                Swal.clickConfirm();
+                            }
+                        });
                     }
+                },
+                preConfirm: () => {
+                    const val = document.getElementById('swalNewGroupName').value;
+                    if (!val || !val.trim()) {
+                        Swal.showValidationMessage('Group name is required!');
+                        return false;
+                    }
+                    return val.trim();
                 }
             }).then((result) => {
                 if (result.isConfirmed && result.value) {
@@ -645,6 +674,49 @@ $(document).ready(function() {
                 }
             });
         });
+    });
+
+    // Clear validation highlighting on key input
+    $(document).on('input.companySettings', '.setting-key-input', function() {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Form submission validation & cleanup of empty new rows
+    $('#ajaxSubmit').on('submit.companySettings', function(e) {
+        var hasError = false;
+        $('.new-setting-row').each(function() {
+            var $row = $(this);
+            var keyVal = ($row.find('.setting-key-input').val() || '').trim();
+            var valVal = ($row.find('.setting-value-input').val() || '').trim();
+
+            if (!keyVal && !valVal) {
+                // Completely empty row, discard before submit
+                $row.remove();
+            } else if (!keyVal) {
+                hasError = true;
+                var grp = $row.data('group');
+                $('.btn-filter-group[data-group="' + grp + '"]').trigger('click');
+                $row.find('.setting-key-input').addClass('is-invalid').focus();
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Please enter a key for all settings or delete empty rows.');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Key Required',
+                        text: 'Please enter a key for the new setting or delete the row.',
+                        confirmButtonColor: '#7367f0'
+                    });
+                }
+                return false;
+            }
+        });
+
+        if (hasError) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }
     });
 
     // Initial group count update
