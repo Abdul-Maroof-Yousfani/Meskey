@@ -92,7 +92,7 @@
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>
-                        {{ $item->decisionBy->name ?? 'N/A'  }}
+                        {{ $item?->decisionBy?->name ?? 'N/A'  }}
                     </td>
                     @if (in_array($type, [
                             'new_tickets',
