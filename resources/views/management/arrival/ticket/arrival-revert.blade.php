@@ -106,6 +106,7 @@
                                                         data-supplier-name="{{ $order->supplier->name ?? '' }}"
                                                         data-created-by-id="{{ $order->created_by ?? '' }}"
                                                         data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
+                                                        data-decision-id="{{ $order->decision_of_id ?? $order->created_by ?? '' }}"
                                                         data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
                                                         data-sauda-type-id="{{ $order->saudaType->id ?? '' }}"
                                                         data-created-at="{{ $order->created_at ?? '' }}"
@@ -217,9 +218,18 @@
                                     <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Decision Of:</label>
-                                            <input type="text" placeholder="Decision Of" class="form-control" disabled
-                                                autocomplete="off"
-                                                value="{{ $arrivalTicket->decisionBy->name ?? 'N/A' }}" />
+                                            <select name="decision_id_display" id="decision_id"
+                                                class="form-control select2 {{ $arrivalTicket->arrival_purchase_order_id ? 'disabled-field' : '' }}"
+                                                {{ $arrivalTicket->arrival_purchase_order_id ? 'disabled' : '' }}>
+                                                <option value="" hidden>Decision Of</option>
+                                                @foreach ($accountsOf as $account)
+                                                    <option value="{{ $account->id }}" @selected($arrivalTicket->decision_id == $account->id)>
+                                                        {{ $account->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <input type="hidden" name="decision_id" id="decision_id_hidden"
+                                                value="{{ $arrivalTicket->decision_id }}">
                                         </div>
                                     </div>
 
@@ -347,7 +357,7 @@
                                     <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>First Weighbridge Weight:</label>
-                                            <input type="text" name="first_weight" placeholder="First Weight"
+                                            <input type="text" name="first_weight" id="first_weight" placeholder="First Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->first_weight }}" />
                                         </div>
@@ -355,7 +365,7 @@
                                     <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>2nd Weighbridge Weight: </label>
-                                            <input type="text" name="second_weight" placeholder="Second Weight"
+                                            <input type="text" name="second_weight" id="second_weight" placeholder="Second Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->second_weight }}" />
                                         </div>
@@ -363,9 +373,13 @@
                                     <div class="col-xs-6 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Net Weight: </label>
-                                            <input type="text" name="net_weight" disabled placeholder="Net Weight"
+                                            <input type="text" name="net_weight" id="net_weight" readonly placeholder="Net Weight"
                                                 class="form-control" autocomplete="off"
                                                 value="{{ $arrivalTicket->net_weight }}" />
+                                            <div class="error-message text-danger" style="display: none;">Please
+                                                check your
+                                                values. Net weight
+                                                cannot be negative.</div>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12 text-right">
@@ -2117,10 +2131,10 @@
         initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
 
-        $('#first_weight, #second_weight').on('input', function () {
-            console.log('input changed');
+        $(document).on('input change keyup paste', '#first_weight, #second_weight', function () {
             calculateNetWeight();
         });
+        calculateNetWeight();
 
         calculateSampleMoney();
 
@@ -2291,6 +2305,9 @@
         $(document).on('change', '#product_id', function () {
             $('#product_id_hidden').val($(this).val());
         });
+        $(document).on('change', '#decision_id', function () {
+            $('#decision_id_hidden').val($(this).val());
+        });
 
         $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
             // First reset all form fields
@@ -2305,6 +2322,7 @@
             var supplierId = selectedOption.data('supplier-id');
             var productId = selectedOption.data('product-id');
             var createdById = selectedOption.data('created-by-id');
+            var decisionId = selectedOption.data('decision-id');
             var saudaTypeName = selectedOption.data('sauda-type-name');
             var saudaTypeId = selectedOption.data('sauda-type-id');
             var createdAt = selectedOption.data('created-at');
@@ -2325,8 +2343,11 @@
             }
 
             // Set decision maker selection
-            if (createdById) {
-                $('#decision_id').val(createdById).trigger('change');
+            var targetDecisionId = decisionId || createdById;
+            if (targetDecisionId) {
+                $('#decision_id').val(targetDecisionId).trigger('change');
+                $('#decision_id').prop('disabled', true).addClass('disabled-field');
+                $('#decision_id_hidden').val(targetDecisionId);
             }
 
             console.log({
@@ -2354,7 +2375,9 @@
 
             $('#product_id').prop('disabled', false).removeClass('disabled-field');
             $('#accounts_of').prop('disabled', false).removeClass('disabled-field');
-
+            $('#decision_id').val('').trigger('change');
+            $('#decision_id_hidden').val('');
+            $('#decision_id').prop('disabled', false).removeClass('disabled-field');
         }
 
         var selectedOption1 = $('[name="arrival_purchase_order_id"]').find('option:selected');
@@ -2363,6 +2386,7 @@
         }
         $('#product_id').prop('disabled', true).addClass('disabled-field');
         $('#accounts_of').prop('disabled', true).addClass('disabled-field');
+        $('#decision_id').prop('disabled', true).addClass('disabled-field');
 
     });
 </script>
