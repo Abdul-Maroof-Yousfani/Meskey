@@ -11,14 +11,19 @@
                     <h2 class="page-title"> Customers List</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('customer.import-modal') }}','Import Customers')" type="button"
-                        class="btn btn-success position-relative mr-1">
+                    @canAccess('customer-import')
+                    <button onclick="openModal(this,'{{ route('customer.import-modal') }}','Import Customers')"
+                        type="button" class="btn btn-success position-relative mr-1">
                         Import Customers
                     </button>
+                    @endcanAccess
+
+                    @canAccess('customer-create')
                     <button onclick="openModal(this,'{{ route('customer.create') }}','Add Customer')" type="button"
                         class="btn btn-primary position-relative ">
                         Create Customer
                     </button>
+                    @endcanAccess
                 </div>
             </div>
             <div class="row">
@@ -75,7 +80,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.customer') }}`)
         });
     </script>

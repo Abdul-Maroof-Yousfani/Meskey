@@ -17,6 +17,15 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
+
+    function __construct()
+    {
+        $this->middleware('check.company:customers', ['only' => ['index']]);
+        $this->middleware('check.company:customer-list', ['only' => ['getList']]);
+        $this->middleware('check.company:customer-create', ['only' => ['create', 'store']]);
+        $this->middleware('check.company:customer-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('check.company:customer-delete', ['only' => ['destroy']]);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -32,7 +41,7 @@ class CustomerController extends Controller
     {
         $Customers = Customer::with(['account.parent'])
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%'.$request->search.'%';
+                $searchTerm = '%' . $request->search . '%';
 
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('name', 'like', $searchTerm)
@@ -120,7 +129,7 @@ class CustomerController extends Controller
                 $existingAccount = Account::where('company_id', $companyId)
                     ->where(function ($q) {
                         $q->where('table_name', 'customers')
-                          ->orWhere('hierarchy_path', 'like', '1-5-%');
+                            ->orWhere('hierarchy_path', 'like', '1-5-%');
                     })
                     ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
                     ->first();
@@ -136,7 +145,7 @@ class CustomerController extends Controller
 
             $customer = Customer::create($requestData);
 
-            if (! empty($request->company_bank_name)) {
+            if (!empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
                     if (empty($bankName)) {
                         continue;
@@ -153,7 +162,7 @@ class CustomerController extends Controller
                 }
             }
 
-            if (! empty($request->owner_bank_name)) {
+            if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
                     if (empty($bankName)) {
                         continue;
@@ -178,12 +187,12 @@ class CustomerController extends Controller
                         continue;
                     }
                     CustomerConsignee::create([
-                        'customer_id'    => $customer->id,
-                        'name'           => $consigneeName,
-                        'address'        => $request->consignee_address[$key] ?? '',
-                        'contact'        => $request->consignee_contact[$key] ?? '',
+                        'customer_id' => $customer->id,
+                        'name' => $consigneeName,
+                        'address' => $request->consignee_address[$key] ?? '',
+                        'contact' => $request->consignee_contact[$key] ?? '',
                         'contact_person' => $request->consignee_contact_person[$key] ?? '',
-                        'email'          => $request->consignee_email[$key] ?? '',
+                        'email' => $request->consignee_email[$key] ?? '',
                     ]);
                 }
             }
@@ -193,20 +202,20 @@ class CustomerController extends Controller
                     ->where(function ($q) use ($companyName, $ownerName) {
                         $q->where(function ($sq) use ($companyName, $ownerName) {
                             $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
-                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
                         })
-                        ->orWhere(function ($sq) use ($companyName, $ownerName) {
-                            $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
-                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
-                        })
-                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)]);
+                            ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                                $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                                    ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                            })
+                            ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)]);
                     })
                     ->first();
 
                 $existingBrokerAccount = Account::where('company_id', $companyId)
                     ->where(function ($q) {
                         $q->where('table_name', 'brokers')
-                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                            ->orWhere('hierarchy_path', 'like', '2-3-%');
                     })
                     ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
                     ->first();
@@ -351,7 +360,7 @@ class CustomerController extends Controller
                 $existingAccount = Account::where('company_id', $companyId)
                     ->where(function ($q) {
                         $q->where('table_name', 'customers')
-                          ->orWhere('hierarchy_path', 'like', '1-5-%');
+                            ->orWhere('hierarchy_path', 'like', '1-5-%');
                     })
                     ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
                     ->first();
@@ -403,20 +412,20 @@ class CustomerController extends Controller
                     ->where(function ($q) use ($companyName, $ownerName) {
                         $q->where(function ($sq) use ($companyName, $ownerName) {
                             $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)])
-                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
                         })
-                        ->orWhere(function ($sq) use ($companyName, $ownerName) {
-                            $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
-                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
-                        })
-                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)]);
+                            ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                                $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
+                                    ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower($ownerName)]);
+                            })
+                            ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)]);
                     })
                     ->first();
 
                 $existingBrokerAccount = Account::where('company_id', $companyId)
                     ->where(function ($q) {
                         $q->where('table_name', 'brokers')
-                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                            ->orWhere('hierarchy_path', 'like', '2-3-%');
                     })
                     ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($companyName)])
                     ->first();
@@ -583,7 +592,7 @@ class CustomerController extends Controller
         }
 
         $toDelete = array_diff($existingIds, $updatedIds);
-        if (! empty($toDelete)) {
+        if (!empty($toDelete)) {
             $customer->{$relation}()->whereIn('id', $toDelete)->delete();
         }
     }
@@ -709,7 +718,7 @@ class CustomerController extends Controller
             $existingAccount = Account::where('company_id', $meskeyCompanyId)
                 ->where(function ($q) {
                     $q->where('table_name', 'customers')
-                      ->orWhere('hierarchy_path', 'like', '1-5-%');
+                        ->orWhere('hierarchy_path', 'like', '1-5-%');
                 })
                 ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
                 ->first();
@@ -777,20 +786,20 @@ class CustomerController extends Controller
                     ->where(function ($q) use ($companyName, $ownerName) {
                         $q->where(function ($sq) use ($companyName, $ownerName) {
                             $sq->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim($companyName))])
-                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))]);
+                                ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))]);
                         })
-                        ->orWhere(function ($sq) use ($companyName, $ownerName) {
-                            $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
-                               ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))]);
-                        })
-                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))]);
+                            ->orWhere(function ($sq) use ($companyName, $ownerName) {
+                                $sq->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
+                                    ->whereRaw('LOWER(TRIM(owner_name)) = ?', [strtolower(trim($ownerName))]);
+                            })
+                            ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))]);
                     })
                     ->first();
 
                 $existingBrokerAccount = Account::where('company_id', $meskeyCompanyId)
                     ->where(function ($q) {
                         $q->where('table_name', 'brokers')
-                          ->orWhere('hierarchy_path', 'like', '2-3-%');
+                            ->orWhere('hierarchy_path', 'like', '2-3-%');
                     })
                     ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($companyName))])
                     ->first();
