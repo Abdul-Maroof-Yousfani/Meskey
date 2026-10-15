@@ -13,7 +13,14 @@ class ProductController extends Controller
 {
 
 
-
+    function __construct()
+    {
+        $this->middleware('check.company:product', ['only' => ['index']]);
+        $this->middleware('check.company:product-list', ['only' => ['getList']]);
+        $this->middleware('check.company:product-create', ['only' => ['create', 'store']]);
+        $this->middleware('check.company:product-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('check.company:product-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         return view('management.master.product.index');
