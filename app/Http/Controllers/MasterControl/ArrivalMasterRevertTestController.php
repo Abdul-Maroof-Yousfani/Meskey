@@ -17,7 +17,10 @@ use App\Services\AuditLogService;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use Illuminate\Validation\ValidationException;
+use App\Models\Master\ProductSlabType;
+
 class ArrivalMasterRevertTestController extends Controller
+
 {
 
     function __construct()
@@ -113,7 +116,9 @@ class ArrivalMasterRevertTestController extends Controller
                 $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
             }
 
-            $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+            $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)
+                ->ordered()
+                ->get();
             foreach ($results as $result) {
                 $matchingSlabs = [];
                 if ($productSlabCalculations) {
