@@ -129,7 +129,7 @@
                 </div>
                 <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4 text-right">
                     <button type="button" 
-                        onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $productionVoucher->id) }}', 'QC Checklist - {{ $productionVoucher->prod_no }}', false, '85%')"
+                        onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $productionVoucher->id) }}', 'QC Checklist - {{ $productionVoucher->prod_no }}', false, '50%')"
                         class="btn btn-info position-relative" title="View Performed Analysis / QC Checklist">
                         <i class="ft-eye mr-1"></i> View QC Checklist
                     </button>
@@ -826,7 +826,7 @@
                                         <div class="row bottom-button-bar mt-4 w-100 mx-auto">
                                             <div class="col-12 text-right">
                                                 <button type="button" 
-                                                    onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $productionVoucher->id) }}', 'QC Checklist - {{ $productionVoucher->prod_no }}', false, '85%')"
+                                                    onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $productionVoucher->id) }}', 'QC Checklist - {{ $productionVoucher->prod_no }}', false, '50%')"
                                                     class="btn btn-outline-info mr-2 position-relative" title="View Performed Analysis / QC Checklist">
                                                     <i class="ft-eye mr-1"></i> View QC Checklist
                                                 </button>

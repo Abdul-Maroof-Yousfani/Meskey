@@ -56,6 +56,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Reports\{
     TransactionController
 };
+use App\Http\Controllers\DatabaseBackupController;
 
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -432,6 +433,9 @@ Route::group(['middleware' => ['auth']], function () {
         $request->session()->regenerateToken();
         return redirect('/');
     })->name('logouts');
+    // Database Backup Route
+    Route::get('/download-database-zip', [DatabaseBackupController::class, 'downloadDatabaseZip'])->name('database.download-zip');
+    Route::get('/download-db-zip', [DatabaseBackupController::class, 'downloadDatabaseZip'])->name('database.download-db-zip');
 });
 
 Route::get('/migrate-refresh', function () {
@@ -466,6 +470,7 @@ Route::get('/clear-all-cache', function () {
         'details' => $output
     ]);
 });
+
 
 Route::get("arrival-po", function () {
     $purchase_orders = ArrivalPurchaseOrder::all();

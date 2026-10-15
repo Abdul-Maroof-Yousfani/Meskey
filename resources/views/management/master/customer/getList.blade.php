@@ -1,3 +1,4 @@
+@canAccess('customer-list')
 <table class="table m-0">
     <thead>
         <tr>
@@ -13,6 +14,7 @@
         </tr>
     </thead>
     <tbody>
+        
         @if (count($Customers) != 0)
             @foreach ($Customers as $key => $row)
                 <tr>
@@ -72,11 +74,12 @@
                         {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
-
-                        <a onclick="openModal(this,'{{ route('customer.edit', $row->id) }}','Edit Customer')"
-                            class="info p-1 text-center mr-2 position-relative ">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
+                        @canAccess('customer-edit')
+                            <a onclick="openModal(this,'{{ route('customer.edit', $row->id) }}','Edit Customer')"
+                                class="info p-1 text-center mr-2 position-relative ">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
+                        @endcan
 
                         {{-- @can('role-delete')
                         <a onclick="deletemodal('{{ route('customer.destroy', $row->id) }}','{{ route('get.customer') }}')"
@@ -120,3 +123,4 @@
         {{ $Customers->links() }}
     </div>
 </div>
+@endcanAccess
