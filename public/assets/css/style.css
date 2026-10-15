@@ -1,4 +1,8 @@
 /*Modal*/
+.table{
+  color: black !important;
+  font-weight: 500 !important;
+}
 .model {
   display: none;
   position: fixed;
