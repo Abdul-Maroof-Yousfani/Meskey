@@ -502,3 +502,7 @@ Route::middleware(['auth', 'web', 'check.company'])->prefix('direct-payment-vouc
     Route::post('sale/store', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'direct_payment_voucher_sale_store']);
     Route::put('sale/{payment_voucher}', [\App\Http\Controllers\Finance\PaymentVoucherController::class, 'update_direct_sale']);
 });
+
+// Universal Audit Logs Modal Route
+Route::middleware(['auth', 'web', 'check.company'])->get('audit-logs/modal/{modelType}/{id}', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->name('audit-logs.modal');
+

@@ -869,7 +869,6 @@ class TicketController extends Controller
      */
     public function getRevertAuditLogs(Request $request, $id)
     {
-        $request->merge(['exclude_create' => 1]);
         return $this->getAuditLogs($request, $id);
     }
 
@@ -888,54 +887,87 @@ class TicketController extends Controller
         ])->findOrFail($id);
 
         $section = $request->get('section', 'ticket_detail');
-        $excludeCreate = $request->boolean('exclude_create', false)
-            || $request->get('exclude_create') == '1'
-            || str_contains($request->url(), 'revert')
-            || str_contains($request->headers->get('referer', ''), 'revert');
+        $excludeCreate = $request->boolean('exclude_create', false);
 
-        $unloadingId = $ticket->unloadingLocation?->id;
-        $firstWbId = $ticket->firstWeighbridge?->id;
-        $secondWbId = $ticket->secondWeighbridge?->id;
-        $approvalId = $ticket->approvals?->id;
-        $freightId = $ticket->freight?->id;
+        // Always show create logs for sub-sections (location transfer, first/second weighbridge, approvals, freight, all)
+        if (in_array($section, ['location_transfer', 'first_weighbridge', 'half_full_approved', 'second_weighbridge', 'freight', 'all'])) {
+            $excludeCreate = false;
+        }
+
+        $getIdsForModel = function ($modelClass, $foreignKey, $ticketId) {
+            if (!class_exists($modelClass)) return [];
+            try {
+                $query = in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))
+                    ? $modelClass::withTrashed()
+                    : $modelClass::query();
+                return $query->where($foreignKey, $ticketId)->pluck('id')->toArray();
+            } catch (\Throwable $e) {
+                return [];
+            }
+        };
+
+        $unloadingIds = $getIdsForModel(\App\Models\Arrival\ArrivalLocationTransfer::class, 'arrival_ticket_id', $ticket->id);
+        if ($ticket->unloadingLocation?->id && !in_array($ticket->unloadingLocation->id, $unloadingIds)) {
+            $unloadingIds[] = $ticket->unloadingLocation->id;
+        }
+
+        $firstWbIds = $getIdsForModel(\App\Models\FirstWeighbridge::class, 'arrival_ticket_id', $ticket->id);
+        if ($ticket->firstWeighbridge?->id && !in_array($ticket->firstWeighbridge->id, $firstWbIds)) {
+            $firstWbIds[] = $ticket->firstWeighbridge->id;
+        }
+
+        $secondWbIds = $getIdsForModel(\App\Models\Arrival\SecondWeighbridge::class, 'arrival_ticket_id', $ticket->id);
+        if ($ticket->secondWeighbridge?->id && !in_array($ticket->secondWeighbridge->id, $secondWbIds)) {
+            $secondWbIds[] = $ticket->secondWeighbridge->id;
+        }
+
+        $approvalIds = $getIdsForModel(\App\Models\ArrivalApprove::class, 'arrival_ticket_id', $ticket->id);
+        if ($ticket->approvals?->id && !in_array($ticket->approvals->id, $approvalIds)) {
+            $approvalIds[] = $ticket->approvals->id;
+        }
+
+        $freightIds = $getIdsForModel(\App\Models\Arrival\Freight::class, 'arrival_ticket_id', $ticket->id);
+        if ($ticket->freight?->id && !in_array($ticket->freight->id, $freightIds)) {
+            $freightIds[] = $ticket->freight->id;
+        }
         $samplingIds = $ticket->arrivalSamplingRequests->pluck('id')->toArray();
 
         $query = \App\Models\AuditLog::with('user');
 
         if ($section === 'all') {
-            $query->where(function ($q) use ($ticket, $unloadingId, $firstWbId, $secondWbId, $approvalId, $freightId, $samplingIds) {
+            $query->where(function ($q) use ($ticket, $unloadingIds, $firstWbIds, $secondWbIds, $approvalIds, $freightIds, $samplingIds) {
                 $q->where(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalTicket::class, 'ArrivalTicket'])
                         ->where('model_id', $ticket->id);
                 });
-                if ($unloadingId) {
-                    $q->orWhere(function ($sq) use ($unloadingId) {
+                if (!empty($unloadingIds)) {
+                    $q->orWhere(function ($sq) use ($unloadingIds) {
                         $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalLocationTransfer::class, 'ArrivalLocationTransfer'])
-                            ->where('model_id', $unloadingId);
+                            ->whereIn('model_id', $unloadingIds);
                     });
                 }
-                if ($firstWbId) {
-                    $q->orWhere(function ($sq) use ($firstWbId) {
-                        $sq->whereIn('model_type', [\App\Models\FirstWeighbridge::class, 'FirstWeighbridge'])
-                            ->where('model_id', $firstWbId);
+                if (!empty($firstWbIds)) {
+                    $q->orWhere(function ($sq) use ($firstWbIds) {
+                        $sq->whereIn('model_type', [\App\Models\FirstWeighbridge::class, 'FirstWeighbridge', \App\Models\Arrival\FirstWeighbridge::class, 'App\Models\Arrival\FirstWeighbridge'])
+                            ->whereIn('model_id', $firstWbIds);
                     });
                 }
-                if ($secondWbId) {
-                    $q->orWhere(function ($sq) use ($secondWbId) {
-                        $sq->whereIn('model_type', [\App\Models\SecondWeighbridge::class, 'SecondWeighbridge', \App\Models\ArrivalWeighbridge::class, 'ArrivalWeighbridge'])
-                            ->where('model_id', $secondWbId);
+                if (!empty($secondWbIds)) {
+                    $q->orWhere(function ($sq) use ($secondWbIds) {
+                        $sq->whereIn('model_type', [\App\Models\Arrival\SecondWeighbridge::class, 'App\Models\Arrival\SecondWeighbridge', \App\Models\SecondWeighbridge::class, 'SecondWeighbridge', \App\Models\ArrivalWeighbridge::class, 'ArrivalWeighbridge'])
+                            ->whereIn('model_id', $secondWbIds);
                     });
                 }
-                if ($approvalId) {
-                    $q->orWhere(function ($sq) use ($approvalId) {
+                if (!empty($approvalIds)) {
+                    $q->orWhere(function ($sq) use ($approvalIds) {
                         $sq->whereIn('model_type', [\App\Models\ArrivalApprove::class, 'ArrivalApprove'])
-                            ->where('model_id', $approvalId);
+                            ->whereIn('model_id', $approvalIds);
                     });
                 }
-                if ($freightId) {
-                    $q->orWhere(function ($sq) use ($freightId) {
+                if (!empty($freightIds)) {
+                    $q->orWhere(function ($sq) use ($freightIds) {
                         $sq->whereIn('model_type', [\App\Models\Arrival\Freight::class, 'Freight'])
-                            ->where('model_id', $freightId);
+                            ->whereIn('model_id', $freightIds);
                     });
                 }
                 if (!empty($samplingIds)) {
@@ -950,119 +982,168 @@ class TicketController extends Controller
                     ->orWhere('new_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%');
             });
         } elseif ($section === 'location_transfer') {
-            $query->where(function ($q) use ($ticket, $unloadingId) {
-                if ($unloadingId) {
-                    $q->where(function ($sq) use ($unloadingId) {
+            $query->where(function ($q) use ($ticket, $unloadingIds) {
+                if (!empty($unloadingIds)) {
+                    $q->where(function ($sq) use ($unloadingIds) {
                         $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalLocationTransfer::class, 'ArrivalLocationTransfer'])
-                            ->where('model_id', $unloadingId);
+                            ->whereIn('model_id', $unloadingIds);
                     });
                 }
                 $q->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalTicket::class, 'ArrivalTicket'])
                         ->where('model_id', $ticket->id)
                         ->where(function ($ssq) {
-                            $ssq->where('action', 'like', '%location_transfer%')
+                            $ssq->where('action', 'location_transfer_update')
+                                ->orWhere('action', 'location_transfer_revert')
+                                ->orWhere('action', 'like', '%location_transfer%')
                                 ->orWhere('description', 'like', '%location transfer%')
                                 ->orWhere('description', 'like', '%unloading location%');
-                        });
+                        })
+                        ->whereNotIn('action', [
+                            'first_weighbridge_revert',
+                            'second_weighbridge_revert',
+                            'half_full_approval_revert',
+                            'freight_revert',
+                        ]);
                 })->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalLocationTransfer::class, 'ArrivalLocationTransfer'])
                         ->where(function ($ssq) use ($ticket) {
                             $ssq->where('old_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
-                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%');
+                                ->orWhere('old_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%');
                         });
                 });
             });
         } elseif ($section === 'first_weighbridge') {
-            $query->where(function ($q) use ($ticket, $firstWbId) {
-                if ($firstWbId) {
-                    $q->where(function ($sq) use ($firstWbId) {
+            $query->where(function ($q) use ($ticket, $firstWbIds) {
+                if (!empty($firstWbIds)) {
+                    $q->where(function ($sq) use ($firstWbIds) {
                         $sq->whereIn('model_type', [\App\Models\FirstWeighbridge::class, 'FirstWeighbridge'])
-                            ->where('model_id', $firstWbId);
+                            ->whereIn('model_id', $firstWbIds);
                     });
                 }
                 $q->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalTicket::class, 'ArrivalTicket'])
                         ->where('model_id', $ticket->id)
                         ->where(function ($ssq) {
-                            $ssq->where('action', 'like', '%first_weighbridge%')
+                            $ssq->where('action', 'first_weighbridge_update')
+                                ->orWhere('action', 'first_weighbridge_revert')
+                                ->orWhere('action', 'like', '%first_weighbridge%')
                                 ->orWhere('description', 'like', '%first weighbridge%');
-                        });
+                        })
+                        ->whereNotIn('action', [
+                            'location_transfer_revert',
+                            'location_transfer_update',
+                            'second_weighbridge_revert',
+                            'half_full_approval_revert',
+                            'freight_revert',
+                        ]);
                 })->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\FirstWeighbridge::class, 'FirstWeighbridge'])
                         ->where(function ($ssq) use ($ticket) {
                             $ssq->where('old_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
-                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%');
+                                ->orWhere('old_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%');
                         });
                 });
             });
         } elseif ($section === 'second_weighbridge') {
-            $query->where(function ($q) use ($ticket, $secondWbId) {
-                if ($secondWbId) {
-                    $q->where(function ($sq) use ($secondWbId) {
-                        $sq->whereIn('model_type', [\App\Models\SecondWeighbridge::class, 'SecondWeighbridge', \App\Models\ArrivalWeighbridge::class, 'ArrivalWeighbridge'])
-                            ->where('model_id', $secondWbId);
+            $query->where(function ($q) use ($ticket, $secondWbIds) {
+                if (!empty($secondWbIds)) {
+                    $q->where(function ($sq) use ($secondWbIds) {
+                        $sq->whereIn('model_type', [\App\Models\Arrival\SecondWeighbridge::class, 'App\Models\Arrival\SecondWeighbridge', \App\Models\SecondWeighbridge::class, 'SecondWeighbridge', \App\Models\ArrivalWeighbridge::class, 'ArrivalWeighbridge'])
+                            ->whereIn('model_id', $secondWbIds);
                     });
                 }
                 $q->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalTicket::class, 'ArrivalTicket'])
                         ->where('model_id', $ticket->id)
                         ->where(function ($ssq) {
-                            $ssq->where('action', 'like', '%second_weighbridge%')
+                            $ssq->where('action', 'second_weighbridge_update')
+                                ->orWhere('action', 'second_weighbridge_revert')
+                                ->orWhere('action', 'like', '%second_weighbridge%')
                                 ->orWhere('description', 'like', '%second weighbridge%');
-                        });
+                        })
+                        ->whereNotIn('action', [
+                            'location_transfer_revert',
+                            'first_weighbridge_revert',
+                            'half_full_approval_revert',
+                            'freight_revert',
+                        ]);
                 })->orWhere(function ($sq) use ($ticket) {
-                    $sq->whereIn('model_type', [\App\Models\SecondWeighbridge::class, 'SecondWeighbridge', \App\Models\ArrivalWeighbridge::class, 'ArrivalWeighbridge'])
+                    $sq->whereIn('model_type', [\App\Models\Arrival\SecondWeighbridge::class, 'App\Models\Arrival\SecondWeighbridge', \App\Models\SecondWeighbridge::class, 'SecondWeighbridge', \App\Models\ArrivalWeighbridge::class, 'ArrivalWeighbridge'])
                         ->where(function ($ssq) use ($ticket) {
                             $ssq->where('old_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
-                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%');
+                                ->orWhere('old_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%');
                         });
                 });
             });
         } elseif ($section === 'half_full_approved') {
-            $query->where(function ($q) use ($ticket, $approvalId) {
-                if ($approvalId) {
-                    $q->where(function ($sq) use ($approvalId) {
+            $query->where(function ($q) use ($ticket, $approvalIds) {
+                if (!empty($approvalIds)) {
+                    $q->where(function ($sq) use ($approvalIds) {
                         $sq->whereIn('model_type', [\App\Models\ArrivalApprove::class, 'ArrivalApprove'])
-                            ->where('model_id', $approvalId);
+                            ->whereIn('model_id', $approvalIds);
                     });
                 }
                 $q->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalTicket::class, 'ArrivalTicket'])
                         ->where('model_id', $ticket->id)
                         ->where(function ($ssq) {
-                            $ssq->where('action', 'like', '%half_full%')
+                            $ssq->where('action', 'half_full_approval_revert')
+                                ->orWhere('action', 'like', '%half_full%')
                                 ->orWhere('action', 'like', '%approval%')
                                 ->orWhere('description', 'like', '%approval%');
-                        });
+                        })
+                        ->whereNotIn('action', [
+                            'location_transfer_revert',
+                            'first_weighbridge_revert',
+                            'second_weighbridge_revert',
+                            'freight_revert',
+                        ]);
                 })->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\ArrivalApprove::class, 'ArrivalApprove'])
                         ->where(function ($ssq) use ($ticket) {
                             $ssq->where('old_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
-                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%');
+                                ->orWhere('old_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%');
                         });
                 });
             });
         } elseif ($section === 'freight') {
-            $query->where(function ($q) use ($ticket, $freightId) {
-                if ($freightId) {
-                    $q->where(function ($sq) use ($freightId) {
+            $query->where(function ($q) use ($ticket, $freightIds) {
+                if (!empty($freightIds)) {
+                    $q->where(function ($sq) use ($freightIds) {
                         $sq->whereIn('model_type', [\App\Models\Arrival\Freight::class, 'Freight'])
-                            ->where('model_id', $freightId);
+                            ->whereIn('model_id', $freightIds);
                     });
                 }
                 $q->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\ArrivalTicket::class, 'ArrivalTicket'])
                         ->where('model_id', $ticket->id)
                         ->where(function ($ssq) {
-                            $ssq->where('action', 'like', '%freight%')
+                            $ssq->where('action', 'freight_revert')
+                                ->orWhere('action', 'like', '%freight%')
                                 ->orWhere('description', 'like', '%freight%');
-                        });
+                        })
+                        ->whereNotIn('action', [
+                            'location_transfer_revert',
+                            'first_weighbridge_revert',
+                            'second_weighbridge_revert',
+                            'half_full_approval_revert',
+                        ]);
                 })->orWhere(function ($sq) use ($ticket) {
                     $sq->whereIn('model_type', [\App\Models\Arrival\Freight::class, 'Freight'])
                         ->where(function ($ssq) use ($ticket) {
                             $ssq->where('old_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
-                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%');
+                                ->orWhere('old_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":' . $ticket->id . '%')
+                                ->orWhere('new_values', 'like', '%"arrival_ticket_id":"' . $ticket->id . '"%');
                         });
                 });
             });
@@ -1359,36 +1440,162 @@ class TicketController extends Controller
             $parsedChanges = [];
             $allKeys = array_unique(array_merge(array_keys($old ?? []), array_keys($new ?? [])));
 
-            $skipKeys = ['id', 'arrival_ticket_id', 'deleted_at', 'creator_id', 'company_id'];
+            $skipKeys = ['id', 'arrival_ticket_id', 'deleted_at', 'creator_id', 'company_id', 'created_by', 'updated_by'];
 
             foreach ($allKeys as $key) {
-                if (in_array($key, $skipKeys)) continue;
+                $baseKey = str_contains($key, '.') ? substr(strrchr($key, '.'), 1) : $key;
+                if (in_array($key, $skipKeys) || in_array($baseKey, $skipKeys)) continue;
 
                 $oldVal = $old[$key] ?? null;
                 $newVal = $new[$key] ?? null;
 
                 if ($oldVal != $newVal) {
-                    $oldResolved = $resolveRelationValue($key, $oldVal);
-                    $newResolved = $resolveRelationValue($key, $newVal);
+                    $oldResolved = $resolveRelationValue($baseKey, $oldVal);
+                    $newResolved = $resolveRelationValue($baseKey, $newVal);
+
+                    $label = $fieldLabels[$key] ?? $fieldLabels[$baseKey] ?? ucwords(str_replace(['_', '.'], ' ', $baseKey));
 
                     $parsedChanges[] = [
-                        'key'     => $key,
-                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace('_', ' ', $key)),
-                        'old'     => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
-                        'new'     => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
-                        'raw_old' => $oldVal,
-                        'raw_new' => $newVal,
+                        'key'      => $key,
+                        'base_key' => $baseKey,
+                        'label'    => $label,
+                        'old'      => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
+                        'new'      => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
+                        'raw_old'  => $oldVal,
+                        'raw_new'  => $newVal,
                     ];
                 }
             }
 
             if (count($parsedChanges) > 1) {
-                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => !in_array($c['key'], ['updated_at', 'created_at'])));
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => !in_array($c['key'], ['updated_at', 'created_at']) && !in_array($c['base_key'] ?? '', ['updated_at', 'created_at'])));
+            }
+
+            // Deduplicate redundant id + name pairs (e.g. broker_id + broker_name, accounts_of_id + accounts_of_name)
+            $redundantPairs = [
+                'broker_id' => 'broker_name',
+                'broker_one_id' => 'broker_one_name',
+                'broker_two_id' => 'broker_two_name',
+                'broker_three_id' => 'broker_three_name',
+                'accounts_of_id' => 'accounts_of_name',
+                'accounts_of' => 'accounts_of_name',
+                'supplier_id' => 'supplier_name',
+                'station_id' => 'station_name',
+                'station' => 'station_name',
+                'miller_id' => 'miller_name',
+                'gala_id' => 'gala_name',
+            ];
+            foreach ($redundantPairs as $idKey => $nameKey) {
+                $idItem = null;
+                $nameItem = null;
+                foreach ($parsedChanges as $c) {
+                    $cBase = $c['base_key'] ?? $c['key'];
+                    if ($cBase === $idKey) $idItem = $c;
+                    if ($cBase === $nameKey) $nameItem = $c;
+                }
+                if ($idItem && $nameItem) {
+                    if (!empty($nameItem['old']) || !empty($nameItem['new'])) {
+                        foreach ($parsedChanges as &$c) {
+                            $cBase = $c['base_key'] ?? $c['key'];
+                            if ($cBase === $idKey) {
+                                if (!empty($nameItem['old'])) $c['old'] = $nameItem['old'];
+                                if (!empty($nameItem['new'])) $c['new'] = $nameItem['new'];
+                                break;
+                            }
+                        }
+                        unset($c);
+                    }
+                    $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => ($c['base_key'] ?? $c['key']) !== $nameKey));
+                }
             }
 
             if ($section === 'loading_weight') {
                 $weightKeys = ['first_weight', 'second_weight', 'net_weight', 'loading_weight'];
-                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['key'], $weightKeys)));
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['base_key'] ?? $c['key'], $weightKeys)));
+                if (empty($parsedChanges)) {
+                    continue;
+                }
+            } elseif ($section === 'location_transfer') {
+                $locKeys = ['arrival_location_id', 'location_transfer_status', 'remarks', 'remark'];
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['base_key'] ?? $c['key'], $locKeys)));
+                if (empty($parsedChanges)) {
+                    continue;
+                }
+            } elseif ($section === 'first_weighbridge') {
+                $wbKeys = ['weight', 'arrival_first_weight', 'first_weighbridge_status', 'document_approval_status', 'remarks', 'remark'];
+                $parsedChanges = array_values(array_filter($parsedChanges, function ($c) use ($wbKeys) {
+                    $k = $c['base_key'] ?? $c['key'];
+                    if (!in_array($k, $wbKeys)) {
+                        return false;
+                    }
+                    if ($k === 'first_weighbridge_status') {
+                        if (($c['old'] === null || $c['old'] === '' || $c['old'] === 'null') && $c['new'] === 'pending') {
+                            return false;
+                        }
+                        if ($c['old'] === 'pending' && ($c['new'] === null || $c['new'] === '' || $c['new'] === 'null')) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }));
+                if (empty($parsedChanges)) {
+                    continue;
+                }
+            } elseif ($section === 'second_weighbridge') {
+                $wb2Keys = ['weight', 'arrival_second_weight', 'second_weighbridge_status', 'arrived_net_weight', 'remarks', 'remark'];
+                $parsedChanges = array_values(array_filter($parsedChanges, function ($c) use ($wb2Keys) {
+                    $k = $c['base_key'] ?? $c['key'];
+                    if (!in_array($k, $wb2Keys)) {
+                        return false;
+                    }
+                    if ($k === 'second_weighbridge_status') {
+                        if (($c['old'] === null || $c['old'] === '' || $c['old'] === 'null') && $c['new'] === 'pending') {
+                            return false;
+                        }
+                        if ($c['old'] === 'pending' && ($c['new'] === null || $c['new'] === '' || $c['new'] === 'null')) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }));
+                if (empty($parsedChanges)) {
+                    continue;
+                }
+            } elseif ($section === 'half_full_approved') {
+                $approvalKeys = [
+                    'gala_id', 'gala_name', 'location_type_id', 'bag_type_id', 'bag_condition_id',
+                    'bag_packing_id', 'bag_packing_approval', 'filling_bags_no', 'total_bags',
+                    'total_rejection', 'total_receivings', 'amanat', 'truck_no', 'document_approval_status',
+                    'remarks', 'remark'
+                ];
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['base_key'] ?? $c['key'], $approvalKeys)));
+                if (empty($parsedChanges)) {
+                    continue;
+                }
+            } elseif ($section === 'freight') {
+                $freightKeys = [
+                    'loaded_weight', 'arrived_weight', 'difference', 'exempted_weight', 'net_shortage',
+                    'shortage_weight_freight_deduction', 'freight_per_ton', 'kanta_golarchi_charges',
+                    'karachi_kanta_charges', 'other_labour_charges', 'other_deduction', 'unpaid_labor_charges',
+                    'freight_written_on_bilty', 'gross_freight_amount', 'net_freight', 'bilty_document',
+                    'loading_weight_document', 'status', 'unique_no', 'freight_status', 'arrival_slip_status',
+                    'remarks', 'remark'
+                ];
+                $parsedChanges = array_values(array_filter($parsedChanges, function ($c) use ($freightKeys) {
+                    $k = $c['base_key'] ?? $c['key'];
+                    if (!in_array($k, $freightKeys)) {
+                        return false;
+                    }
+                    if ($k === 'freight_status') {
+                        if (($c['old'] === null || $c['old'] === '' || $c['old'] === 'null') && $c['new'] === 'pending') {
+                            return false;
+                        }
+                        if ($c['old'] === 'pending' && ($c['new'] === null || $c['new'] === '' || $c['new'] === 'null')) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }));
                 if (empty($parsedChanges)) {
                     continue;
                 }
@@ -1440,9 +1647,14 @@ class TicketController extends Controller
                     'sauda_type_id',
                     'driver_name',
                     'driver_phone',
+                    'first_weight',
+                    'second_weight',
+                    'net_weight',
+                    'loading_weight',
+                    'arrived_net_weight',
                 ];
 
-                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['key'], $ticketDetailKeys)));
+                $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['base_key'] ?? $c['key'], $ticketDetailKeys)));
                 if (empty($parsedChanges)) {
                     continue;
                 }
@@ -1456,7 +1668,7 @@ class TicketController extends Controller
 
         $sectionTitles = [
             'all' => 'All Changes',
-            'ticket_detail' => 'Ticket Detail',
+            'ticket_detail' => 'Ticket & Loading Weight Detail',
             'loading_weight' => 'Loading Weight',
             'location_transfer' => 'Location Transfer',
             'first_weighbridge' => 'First Weighbridge Detail',
@@ -1470,5 +1682,3 @@ class TicketController extends Controller
         return view('management.arrival.ticket.partials.audit_logs_content', compact('ticket', 'section', 'logs', 'title'));
     }
 }
-
-

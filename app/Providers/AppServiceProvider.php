@@ -35,9 +35,15 @@ class AppServiceProvider extends ServiceProvider
         User::observe(UserObserver::class);
         Product::observe(ProductObserver::class);
         Freight::observe(FreightObserver::class);
+        Freight::observe(\App\Observers\UniversalAuditObserver::class);
         PurchaseFreight::observe(PurchaseFreightObserver::class);
         ArrivalTicket::observe(ArrivalTicketObserver::class);
         Account::observe(AccountsObserver::class);
+
+        \App\Models\Arrival\ArrivalLocationTransfer::observe(\App\Observers\UniversalAuditObserver::class);
+        \App\Models\FirstWeighbridge::observe(\App\Observers\UniversalAuditObserver::class);
+        \App\Models\Arrival\SecondWeighbridge::observe(\App\Observers\UniversalAuditObserver::class);
+        \App\Models\ArrivalApprove::observe(\App\Observers\UniversalAuditObserver::class);
 
         Blade::directive('canAccess', function ($expression) {
             return "<?php if (canAccess($expression)): ?>";
