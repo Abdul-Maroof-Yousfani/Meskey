@@ -115,7 +115,7 @@ class JobOrderRequest extends Model
         return $this->hasMany(JobOrder::class, 'job_order_request_id');
     }
 
-    // Auto calculate totals: sum Packing Size (kg) only
+    // Auto calculate totals
     public function getTotalBagsAttribute()
     {
         return $this->packingItems->sum('total_bags');
@@ -123,7 +123,9 @@ class JobOrderRequest extends Model
 
     public function getTotalKgsAttribute()
     {
-        return (float) $this->packingItems->sum('bag_size');
+        return (float) $this->packingItems->sum(function ($item) {
+            return (float) ($item->total_kgs ?: ((float) $item->bag_size * (int) $item->no_of_bags));
+        });
     }
 
     public function getTotalMetricTonsAttribute()

@@ -140,7 +140,7 @@ class JobOrderRequestController extends Controller
             $jobOrderRequest = JobOrderRequest::create($requestData);
 
             // Packing items
-            foreach ($request->packing_items as $item) {
+            foreach ($request->packing_items as $pIndex => $item) {
                 $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
 
                 $subItems = $item['sub_items'] ?? [];
@@ -151,7 +151,7 @@ class JobOrderRequestController extends Controller
                 $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                 $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
                 $item['total_bags'] = ($item['no_of_bags'] ?? 0) + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
-                $item['total_kgs'] = (float) ($item['bag_size'] ?? 0);
+                $item['total_kgs'] = (float) ($item['bag_size'] ?? 0) * (float) ($item['no_of_bags'] ?? 0);
                 $item['metric_tons'] = $item['total_kgs'] / 1000;
                 $item['no_of_containers'] = $item['no_of_containers'] ?? 0;
                 $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
@@ -161,19 +161,31 @@ class JobOrderRequestController extends Controller
                     $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
                 }
 
+                $attachmentFile = $request->file("packing_items.{$pIndex}.attachment") ?? (isset($item['attachment']) && $item['attachment'] instanceof \Illuminate\Http\UploadedFile ? $item['attachment'] : null);
+                if ($attachmentFile) {
+                    $item['attachment'] = $attachmentFile->store('job_order_request_attachments', 'public');
+                } elseif (!empty($item['old_attachment'])) {
+                    $item['attachment'] = $item['old_attachment'];
+                }
+                unset($item['old_attachment']);
+
                 $packingItem = $jobOrderRequest->packingItems()->create($item);
 
                 if (!empty($subItems)) {
-                    foreach ($subItems as $subItem) {
+                    foreach ($subItems as $sIdx => $subItem) {
                         $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['total_bags'] = ($subItem['no_of_bags'] ?? 0) + $subItem['extra_bags'] + $subItem['empty_bags'];
 
-                        if (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile) {
-                            $subItem['attachment'] = $subItem['attachment']->store('job_order_request_attachments', 'public');
+                        $subAttachmentFile = $request->file("packing_items.{$pIndex}.sub_items.{$sIdx}.attachment") ?? (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile ? $subItem['attachment'] : null);
+                        if ($subAttachmentFile) {
+                            $subItem['attachment'] = $subAttachmentFile->store('job_order_request_attachments', 'public');
+                        } elseif (!empty($subItem['old_attachment'])) {
+                            $subItem['attachment'] = $subItem['old_attachment'];
                         }
+                        unset($subItem['old_attachment']);
 
                         $packingItem->subItems()->create($subItem);
                     }
@@ -321,7 +333,7 @@ class JobOrderRequestController extends Controller
             // Replace packing items
             $jobOrderRequest->packingItems()->delete();
 
-            foreach ($request->packing_items as $item) {
+            foreach ($request->packing_items as $pIndex => $item) {
                 $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
 
                 $subItems = $item['sub_items'] ?? [];
@@ -332,7 +344,7 @@ class JobOrderRequestController extends Controller
                 $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                 $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
                 $item['total_bags'] = ($item['no_of_bags'] ?? 0) + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
-                $item['total_kgs'] = (float) ($item['bag_size'] ?? 0);
+                $item['total_kgs'] = (float) ($item['bag_size'] ?? 0) * (float) ($item['no_of_bags'] ?? 0);
                 $item['metric_tons'] = $item['total_kgs'] / 1000;
                 $item['no_of_containers'] = $item['no_of_containers'] ?? 0;
                 $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
@@ -342,19 +354,31 @@ class JobOrderRequestController extends Controller
                     $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
                 }
 
+                $attachmentFile = $request->file("packing_items.{$pIndex}.attachment") ?? (isset($item['attachment']) && $item['attachment'] instanceof \Illuminate\Http\UploadedFile ? $item['attachment'] : null);
+                if ($attachmentFile) {
+                    $item['attachment'] = $attachmentFile->store('job_order_request_attachments', 'public');
+                } elseif (!empty($item['old_attachment'])) {
+                    $item['attachment'] = $item['old_attachment'];
+                }
+                unset($item['old_attachment']);
+
                 $packingItem = $jobOrderRequest->packingItems()->create($item);
 
                 if (!empty($subItems)) {
-                    foreach ($subItems as $subItem) {
+                    foreach ($subItems as $sIdx => $subItem) {
                         $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['total_bags'] = ($subItem['no_of_bags'] ?? 0) + $subItem['extra_bags'] + $subItem['empty_bags'];
 
-                        if (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile) {
-                            $subItem['attachment'] = $subItem['attachment']->store('job_order_request_attachments', 'public');
+                        $subAttachmentFile = $request->file("packing_items.{$pIndex}.sub_items.{$sIdx}.attachment") ?? (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile ? $subItem['attachment'] : null);
+                        if ($subAttachmentFile) {
+                            $subItem['attachment'] = $subAttachmentFile->store('job_order_request_attachments', 'public');
+                        } elseif (!empty($subItem['old_attachment'])) {
+                            $subItem['attachment'] = $subItem['old_attachment'];
                         }
+                        unset($subItem['old_attachment']);
 
                         $packingItem->subItems()->create($subItem);
                     }
@@ -568,22 +592,24 @@ class JobOrderRequestController extends Controller
         $tempConsumed = $consumedKg;
 
         $packingItems = $jobOrderRequest->packingItems->sortBy('id')->map(function ($pi) use (&$tempConsumed) {
-            $originalKg = (float) $pi->bag_size;
+            $bagSize = (float) $pi->bag_size;
+            $originalTotalKg = (float) $pi->total_kgs ?: ($bagSize * (int) $pi->no_of_bags);
             $originalBags = (int) $pi->no_of_bags;
 
-            $consumedFromThis = min($originalKg, $tempConsumed);
+            $consumedFromThis = min($originalTotalKg, $tempConsumed);
             $tempConsumed -= $consumedFromThis;
 
-            $remainingKgInItem = max(0, $originalKg - $consumedFromThis);
-            $remainingBagsInItem = $originalKg > 0 ? round(($remainingKgInItem / $originalKg) * $originalBags) : 0;
+            $remainingKgInItem = max(0, $originalTotalKg - $consumedFromThis);
+            $remainingBagsInItem = $bagSize > 0 ? round($remainingKgInItem / $bagSize) : 0;
+            $remainingTotalKgs = $bagSize * $remainingBagsInItem;
 
             $fumigationCompanies = is_string($pi->fumigation_company_id)
                 ? (json_decode($pi->fumigation_company_id, true) ?? [])
                 : ($pi->fumigation_company_id ?? []);
 
-            $subItems = $pi->subItems->map(function ($sub) use ($originalKg, $remainingKgInItem) {
+            $subItems = $pi->subItems->map(function ($sub) use ($originalTotalKg, $remainingKgInItem) {
                 $subOriginalBags = (int) $sub->no_of_bags;
-                $subRemainingBags = $originalKg > 0 ? round(($remainingKgInItem / $originalKg) * $subOriginalBags) : 0;
+                $subRemainingBags = $originalTotalKg > 0 ? round(($remainingKgInItem / $originalTotalKg) * $subOriginalBags) : 0;
 
                 return [
                     'bag_type_id'             => $sub->bag_type_id,
@@ -601,6 +627,8 @@ class JobOrderRequestController extends Controller
                     'bag_color_id'            => $sub->bag_color_id,
                     'brand_id'                => $sub->brand_id,
                     'thread_color_id'         => $sub->thread_color_id,
+                    'attachment'              => $sub->attachment ? asset('storage/' . $sub->attachment) : null,
+                    'attachment_path'         => $sub->attachment,
                 ];
             })->values();
 
@@ -608,14 +636,14 @@ class JobOrderRequestController extends Controller
                 'company_location_id'   => $pi->company_location_id,
                 'bag_product_id'        => $pi->bag_product_id,
                 'bag_condition_id'      => $pi->bag_condition_id,
-                'bag_size'              => $remainingKgInItem,
+                'bag_size'              => $bagSize,
                 'no_of_bags'            => $remainingBagsInItem,
                 'extra_bags'            => $pi->extra_bags,
                 'extra_bags_percentage' => $pi->extra_bags_percentage,
                 'empty_bags'            => $pi->empty_bags,
                 'total_bags'            => $remainingBagsInItem + ($pi->extra_bags ?? 0) + ($pi->empty_bags ?? 0),
-                'total_kgs'             => $remainingKgInItem,
-                'metric_tons'           => round($remainingKgInItem / 1000, 3),
+                'total_kgs'             => $remainingTotalKgs,
+                'metric_tons'           => round($remainingTotalKgs / 1000, 3),
                 'stuffing_in_container' => $pi->stuffing_in_container,
                 'no_of_containers'      => $pi->no_of_containers,
                 'brand_id'              => $pi->brand_id,
@@ -625,12 +653,14 @@ class JobOrderRequestController extends Controller
                 'min_weight_empty_bags' => $pi->min_weight_empty_bags,
                 'delivery_date'         => $pi->delivery_date ? Carbon::parse($pi->delivery_date)->format('Y-m-d') : null,
                 'fumigation_company_id' => $fumigationCompanies,
+                'attachment'            => $pi->attachment ? asset('storage/' . $pi->attachment) : null,
+                'attachment_path'         => $pi->attachment,
                 'sub_items'             => $subItems,
             ];
         })->values();
 
         $activePackingItems = $packingItems->filter(function ($item) {
-            return $item['bag_size'] > 0;
+            return $item['no_of_bags'] > 0 || $item['total_kgs'] > 0;
         })->values();
 
         if ($activePackingItems->isNotEmpty()) {

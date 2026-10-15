@@ -224,7 +224,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Head Product:</label>
-                        <select name="product_id" id="product_id" class="form-control select2" required onchange="loadJobOrdersByLocation();loadHeadProductsData();">
+                        <select name="product_id" id="product_id" class="form-control select2" required onchange="loadJobOrdersByLocation();loadHeadProductsData();autoSelectByProduct();">
                             <option value="">Select Commodity</option>
                             @php
                                 $locationId = $productionVoucher->location_id ?? null;
@@ -243,14 +243,29 @@
                                         ->unique()
                                         ->filter()
                                         ->map(function ($productId) {
-                                            return \App\Models\Product::find($productId);
+                                            return \App\Models\Product::with('parent')->find($productId);
                                         })
-                                        ->filter();
+                                        ->filter()
+                                        ->sort(function ($a, $b) {
+                                            $flagA = ($a->product_category_flags === 'b2') ? 2 : 1;
+                                            $flagB = ($b->product_category_flags === 'b2') ? 2 : 1;
+                                            if ($flagA !== $flagB) {
+                                                return $flagA <=> $flagB;
+                                            }
+                                            return strcasecmp($a->name, $b->name);
+                                        })
+                                        ->values();
                                 }
                             @endphp
                             @foreach($commodities as $commodity)
-                                <option value="{{ $commodity->id }}" {{ $currentProductId == $commodity->id ? 'selected' : '' }}>
-                                    {{ $commodity->name }}
+                                @php
+                                    $parent = $commodity->parent ?: $commodity;
+                                    $isB2 = $commodity->product_category_flags === 'b2';
+                                    $pName = $commodity->name ?? '';
+                                    $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                                @endphp
+                                <option value="{{ $commodity->id }}" data-parent-id="{{ $parent->id }}" data-parent-name="{{ $parent->name }}" {{ $currentProductId == $commodity->id ? 'selected' : '' }}>
+                                    {{ $displayName }}
                                 </option>
                             @endforeach
                         </select>
@@ -364,7 +379,12 @@
                         'product',
                         'brand'
                     ])
-                        ->where('job_order_id', $jobOrderId)
+                        ->where(function ($q) use ($jobOrderId, $selectedJobOrderIds) {
+                            $q->where('job_order_id', $jobOrderId);
+                            if (count($selectedJobOrderIds) === 1) {
+                                $q->orWhereNull('job_order_id');
+                            }
+                        })
                         ->whereHas('productionVoucher', function($q) use ($locationId) {
                             $q->where('location_id', $locationId);
                         })
@@ -530,7 +550,7 @@
                     <div id="productionHeadProductsTable">
                         @php
                             $headProduct = $productionVoucher->product;
-                            $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->product_id);
+                            $headProductOutputs = $headProductOutputs ?? $productionVoucher->outputs->whereIn('product_id', $allHeadProductIds ?? [$productionVoucher->product_id])->values();
                             $arrivalSubLocations = $sublocations;
                         @endphp
                         @include('management.production.production_voucher.partials.head_products_table', [
@@ -540,7 +560,9 @@
                             'jobOrders' => $jobOrders,
                             'headProductOutputs' => $headProductOutputs,
                             'productionVoucher' => $productionVoucher,
-                            'jobOrderPackings' =>$jobOrderPackings
+                            'jobOrderPackings' => $jobOrderPackings,
+                            'packingItemsProducts' => $packingItemsProducts ?? collect(),
+                            'nonPackingItemsProducts' => $nonPackingItemsProducts ?? collect(),
                         ])
                     </div>
                 </div>
@@ -636,52 +658,56 @@
                                         <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center" style="background-color: #93c3f2;">
                                             <div class="col-md-12 d-flex justify-content-between align-items-center py-1">
                                                 <h6 class="m-0">Production Machines</h6>
+                                                <div id="machinePlanSettingBadge">
+                                                    @if(isset($machinePlanSetting) && $machinePlanSetting)
+                                                        <span class="badge badge-success" style="font-size: 11px;">
+                                                            <i class="fa fa-calendar-check-o mr-1"></i> Machine Plan Setting Linked ({{ $machinePlanSetting->date ? $machinePlanSetting->date->format('d-m-Y') : '' }})
+                                                        </span>
+                                                    @else
+                                                        <span class="badge badge-secondary" style="font-size: 11px;">
+                                                            <i class="fa fa-cogs mr-1"></i> Plant Machines
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                         <div id="productionMachinesContainer">
                                             <!-- Machines will be loaded here -->
                                             @if($productionVoucher->plant_id)
-                                                {{-- 
                                                 @php
-                                                    $allMachines = \App\Models\Master\ProductionMachine::where('plant_id', $productionVoucher->plant_id)->where('status', 'active')->get();
-                                                    $selectedMachineIds = $productionVoucher->productionMachines->pluck('id')->toArray();
-                                                @endphp
-                                                <table class="table table-bordered table-sm">
-                                                    <thead style="background-color: #f8f9fa;">
-                                                        <tr>
-                                                            <th width="10%">S.No</th>
-                                                            <th>Machine Name</th>
-                                                            <th width="20%" class="text-center">Select</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($allMachines as $index => $machine)
-                                                            <tr>
-                                                                <td>{{ $index + 1 }}</td>
-                                                                <td>{{ $machine->name }}</td>
-                                                                <td class="text-center">
-                                                                    <div class="custom-control custom-switch">
-                                                                        <input type="checkbox" class="custom-control-input" name="production_machine_id[]" value="{{ $machine->id }}" id="machine_{{ $machine->id }}" {{ in_array($machine->id, $selectedMachineIds) ? 'checked' : '' }}>
-                                                                        <label class="custom-control-label" for="machine_{{ $machine->id }}"></label>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                                --}}
-
-                                                @php
-                                                    $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine'])
-                                                        ->where('plant_id', $productionVoucher->plant_id)
-                                                        ->whereDate('date', $productionVoucher->prod_date)
+                                                    $machinePlanSetting = $machinePlanSetting ?? \App\Models\Production\MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
+                                                        ->where(function ($q) use ($productionVoucher) {
+                                                            $q->where('production_voucher_id', $productionVoucher->id);
+                                                            if ($productionVoucher->plant_id) {
+                                                                $q->orWhere(function ($sub) use ($productionVoucher) {
+                                                                    $sub->where('plant_id', $productionVoucher->plant_id);
+                                                                    if ($productionVoucher->prod_date) {
+                                                                        $sub->whereDate('date', $productionVoucher->prod_date);
+                                                                    }
+                                                                });
+                                                            }
+                                                        })
                                                         ->first();
                                                         
-                                                    $allMachines = [];
+                                                    // Fetch active machines from Plant
+                                                    $allMachines = \App\Models\Master\ProductionMachine::where('plant_id', $productionVoucher->plant_id)
+                                                        ->where('status', 'active')
+                                                        ->get();
+
+                                                    // Merge machines from machinePlanSetting if any are missing
                                                     if ($machinePlanSetting && $machinePlanSetting->items) {
                                                         foreach ($machinePlanSetting->items as $item) {
-                                                            if ($item->machine && $item->machine->status === 'active') {
-                                                                $allMachines[] = $item->machine;
+                                                            if ($item->machine && $item->machine->status === 'active' && !$allMachines->contains('id', $item->machine->id)) {
+                                                                $allMachines->push($item->machine);
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // Merge machines already attached to this voucher
+                                                    if ($productionVoucher->productionMachines && $productionVoucher->productionMachines->isNotEmpty()) {
+                                                        foreach ($productionVoucher->productionMachines as $pm) {
+                                                            if (!$allMachines->contains('id', $pm->id)) {
+                                                                $allMachines->push($pm);
                                                             }
                                                         }
                                                     }
@@ -695,9 +721,9 @@
                                                     @foreach($allMachines as $index => $machine)
                                                         @php
                                                             $planItem = $machinePlanSetting && $machinePlanSetting->items ? $machinePlanSetting->items->firstWhere('production_machine_id', $machine->id) : null;
-                                                            $isChecked = count($selectedMachineIds) > 0 ? in_array($machine->id, $selectedMachineIds) : ($planItem ? $planItem->is_enabled : $machine->is_enabled);
+                                                            $isChecked = count($selectedMachineIds) > 0 ? in_array($machine->id, $selectedMachineIds) : ($planItem ? (bool)$planItem->is_enabled : (bool)($machine->is_enabled ?? false));
                                                             $hasSavedTimes = isset($machineTimes[$machine->id]) && $machineTimes[$machine->id]->count() > 0;
-                                                            $times = $hasSavedTimes ? $machineTimes[$machine->id] : collect([new \App\Models\Production\ProductionVoucherMachineTime()]);
+                                                            $times = $hasSavedTimes ? $machineTimes[$machine->id] : ($planItem && ($planItem->start_time || $planItem->end_time) ? collect([$planItem]) : collect([new \App\Models\Production\ProductionVoucherMachineTime()]));
                                                             $totalMins = 0;
                                                         @endphp
                                                         <div class="col-md-12 mb-3">
@@ -826,7 +852,7 @@
                                                 </div>
                                                 @else
                                                     <div class="text-center py-4" style="color:#999; font-size:13px;">
-                                                        <i class="fa fa-info-circle mr-1"></i> No machines found in Machine Plan Setting for this date & plant.
+                                                        <i class="fa fa-info-circle mr-1"></i> No active machines found for this plant.
                                                     </div>
                                                 @endif
                                             @endif
@@ -996,6 +1022,8 @@
                         commoditySelect.append(
                             $('<option></option>')
                                 .attr('value', commodity.id)
+                                .attr('data-parent-id', commodity.parent_id)
+                                .attr('data-parent-name', commodity.parent_name)
                                 .text(commodity.name)
                         );
                     });
@@ -1136,10 +1164,24 @@
             data: {
                 plant_id: plantId,
                 date: date,
+                production_voucher_id: '{{ $productionVoucher->id }}',
                 _token: '{{ csrf_token() }}'
             },
             success: function (response) {
                 container.empty();
+                if (response.machine_plan_setting) {
+                    $('#machinePlanSettingBadge').html(`
+                        <span class="badge badge-success" style="font-size: 11px;">
+                            <i class="fa fa-calendar-check-o mr-1"></i> Machine Plan Setting Linked (${response.machine_plan_setting.date})
+                        </span>
+                    `);
+                } else {
+                    $('#machinePlanSettingBadge').html(`
+                        <span class="badge badge-secondary" style="font-size: 11px;">
+                            <i class="fa fa-cogs mr-1"></i> Plant Machines
+                        </span>
+                    `);
+                }
                 if (response.machines && response.machines.length > 0) {
                     section.show();
                     let html = `<div class="row">`;
@@ -1256,6 +1298,51 @@
                 section.hide();
             }
         });
+    }
+
+    function autoSelectByProduct() {
+        const headProductId = $('#product_id').val();
+        if (!headProductId) {
+            return;
+        }
+
+        const selectedOption = $('#product_id option:selected');
+        let parentId = selectedOption.attr('data-parent-id');
+        let parentName = selectedOption.attr('data-parent-name');
+
+        function applyParentToByProduct(pId, pName) {
+            if (!pId) return;
+
+            // Ensure the parent option exists in by_product_id dropdown
+            if ($('#by_product_id option[value="' + pId + '"]').length === 0) {
+                $('#by_product_id').append(new Option(pName || 'Parent Product', pId, true, true));
+            }
+
+            // Auto select the parent product and trigger change to load by-product table
+            if ($('#by_product_id').val() != pId) {
+                $('#by_product_id').val(pId).trigger('change');
+            }
+        }
+
+        if (parentId) {
+            applyParentToByProduct(parentId, parentName);
+        } else {
+            $.ajax({
+                url: '{{ route('production-voucher.get-parent-product') }}',
+                method: 'POST',
+                data: {
+                    product_id: headProductId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(res) {
+                    if (res && res.parent_id) {
+                        selectedOption.attr('data-parent-id', res.parent_id);
+                        selectedOption.attr('data-parent-name', res.parent_name);
+                        applyParentToByProduct(res.parent_id, res.parent_name);
+                    }
+                }
+            });
+        }
     }
 
     function loadJobOrdersByLocation() {
@@ -1527,6 +1614,7 @@
                 product_id: productId,
                 location_id: locationId,
                 job_order_ids: jobOrderIds,
+                company_id: '{{ auth()->user()->company_id ?? 1 }}',
                 production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
 
             }, { 
@@ -1591,6 +1679,7 @@
         } else {
             totalYieldInput.val('');
         }
+        calculateNetTotalInput();
     }
 
     // Calculate total outputs (head products + by products)
@@ -1694,6 +1783,7 @@
                 totalYieldInput.val('');
             }
         }
+        calculateNetTotalInput();
     }
 
     // Calculate By Products Yield, Avg Weight, and Totals
@@ -1804,6 +1894,28 @@
                 grandTotalRow.find('input[name="total_yield[]"]').val('');
             }
         }
+        calculateNetTotalInput();
+    }
+
+    function calculateNetTotalInput() {
+        let totalInput = 0;
+        $('#productionInputsTable tbody tr').each(function() {
+            const qty = parseFloat($(this).find('input[name="input_qty[]"]').val()) || 0;
+            totalInput += qty;
+        });
+        $('input[name="net_total_input"]').val(roundToTwo(totalInput));
+
+        // Total Output is from total sum of by product Qty (kg) and Head Products Qty (kg)
+        const totalOutput = roundToTwo(getTotalOutputs());
+        $('input[name="net_total_output"]').val(totalOutput);
+
+        const labourRate = parseFloat($('#production_labour_charges_per_kg').val()) || 0;
+        const calcLabour = roundToTwo(totalOutput * labourRate);
+        $('input[name="total_labour_charges"]').val(calcLabour);
+
+        const deduction = parseFloat($('input[name="labour_deduction"]').val()) || 0;
+        const netAmount = roundToTwo(calcLabour - deduction);
+        $('input[name="labour_net_amount"]').val(netAmount);
     }
 
     // Initialize all calculations
@@ -1854,6 +1966,7 @@
             $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
             calculateHeadProducts();
             calculateByProducts(); // Recalculate by products too since total outputs changed
+            validateOutputRow($(this).closest('tr'));
         });
         
         // Head Products - qty manual change (mark as manual, then recalculate)
@@ -1862,6 +1975,7 @@
             $(this).data('manual-change', true);
             calculateHeadProducts();
             calculateByProducts(); // Recalculate by products too since total outputs changed
+            validateOutputRow($(this).closest('tr'));
         });
         
         // By Products - no_of_bags and bag_size changes (auto calculate qty)
@@ -1871,6 +1985,7 @@
             $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
             calculateHeadProducts(); // Recalculate head products too since total outputs changed
             calculateByProducts();
+            validateOutputRow($(this).closest('tr'));
         });
         
         // By Products - qty manual change (mark as manual, then recalculate)
@@ -1879,6 +1994,47 @@
             $(this).data('manual-change', true);
             calculateHeadProducts(); // Recalculate head products too since total outputs changed
             calculateByProducts();
+            validateOutputRow($(this).closest('tr'));
+        });
+
+        // Job order selection in row -> autofill No of Bags, Packed in (KG), and Qty (kg)
+        $(document).off('change', 'select[name="output_job_order_id[]"]');
+        $(document).on('change', 'select[name="output_job_order_id[]"]', function() {
+            const $row = $(this).closest('tr');
+            const selectedOption = $(this).find('option:selected');
+            const noOfBags = selectedOption.data('no-of-bags');
+            const bagSize = selectedOption.data('bag-size');
+            const qty = selectedOption.data('qty');
+            const brandId = selectedOption.data('brand-id');
+
+            if (noOfBags !== undefined && noOfBags !== '') {
+                $row.find('input[name="output_no_of_bags[]"]').val(noOfBags);
+            }
+            if (bagSize !== undefined && bagSize !== '') {
+                $row.find('input[name="output_bag_size[]"]').val(bagSize);
+            }
+            if (qty !== undefined && qty !== '') {
+                $row.find('input[name="output_qty[]"]').val(qty).removeData('manual-change');
+            } else if (noOfBags && bagSize) {
+                $row.find('input[name="output_qty[]"]').val(roundToTwo(parseFloat(noOfBags) * parseFloat(bagSize))).removeData('manual-change');
+            }
+            if (brandId) {
+                const $brandSelect = $row.find('select[name="output_brand_id[]"]');
+                if (!$brandSelect.val() || $brandSelect.val() == '') {
+                    $brandSelect.val(brandId).trigger('change');
+                }
+            }
+
+            validateOutputRow($row);
+            calculateHeadProducts();
+            calculateByProducts();
+            calculateNetTotalInput();
+        });
+
+        // Labour charges changes
+        $(document).off('input change keyup', '#production_labour_charges_per_kg, input[name="labour_deduction"]');
+        $(document).on('input change keyup', '#production_labour_charges_per_kg, input[name="labour_deduction"]', function() {
+            calculateNetTotalInput();
         });
         
         // Note: produced_qty_kg no longer affects production inputs yield calculation
@@ -1888,12 +2044,164 @@
         calculateProductionInputs();
         calculateHeadProducts();
         calculateByProducts();
+        calculateNetTotalInput();
+    }
+
+    // Validate an individual output row
+    function validateOutputRow($row) {
+        if ($row.hasClass('commodity-total-row') || $row.find('strong').text().includes('Total') || $row.find('strong').text().includes('Commodity Total')) {
+            return true;
+        }
+        const noOfBagsInput = $row.find('input[name="output_no_of_bags[]"]');
+        const bagSizeInput = $row.find('input[name="output_bag_size[]"]');
+        const qtyInput = $row.find('input[name="output_qty[]"]');
+
+        if (noOfBagsInput.length === 0 || bagSizeInput.length === 0 || qtyInput.length === 0) {
+            return true;
+        }
+
+        const noOfBagsVal = noOfBagsInput.val() ? noOfBagsInput.val().trim() : '';
+        const bagSizeVal = bagSizeInput.val() ? bagSizeInput.val().trim() : '';
+        const qtyVal = qtyInput.val() ? qtyInput.val().trim() : '';
+
+        const noOfBags = parseFloat(noOfBagsVal) || 0;
+        const bagSize = parseFloat(bagSizeVal) || 0;
+        const qty = parseFloat(qtyVal) || 0;
+
+        const hasAny = (noOfBagsVal !== '' && noOfBags > 0) || (bagSizeVal !== '' && bagSize > 0) || (qtyVal !== '' && qty > 0);
+
+        if (hasAny) {
+            let valid = true;
+            if (noOfBagsVal === '' || noOfBags <= 0) {
+                noOfBagsInput.addClass('is-invalid');
+                valid = false;
+            } else {
+                noOfBagsInput.removeClass('is-invalid');
+            }
+
+            if (bagSizeVal === '' || bagSize <= 0) {
+                bagSizeInput.addClass('is-invalid');
+                valid = false;
+            } else {
+                bagSizeInput.removeClass('is-invalid');
+            }
+
+            if (qtyVal === '' || qty <= 0) {
+                qtyInput.addClass('is-invalid');
+                valid = false;
+            } else {
+                qtyInput.removeClass('is-invalid');
+            }
+            return valid;
+        } else {
+            noOfBagsInput.removeClass('is-invalid');
+            bagSizeInput.removeClass('is-invalid');
+            qtyInput.removeClass('is-invalid');
+            return true;
+        }
+    }
+
+    // Validate all output rows across Head Products and By Products
+    function validateAllOutputRows() {
+        let allValid = true;
+        let firstInvalid = null;
+        let errorMessages = [];
+
+        $('#productionHeadProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
+            const $row = $(this);
+            if ($row.hasClass('commodity-total-row') || $row.find('strong').text().includes('Total') || $row.find('strong').text().includes('Commodity Total')) {
+                return;
+            }
+            const noOfBagsInput = $row.find('input[name="output_no_of_bags[]"]');
+            const bagSizeInput = $row.find('input[name="output_bag_size[]"]');
+            const qtyInput = $row.find('input[name="output_qty[]"]');
+
+            if (noOfBagsInput.length === 0 || bagSizeInput.length === 0 || qtyInput.length === 0) return;
+
+            const commodity = $row.find('strong').first().text().trim() || 'Product';
+            const noOfBagsVal = noOfBagsInput.val() ? noOfBagsInput.val().trim() : '';
+            const bagSizeVal = bagSizeInput.val() ? bagSizeInput.val().trim() : '';
+            const qtyVal = qtyInput.val() ? qtyInput.val().trim() : '';
+
+            const noOfBags = parseFloat(noOfBagsVal) || 0;
+            const bagSize = parseFloat(bagSizeVal) || 0;
+            const qty = parseFloat(qtyVal) || 0;
+
+            const hasAny = (noOfBagsVal !== '' && noOfBags > 0) || (bagSizeVal !== '' && bagSize > 0) || (qtyVal !== '' && qty > 0);
+
+            if (hasAny) {
+                let missing = [];
+                if (noOfBagsVal === '' || noOfBags <= 0) {
+                    noOfBagsInput.addClass('is-invalid');
+                    missing.push('No of Bags');
+                    if (!firstInvalid) firstInvalid = noOfBagsInput;
+                } else {
+                    noOfBagsInput.removeClass('is-invalid');
+                }
+
+                if (bagSizeVal === '' || bagSize <= 0) {
+                    bagSizeInput.addClass('is-invalid');
+                    missing.push('Packed in (KG)');
+                    if (!firstInvalid) firstInvalid = bagSizeInput;
+                } else {
+                    bagSizeInput.removeClass('is-invalid');
+                }
+
+                if (qtyVal === '' || qty <= 0) {
+                    qtyInput.addClass('is-invalid');
+                    missing.push('Qty (kg)');
+                    if (!firstInvalid) firstInvalid = qtyInput;
+                } else {
+                    qtyInput.removeClass('is-invalid');
+                }
+
+                if (missing.length > 0) {
+                    allValid = false;
+                    errorMessages.push(`${commodity}: ${missing.join(' and ')} required.`);
+                }
+            } else {
+                noOfBagsInput.removeClass('is-invalid');
+                bagSizeInput.removeClass('is-invalid');
+                qtyInput.removeClass('is-invalid');
+            }
+        });
+
+        if (!allValid) {
+            if (firstInvalid) {
+                firstInvalid.focus();
+            }
+            const msg = 'If any of No of Bags, Packed in (KG), or Qty (kg) is entered, all three are required:\n' + errorMessages.join('\n');
+            if (typeof toastr !== 'undefined') {
+                toastr.error('If any of No of Bags, Packed in (KG), or Qty (kg) is entered, all three are required: ' + errorMessages.join(' | '));
+            } else {
+                alert(msg);
+            }
+            return false;
+        }
+        return true;
     }
 
     // Initialize on page load
     $(document).ready(function() {
         initializeCalculations();
         
+        // Intercept submit on form directly to validate output rows
+        $('#ajaxSubmit').on('submit', function(e) {
+            if (!validateAllOutputRows()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        });
+
+        $(document).on('click', '#ajaxSubmit button[type="submit"], #ajaxSubmit .submitbutton', function(e) {
+            if (!validateAllOutputRows()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        });
+
         // Reinitialize after dynamic content loads
         $(document).on('DOMNodeInserted', function(e) {
             if ($(e.target).find('#productionInputsTable, #productionHeadProductsTable, #productionByProductsTable').length > 0) {
@@ -2653,7 +2961,7 @@
         });
 
         $(document).off('submit.pv_breakdown', '#ajaxSubmit').on('submit.pv_breakdown', '#ajaxSubmit', function(e) {
-            if (!validateBreakdownTimes() || !validateAllSlotBreakdowns()) {
+            if (!validateBreakdownTimes() || !validateAllSlotBreakdowns() || !validateAllOutputRows()) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 return false;
@@ -2663,7 +2971,12 @@
         $('.machine-toggle').each(function() {
             var machineId = $(this).val();
             updateMachineCardStyle(this, machineId);
+            calculateMachineTime(machineId);
         });
+
+        if ($('#plant_id').val() && $('#productionMachinesContainer .machine-card').length === 0) {
+            loadMachinesByPlant();
+        }
 
         calculateBreakdownHours();
     });

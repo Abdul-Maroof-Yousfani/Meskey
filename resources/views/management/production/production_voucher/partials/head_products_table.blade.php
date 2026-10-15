@@ -20,6 +20,27 @@
             $existingOutputs = isset($headProductOutputs) 
                 ? (is_array($headProductOutputs) ? collect($headProductOutputs) : $headProductOutputs) 
                 : collect();
+            $renderedOutputIds = [];
+
+            $jobOrdersList = isset($jobOrders) && $jobOrders ? $jobOrders : collect();
+            $renderJobOrderOptions = function($selectedJobOrderId, $rowProdId) use ($jobOrdersList) {
+                $html = '<option value="">Select Job Order</option>';
+                foreach ($jobOrdersList as $jobOrder) {
+                    $joPacking = null;
+                    if ($jobOrder->relationLoaded('packingItems') && $jobOrder->packingItems) {
+                        $joPacking = $jobOrder->packingItems->first(function($pi) use ($rowProdId) {
+                            return $rowProdId && $pi->jobOrder && $pi->jobOrder->product_id == $rowProdId;
+                        }) ?? $jobOrder->packingItems->first();
+                    }
+                    $optBags = $joPacking->no_of_bags ?? '';
+                    $optSize = $joPacking->bag_size ?? '';
+                    $optQty = $joPacking->total_kgs ?? (($optBags && $optSize) ? ($optBags * $optSize) : '');
+                    $optBrand = $joPacking->brand_id ?? '';
+                    $isSelected = ($selectedJobOrderId == $jobOrder->id) ? 'selected' : '';
+                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($jobOrder->job_order_no) . '</option>';
+                }
+                return $html;
+            };
         @endphp
 
         {{-- 1. First show products with packing items (existing structure) --}}
@@ -45,9 +66,20 @@
                     @if($outputs->count() > 0)
                         {{-- Show existing outputs --}}
                         @foreach($outputs as $output)
+                            @php
+                                if (!empty($output->id)) {
+                                    $renderedOutputIds[] = $output->id;
+                                }
+                            @endphp
                             <tr>
                                 <td>
-                                    <strong>{{ $output->product->name ?? $product->name }}</strong>
+                                    @php
+                                        $prod = $output->product ?? $product;
+                                        $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                                        $pName = $prod->name ?? '';
+                                        $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                                    @endphp
+                                    <strong>{{ $displayName }}</strong>
                                     <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
                                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                                     @if($output->id)
@@ -56,7 +88,7 @@
                                 </td>
                                 <td>
                                     <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0"
-                                        value="{{ $output->no_of_bags ?? '' }}">
+                                        value="{{ $output->no_of_bags ?? $jobOrderPacking->no_of_bags ?? '' }}">
                                 </td>
                                 <td>
                                     <input type="number" name="output_bag_size[]" class="form-control" step="0.01" min="0.01"
@@ -64,7 +96,7 @@
                                 </td>
                                 <td>
                                     <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01"
-                                        value="{{ $output->qty ?? '' }}">
+                                        value="{{ $output->qty ?? $jobOrderPacking->total_kgs ?? '' }}">
                                 </td>
                                 <td>
                                     <input type="number" name="output_avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01"
@@ -96,12 +128,7 @@
                                 </td>
                                 <td>
                                     <select name="output_job_order_id[]" class="form-control select2">
-                                        <option value="">Select Job Order</option>
-                                        @foreach($jobOrders as $jobOrder)
-                                            <option value="{{ $jobOrder->id }}" {{ ($output->job_order_id ?? '') == $jobOrder->id ? 'selected' : '' }}>
-                                                {{ $jobOrder->job_order_no }}
-                                            </option>
-                                        @endforeach
+                                        {!! $renderJobOrderOptions($output->job_order_id ?? ($jobOrderPacking->job_order_id ?? ''), $output->product_id ?? $product->id) !!}
                                     </select>
                                 </td>
                                 <td>
@@ -117,19 +144,27 @@
                         {{-- Show new row for packing item without outputs --}}
                         <tr>
                             <td>
-                                <strong>{{ $jobOrderPacking->jobOrder->product->name ?? $product->name }}</strong>
+                                @php
+                                    $prod = $jobOrderPacking->jobOrder->product ?? $product;
+                                    $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                                    $pName = $prod->name ?? '';
+                                    $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                                @endphp
+                                <strong>{{ $displayName }}</strong>
                                 <input type="hidden" name="output_product_id[]" value="{{ $jobOrderPacking->jobOrder->product->id ?? $product->id }}">
                                 <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                             </td>
                             <td>
-                                <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0" value="">
+                                <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0"
+                                    value="{{ $jobOrderPacking->no_of_bags ?? '' }}">
                             </td>
                             <td>
                                 <input type="number" name="output_bag_size[]" class="form-control" step="0.01" min="0.01"
                                     value="{{ $jobOrderPacking->bag_size ?? '' }}">
                             </td>
                             <td>
-                                <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01" value="">
+                                <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01"
+                                    value="{{ $jobOrderPacking->total_kgs ?? (($jobOrderPacking->no_of_bags && $jobOrderPacking->bag_size) ? ($jobOrderPacking->no_of_bags * $jobOrderPacking->bag_size) : '') }}">
                             </td>
                             <td>
                                 <input type="number" name="output_avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01"
@@ -156,11 +191,7 @@
                         </td>
                         <td>
                             <select name="output_job_order_id[]" class="form-control select2">
-                                <option value="">Select Job Order</option>
-                                @foreach($jobOrders as $jobOrder)
-                                    <option value="{{ $jobOrder->id }}" {{ $jobOrderPacking && $jobOrderPacking->job_order_id == $jobOrder->id ? 'selected' : '' }}>{{ $jobOrder->job_order_no }}
-                                    </option>
-                                @endforeach
+                                {!! $renderJobOrderOptions($jobOrderPacking->job_order_id ?? '', $jobOrderPacking->jobOrder->product->id ?? $product->id) !!}
                             </select>
                         </td>
                             <td>
@@ -173,6 +204,90 @@
                         </tr>
                     @endif
                 @endforeach
+
+                {{-- Also render any existing outputs for this product that have empty job_order_packing_item_id or not yet rendered --}}
+                @php
+                    $standalonePackingOutputs = $existingOutputs->filter(function($output) use ($product, $renderedOutputIds) {
+                        return $output && $output->product_id == $product->id 
+                            && empty($output->job_order_packing_item_id) 
+                            && (!isset($output->id) || !in_array($output->id, $renderedOutputIds));
+                    });
+                @endphp
+                @foreach($standalonePackingOutputs as $output)
+                    @php
+                        if (!empty($output->id)) {
+                            $renderedOutputIds[] = $output->id;
+                        }
+                    @endphp
+                    <tr>
+                        <td>
+                            @php
+                                $prod = $output->product ?? $product;
+                                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                                $pName = $prod->name ?? '';
+                                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                            @endphp
+                            <strong>{{ $displayName }}</strong>
+                            <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
+                            <input type="hidden" name="job_order_packing_item_id[]" value="">
+                            @if($output->id)
+                                <input type="hidden" name="output_id[]" value="{{ $output->id }}">
+                            @endif
+                        </td>
+                        <td>
+                            <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0"
+                                value="{{ $output->no_of_bags ?? '' }}">
+                        </td>
+                        <td>
+                            <input type="number" name="output_bag_size[]" class="form-control" step="0.01" min="0.01"
+                                value="{{ $output->bag_size ?? '' }}">
+                        </td>
+                        <td>
+                            <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01"
+                                value="{{ $output->qty ?? '' }}">
+                        </td>
+                        <td>
+                            <input type="number" name="output_avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01"
+                                readonly value="{{ $output->avg_weight_per_bag ?? '' }}">
+                        </td>
+                        <td>
+                            <input type="number" name="output_yield[]" class="form-control" step="0.01" min="0.01" readonly
+                                value="{{ $output->yield ?? '' }}">
+                        </td>
+                        <td>
+                            <select name="output_arrival_sub_location_id[]" class="form-control select2">
+                                <option value="">Select Storage Location</option>
+                                @foreach($arrivalSubLocations as $arrivalSubLocation)
+                                    <option value="{{ $arrivalSubLocation->id }}" {{ ($output->arrival_sub_location_id ?? '') == $arrivalSubLocation->id ? 'selected' : '' }}>
+                                        {{ $arrivalSubLocation->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="output_brand_id[]" class="form-control select2">
+                                <option value="">Select Brand</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand->id }}" {{ ($output->brand_id ?? '') == $brand->id ? 'selected' : '' }}>
+                                        {{ $brand->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="output_job_order_id[]" class="form-control select2">
+                                {!! $renderJobOrderOptions($output->job_order_id ?? '', $output->product_id ?? $product->id) !!}
+                            </select>
+                        </td>
+                        <td>
+                            <textarea name="output_remarks[]" class="form-control" rows="1">{{ $output->remarks ?? '' }}</textarea>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary copythis"><i class="fa fa-copy"></i></button>
+                            <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
+                        </td>
+                    </tr>
+                @endforeach
             @endforeach
         @endif
 
@@ -181,17 +296,29 @@
             @foreach ($nonPackingItemsProducts as $product)
                 @php
                     // Check if this product has existing outputs
-                    $productOutputs = $existingOutputs->filter(function($output) use ($product) {
-                        return $output && $output->product_id == $product->id && empty($output->job_order_packing_item_id);
+                    $productOutputs = $existingOutputs->filter(function($output) use ($product, $renderedOutputIds) {
+                        return $output && $output->product_id == $product->id 
+                            && (!isset($output->id) || !in_array($output->id, $renderedOutputIds));
                     });
                 @endphp
 
                 @if($productOutputs->count() > 0)
                     {{-- Show existing outputs for this product --}}
                     @foreach($productOutputs as $output)
+                        @php
+                            if (!empty($output->id)) {
+                                $renderedOutputIds[] = $output->id;
+                            }
+                        @endphp
                         <tr>
                             <td>
-                                <strong>{{ $product->name }}</strong>
+                                @php
+                                    $prod = $output->product ?? $product;
+                                    $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                                    $pName = $prod->name ?? '';
+                                    $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                                @endphp
+                                <strong>{{ $displayName }}</strong>
                                 <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
                                 <input type="hidden" name="job_order_packing_item_id[]" value="">
                                 @if($output->id)
@@ -240,12 +367,7 @@
                             </td>
                             <td>
                                 <select name="output_job_order_id[]" class="form-control select2">
-                                    <option value="">Select Job Order</option>
-                                    @foreach($jobOrders as $jobOrder)
-                                        <option value="{{ $jobOrder->id }}" {{ ($output->job_order_id ?? '') == $jobOrder->id ? 'selected' : '' }}>
-                                            {{ $jobOrder->job_order_no }}
-                                        </option>
-                                    @endforeach
+                                    {!! $renderJobOrderOptions($output->job_order_id ?? '', $output->product_id ?? $product->id) !!}
                                 </select>
                             </td>
                             <td>
@@ -261,7 +383,13 @@
                     {{-- Show new row for product without outputs --}}
                     <tr>
                         <td>
-                            <strong>{{ $product->name }}</strong>
+                            @php
+                                $prod = $product;
+                                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                                $pName = $prod->name ?? '';
+                                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                            @endphp
+                            <strong>{{ $displayName }}</strong>
                             <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                         </td>
@@ -298,10 +426,7 @@
                         </td>
                         <td>
                             <select name="output_job_order_id[]" class="form-control select2">
-                                <option value="">Select Job Order</option>
-                                @foreach($jobOrders as $jobOrder)
-                                    <option value="{{ $jobOrder->id }}">{{ $jobOrder->job_order_no }}</option>
-                                @endforeach
+                                {!! $renderJobOrderOptions('', $product->id) !!}
                             </select>
                         </td>
                         <td>
@@ -316,7 +441,87 @@
             @endforeach
         @endif
 
-        {{-- 3. Total Row --}}
+        {{-- 3. Any remaining existing outputs that were not rendered above --}}
+        @php
+            $remainingOutputs = $existingOutputs->filter(function($output) use ($renderedOutputIds) {
+                return $output && (!isset($output->id) || !in_array($output->id, $renderedOutputIds));
+            });
+        @endphp
+        @foreach($remainingOutputs as $output)
+            @php
+                if (!empty($output->id)) {
+                    $renderedOutputIds[] = $output->id;
+                }
+                $prod = $output->product;
+                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                $pName = $prod->name ?? 'Product';
+                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+            @endphp
+            <tr>
+                <td>
+                    <strong>{{ $displayName }}</strong>
+                    <input type="hidden" name="output_product_id[]" value="{{ $output->product_id }}">
+                    <input type="hidden" name="job_order_packing_item_id[]" value="{{ $output->job_order_packing_item_id ?? '' }}">
+                    @if($output->id)
+                        <input type="hidden" name="output_id[]" value="{{ $output->id }}">
+                    @endif
+                </td>
+                <td>
+                    <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0"
+                        value="{{ $output->no_of_bags ?? '' }}">
+                </td>
+                <td>
+                    <input type="number" name="output_bag_size[]" class="form-control" step="0.01" min="0.01"
+                        value="{{ $output->bag_size ?? '' }}">
+                </td>
+                <td>
+                    <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01"
+                        value="{{ $output->qty ?? '' }}">
+                </td>
+                <td>
+                    <input type="number" name="output_avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01"
+                        readonly value="{{ $output->avg_weight_per_bag ?? '' }}">
+                </td>
+                <td>
+                    <input type="number" name="output_yield[]" class="form-control" step="0.01" min="0.01" readonly
+                        value="{{ $output->yield ?? '' }}">
+                </td>
+                <td>
+                    <select name="output_arrival_sub_location_id[]" class="form-control select2">
+                        <option value="">Select Storage Location</option>
+                        @foreach($arrivalSubLocations as $arrivalSubLocation)
+                            <option value="{{ $arrivalSubLocation->id }}" {{ ($output->arrival_sub_location_id ?? '') == $arrivalSubLocation->id ? 'selected' : '' }}>
+                                {{ $arrivalSubLocation->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <select name="output_brand_id[]" class="form-control select2">
+                        <option value="">Select Brand</option>
+                        @foreach($brands as $brand)
+                            <option value="{{ $brand->id }}" {{ ($output->brand_id ?? '') == $brand->id ? 'selected' : '' }}>
+                                {{ $brand->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <select name="output_job_order_id[]" class="form-control select2">
+                        {!! $renderJobOrderOptions($output->job_order_id ?? '', $output->product_id ?? null) !!}
+                    </select>
+                </td>
+                <td>
+                    <textarea name="output_remarks[]" class="form-control" rows="1">{{ $output->remarks ?? '' }}</textarea>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-primary copythis"><i class="fa fa-copy"></i></button>
+                    <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>
+        @endforeach
+
+        {{-- 4. Total Row --}}
         @if(isset($headProduct) && $headProduct)
             <tr class="commodity-total-row">
                 <td>

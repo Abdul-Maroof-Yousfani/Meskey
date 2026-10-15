@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Product;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
@@ -20,7 +21,14 @@ class StoreProductRequest extends FormRequest
             'unique_no' => 'nullable|unique:products,unique_no',
             'bag_weight_for_purchasing' => 'nullable|numeric',
             'product_type' => 'required|in:raw_material,finish_good,general_items',
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('products', 'name')
+                    ->where('company_id', $this->input('company_id') ?? $this->company_id)
+                    ->whereNull('deleted_at'),
+            ],
             'description' => 'nullable|string',
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -43,6 +51,7 @@ class StoreProductRequest extends FormRequest
             'unique_no.required' => 'The unique number is required.',
             'unique_no.unique' => 'This unique number already exists.',
             'name.required' => 'The product name is required.',
+            'name.unique' => 'The product name has already been taken.',
             'image.image' => 'The file must be an image.',
             'image.max' => 'The image size must be less than 2MB.',
             'price.numeric' => 'The price must be a number.',

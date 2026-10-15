@@ -15,6 +15,27 @@
         </tr>
     </thead>
     <tbody>
+        @php
+            $jobOrdersList = isset($jobOrders) && $jobOrders ? $jobOrders : collect();
+            $renderJobOrderOptions = function($selectedJobOrderId, $rowProdId) use ($jobOrdersList) {
+                $html = '<option value="">Select Job Order</option>';
+                foreach ($jobOrdersList as $jobOrder) {
+                    $joPacking = null;
+                    if ($jobOrder->relationLoaded('packingItems') && $jobOrder->packingItems) {
+                        $joPacking = $jobOrder->packingItems->first(function($pi) use ($rowProdId) {
+                            return $rowProdId && $pi->jobOrder && $pi->jobOrder->product_id == $rowProdId;
+                        }) ?? $jobOrder->packingItems->first();
+                    }
+                    $optBags = $joPacking->no_of_bags ?? '';
+                    $optSize = $joPacking->bag_size ?? '';
+                    $optQty = $joPacking->total_kgs ?? (($optBags && $optSize) ? ($optBags * $optSize) : '');
+                    $optBrand = $joPacking->brand_id ?? '';
+                    $isSelected = ($selectedJobOrderId == $jobOrder->id) ? 'selected' : '';
+                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($jobOrder->job_order_no) . '</option>';
+                }
+                return $html;
+            };
+        @endphp
         @if(isset($byProducts) && $byProducts && count($byProducts) > 0)
             @foreach($byProducts as $product)
                 @php
@@ -83,10 +104,7 @@ $filteredJobOrderPackings = $jobOrderPackings->whereHas('jobOrder', function ($q
                                 </td>
                                 <td>
                                     <select name="output_job_order_id[]" class="form-control select2">
-                                        <option value="">Select Job Order</option>
-                                        @foreach($jobOrders as $jobOrder)
-                                            <option value="{{ $jobOrder->id }}" {{ $jobOrderPacking && $jobOrderPacking->job_order_id == $jobOrder->id ? 'selected' : '' }}>{{ $jobOrder->job_order_no }}</option>
-                                        @endforeach
+                                        {!! $renderJobOrderOptions($output->job_order_id ?? ($jobOrderPacking->job_order_id ?? ''), $product->id ?? null) !!}
                                     </select>
                                 </td>
                                 <td>
@@ -144,10 +162,7 @@ $filteredJobOrderPackings = $jobOrderPackings->whereHas('jobOrder', function ($q
                         </td>
                         <td>
                             <select name="output_job_order_id[]" class="form-control select2">
-                                <option value="">Select Job Order</option>
-                                @foreach($jobOrders as $jobOrder)
-                                    <option value="{{ $jobOrder->id }}" {{ $output && $output->job_order_id == $jobOrder->id ? 'selected' : '' }}>{{ $jobOrder->job_order_no }}</option>
-                                @endforeach
+                                {!! $renderJobOrderOptions($output->job_order_id ?? '', $product->id ?? null) !!}
                             </select>
                         </td>
                         <td>

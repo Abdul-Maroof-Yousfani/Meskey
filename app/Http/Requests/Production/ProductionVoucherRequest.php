@@ -200,51 +200,46 @@ class ProductionVoucherRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Get by product ID
-            $byProductId = $this->input('by_product_id');
-
-            // If no by product is selected, skip validation
-            if (empty($byProductId)) {
-                return;
-            }
-
-            // Get all output rows
             $outputQtys = $this->input('output_qty', []);
             $outputNoOfBags = $this->input('output_no_of_bags', []);
             $outputProductIds = $this->input('output_product_id', []);
             $outputBagSizes = $this->input('output_bag_size', []);
-            $outputStorageLocations = $this->input('output_arrival_sub_location_id', []);
-            $outputBrandIds = $this->input('output_brand_id', []);
-            $outputJobOrderIds = $this->input('output_job_order_id', []);
 
-            // Validate by product rows: if no_of_bags is provided, other fields are required
-            foreach ($outputNoOfBags as $index => $noOfBags) {
-                // Check if this row is a by product row (product_id matches by_product_id)
-                $isByProductRow = false;
-                if (!empty($outputProductIds[$index])) {
-                    $isByProductRow = ($outputProductIds[$index] == $byProductId);
-                }
+            $allIndices = array_unique(array_merge(
+                array_keys($outputQtys),
+                array_keys($outputNoOfBags),
+                array_keys($outputBagSizes)
+            ));
 
-                // If it's a by product row and no_of_bags is provided (and > 0), make other fields required
-                if ($isByProductRow && !empty($noOfBags) && $noOfBags > 0) {
-                    if (empty($outputQtys[$index]) || $outputQtys[$index] <= 0) {
-                        $validator->errors()->add("output_qty.{$index}", "Quantity is required when number of bags is provided for by product.");
+            // Validate all output rows: if any of No of Bags, Packed in (KG), Qty (kg) is entered, all three are required
+            foreach ($allIndices as $index) {
+                $bags = $outputNoOfBags[$index] ?? null;
+                $size = $outputBagSizes[$index] ?? null;
+                $qty = $outputQtys[$index] ?? null;
+
+                $hasBags = (!is_null($bags) && $bags !== '' && (float)$bags > 0);
+                $hasSize = (!is_null($size) && $size !== '' && (float)$size > 0);
+                $hasQty = (!is_null($qty) && $qty !== '' && (float)$qty > 0);
+
+                if ($hasBags || $hasSize || $hasQty) {
+                    $prodName = 'Row ' . ($index + 1);
+                    if (!empty($outputProductIds[$index])) {
+                        $prod = \App\Models\Product::find($outputProductIds[$index]);
+                        if ($prod) {
+                            $prodName = $prod->name;
+                        }
                     }
 
-                    if (empty($outputBagSizes[$index])) {
-                        $validator->errors()->add("output_bag_size.{$index}", "Bag size is required when number of bags is provided for by product.");
+                    if (!$hasBags) {
+                        $validator->errors()->add("output_no_of_bags.{$index}", "No of Bags is required for {$prodName} when Packed in (KG) or Qty (kg) is entered.");
                     }
 
-                    if (empty($outputStorageLocations[$index])) {
-                        $validator->errors()->add("output_arrival_sub_location_id.{$index}", "Storage location is required when number of bags is provided for by product.");
+                    if (!$hasSize) {
+                        $validator->errors()->add("output_bag_size.{$index}", "Packed in (KG) is required for {$prodName} when No of Bags or Qty (kg) is entered.");
                     }
 
-                    if (empty($outputBrandIds[$index])) {
-                        $validator->errors()->add("output_brand_id.{$index}", "Brand is required when number of bags is provided for by product.");
-                    }
-
-                    if (empty($outputJobOrderIds[$index])) {
-                        $validator->errors()->add("output_job_order_id.{$index}", "Job order is required when number of bags is provided for by product.");
+                    if (!$hasQty) {
+                        $validator->errors()->add("output_qty.{$index}", "Qty (kg) is required for {$prodName} when No of Bags or Packed in (KG) is entered.");
                     }
                 }
             }

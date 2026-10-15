@@ -45,6 +45,7 @@ class ExportOrderPackingItem extends Model
         'stuffing_maunds',
         'amount',
         'amount_pkr',
+        'attachment',
     ];
 
     protected $casts = [

@@ -26,7 +26,15 @@ class UpdateProductRequest extends FormRequest
                     ->where('company_id', $this->input('company_id'))
                     ->ignore($productId)
             ],
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('products', 'name')
+                    ->where('company_id', $this->input('company_id') ?? $this->company_id)
+                    ->whereNull('deleted_at')
+                    ->ignore($productId),
+            ],
             'description' => 'nullable|string',
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -50,6 +58,7 @@ class UpdateProductRequest extends FormRequest
             'unit_of_measure_id.required' => 'The unit of measure is required.',
             'unique_no.unique' => 'This unique number already exists for the selected company.',
             'name.required' => 'The product name is required.',
+            'name.unique' => 'The product name has already been taken.',
             'image.image' => 'The file must be an image.',
             'image.max' => 'The image size must be less than 2MB.',
             'price.numeric' => 'The price must be a number.',

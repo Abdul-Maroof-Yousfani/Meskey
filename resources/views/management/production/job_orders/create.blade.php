@@ -14,7 +14,7 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('job-orders.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+                    <form action="{{ route('job-orders.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" id="url" value="{{ route('job-orders.index') }}" />
                         <input type="hidden" id="listRefresh" value="{{ route('get.job_orders') }}" />
@@ -344,6 +344,13 @@
                                     <option value="{{ $company->id }}">{{ $company->name }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Attachment:</label>
+                            <div class="existing-attachment-wrap"></div>
+                            <input type="file" name="packing_items[0][attachment]" class="form-control packing-attachment" accept="image/*,application/pdf,.doc,.docx">
                         </div>
                     </div>
                     <!-- <div class="col-md-2">
@@ -1000,6 +1007,9 @@
             cleanRow.find('.packing-company-location-id').val($('#company_location_id').val() || '');
 
             cleanRow.find('.sub-packing-items-container').attr('data-index', 0).empty();
+            cleanRow.find('.existing-attachment-wrap').empty();
+            cleanRow.find('.old-attachment-input').remove();
+            cleanRow.find('input[type="file"]').val('');
             cleanRow.find('.add-sub-packing-item').attr('data-index', 0);
             cleanRow.attr('data-index', 0);
 
@@ -1230,6 +1240,18 @@
                     fumigationSelect.val(item.fumigation_company_id);
                 }
 
+                // Attachment sync
+                if (item.attachment_path || item.attachment) {
+                    let attachPath = item.attachment_path || item.attachment;
+                    let attachUrl = item.attachment || ('/storage/' + attachPath);
+                    row.find('.existing-attachment-wrap').html(`
+                        <a href="${attachUrl}" target="_blank" class="btn btn-sm btn-info mb-1">
+                            <i class="ft-eye"></i> View Attachment
+                        </a>
+                        <input type="hidden" name="packing_items[${index}][old_attachment]" value="${attachPath}" class="old-attachment-input">
+                    `);
+                }
+
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);
@@ -1273,6 +1295,16 @@
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][extra_bags_percentage]"]`).val(sub.extra_bags_percentage);
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bag_weight]"]`).val(sub.empty_bag_weight);
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][total_bags]"]`).val(sub.total_bags);
+
+                        if (sub.attachment_path || sub.attachment) {
+                            let subAttachPath = sub.attachment_path || sub.attachment;
+                            let subAttachUrl = sub.attachment || ('/storage/' + subAttachPath);
+                            let attachCell = subRow.find('.sub-attachment').parent();
+                            attachCell.prepend(`
+                                <a href="${subAttachUrl}" target="_blank" class="btn btn-sm btn-info mb-1 d-inline-block">View</a>
+                                <input type="hidden" name="packing_items[${index}][sub_items][${sIdx}][old_attachment]" value="${subAttachPath}" class="sub-old-attachment">
+                            `);
+                        }
 
                         subContainer.append(subRow);
                         subRow.find('select.select2').select2({ width: '100%' });
@@ -1374,8 +1406,11 @@
             $newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
             $newItem.find('.add-sub-packing-item').attr('data-index', newIndex);
 
-            // 5. Clean sub-items container
+            // 5. Clean sub-items container and attachments
             $newItem.find('.sub-packing-items-container').empty();
+            $newItem.find('.existing-attachment-wrap').empty();
+            $newItem.find('.old-attachment-input').remove();
+            $newItem.find('input[type="file"]').val('');
 
             // 6. Reset calculation fields
             $newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
@@ -1710,7 +1745,7 @@
 
             // Calculate totals
             var totalBags = noOfBags + extraBags + emptyBags;
-            var totalKgs = bagSize;
+            var totalKgs = bagSize * noOfBags;
             var metricTons = totalKgs / 1000;
 
             // Update fields

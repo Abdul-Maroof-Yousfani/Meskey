@@ -14,7 +14,7 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('job-order-requests.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+                    <form action="{{ route('job-order-requests.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" id="url" value="{{ route('job-order-requests.index') }}" />
                         <input type="hidden" id="listRefresh" value="{{ route('get.job_order_requests') }}" />
@@ -312,6 +312,13 @@
                                                         <option value="{{ $company->id }}">{{ $company->name }}</option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Attachment:</label>
+                                                <div class="existing-attachment-wrap"></div>
+                                                <input type="file" name="packing_items[0][attachment]" class="form-control packing-attachment" accept="image/*,application/pdf,.doc,.docx">
                                             </div>
                                         </div>
 
@@ -885,6 +892,9 @@
             $newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
             $newItem.find('.add-sub-packing-item').attr('data-index', newIndex);
             $newItem.find('.sub-packing-items-container').empty();
+            $newItem.find('.existing-attachment-wrap').empty();
+            $newItem.find('.old-attachment-input').remove();
+            $newItem.find('input[type="file"]').val('');
             $newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
 
             $('#packingItems').append($newItem);
@@ -987,8 +997,8 @@
         function updateOverallTotalRequestQty() {
             var sumKg = 0;
             $('#packingItems .packing-item').each(function() {
-                var bagSize = parseFloat($(this).find('.bag-size').val()) || 0;
-                sumKg += bagSize;
+                var totalKgs = parseFloat($(this).find('.total-kgs').val()) || 0;
+                sumKg += totalKgs;
             });
             var sumMt = sumKg / 1000;
             $('#totalRequestQty').text(sumKg.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }));
@@ -1002,7 +1012,7 @@
             var emptyBags = parseInt(item.find('.empty-bags').val()) || 0;
 
             var totalBags = noOfBags + extraBags + emptyBags;
-            var totalKgs = bagSize;
+            var totalKgs = bagSize * noOfBags;
             var metricTons = totalKgs / 1000;
 
             item.find('.total-bags').val(totalBags);

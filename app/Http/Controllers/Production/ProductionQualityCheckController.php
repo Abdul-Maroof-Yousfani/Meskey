@@ -79,13 +79,16 @@ class ProductionQualityCheckController extends Controller
         }
 
         // Apply sorting
-        $sortField = $request->get('sort', 'prod_date');
+        $sortField = $request->get('sort', 'prod_no');
         $sortDirection = $request->get('direction', 'desc');
 
         if (in_array($sortField, ['prod_no', 'prod_date', 'status'])) {
             $query->orderBy($sortField, $sortDirection);
+            if ($sortField !== 'id') {
+                $query->orderBy('id', $sortDirection);
+            }
         } else {
-            $query->orderBy('prod_date', 'desc')->orderBy('created_at', 'desc');
+            $query->orderBy('prod_no', 'desc')->orderBy('id', 'desc');
         }
 
         // Paginate results
@@ -122,8 +125,12 @@ class ProductionQualityCheckController extends Controller
 
             // Get produced quantities from production outputs (grouped by job order)
             foreach ($voucher->outputs as $output) {
-                if ($output->job_order_id && isset($jobOrderData[$output->job_order_id])) {
-                    $jobOrderData[$output->job_order_id]['produced_qty'] += $output->qty ?? 0;
+                $targetJobOrderId = $output->job_order_id;
+                if (!$targetJobOrderId && count($jobOrderData) === 1) {
+                    $targetJobOrderId = array_key_first($jobOrderData);
+                }
+                if ($targetJobOrderId && isset($jobOrderData[$targetJobOrderId])) {
+                    $jobOrderData[$targetJobOrderId]['produced_qty'] += $output->qty ?? 0;
                 }
             }
 
@@ -164,8 +171,15 @@ class ProductionQualityCheckController extends Controller
 
         $jobOrderRawMaterialQcs = JobOrderRawMaterialQc::whereIn('job_order_id', $productionVoucher->jobOrders->pluck('id'))->get();
 
-        $headProductOutputs = $productionVoucher->outputs->where('product_id', $productionVoucher->headProduct->id);
-        $byProductOutputs = $productionVoucher->outputs->where('product_id','!=', $productionVoucher->headProduct->id);
+        $headProductId = $productionVoucher->product_id;
+        $headProduct = \App\Models\Product::find($headProductId);
+        $parentId = ($headProduct && $headProduct->parent_id) ? $headProduct->parent_id : $headProductId;
+        $allHeadProductIds = \App\Models\Product::where(function ($q) use ($parentId) {
+            $q->where('id', $parentId)->orWhere('parent_id', $parentId);
+        })->whereIn('product_category_flags', ['head', 'b2'])->pluck('id')->toArray();
+
+        $headProductOutputs = $productionVoucher->outputs->whereIn('product_id', $allHeadProductIds);
+        $byProductOutputs = $productionVoucher->outputs->whereNotIn('product_id', $allHeadProductIds);
         $jobOrders = JobOrder::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         // $supervisors = User::where('status', 'active')->get();
@@ -222,29 +236,64 @@ class ProductionQualityCheckController extends Controller
             
             $productionVoucher->update(['status' => 'qc_completed', 'qc_remarks' => $request->qc_remarks ?? null]);
             
+            // Determine all head product IDs for this voucher (head and b2)
+            $headProductId = $productionVoucher->product_id;
+            $headProduct = Product::find($headProductId);
+            $voucherParentId = ($headProduct && $headProduct->parent_id) ? $headProduct->parent_id : $headProductId;
+            $allHeadProductIds = Product::where(function ($q) use ($voucherParentId) {
+                $q->where('id', $voucherParentId)->orWhere('parent_id', $voucherParentId);
+            })->whereIn('product_category_flags', ['head', 'b2'])->pluck('id')->toArray();
+
             // Update qc_status for all outputs
             if ($request->has('qc_status') && is_array($request->qc_status)) {
                 foreach ($request->qc_status as $outputId => $qcStatus) {
-                    $output = ProductionOutput::where('id', $outputId)
+                    $output = ProductionOutput::with(['product.parent'])
+                        ->where('id', $outputId)
                         ->where('production_voucher_id', $id)
                         ->first();
                     
                     if ($output) {
                         $output->update(['qc_status' => $qcStatus]);
-                        if($qcStatus == 're_milling') {
-                            $nameProduct = $output->product->name. '-Re-milling';
-                           
-                            $product = Product::where('name', $nameProduct)->firstOrCreate([
-                                'name' => $nameProduct,
-                                'status' => 'active',
-                                'company_id' => $productionVoucher->company_id,
-                                'product_type' =>  'raw_material',
-                                'parent_id' => $output->product->parent_id != null ? $output->product->parent_id : $output->product->id,
-                                'category_id' => $output->product->category_id,
-                                'unit_of_measure_id' => $output->product->unit_of_measure_id,
-                
-                            ]);
-                         
+                        if ($qcStatus == 're_milling' && $output->product) {
+                            $nameProduct = $output->product->name . '-Re-milling';
+
+                            $isHeadProduct = in_array($output->product_id, $allHeadProductIds) 
+                                || in_array($output->product->product_category_flags, ['head', 'b2']);
+
+                            $parentProduct = $output->product->parent_id != null 
+                                ? ($output->product->parent ?? Product::find($output->product->parent_id))
+                                : $output->product;
+
+                            $parentId = $parentProduct ? $parentProduct->id : $output->product->id;
+
+                            // When setting Head Products Actions into re-milling, set product_category_flags to what that product's parent has
+                            if ($isHeadProduct) {
+                                $categoryFlag = $parentProduct ? $parentProduct->product_category_flags : ($output->product->product_category_flags ?? 'head');
+                            } else {
+                                $categoryFlag = $output->product->product_category_flags ?? 'by';
+                            }
+
+                            $product = Product::where('name', $nameProduct)
+                                ->where('company_id', $productionVoucher->company_id)
+                                ->first();
+
+                            if (!$product) {
+                                $product = Product::create([
+                                    'name' => $nameProduct,
+                                    'status' => 'active',
+                                    'company_id' => $productionVoucher->company_id,
+                                    'product_type' => 'raw_material',
+                                    'parent_id' => $parentId,
+                                    'category_id' => $output->product->category_id,
+                                    'unit_of_measure_id' => $output->product->unit_of_measure_id,
+                                    'product_category_flags' => $categoryFlag,
+                                ]);
+                            } else {
+                                $product->update([
+                                    'product_category_flags' => $categoryFlag,
+                                    'parent_id' => $product->parent_id ?? $parentId,
+                                ]);
+                            }
                         }
                     }
                 }

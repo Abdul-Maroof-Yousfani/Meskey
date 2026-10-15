@@ -205,8 +205,8 @@
                                                 <div class="form-group">
                                                     <label>Job Ord. No:</label>
                                                     <select name="job_order_id[]" id="job_order_id" disabled
-                                                        class="form-control select2" multiple disabled <option
-                                                        value="">Select Job Order</option>
+                                                        class="form-control select2" multiple>
+                                                        <option value="">Select Job Order</option>
 
                                                         @foreach($jobOrders as $jobOrder)
                                                             <option value="{{ $jobOrder->id }}" {{ in_array($jobOrder->id, $productionVoucher->jobOrders->pluck('id')->toArray()) ? 'selected' : '' }}>
@@ -223,6 +223,21 @@
                                                     <label>By Product:</label>
                                                     <input type="text" name="by_product_name" class="form-control"
                                                         value="{{ $productionVoucher->byProducts->name ?? '' }}" readonly>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>Production Machines:</label>
+                                                    @php
+                                                        $machineNames = $productionVoucher->productionMachines->pluck('name')->implode(', ');
+                                                        if (empty($machineNames) && $productionVoucher->plant_id) {
+                                                            $pMachines = \App\Models\Master\ProductionMachine::where('plant_id', $productionVoucher->plant_id)->where('status', 'active')->pluck('name')->implode(', ');
+                                                            $machineNames = $pMachines ? $pMachines . ' (Plant Default)' : 'N/A';
+                                                        }
+                                                    @endphp
+                                                    <input type="text" class="form-control" readonly
+                                                        value="{{ $machineNames ?: 'N/A' }}" title="{{ $machineNames }}">
                                                 </div>
                                             </div>
 
@@ -269,7 +284,12 @@
                                                     'product',
                                                     'brand'
                                                 ])
-                                                    ->where('job_order_id', $jobOrderId)
+                                                    ->where(function ($q) use ($jobOrderId, $selectedJobOrderIds) {
+                                                        $q->where('job_order_id', $jobOrderId);
+                                                        if (count($selectedJobOrderIds) === 1) {
+                                                            $q->orWhereNull('job_order_id');
+                                                        }
+                                                    })
                                                     ->whereHas('productionVoucher', function ($q) use ($locationId) {
                                                         $q->where('location_id', $locationId);
                                                     })
@@ -444,7 +464,13 @@
                                                                 @foreach($headProductOutputs as $headProductOutput)
                                                                     <tr>
                                                                         <td>
-                                                                            <strong>{{ $headProductOutput->product->name }}</strong>
+                                                                            @php
+                                                                                $prod = $headProductOutput->product;
+                                                                                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
+                                                                                $pName = $prod->name ?? '';
+                                                                                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
+                                                                            @endphp
+                                                                            <strong>{{ $displayName }}</strong>
                                                                             <input type="hidden" name="output_ids[]"
                                                                                 value="{{ $headProductOutput->id }}">
                                                                         </td>
@@ -514,15 +540,15 @@
                                                                         <strong>Total</strong>
                                                                     </td>
                                                                     <td>
-                                                                        <input type="number" name="commodity_total_qty[]"
-                                                                            readonly class="form-control" step="0.01" min="0.01"
-                                                                            readonly>
-                                                                    </td>
-                                                                    <td>
                                                                         <input type="number" name="commodity_total_no_of_bags[]"
                                                                             class="form-control" step="1" min="0" readonly>
                                                                     </td>
                                                                     <td></td>
+                                                                    <td>
+                                                                        <input type="number" name="commodity_total_qty[]"
+                                                                            readonly class="form-control" step="0.01" min="0.01"
+                                                                            readonly>
+                                                                    </td>
                                                                     <td></td>
                                                                     <td>
                                                                         <input type="number" name="total_yield[]" readonly
@@ -739,6 +765,45 @@
                                                             @endif
                                                         </tbody>
                                                     </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row my-2">
+                                            <div class="col-md-6">
+                                                <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                                    style="background-color: #93c3f2;">
+                                                    <div class="col-md-12">
+                                                        <h6 class="m-0">Total Input</h6>
+                                                    </div>
+                                                </div>
+                                                <div id="productionTotalInputTable">
+                                                    @php
+                                                        $totalInputVal = $productionVoucher->net_total_input;
+                                                        if (empty($totalInputVal) && $productionVoucher->inputs) {
+                                                            $totalInputVal = $productionVoucher->inputs->sum('qty');
+                                                        }
+                                                    @endphp
+                                                    <input type="text" name="net_total_input" value="{{ $totalInputVal ? number_format((float)$totalInputVal, 2, '.', '') : '' }}" class="form-control" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                                    style="background-color: #93c3f2;">
+                                                    <div class="col-md-12">
+                                                        <h6 class="m-0">Total Output</h6>
+                                                    </div>
+                                                </div>
+                                                <div id="productionTotalOutputTable">
+                                                    @php
+                                                        $totalOutputVal = $productionVoucher->net_total_output;
+                                                        if (empty($totalOutputVal) && !empty($productionVoucher->produced_qty_kg)) {
+                                                            $totalOutputVal = $productionVoucher->produced_qty_kg;
+                                                        }
+                                                        if (empty($totalOutputVal) && $productionVoucher->outputs) {
+                                                            $totalOutputVal = $productionVoucher->outputs->sum('qty');
+                                                        }
+                                                    @endphp
+                                                    <input type="text" name="net_total_output" value="{{ $totalOutputVal ? number_format((float)$totalOutputVal, 2, '.', '') : '' }}" class="form-control" readonly>
                                                 </div>
                                             </div>
                                         </div>
@@ -1225,6 +1290,7 @@
             } else {
                 totalYieldInput.val('');
             }
+            calculateNetTotalInput();
         }
 
         // Calculate total outputs (head products + by products)
@@ -1328,6 +1394,7 @@
                     totalYieldInput.val('');
                 }
             }
+            calculateNetTotalInput();
         }
 
         // Calculate By Products Yield, Avg Weight, and Totals
@@ -1438,6 +1505,19 @@
                     grandTotalRow.find('input[name="total_yield[]"]').val('');
                 }
             }
+            calculateNetTotalInput();
+        }
+
+        function calculateNetTotalInput() {
+            let totalInput = 0;
+            $('#productionInputsTable tbody tr').not(':last').each(function () {
+                const qty = parseFloat($(this).find('input[name="input_qty[]"]').val()) || 0;
+                totalInput += qty;
+            });
+            $('input[name="net_total_input"]').val(roundToTwo(totalInput));
+
+            const totalOutput = roundToTwo(getTotalOutputs());
+            $('input[name="net_total_output"]').val(totalOutput);
         }
 
         // Initialize all calculations
@@ -1522,6 +1602,7 @@
             calculateProductionInputs();
             calculateHeadProducts();
             calculateByProducts();
+            calculateNetTotalInput();
         }
 
         // Initialize on page load

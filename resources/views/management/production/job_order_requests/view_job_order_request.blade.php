@@ -1,5 +1,5 @@
 <!-- Action Bar (Hidden on Print) -->
-<div class="d-flex justify-content-end mb-2 d-print-none bg-light p-1 rounded">
+{{-- <div class="d-flex justify-content-end mb-2 d-print-none bg-light p-1 rounded">
     <div>
         <button onclick="printDiv('print-area')" class="btn btn-primary btn-sm">
             <i class="ft-printer mr-1"></i> Print
@@ -8,18 +8,18 @@
             <i class="ft-x"></i>
         </button>
     </div>
-</div>
+</div> --}}
 <br>
 <div class="print-ready-section" id="print-area">
     <div class="rela">
         <div class="header mb-4">
             <div class="row" style="width: 100% !important; align-items: center !important;">
-                <div class="col-6">
+                {{-- <div class="col-6">
                     <div class="logo">
                         <img class="logo-img" alt="Logo" src="/storage/company_logos/meskay-logo-20250514082251.png" style="max-height: 60px;">
                     </div>
-                </div>
-                <div class="col-6 text-right">
+                </div> --}}
+                <div class="col-6">
                     <h3 class="font-weight-bold text-uppercase mb-0">JOB ORDER REQUEST</h3>
                     <p class="text-muted mb-0">Status: <strong class="text-uppercase">{{ $request->status }}</strong></p>
                 </div>
@@ -134,6 +134,7 @@
                             <th>Total Bags</th>
                             <th>Total MT</th>
                             <th>Containers</th>
+                            <th>Attachment</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,6 +149,15 @@
                             <td><strong>{{ number_format($pi->total_bags) }}</strong></td>
                             <td>{{ number_format($pi->metric_tons, 3) }}</td>
                             <td>{{ $pi->no_of_containers }}</td>
+                            <td>
+                                @if($pi->attachment)
+                                    <a href="{{ asset('storage/' . $pi->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">
+                                        <i class="ft-file"></i> View
+                                    </a>
+                                @else
+                                    -
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>

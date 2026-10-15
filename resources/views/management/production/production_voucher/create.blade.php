@@ -49,7 +49,7 @@
                                                     onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();"
                                                     class="form-control select2" required>
                                                     <option value="">Select Location</option>
-                                                    @foreach($companyLocations as $location)
+                                                    @foreach ($companyLocations as $location)
                                                         <option value="{{ $location->id }}">{{ $location->name }}</option>
                                                     @endforeach
                                                 </select>
@@ -68,7 +68,8 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Plant:</label>
-                                                <select name="plant_id" id="plant_id" onchange="loadlabourCharges();loadMachinesByPlant();"
+                                                <select name="plant_id" id="plant_id"
+                                                    onchange="loadlabourCharges();loadMachinesByPlant();"
                                                     class="form-control select2" required>
                                                     <option value="">Select Plant</option>
                                                     <!-- Plants will be loaded dynamically based on location -->
@@ -80,7 +81,7 @@
                                             <div class="form-group">
                                                 <label>Head Product:</label>
                                                 <select name="product_id" id="product_id" class="form-control select2"
-                                                    required onchange="loadJobOrdersByLocation();loadHeadProductsData();">
+                                                    required onchange="loadJobOrdersByLocation();loadHeadProductsData();autoSelectByProduct();">
                                                     <option value="">Select Commodity</option>
                                                 </select>
                                             </div>
@@ -105,9 +106,10 @@
                                                 <select name="by_product_id" id="by_product_id" onchange="loadData()"
                                                     class="form-control select2">
                                                     <option value="">Select By Product</option>
-                                                    @if(isset($byheadsproducts))
-                                                        @foreach($byheadsproducts as $product)
-                                                            <option value="{{ $product->id }}">{{ $product->name }}</option>
+                                                    @if (isset($byheadsproducts))
+                                                        @foreach ($byheadsproducts as $product)
+                                                            <option value="{{ $product->id }}">{{ $product->name }}
+                                                            </option>
                                                         @endforeach
                                                     @endif
                                                 </select>
@@ -163,20 +165,21 @@
                                                             <select name="input_product_id[]" class="form-control select2"
                                                                 required>
                                                                 <option value="">Select Commodity</option>
-                                                                @if(isset($products))
-                                                                    @foreach($products as $product)
-                                                                        <option value="{{ $product->id }}">{{ $product->name }}
+                                                                @if (isset($products))
+                                                                    @foreach ($products as $product)
+                                                                        <option value="{{ $product->id }}">
+                                                                            {{ $product->name }}
                                                                         </option>
                                                                     @endforeach
                                                                 @endif
                                                             </select>
                                                         </td>
                                                         <td>
-                                                            <select name="input_location_id[]" class="form-control select2"
-                                                                required>
+                                                            <select name="input_location_id[]"
+                                                                class="form-control select2" required>
                                                                 <option value="">Select Location</option>
-                                                                @if(isset($sublocations))
-                                                                    @foreach($sublocations as $sublocation)
+                                                                @if (isset($sublocations))
+                                                                    @foreach ($sublocations as $sublocation)
                                                                         <option value="{{ $sublocation->id }}">
                                                                             {{ $sublocation->name }}
                                                                         </option>
@@ -189,14 +192,15 @@
                                                                 step="0.01" min="0.01" required>
                                                         </td>
                                                         <td>
-                                                            <input type="number" name="input_yield[]" class="form-control"
-                                                                step="0.01" min="0.01" readonly>
+                                                            <input type="number" name="input_yield[]"
+                                                                class="form-control" step="0.01" min="0.01"
+                                                                readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea name="input_remarks[]" class="form-control"
-                                                                rows="1"></textarea>
+                                                            <textarea name="input_remarks[]" class="form-control" rows="1"></textarea>
                                                         </td>
-                                                        <td><button type="button" class="btn btn-sm btn-primary copythis"><i
+                                                        <td><button type="button"
+                                                                class="btn btn-sm btn-primary copythis"><i
                                                                     class="fa fa-plus"></i></button>
                                                             <button type="button"
                                                                 class="btn btn-sm btn-danger removethis"><i
@@ -212,11 +216,13 @@
                                                         </td>
                                                         <td>
                                                             <input type="number" name="input_total_qty[]"
-                                                                class="form-control" step="0.01" min="0.01" readonly>
+                                                                class="form-control" step="0.01" min="0.01"
+                                                                readonly>
                                                         </td>
                                                         <td>
                                                             <input type="number" name="input_total_yield[]"
-                                                                class="form-control" step="0.01" min="0.01" readonly>
+                                                                class="form-control" step="0.01" min="0.01"
+                                                                readonly>
                                                         </td>
 
                                                     </tr>
@@ -243,107 +249,106 @@
                                         <div id="productionHeadProductsTable">
                                             @include('management.production.production_voucher.partials.head_products_table')
                                             <!-- <table class="table table-bordered">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <thead>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <tr>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th class="col-2">Commodity</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Qty (kg)</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>No of Bags</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Bag Size</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Avg Weight per Bag (kg)</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Yield %</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Storage </th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Brand</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Job Order</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th>Remarks</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <th class="col-1">Actions</th>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </tr>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </thead>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <tbody>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <thead>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th class="col-2">Commodity</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Qty (kg)</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>No of Bags</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Bag Size</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Avg Weight per Bag (kg)</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Yield %</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Storage </th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Brand</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Job Order</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th>Remarks</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <th class="col-1">Actions</th>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </thead>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <tbody>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <tr>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <select name="product_id[]" class="form-control select2"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <option value="">Select Commodity</option>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @if(isset($products))
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @foreach($products as $product)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <option value="{{ $product->id }}">{{ $product->name }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </option>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @endforeach
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @endif
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </select>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="qty[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    step="0.01" min="0.01" required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="no_of_bags[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    step="1" min="0" required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="bag_size[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    step="0.01" min="0.01" required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="avg_weight_per_bag[]"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    class="form-control" step="0.01" min="0.01" readonly>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="yield[]" class="form-control" step="0.01" min="0.01" readonly>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <select name="arrival_sub_location_id[]"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    class="form-control select2" required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <option value="">Select Storage Location</option>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <select name="product_id[]" class="form-control select2"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <option value="">Select Commodity</option>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @if (isset($products))
+    @foreach ($products as $product)
+    <option value="{{ $product->id }}">{{ $product->name }}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </option>
+    @endforeach
+    @endif
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </select>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="qty[]" class="form-control"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        step="0.01" min="0.01" required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="no_of_bags[]" class="form-control"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        step="1" min="0" required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="bag_size[]" class="form-control"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        step="0.01" min="0.01" required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="avg_weight_per_bag[]"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        class="form-control" step="0.01" min="0.01" readonly>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="yield[]" class="form-control" step="0.01" min="0.01" readonly>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <select name="arrival_sub_location_id[]"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        class="form-control select2" required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <option value="">Select Storage Location</option>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </select>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <select name="brand_id[]" class="form-control select2" required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <option value="">Select Brand</option>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </select>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <select name="brand_id[]" class="form-control select2" required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <option value="">Select Brand</option>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </select>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <select name="job_order_id[]" class="form-control select2"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    required>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <option value="">Select Job Order</option>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </select>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <select name="job_order_id[]" class="form-control select2"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        required>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <option value="">Select Job Order</option>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </select>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <textarea name="remarks[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    rows="1"></textarea>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td class="col-1"><button class="btn btn-sm btn-primary copythis"><i
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        class="fa fa-copy"></i></button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button class="btn btn-sm btn-danger removethis"><i
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        class="fa fa-trash"></i></button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </select>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <textarea name="remarks[]" class="form-control" rows="1"></textarea>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td class="col-1"><button class="btn btn-sm btn-primary copythis"><i
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            class="fa fa-copy"></i></button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-sm btn-danger removethis"><i
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            class="fa fa-trash"></i></button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </tr>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <tr>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <strong>Total</strong>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="commodity_total_qty[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    step="0.01" min="0.01" readonly>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="commodity_total_no_of_bags[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    step="1" min="0" readonly>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td></td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td></td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <input type="number" name="total_yield[]" class="form-control"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    step="0.01" min="0.01" readonly>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td colspan="5"></td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </tbody>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </table> -->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <strong>Total</strong>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="commodity_total_qty[]" class="form-control"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        step="0.01" min="0.01" readonly>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="commodity_total_no_of_bags[]" class="form-control"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        step="1" min="0" readonly>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td></td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td></td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <input type="number" name="total_yield[]" class="form-control"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        step="0.01" min="0.01" readonly>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td colspan="5"></td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </tbody>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </table> -->
                                         </div>
                                     </div>
                                 </div>
@@ -405,12 +410,14 @@
                                                             id="production_labour_charges_per_kg" class="form-control"
                                                             step="0.01" min="0.01" readonly></td>
                                                     <td><input type="number" name="total_labour_charges"
-                                                            class="form-control" step="0.01" min="0.01" readonly></td>
+                                                            class="form-control" step="0.01" min="0.01" readonly>
+                                                    </td>
                                                     <td><input type="number" name="labour_deduction"
                                                             onkeyup="calculateNetTotalInput()" class="form-control"
                                                             step="0.01" min="0.01"></td>
-                                                    <td><input type="number" name="labour_net_amount" class="form-control"
-                                                            step="0.01" min="0.01" readonly></td>
+                                                    <td><input type="number" name="labour_net_amount"
+                                                            class="form-control" step="0.01" min="0.01" readonly>
+                                                    </td>
                                                     <td><input type="text" name="labour_deduction_remarks"
                                                             class="form-control">
                                                     </td>
@@ -424,8 +431,9 @@
                                     <div class="col-md-12">
                                         <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
                                             style="background-color: #93c3f2;">
-                                            <div class="col-md-12">
+                                            <div class="col-md-12 d-flex justify-content-between align-items-center py-1">
                                                 <h6 class="m-0">Production Machines</h6>
+                                                <div id="machinePlanSettingBadgeCreate"></div>
                                             </div>
                                         </div>
                                         <div id="productionMachinesContainer" class="p-3 border">
@@ -445,7 +453,8 @@
                                         <div class="row">
                                             <div class="col-md-12">
                                                 <div id="breakdownItemsTable" class="table-responsive">
-                                                    <table class="table table-sm table-bordered mb-0" style="font-size: 12px;">
+                                                    <table class="table table-sm table-bordered mb-0"
+                                                        style="font-size: 12px;">
                                                         <thead style="background: #f4f6f9;">
                                                             <tr>
                                                                 <th style="width: 28%">Breakdown Type</th>
@@ -459,30 +468,50 @@
                                                         <tbody id="breakdownItemsBody">
                                                             <tr>
                                                                 <td>
-                                                                    <select name="breakdown_type_id[]" class="form-control form-control-sm" style="height: 30px;">
-                                                                        <option value="">Select Breakdown Type</option>
-                                                                        @if(isset($breakdownTypes))
-                                                                            @foreach($breakdownTypes as $type)
-                                                                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                                                    <select name="breakdown_type_id[]"
+                                                                        class="form-control form-control-sm"
+                                                                        style="height: 30px;">
+                                                                        <option value="">Select Breakdown Type
+                                                                        </option>
+                                                                        @if (isset($breakdownTypes))
+                                                                            @foreach ($breakdownTypes as $type)
+                                                                                <option value="{{ $type->id }}">
+                                                                                    {{ $type->name }}</option>
                                                                             @endforeach
                                                                         @endif
                                                                     </select>
                                                                 </td>
                                                                 <td>
-                                                                    <input type="time" name="from[]" class="form-control form-control-sm from-time" style="height: 30px;">
+                                                                    <input type="time" name="from[]"
+                                                                        class="form-control form-control-sm from-time"
+                                                                        style="height: 30px;">
                                                                 </td>
                                                                 <td>
-                                                                    <input type="time" name="to[]" class="form-control form-control-sm to-time" style="height: 30px;">
+                                                                    <input type="time" name="to[]"
+                                                                        class="form-control form-control-sm to-time"
+                                                                        style="height: 30px;">
                                                                 </td>
                                                                 <td>
-                                                                    <input type="number" name="hours[]" class="form-control form-control-sm hours-input" step="0.01" min="0" readonly style="height: 30px; background: #f8f9fa; text-align: center;">
+                                                                    <input type="number" name="hours[]"
+                                                                        class="form-control form-control-sm hours-input"
+                                                                        step="0.01" min="0" readonly
+                                                                        style="height: 30px; background: #f8f9fa; text-align: center;">
                                                                 </td>
                                                                 <td>
-                                                                    <input type="text" name="breakdown_remarks[]" class="form-control form-control-sm" placeholder="Breakdown remarks..." style="height: 30px;">
+                                                                    <input type="text" name="breakdown_remarks[]"
+                                                                        class="form-control form-control-sm"
+                                                                        placeholder="Breakdown remarks..."
+                                                                        style="height: 30px;">
                                                                 </td>
                                                                 <td class="text-center align-middle">
-                                                                    <button type="button" class="btn btn-sm btn-primary copythis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-plus"></i></button>
-                                                                    <button type="button" class="btn btn-sm btn-danger removethis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-trash"></i></button>
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-primary copythis_breakdown py-0 px-2"
+                                                                        style="height: 26px;"><i
+                                                                            class="fa fa-plus"></i></button>
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-danger removethis_breakdown py-0 px-2"
+                                                                        style="height: 26px;"><i
+                                                                            class="fa fa-trash"></i></button>
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -511,12 +540,12 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             // Initialize Select2 for all selects
             $('.select2').select2();
 
             // Generate production number on date change
-            $('input[name="prod_date"]').on('change', function () {
+            $('input[name="prod_date"]').on('change', function() {
                 let selectedDate = $(this).val();
 
                 getUniversalNumber({
@@ -527,10 +556,10 @@
                     custom_date: selectedDate,
                     date_format: 'm-Y',
                     serial_at_end: 1,
-                }, function (no) {
+                }, function(no) {
                     $('input[name="prod_no"]').val(no);
                 });
-                
+
                 loadMachinesByPlant();
             });
 
@@ -567,19 +596,21 @@
             commoditySelect.prop('disabled', true);
 
             $.ajax({
-                url: '{{ route("production-voucher.get-commodities-by-location") }}',
+                url: '{{ route('production-voucher.get-commodities-by-location') }}',
                 method: 'POST',
                 data: {
                     location_id: locationId,
                     _token: '{{ csrf_token() }}'
                 },
-                success: function (response) {
+                success: function(response) {
                     if (response.commodities && response.commodities.length > 0) {
-                        $.each(response.commodities, function (index, commodity) {
+                        $.each(response.commodities, function(index, commodity) {
                             commoditySelect.append(
                                 $('<option></option>')
-                                    .attr('value', commodity.id)
-                                    .text(commodity.name)
+                                .attr('value', commodity.id)
+                                .attr('data-parent-id', commodity.parent_id)
+                                .attr('data-parent-name', commodity.parent_name)
+                                .text(commodity.name)
                             );
                         });
                     } else {
@@ -587,11 +618,11 @@
                     }
                     commoditySelect.trigger('change');
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Error loading commodities:', xhr);
                     commoditySelect.append('<option value="">Error loading commodities</option>');
                 },
-                complete: function () {
+                complete: function() {
                     commoditySelect.prop('disabled', false);
                 }
             });
@@ -609,20 +640,20 @@
             subLocationSelect.prop('disabled', true);
 
             $.ajax({
-                url: '{{ route("production-voucher.get-sublocations-by-location") }}',
+                url: '{{ route('production-voucher.get-sublocations-by-location') }}',
                 method: 'POST',
                 data: {
                     location_id: locationId,
                     _token: '{{ csrf_token() }}'
                 },
-                success: function (response) {
+                success: function(response) {
                     subLocationSelect.empty().append('<option value="">Select Sub Location</option>');
                     if (response.sublocations && response.sublocations.length > 0) {
-                        $.each(response.sublocations, function (index, sublocation) {
+                        $.each(response.sublocations, function(index, sublocation) {
                             subLocationSelect.append(
                                 $('<option></option>')
-                                    .attr('value', sublocation.id)
-                                    .text(sublocation.name)
+                                .attr('value', sublocation.id)
+                                .text(sublocation.name)
                             );
                         });
                     } else {
@@ -630,11 +661,11 @@
                     }
                     subLocationSelect.trigger('change');
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Error loading plants:', xhr);
                     subLocationSelect.append('<option value="">Error loading Sub Location</option>');
                 },
-                complete: function () {
+                complete: function() {
                     subLocationSelect.prop('disabled', false);
                 }
             });
@@ -654,21 +685,22 @@
             plantSelect.prop('disabled', true);
 
             $.ajax({
-                url: '{{ route("production-voucher.get-plants-by-location") }}',
+                url: '{{ route('production-voucher.get-plants-by-location') }}',
                 method: 'POST',
                 data: {
                     subLocationId: subLocationId,
                     _token: '{{ csrf_token() }}'
                 },
-                success: function (response) {
+                success: function(response) {
                     plantSelect.empty().append('<option value="">Select Plant</option>');
                     if (response.plants && response.plants.length > 0) {
-                        $.each(response.plants, function (index, plant) {
+                        $.each(response.plants, function(index, plant) {
                             plantSelect.append(
                                 $('<option></option>')
-                                    .attr('value', plant.id)
-                                    .text(plant.name)
-                                    .attr('data-production_labour_charges_per_kg', plant.production_labour_charges_per_kg)
+                                .attr('value', plant.id)
+                                .text(plant.name)
+                                .attr('data-production_labour_charges_per_kg', plant
+                                    .production_labour_charges_per_kg)
                             );
                         });
                     } else {
@@ -676,15 +708,16 @@
                     }
                     plantSelect.trigger('change');
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Error loading plants:', xhr);
                     plantSelect.append('<option value="">Error loading plants</option>');
                 },
-                complete: function () {
+                complete: function() {
                     plantSelect.prop('disabled', false);
                 }
             });
         }
+
         function loadlabourCharges() {
             const plantId = $('#plant_id').val();
             const plant = $('#plant_id option:selected');
@@ -709,19 +742,32 @@
             }
 
             $.ajax({
-                url: '{{ route("production-voucher.get-machines-by-plant") }}',
+                url: '{{ route('production-voucher.get-machines-by-plant') }}',
                 method: 'POST',
                 data: {
                     plant_id: plantId,
                     date: date,
                     _token: '{{ csrf_token() }}'
                 },
-                success: function (response) {
+                success: function(response) {
                     container.empty();
+                    if (response.machine_plan_setting) {
+                        $('#machinePlanSettingBadgeCreate').html(`
+                            <span class="badge badge-success" style="font-size: 11px;">
+                                <i class="fa fa-calendar-check-o mr-1"></i> Machine Plan Setting Linked (${response.machine_plan_setting.date})
+                            </span>
+                        `);
+                    } else {
+                        $('#machinePlanSettingBadgeCreate').html(`
+                            <span class="badge badge-secondary" style="font-size: 11px;">
+                                <i class="fa fa-cogs mr-1"></i> Plant Machines
+                            </span>
+                        `);
+                    }
                     if (response.machines && response.machines.length > 0) {
                         section.show();
                         let html = `<div class="row">`;
-                        $.each(response.machines, function (index, machine) {
+                        $.each(response.machines, function(index, machine) {
                             const isEnabled = machine.is_enabled;
                             const headerBg = isEnabled ? '#e8f3fc' : '#f5f5f5';
                             const statusLabel = isEnabled ? 'Active' : 'Inactive';
@@ -729,9 +775,13 @@
                             const cardBorder = isEnabled ? '#93c3f2' : '#e0e0e0';
 
                             let timeSlotsHtml = '';
-                            const slots = (machine.time_slots && machine.time_slots.length > 0) 
-                                ? machine.time_slots 
-                                : [{ start_time: machine.start_time || '', end_time: machine.end_time || '', breakdowns: [] }];
+                            const slots = (machine.time_slots && machine.time_slots.length > 0) ?
+                                machine.time_slots :
+                                [{
+                                    start_time: machine.start_time || '',
+                                    end_time: machine.end_time || '',
+                                    breakdowns: []
+                                }];
 
                             $.each(slots, function(sIdx, slot) {
                                 const startTimeVal = slot.start_time || '';
@@ -739,7 +789,8 @@
                                 let breakdownsHtml = '';
                                 if (slot.breakdowns && slot.breakdowns.length > 0) {
                                     $.each(slot.breakdowns, function(bIdx, bd) {
-                                        breakdownsHtml += renderSlotBreakdownRowHtml(machine.id, sIdx, bd);
+                                        breakdownsHtml += renderSlotBreakdownRowHtml(
+                                            machine.id, sIdx, bd);
                                     });
                                 }
 
@@ -821,7 +872,7 @@
                         html += `</div>`;
                         container.append(html);
 
-                        $.each(response.machines, function (index, machine) {
+                        $.each(response.machines, function(index, machine) {
                             calculateMachineTime(machine.id);
                             updateMachineCardStyle($(`#machine_${machine.id}`), machine.id);
                         });
@@ -829,12 +880,58 @@
                         section.hide();
                     }
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Error loading machines:', xhr);
                     section.hide();
                 }
             });
         }
+
+        function autoSelectByProduct() {
+            const headProductId = $('#product_id').val();
+            if (!headProductId) {
+                return;
+            }
+
+            const selectedOption = $('#product_id option:selected');
+            let parentId = selectedOption.attr('data-parent-id');
+            let parentName = selectedOption.attr('data-parent-name');
+
+            function applyParentToByProduct(pId, pName) {
+                if (!pId) return;
+
+                // Ensure the parent option exists in by_product_id dropdown
+                if ($('#by_product_id option[value="' + pId + '"]').length === 0) {
+                    $('#by_product_id').append(new Option(pName || 'Parent Product', pId, true, true));
+                }
+
+                // Auto select the parent product and trigger change to load by-product table
+                if ($('#by_product_id').val() != pId) {
+                    $('#by_product_id').val(pId).trigger('change');
+                }
+            }
+
+            if (parentId) {
+                applyParentToByProduct(parentId, parentName);
+            } else {
+                $.ajax({
+                    url: '{{ route('production-voucher.get-parent-product') }}',
+                    method: 'POST',
+                    data: {
+                        product_id: headProductId,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        if (res && res.parent_id) {
+                            selectedOption.attr('data-parent-id', res.parent_id);
+                            selectedOption.attr('data-parent-name', res.parent_name);
+                            applyParentToByProduct(res.parent_id, res.parent_name);
+                        }
+                    }
+                });
+            }
+        }
+
         function loadJobOrdersByLocation() {
             const locationId = $('#location_id').val();
             const productId = $('#product_id').val();
@@ -854,20 +951,21 @@
             jobOrderSelect.prop('disabled', true);
 
             $.ajax({
-                url: '{{ route("production-voucher.get-job-orders-by-location") }}',
+                url: '{{ route('production-voucher.get-job-orders-by-location') }}',
                 method: 'POST',
                 data: {
                     location_id: locationId,
                     product_id: productId,
                     _token: '{{ csrf_token() }}'
                 },
-                success: function (response) {
+                success: function(response) {
                     if (response.jobOrders && response.jobOrders.length > 0) {
-                        $.each(response.jobOrders, function (index, jobOrder) {
+                        $.each(response.jobOrders, function(index, jobOrder) {
                             jobOrderSelect.append(
                                 $('<option></option>')
-                                    .attr('value', jobOrder.id)
-                                    .text(jobOrder.job_order_no + (jobOrder.ref_no ? ' (' + jobOrder.ref_no + ')' : ''))
+                                .attr('value', jobOrder.id)
+                                .text(jobOrder.job_order_no + (jobOrder.ref_no ? ' (' + jobOrder
+                                    .ref_no + ')' : ''))
                             );
                         });
                     } else {
@@ -875,11 +973,11 @@
                     }
                     jobOrderSelect.trigger('change');
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Error loading job orders:', xhr);
                     jobOrderSelect.append('<option value="">Error loading job orders</option>');
                 },
-                complete: function () {
+                complete: function() {
                     jobOrderSelect.prop('disabled', false);
                 }
             });
@@ -899,13 +997,11 @@
 
             // Use fetchDynamicHTML to load packing items with produced quantity
             fetchDynamicHTML(
-                '{{ route("production-voucher.get-packing-items-with-produced") }}',
-                'packingItemsContainer',
-                {
+                '{{ route('production-voucher.get-packing-items-with-produced') }}',
+                'packingItemsContainer', {
                     job_order_ids: jobOrderIds,
                     location_id: locationId
-                },
-                {
+                }, {
                     method: 'POST',
                     loader: true,
                     loadingText: 'Loading packing items...'
@@ -913,7 +1009,7 @@
             );
         }
 
-        $(document).on('click', '.copythis', function (e) {
+        $(document).on('click', '.copythis', function(e) {
             e.stopImmediatePropagation();
 
             var $originalRow = $(this).closest('tr');
@@ -932,7 +1028,7 @@
             $originalRow.after(clone);
 
             // Initialize Select2 for cloned row - properly destroy and reinitialize
-            clone.find('select').each(function () {
+            clone.find('select').each(function() {
                 var $select = $(this);
 
                 // Destroy existing select2 instance if any
@@ -951,8 +1047,8 @@
             });
 
             // Reinitialize select2 after DOM is ready
-            setTimeout(function () {
-                clone.find('select.select2').each(function () {
+            setTimeout(function() {
+                clone.find('select.select2').each(function() {
                     var $select = $(this);
                     // Initialize select2 with proper settings
                     $select.select2({
@@ -1013,19 +1109,21 @@
             setTimeout(runAppropriateCalculation, 50);
 
             // Also attach direct event handlers to cloned row inputs for immediate calculation
-            clone.find('input[name="output_qty[]"]').on('input change keyup', function () {
+            clone.find('input[name="output_qty[]"]').on('input change keyup', function() {
                 $(this).data('manual-change', true);
                 setTimeout(runAppropriateCalculation, 10);
             });
 
-            clone.find('input[name="output_no_of_bags[]"], input[name="output_bag_size[]"]').on('input change keyup', function () {
-                // Clear manual-change flag so qty can be recalculated
-                $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
-                setTimeout(runAppropriateCalculation, 10);
-            });
+            clone.find('input[name="output_no_of_bags[]"], input[name="output_bag_size[]"]').on(
+                'input change keyup',
+                function() {
+                    // Clear manual-change flag so qty can be recalculated
+                    $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
+                    setTimeout(runAppropriateCalculation, 10);
+                });
         });
 
-        $(document).on('click', '.removethis', function () {
+        $(document).on('click', '.removethis', function() {
             var $row = $(this).closest('tr');
             var $tbody = $row.closest('tbody');
             var $table = $tbody.closest('table');
@@ -1035,16 +1133,19 @@
                 $row.remove();
 
                 // Immediately trigger calculations after removing row
-                setTimeout(function () {
+                setTimeout(function() {
                     var containerId = $container.attr('id');
 
-                    if (containerId === 'productionInputsTable' || $container.find('#productionInputsTable').length > 0) {
+                    if (containerId === 'productionInputsTable' || $container.find('#productionInputsTable')
+                        .length > 0) {
                         calculateProductionInputs();
-                    } else if (containerId === 'productionHeadProductsTable' || $container.find('#productionHeadProductsTable').length > 0) {
+                    } else if (containerId === 'productionHeadProductsTable' || $container.find(
+                            '#productionHeadProductsTable').length > 0) {
                         // Recalculate both head and by products since total outputs changed
                         calculateHeadProducts();
                         calculateByProducts();
-                    } else if (containerId === 'productionByProductsTable' || $container.find('#productionByProductsTable').length > 0) {
+                    } else if (containerId === 'productionByProductsTable' || $container.find(
+                            '#productionByProductsTable').length > 0) {
                         // Recalculate both head and by products since total outputs changed
                         calculateHeadProducts();
                         calculateByProducts();
@@ -1076,32 +1177,34 @@
                     head_product_id: headProductId
                 }, {
                     method: 'POST',
-                    onSuccess: function (response, target) {
+                    onSuccess: function(response, target) {
                         target.html(response);
                         // Reinitialize calculations after table loads
-                        setTimeout(function () {
+                        setTimeout(function() {
                             initializeCalculations();
                         }, 300);
                     }
                 });
             }
         }
+
         function loadHeadProductsData() {
             const productId = $('[name="product_id"]').val();
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = $('#job_order_id').val();
             console.log(jobOrderIds);
             if (productId) {
-                fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}', 'productionHeadProductsTable', {
+                fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}',
+                'productionHeadProductsTable', {
                     product_id: productId,
                     location_id: locationId,
                     job_order_ids: jobOrderIds
                 }, {
                     method: 'POST',
-                    onSuccess: function (response, target) {
+                    onSuccess: function(response, target) {
                         target.html(response);
                         // Reinitialize calculations after table loads
-                        setTimeout(function () {
+                        setTimeout(function() {
                             initializeCalculations();
                         }, 300);
                     }
@@ -1125,13 +1228,13 @@
             let totalQty = 0;
 
             // First, calculate total input qty (excluding total row)
-            tbody.find('tr').not(':last').each(function () {
+            tbody.find('tr').not(':last').each(function() {
                 const qty = parseFloat($(this).find('input[name="input_qty[]"]').val()) || 0;
                 totalQty += qty;
             });
 
             // Now calculate yield for each input row (total input = 100%)
-            tbody.find('tr').not(':last').each(function () {
+            tbody.find('tr').not(':last').each(function() {
                 const qtyInput = $(this).find('input[name="input_qty[]"]');
                 const yieldInput = $(this).find('input[name="input_yield[]"]');
 
@@ -1166,16 +1269,17 @@
             let totalOutputs = 0;
 
             // Sum all head products qty
-            $('#productionHeadProductsTable tbody tr').not(':last').each(function () {
+            $('#productionHeadProductsTable tbody tr').not(':last').each(function() {
                 const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
                 totalOutputs += qty;
             });
 
             // Sum all by products qty
-            $('#productionByProductsTable tbody tr').each(function () {
+            $('#productionByProductsTable tbody tr').each(function() {
                 const row = $(this);
                 // Skip total rows
-                if (!row.find('strong').text().includes('Total') && !row.find('strong').text().includes('Commodity Total')) {
+                if (!row.find('strong').text().includes('Total') && !row.find('strong').text().includes(
+                        'Commodity Total')) {
                     const qty = parseFloat(row.find('input[name="output_qty[]"]').val()) || 0;
                     totalOutputs += qty;
                 }
@@ -1197,7 +1301,7 @@
             let totalNoOfBags = 0;
 
             // Calculate for each product row (excluding total row)
-            tbody.find('tr').not(':last').each(function () {
+            tbody.find('tr').not(':last').each(function() {
                 const qtyInput = $(this).find('input[name="output_qty[]"]');
                 const noOfBagsInput = $(this).find('input[name="output_no_of_bags[]"]');
                 const bagSizeInput = $(this).find('input[name="output_bag_size[]"]');
@@ -1280,7 +1384,7 @@
             // Group rows by commodity (each commodity has its rows + total row)
             let currentCommodityRows = [];
 
-            tbody.find('tr').each(function () {
+            tbody.find('tr').each(function() {
                 const row = $(this);
 
                 // Check if it's a commodity total row
@@ -1289,9 +1393,10 @@
                     let commodityQty = 0;
                     let commodityBags = 0;
 
-                    currentCommodityRows.forEach(function (commodityRow) {
+                    currentCommodityRows.forEach(function(commodityRow) {
                         const qty = parseFloat(commodityRow.find('input[name="output_qty[]"]').val()) || 0;
-                        const bags = parseFloat(commodityRow.find('input[name="output_no_of_bags[]"]').val()) || 0;
+                        const bags = parseFloat(commodityRow.find('input[name="output_no_of_bags[]"]')
+                        .val()) || 0;
                         commodityQty += qty;
                         commodityBags += bags;
                     });
@@ -1373,43 +1478,45 @@
                     grandTotalRow.find('input[name="total_yield[]"]').val('');
                 }
             }
+            calculateNetTotalInput();
         }
 
         function calculateNetTotalInput() {
             let totalInput = 0;
-            $('#productionInputsTable tbody tr').each(function () {
+            $('#productionInputsTable tbody tr').each(function() {
                 const qty = parseFloat($(this).find('input[name="input_qty[]"]').val()) || 0;
                 totalInput += qty;
             });
-            $('input[name="net_total_input"]').val(totalInput);
-            let totalOutput = 0;
-            $('#productionOutputsSection tbody tr').each(function () {
-                const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
-                totalOutput += qty;
-            });
+            $('input[name="net_total_input"]').val(roundToTwo(totalInput));
+
+            // Total Output is from total sum of by product Qty (kg) and Head Products Qty (kg)
+            const totalOutput = roundToTwo(getTotalOutputs());
             $('input[name="net_total_output"]').val(totalOutput);
 
+            const labourRate = parseFloat($('#production_labour_charges_per_kg').val()) || 0;
+            const calcLabour = roundToTwo(totalOutput * labourRate);
+            $('input[name="total_labour_charges"]').val(calcLabour);
 
-            const calcLablour = totalOutput * $('#production_labour_charges_per_kg').val();
-            $('input[name="total_labour_charges"]').val(calcLablour);
-
-            const netafterlaboutdeduction = calcLablour - ($('input[name="labour_deduction"]').val() ?? 0);
-            $('input[name="labour_net_amount"]').val(netafterlaboutdeduction);
+            const deduction = parseFloat($('input[name="labour_deduction"]').val()) || 0;
+            const netAmount = roundToTwo(calcLabour - deduction);
+            $('input[name="labour_net_amount"]').val(netAmount);
         }
         // Initialize all calculations
         function initializeCalculations() {
             // Reinitialize Select2 for dynamically loaded selects - properly destroy and reinitialize
-            setTimeout(function () {
+            setTimeout(function() {
                 // Destroy existing select2 instances first
-                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select').each(function () {
-                    var $select = $(this);
-                    if ($select.data('select2')) {
-                        $select.select2('destroy');
-                    }
-                });
+                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select')
+                    .each(function() {
+                        var $select = $(this);
+                        if ($select.data('select2')) {
+                            $select.select2('destroy');
+                        }
+                    });
 
                 // Remove existing select2 containers
-                $('#productionInputsTable .select2-container, #productionHeadProductsTable .select2-container, #productionByProductsTable .select2-container').remove();
+                $('#productionInputsTable .select2-container, #productionHeadProductsTable .select2-container, #productionByProductsTable .select2-container')
+                    .remove();
 
                 // Clean up all selects
                 $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select')
@@ -1417,58 +1524,105 @@
                     .removeAttr('data-select2-id');
 
                 // Reinitialize all select2 with proper settings
-                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select').each(function () {
-                    var $select = $(this);
-                    // Make sure it has select2 class
-                    if (!$select.hasClass('select2')) {
-                        $select.addClass('select2');
-                    }
-                    // Initialize select2 with proper settings
-                    $select.select2({
-                        dropdownParent: $select.closest('.modal-body, .card-body, body')
+                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select')
+                    .each(function() {
+                        var $select = $(this);
+                        // Make sure it has select2 class
+                        if (!$select.hasClass('select2')) {
+                            $select.addClass('select2');
+                        }
+                        // Initialize select2 with proper settings
+                        $select.select2({
+                            dropdownParent: $select.closest('.modal-body, .card-body, body')
+                        });
                     });
-                });
             }, 200);
 
             // Attach event handlers using delegated events (works for dynamically added rows)
             // Production Inputs - qty changes
             $(document).off('input change keyup', '#productionInputsTable input[name="input_qty[]"]');
-            $(document).on('input change keyup', '#productionInputsTable input[name="input_qty[]"]', function () {
+            $(document).on('input change keyup', '#productionInputsTable input[name="input_qty[]"]', function() {
                 calculateProductionInputs();
             });
 
             // Head Products - no_of_bags and bag_size changes (auto calculate qty)
-            $(document).off('input change keyup', '#productionHeadProductsTable input[name="output_no_of_bags[]"], #productionHeadProductsTable input[name="output_bag_size[]"]');
-            $(document).on('input change keyup', '#productionHeadProductsTable input[name="output_no_of_bags[]"], #productionHeadProductsTable input[name="output_bag_size[]"]', function () {
-                // Clear manual-change flag so qty can be recalculated
-                $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
-                calculateHeadProducts();
-                calculateByProducts(); // Recalculate by products too since total outputs changed
-            });
+            $(document).off('input change keyup',
+                '#productionHeadProductsTable input[name="output_no_of_bags[]"], #productionHeadProductsTable input[name="output_bag_size[]"]'
+                );
+            $(document).on('input change keyup',
+                '#productionHeadProductsTable input[name="output_no_of_bags[]"], #productionHeadProductsTable input[name="output_bag_size[]"]',
+                function() {
+                    // Clear manual-change flag so qty can be recalculated
+                    $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
+                    calculateHeadProducts();
+                    calculateByProducts(); // Recalculate by products too since total outputs changed
+                    validateOutputRow($(this).closest('tr'));
+                });
 
             // Head Products - qty manual change (mark as manual, then recalculate)
             $(document).off('input change keyup', '#productionHeadProductsTable input[name="output_qty[]"]');
-            $(document).on('input change keyup', '#productionHeadProductsTable input[name="output_qty[]"]', function () {
+            $(document).on('input change keyup', '#productionHeadProductsTable input[name="output_qty[]"]', function() {
                 $(this).data('manual-change', true);
                 calculateHeadProducts();
                 calculateByProducts(); // Recalculate by products too since total outputs changed
+                validateOutputRow($(this).closest('tr'));
             });
 
             // By Products - no_of_bags and bag_size changes (auto calculate qty)
-            $(document).off('input change keyup', '#productionByProductsTable input[name="output_no_of_bags[]"], #productionByProductsTable input[name="output_bag_size[]"]');
-            $(document).on('input change keyup', '#productionByProductsTable input[name="output_no_of_bags[]"], #productionByProductsTable input[name="output_bag_size[]"]', function () {
-                // Clear manual-change flag so qty can be recalculated
-                $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
-                calculateHeadProducts(); // Recalculate head products too since total outputs changed
-                calculateByProducts();
-            });
+            $(document).off('input change keyup',
+                '#productionByProductsTable input[name="output_no_of_bags[]"], #productionByProductsTable input[name="output_bag_size[]"]'
+                );
+            $(document).on('input change keyup',
+                '#productionByProductsTable input[name="output_no_of_bags[]"], #productionByProductsTable input[name="output_bag_size[]"]',
+                function() {
+                    // Clear manual-change flag so qty can be recalculated
+                    $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
+                    calculateHeadProducts(); // Recalculate head products too since total outputs changed
+                    calculateByProducts();
+                    validateOutputRow($(this).closest('tr'));
+                });
 
             // By Products - qty manual change (mark as manual, then recalculate)
             $(document).off('input change keyup', '#productionByProductsTable input[name="output_qty[]"]');
-            $(document).on('input change keyup', '#productionByProductsTable input[name="output_qty[]"]', function () {
+            $(document).on('input change keyup', '#productionByProductsTable input[name="output_qty[]"]', function() {
                 $(this).data('manual-change', true);
                 calculateHeadProducts(); // Recalculate head products too since total outputs changed
                 calculateByProducts();
+                validateOutputRow($(this).closest('tr'));
+            });
+
+            // Job order selection in row -> autofill No of Bags, Packed in (KG), and Qty (kg)
+            $(document).off('change', 'select[name="output_job_order_id[]"]');
+            $(document).on('change', 'select[name="output_job_order_id[]"]', function() {
+                const $row = $(this).closest('tr');
+                const selectedOption = $(this).find('option:selected');
+                const noOfBags = selectedOption.data('no-of-bags');
+                const bagSize = selectedOption.data('bag-size');
+                const qty = selectedOption.data('qty');
+                const brandId = selectedOption.data('brand-id');
+
+                if (noOfBags !== undefined && noOfBags !== '') {
+                    $row.find('input[name="output_no_of_bags[]"]').val(noOfBags);
+                }
+                if (bagSize !== undefined && bagSize !== '') {
+                    $row.find('input[name="output_bag_size[]"]').val(bagSize);
+                }
+                if (qty !== undefined && qty !== '') {
+                    $row.find('input[name="output_qty[]"]').val(qty).removeData('manual-change');
+                } else if (noOfBags && bagSize) {
+                    $row.find('input[name="output_qty[]"]').val(roundToTwo(parseFloat(noOfBags) * parseFloat(bagSize))).removeData('manual-change');
+                }
+                if (brandId) {
+                    const $brandSelect = $row.find('select[name="output_brand_id[]"]');
+                    if (!$brandSelect.val() || $brandSelect.val() == '') {
+                        $brandSelect.val(brandId).trigger('change');
+                    }
+                }
+
+                validateOutputRow($row);
+                calculateHeadProducts();
+                calculateByProducts();
+                calculateNetTotalInput();
             });
 
             // Note: produced_qty_kg no longer affects production inputs yield calculation
@@ -1481,18 +1635,171 @@
             calculateNetTotalInput();
         }
 
+        // Validate an individual output row
+        function validateOutputRow($row) {
+            if ($row.hasClass('commodity-total-row') || $row.find('strong').text().includes('Total') || $row.find('strong').text().includes('Commodity Total')) {
+                return true;
+            }
+            const noOfBagsInput = $row.find('input[name="output_no_of_bags[]"]');
+            const bagSizeInput = $row.find('input[name="output_bag_size[]"]');
+            const qtyInput = $row.find('input[name="output_qty[]"]');
+
+            if (noOfBagsInput.length === 0 || bagSizeInput.length === 0 || qtyInput.length === 0) {
+                return true;
+            }
+
+            const noOfBagsVal = noOfBagsInput.val() ? noOfBagsInput.val().trim() : '';
+            const bagSizeVal = bagSizeInput.val() ? bagSizeInput.val().trim() : '';
+            const qtyVal = qtyInput.val() ? qtyInput.val().trim() : '';
+
+            const noOfBags = parseFloat(noOfBagsVal) || 0;
+            const bagSize = parseFloat(bagSizeVal) || 0;
+            const qty = parseFloat(qtyVal) || 0;
+
+            const hasAny = (noOfBagsVal !== '' && noOfBags > 0) || (bagSizeVal !== '' && bagSize > 0) || (qtyVal !== '' && qty > 0);
+
+            if (hasAny) {
+                let valid = true;
+                if (noOfBagsVal === '' || noOfBags <= 0) {
+                    noOfBagsInput.addClass('is-invalid');
+                    valid = false;
+                } else {
+                    noOfBagsInput.removeClass('is-invalid');
+                }
+
+                if (bagSizeVal === '' || bagSize <= 0) {
+                    bagSizeInput.addClass('is-invalid');
+                    valid = false;
+                } else {
+                    bagSizeInput.removeClass('is-invalid');
+                }
+
+                if (qtyVal === '' || qty <= 0) {
+                    qtyInput.addClass('is-invalid');
+                    valid = false;
+                } else {
+                    qtyInput.removeClass('is-invalid');
+                }
+                return valid;
+            } else {
+                noOfBagsInput.removeClass('is-invalid');
+                bagSizeInput.removeClass('is-invalid');
+                qtyInput.removeClass('is-invalid');
+                return true;
+            }
+        }
+
+        // Validate all output rows across Head Products and By Products
+        function validateAllOutputRows() {
+            let allValid = true;
+            let firstInvalid = null;
+            let errorMessages = [];
+
+            $('#productionHeadProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
+                const $row = $(this);
+                if ($row.hasClass('commodity-total-row') || $row.find('strong').text().includes('Total') || $row.find('strong').text().includes('Commodity Total')) {
+                    return;
+                }
+                const noOfBagsInput = $row.find('input[name="output_no_of_bags[]"]');
+                const bagSizeInput = $row.find('input[name="output_bag_size[]"]');
+                const qtyInput = $row.find('input[name="output_qty[]"]');
+
+                if (noOfBagsInput.length === 0 || bagSizeInput.length === 0 || qtyInput.length === 0) return;
+
+                const commodity = $row.find('strong').first().text().trim() || 'Product';
+                const noOfBagsVal = noOfBagsInput.val() ? noOfBagsInput.val().trim() : '';
+                const bagSizeVal = bagSizeInput.val() ? bagSizeInput.val().trim() : '';
+                const qtyVal = qtyInput.val() ? qtyInput.val().trim() : '';
+
+                const noOfBags = parseFloat(noOfBagsVal) || 0;
+                const bagSize = parseFloat(bagSizeVal) || 0;
+                const qty = parseFloat(qtyVal) || 0;
+
+                const hasAny = (noOfBagsVal !== '' && noOfBags > 0) || (bagSizeVal !== '' && bagSize > 0) || (qtyVal !== '' && qty > 0);
+
+                if (hasAny) {
+                    let missing = [];
+                    if (noOfBagsVal === '' || noOfBags <= 0) {
+                        noOfBagsInput.addClass('is-invalid');
+                        missing.push('No of Bags');
+                        if (!firstInvalid) firstInvalid = noOfBagsInput;
+                    } else {
+                        noOfBagsInput.removeClass('is-invalid');
+                    }
+
+                    if (bagSizeVal === '' || bagSize <= 0) {
+                        bagSizeInput.addClass('is-invalid');
+                        missing.push('Packed in (KG)');
+                        if (!firstInvalid) firstInvalid = bagSizeInput;
+                    } else {
+                        bagSizeInput.removeClass('is-invalid');
+                    }
+
+                    if (qtyVal === '' || qty <= 0) {
+                        qtyInput.addClass('is-invalid');
+                        missing.push('Qty (kg)');
+                        if (!firstInvalid) firstInvalid = qtyInput;
+                    } else {
+                        qtyInput.removeClass('is-invalid');
+                    }
+
+                    if (missing.length > 0) {
+                        allValid = false;
+                        errorMessages.push(`${commodity}: ${missing.join(' and ')} required.`);
+                    }
+                } else {
+                    noOfBagsInput.removeClass('is-invalid');
+                    bagSizeInput.removeClass('is-invalid');
+                    qtyInput.removeClass('is-invalid');
+                }
+            });
+
+            if (!allValid) {
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+                const msg = 'If any of No of Bags, Packed in (KG), or Qty (kg) is entered, all three are required:\n' + errorMessages.join('\n');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('If any of No of Bags, Packed in (KG), or Qty (kg) is entered, all three are required: ' + errorMessages.join(' | '));
+                } else {
+                    alert(msg);
+                }
+                return false;
+            }
+            return true;
+        }
+
         // Initialize on page load
-        $(document).ready(function () {
+        $(document).ready(function() {
             initializeCalculations();
 
             if ($('#plant_id').val()) {
                 loadMachinesByPlant();
             }
 
+            // Intercept submit on form directly to validate output rows
+            $('#ajaxSubmit').on('submit', function(e) {
+                if (!validateAllOutputRows()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
+
+            $(document).on('click', '#ajaxSubmit button[type="submit"], #ajaxSubmit .submitbutton', function(e) {
+                if (!validateAllOutputRows()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
+
             // Reinitialize after dynamic content loads
-            $(document).on('DOMNodeInserted', function (e) {
-                if ($(e.target).find('#productionInputsTable, #productionHeadProductsTable, #productionByProductsTable').length > 0) {
-                    setTimeout(function () {
+            $(document).on('DOMNodeInserted', function(e) {
+                if ($(e.target).find(
+                        '#productionInputsTable, #productionHeadProductsTable, #productionByProductsTable')
+                    .length > 0) {
+                    setTimeout(function() {
                         initializeCalculations();
                     }, 100);
                 }
@@ -1588,16 +1895,20 @@
         function reindexMachineTimeSlots(machineId) {
             $(`#machine_time_table_${machineId} .time-slot-block`).each(function(slotIdx) {
                 $(this).attr('data-slot-index', slotIdx);
-                $(this).find('.slot-breakdown-from').attr('name', `slot_breakdown_from[${machineId}][${slotIdx}][]`);
+                $(this).find('.slot-breakdown-from').attr('name',
+                `slot_breakdown_from[${machineId}][${slotIdx}][]`);
                 $(this).find('.slot-breakdown-to').attr('name', `slot_breakdown_to[${machineId}][${slotIdx}][]`);
-                $(this).find('.slot-breakdown-hours').attr('name', `slot_breakdown_hours[${machineId}][${slotIdx}][]`);
-                $(this).find('.slot-breakdown-remarks').attr('name', `slot_breakdown_remarks[${machineId}][${slotIdx}][]`);
+                $(this).find('.slot-breakdown-hours').attr('name',
+                    `slot_breakdown_hours[${machineId}][${slotIdx}][]`);
+                $(this).find('.slot-breakdown-remarks').attr('name',
+                    `slot_breakdown_remarks[${machineId}][${slotIdx}][]`);
             });
         }
 
         function addSlotBreakdownRow(machineId, btn) {
             const $slotBlock = $(btn).closest('.time-slot-block');
-            const slotIdx = $slotBlock.data('slot-index') !== undefined ? $slotBlock.data('slot-index') : $slotBlock.index();
+            const slotIdx = $slotBlock.data('slot-index') !== undefined ? $slotBlock.data('slot-index') : $slotBlock
+        .index();
             const rowHtml = renderSlotBreakdownRowHtml(machineId, slotIdx, {});
             $slotBlock.find('.slot-breakdown-list').append(rowHtml);
         }
@@ -1695,7 +2006,9 @@
                         if (fromMin < pStartMin || toMin > pEndMin) {
                             $from.addClass('is-invalid');
                             $to.addClass('is-invalid');
-                            toastr.warning(`Breakdown time (${fromVal} - ${toVal}) must be within the slot time (${parentStart} - ${parentEnd})`);
+                            toastr.warning(
+                                `Breakdown time (${fromVal} - ${toVal}) must be within the slot time (${parentStart} - ${parentEnd})`
+                                );
                             if ($changedInput && ($changedInput.is($from) || $changedInput.is($to))) {
                                 $changedInput.val('');
                                 $hours.val('');
@@ -1762,7 +2075,7 @@
                     const diffMs = end - start;
                     const diffMins = Math.floor(diffMs / 60000);
                     totalMinutes += diffMins;
-                    
+
                     const hours = Math.floor(diffMins / 60);
                     const mins = diffMins % 60;
                     durationInput.val(`${hours}h ${mins}m`);
@@ -1773,7 +2086,8 @@
 
             const grandTotalHours = Math.floor(totalMinutes / 60);
             const grandTotalMins = totalMinutes % 60;
-            $(`#machine_time_table_${machineId}`).closest('.machine-card-body').find('.grand-total-display').val(`${grandTotalHours}h ${grandTotalMins}m`);
+            $(`#machine_time_table_${machineId}`).closest('.machine-card-body').find('.grand-total-display').val(
+                `${grandTotalHours}h ${grandTotalMins}m`);
         }
 
         function updateMachineCardStyle(checkbox, machineId) {
@@ -1808,7 +2122,8 @@
                     'pointer-events': 'auto'
                 });
                 cardBody.find('input:not([type="hidden"])').prop('disabled', false);
-                cardBody.find('input:not(.duration-display):not(.slot-breakdown-hours):not([type="hidden"])').prop('readonly', false).css({
+                cardBody.find('input:not(.duration-display):not(.slot-breakdown-hours):not([type="hidden"])').prop(
+                    'readonly', false).css({
                     'background': '#fff',
                     'cursor': 'text'
                 });
@@ -1856,23 +2171,28 @@
             if (!date || !plantId) return;
 
             $.ajax({
-                url: '{{ route("getBreakdownsByPlantAndDate") }}',
+                url: '{{ route('getBreakdownsByPlantAndDate') }}',
                 type: 'GET',
-                data: { date: date, plant_id: plantId },
-                success: function (response) {
+                data: {
+                    date: date,
+                    plant_id: plantId
+                },
+                success: function(response) {
                     if (response.items && response.items.length > 0) {
                         var html = '';
-                        $.each(response.items, function (index, item) {
+                        $.each(response.items, function(index, item) {
                             var fromVal = item.from ? item.from.substring(0, 5) : '';
                             var toVal = item.to ? item.to.substring(0, 5) : '';
                             var hoursVal = item.hours || '';
                             var remarksVal = item.remarks || '';
 
                             var optionsHtml = '<option value="">Select Breakdown Type</option>';
-                            @if(isset($breakdownTypes))
-                                @foreach($breakdownTypes as $type)
-                                    var selected = (item.breakdown_type_id == '{{ $type->id }}') ? 'selected' : '';
-                                    optionsHtml += `<option value="{{ $type->id }}" ${selected}>{{ $type->name }}</option>`;
+                            @if (isset($breakdownTypes))
+                                @foreach ($breakdownTypes as $type)
+                                    var selected = (item.breakdown_type_id == '{{ $type->id }}') ?
+                                        'selected' : '';
+                                    optionsHtml +=
+                                        `<option value="{{ $type->id }}" ${selected}>{{ $type->name }}</option>`;
                                 @endforeach
                             @endif
 
@@ -1906,9 +2226,10 @@
                         calculateBreakdownHours();
                     } else {
                         var optionsHtml = '<option value="">Select Breakdown Type</option>';
-                        @if(isset($breakdownTypes))
-                            @foreach($breakdownTypes as $type)
-                                optionsHtml += `<option value="{{ $type->id }}">{{ $type->name }}</option>`;
+                        @if (isset($breakdownTypes))
+                            @foreach ($breakdownTypes as $type)
+                                optionsHtml +=
+                                    `<option value="{{ $type->id }}">{{ $type->name }}</option>`;
                             @endforeach
                         @endif
 
@@ -1941,7 +2262,7 @@
                         calculateBreakdownHours();
                     }
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Error loading breakdowns:', xhr);
                 }
             });
@@ -1957,7 +2278,7 @@
             var hasError = false;
             var rows = [];
 
-            $('#breakdownItemsBody tr').each(function (index) {
+            $('#breakdownItemsBody tr').each(function(index) {
                 var $row = $(this);
                 var $fromInput = $row.find('.from-time');
                 var $toInput = $row.find('.to-time');
@@ -1973,7 +2294,8 @@
 
                     if (fromMin >= toMin) {
                         $toInput.addClass('is-invalid');
-                        toastr.error('End time (' + toVal + ') must be after start time (' + fromVal + ') in row ' + (index + 1));
+                        toastr.error('End time (' + toVal + ') must be after start time (' + fromVal + ') in row ' +
+                            (index + 1));
                         if ($changedInput && $changedInput.is($toInput)) {
                             $toInput.val('');
                         }
@@ -2010,7 +2332,8 @@
                         r2.$fromInput.addClass('is-invalid');
                         r2.$toInput.addClass('is-invalid');
 
-                        toastr.error('Time interval (' + r2.fromVal + ' - ' + r2.toVal + ') in row ' + (r2.index + 1) + ' overlaps with (' + r1.fromVal + ' - ' + r1.toVal + ') in row ' + (r1.index + 1));
+                        toastr.error('Time interval (' + r2.fromVal + ' - ' + r2.toVal + ') in row ' + (r2.index + 1) +
+                            ' overlaps with (' + r1.fromVal + ' - ' + r1.toVal + ') in row ' + (r1.index + 1));
 
                         if ($changedInput) {
                             $changedInput.val('');
@@ -2027,7 +2350,7 @@
         }
 
         function calculateBreakdownHours() {
-            $('#breakdownItemsBody tr').each(function () {
+            $('#breakdownItemsBody tr').each(function() {
                 var $row = $(this);
                 var fromTime = $row.find('.from-time').val();
                 var toTime = $row.find('.to-time').val();
@@ -2050,11 +2373,11 @@
             });
         }
 
-        $(document).on('change', '#breakdownItemsBody .from-time, #breakdownItemsBody .to-time', function () {
+        $(document).on('change', '#breakdownItemsBody .from-time, #breakdownItemsBody .to-time', function() {
             validateBreakdownTimes($(this));
         });
 
-        $(document).on('click', '.copythis_breakdown', function (e) {
+        $(document).on('click', '.copythis_breakdown', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             var $row = $(this).closest('tr');
@@ -2066,7 +2389,7 @@
             calculateBreakdownHours();
         });
 
-        $(document).on('click', '.removethis_breakdown', function (e) {
+        $(document).on('click', '.removethis_breakdown', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             if ($('#breakdownItemsBody tr').length > 1) {
