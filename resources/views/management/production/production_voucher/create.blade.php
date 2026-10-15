@@ -46,7 +46,7 @@
                                             <div class="form-group">
                                                 <label>Location:</label>
                                                 <select name="location_id" id="location_id"
-                                                    onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();"
+                                                    onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();filterAllInputLocations();"
                                                     class="form-control select2" required>
                                                     <option value="">Select Location</option>
                                                     @foreach ($companyLocations as $location)
@@ -180,7 +180,7 @@
                                                                 <option value="">Select Location</option>
                                                                 @if (isset($sublocations))
                                                                     @foreach ($sublocations as $sublocation)
-                                                                        <option value="{{ $sublocation->id }}">
+                                                                        <option value="{{ $sublocation->id }}" data-location-id="{{ $sublocation->company_location_id }}">
                                                                             {{ $sublocation->name }}
                                                                         </option>
                                                                     @endforeach
@@ -540,9 +540,87 @@
 @endsection
 @section('script')
     <script>
+        var allInputSublocations = [
+            @if (isset($sublocations))
+                @foreach ($sublocations as $sublocation)
+                    { id: {{ $sublocation->id }}, name: {!! json_encode($sublocation->name) !!}, company_location_id: {{ $sublocation->company_location_id ?? 'null' }} },
+                @endforeach
+            @endif
+        ];
+
+        function populateInputLocationsSelect($select, selectedValue) {
+            var currentLocationId = $('#location_id').val();
+            var currentValue = (selectedValue !== undefined && selectedValue !== null && selectedValue !== '')
+                ? selectedValue
+                : $select.val();
+
+            $select.empty().append('<option value="">Select Location</option>');
+
+            var hasSelected = false;
+            allInputSublocations.forEach(function(item) {
+                if (!currentLocationId || item.company_location_id == currentLocationId) {
+                    var $opt = $('<option></option>')
+                        .attr('value', item.id)
+                        .attr('data-location-id', item.company_location_id)
+                        .text(item.name);
+
+                    if (currentValue && item.id == currentValue) {
+                        $opt.prop('selected', true);
+                        hasSelected = true;
+                    }
+                    $select.append($opt);
+                }
+            });
+
+            if (hasSelected && currentValue) {
+                $select.val(currentValue);
+            } else {
+                $select.val('');
+            }
+        }
+
+        function filterAllInputLocations() {
+            var currentSubLocation = $('#sub_location_id').val();
+            $('#productionInputsTable select[name="input_location_id[]"]').each(function() {
+                var $select = $(this);
+                var currentVal = $select.val();
+                populateInputLocationsSelect($select, currentVal);
+                if (!$select.val() && currentSubLocation) {
+                    $select.val(currentSubLocation);
+                }
+                if ($select.data('select2')) {
+                    $select.trigger('change.select2');
+                }
+            });
+        }
+
         $(document).ready(function() {
             // Initialize Select2 for all selects
             $('.select2').select2();
+
+            // Filter input locations on load if location already chosen
+            if ($('#location_id').val()) {
+                filterAllInputLocations();
+            }
+
+            $('#location_id').on('change', function() {
+                filterAllInputLocations();
+            });
+
+            $('#sub_location_id').on('change', function() {
+                var subLoc = $(this).val();
+                if (subLoc) {
+                    $('#productionInputsTable select[name="input_location_id[]"]').each(function() {
+                        var $loc = $(this);
+                        if (!$loc.val()) {
+                            $loc.val(subLoc);
+                            if ($loc.data('select2')) {
+                                $loc.trigger('change.select2');
+                            }
+                        }
+                    });
+                }
+            });
 
             // Generate production number on date change
             $('input[name="prod_date"]').on('change', function() {
@@ -1016,6 +1094,21 @@
             var $tbody = $originalRow.closest('tbody');
             var $table = $tbody.closest('table');
             var $container = $table.closest('div');
+
+            var isInputRow = ($container.attr('id') === 'productionInputsTable' || $table.closest('#productionInputsTable').length > 0 || $originalRow.find('select[name="input_location_id[]"]').length > 0);
+
+            // Capture select values from original row before cloning
+            var selectValues = [];
+            $originalRow.find('select').each(function() {
+                selectValues.push({
+                    name: $(this).attr('name'),
+                    val: $(this).val()
+                });
+            });
+
+            var originalInputLocation = $originalRow.find('select[name="input_location_id[]"]').val();
+            var originalInputProduct = $originalRow.find('select[name="input_product_id[]"]').val();
+
             var clone = $originalRow.clone();
 
             // Clear input values in cloned row (but keep readonly fields empty)
@@ -1024,38 +1117,80 @@
             clone.find('input[readonly]').val(''); // Clear readonly fields too
             clone.find('input[name="output_qty[]"]').removeData('manual-change'); // Reset manual change flag
 
-            // Insert clone after the original row
-            $originalRow.after(clone);
+            // Strip ALL Select2 artifacts, containers, classes and data-select2-id from clone completely
+            clone.find('.select2-container').remove();
+            clone.removeAttr('data-select2-id');
+            clone.find('[data-select2-id]').removeAttr('data-select2-id');
 
-            // Initialize Select2 for cloned row - properly destroy and reinitialize
             clone.find('select').each(function() {
                 var $select = $(this);
-
-                // Destroy existing select2 instance if any
-                if ($select.data('select2')) {
-                    $select.select2('destroy');
-                }
-
-                // Remove select2 containers and classes
-                $select.siblings('.select2-container').remove();
-                $select.removeClass('select2-hidden-accessible').removeAttr('data-select2-id');
-
-                // Make sure it has select2 class
+                $select.removeClass('select2-hidden-accessible')
+                       .removeAttr('data-select2-id')
+                       .removeAttr('tabindex')
+                       .removeAttr('aria-hidden')
+                       .removeData('select2')
+                       .removeData('applied-val');
+                $select.find('option, optgroup').removeAttr('data-select2-id');
                 if (!$select.hasClass('select2')) {
                     $select.addClass('select2');
                 }
             });
 
-            // Reinitialize select2 after DOM is ready
+            // Insert clone after the original row
+            $originalRow.after(clone);
+
+            if (isInputRow) {
+                var locationToApply = originalInputLocation;
+                if (!locationToApply || locationToApply === '') {
+                    locationToApply = $('#sub_location_id').val() || '';
+                }
+
+                var $cloneLoc = clone.find('select[name="input_location_id[]"]');
+                if ($cloneLoc.length > 0) {
+                    populateInputLocationsSelect($cloneLoc, locationToApply);
+                    $cloneLoc.find('option').prop('selected', false).removeAttr('selected');
+                    if (locationToApply) {
+                        $cloneLoc.find('option[value="' + locationToApply + '"]').prop('selected', true);
+                        $cloneLoc.val(locationToApply);
+                    } else {
+                        $cloneLoc.val('');
+                    }
+                }
+
+                var $cloneProd = clone.find('select[name="input_product_id[]"]');
+                if ($cloneProd.length > 0) {
+                    $cloneProd.find('option').prop('selected', false).removeAttr('selected');
+                    if (originalInputProduct) {
+                        $cloneProd.find('option[value="' + originalInputProduct + '"]').prop('selected', true);
+                        $cloneProd.val(originalInputProduct);
+                    } else {
+                        $cloneProd.val('');
+                    }
+                }
+            } else {
+                clone.find('select').each(function(index) {
+                    var $select = $(this);
+                    var orig = selectValues[index];
+                    if (orig && orig.val !== undefined && orig.val !== null && orig.val !== '') {
+                        $select.find('option').prop('selected', false).removeAttr('selected');
+                        $select.find('option[value="' + orig.val + '"]').prop('selected', true);
+                        $select.val(orig.val);
+                    }
+                });
+            }
+
+            // Reinitialize select2 cleanly on cloned row
             setTimeout(function() {
                 clone.find('select.select2').each(function() {
                     var $select = $(this);
-                    // Initialize select2 with proper settings
+                    if ($select.data('select2')) {
+                        $select.select2('destroy');
+                    }
                     $select.select2({
                         dropdownParent: $select.closest('.modal-body, .card-body, body')
                     });
                 });
-            }, 100);
+            }, 50);
 
             // Function to determine which calculation to run
             function runAppropriateCalculation() {
