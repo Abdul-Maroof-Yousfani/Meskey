@@ -57,7 +57,8 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            <span class="badge {{ strtolower($row->status ?? 'active') === 'active' ? 'badge-success' : 'badge-danger' }}">
+                            <span
+                                class="badge {{ strtolower($row->status ?? 'active') === 'active' ? 'badge-success' : 'badge-danger' }}">
                                 {{ ucfirst($row->status ?? 'active') }}
                             </span>
                         </p>
@@ -68,21 +69,21 @@
                         </p>
                     </td>
                     <td>
-                         {!! dateFormatHtml($row->created_at) !!}
+                        {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('customer.edit', $row->id) }}','Edit Customer')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
-                        {{-- @can('role-delete')
-                            <a onclick="deletemodal('{{ route('customer.destroy', $row->id) }}','{{ route('get.customer') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
 
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                        <a onclick="openModal(this,'{{ route('customer.edit', $row->id) }}','Edit Customer')"
+                            class="info p-1 text-center mr-2 position-relative ">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
+
+                        {{-- @can('role-delete')
+                        <a onclick="deletemodal('{{ route('customer.destroy', $row->id) }}','{{ route('get.customer') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
+
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
                         @endcan --}}
                     </td>
                 </tr>
