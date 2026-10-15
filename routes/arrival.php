@@ -18,7 +18,7 @@ use App\Http\Controllers\Arrival\{
 use App\Models\Master\CompanyLocation;
 
 Route::resource('ticket', TicketController::class);
-Route::get('/ticket/{ticket}/audit-logs', [TicketController::class, 'getAuditLogs'])->name('ticket.audit-logs');
+Route::get('/ticket/{ticket}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'ticket')->name('ticket.audit-logs');
 Route::get('/ticket-revert/{ticket}/audit-logs', [TicketController::class, 'getRevertAuditLogs'])->name('ticket.revert-audit-logs');
 Route::get('/ticket-revert-test/{ticket}/audit-logs', [TicketController::class, 'getRevertAuditLogs'])->name('ticket.revert-test-audit-logs');
 Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.ticket');

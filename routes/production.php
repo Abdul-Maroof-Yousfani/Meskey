@@ -55,6 +55,7 @@ Route::post('get-production-voucher', [ProductionVoucherController::class, 'getL
 Route::get('production-voucher/{id}/analysis-qc-view', [ProductionVoucherController::class, 'getAnalysisQcView'])->name('production-voucher.analysis-qc-view');
 Route::post('production-voucher-get-job-orders-by-location', [ProductionVoucherController::class, 'getJobOrdersByLocation'])->name('production-voucher.get-job-orders-by-location');
 Route::post('production-voucher-get-commodities-by-location', [ProductionVoucherController::class, 'getCommoditiesByLocation'])->name('production-voucher.get-commodities-by-location');
+Route::post('production-voucher-get-parent-product', [ProductionVoucherController::class, 'getParentProduct'])->name('production-voucher.get-parent-product');
 Route::post('production-voucher-get-plants-by-location', [ProductionVoucherController::class, 'getPlantsByLocation'])->name('production-voucher.get-plants-by-location');
 Route::post('production-voucher-get-sublocations-by-location', [ProductionVoucherController::class, 'getSublocationsByLocation'])->name('production-voucher.get-sublocations-by-location');
 Route::post('production-voucher-get-packing-items', [ProductionVoucherController::class, 'getPackingItemsByJobOrder'])->name('production-voucher.get-packing-items');

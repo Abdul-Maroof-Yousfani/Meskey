@@ -599,7 +599,8 @@ class ArrivalMasterRevertController extends Controller
             'net_weight' => 'nullable|numeric',
             'arrival_purchase_order_id' => 'nullable|integer',
             'accounts_of' => 'required|string',
-            'decision_id' => 'nullable'
+            'decision_id' => 'nullable',
+            'broker_name' => 'nullable|string|max:255',
         ]);
 
         $oldTicketAttributes = $arrivalTicket ? $arrivalTicket->getAttributes() : null;
@@ -634,6 +635,15 @@ class ArrivalMasterRevertController extends Controller
                 $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
                 $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
                 $requestData['accounts_of_name'] = $requestData['accounts_of'];
+            }
+
+            if (!empty($requestData['broker_name'])) {
+                $broker = Supplier::where('company_name', $requestData['broker_name'])
+                    ->orWhere('name', $requestData['broker_name'])
+                    ->first();
+                $requestData['broker_id'] = $broker ? $broker->id : null;
+            } else {
+                $requestData['broker_id'] = null;
             }
 
             if (!empty($requestData['miller_name'])) {
@@ -1060,11 +1070,13 @@ class ArrivalMasterRevertController extends Controller
                 'second_weighbridge' => $arrivalTicket->secondWeighbridge->toArray(),
                 'second_weighbridge_status' => $arrivalTicket->second_weighbridge_status,
                 'freight_status' => $arrivalTicket->freight_status,
+                'arrived_net_weight' => $arrivalTicket->arrived_net_weight,
             ];
             $arrivalTicket->secondWeighbridge->delete();
             $arrivalTicket->update([
                 'second_weighbridge_status' => 'pending',
                 'freight_status' => null,
+                'arrived_net_weight' => null,
             ]);
 
             $this->logRevertAction(
@@ -1072,7 +1084,7 @@ class ArrivalMasterRevertController extends Controller
                 'second_weighbridge_revert',
                 "Second weighbridge reverted for Ticket #{$arrivalTicket->unique_no}",
                 $oldData,
-                ['second_weighbridge_status' => 'pending', 'freight_status' => null]
+                ['second_weighbridge_status' => 'pending', 'freight_status' => null, 'arrived_net_weight' => null]
             );
         }
     }

@@ -47,6 +47,23 @@ class ProductionVoucher extends Model
         'overhead_cost_per_kg' => 'decimal:4',
     ];
 
+    public function getProducedQtyKgAttribute($value)
+    {
+        if (!empty($value) && (float)$value > 0) {
+            return (float)$value;
+        }
+
+        if ($this->relationLoaded('outputs') && $this->outputs->isNotEmpty()) {
+            return (float)$this->outputs->sum('qty');
+        }
+
+        if (!empty($this->net_total_output) && (float)$this->net_total_output > 0) {
+            return (float)$this->net_total_output;
+        }
+
+        return (float)($this->outputs()->sum('qty') ?: 0);
+    }
+
     public function jobOrder()
     {
         return $this->belongsTo(JobOrder::class);

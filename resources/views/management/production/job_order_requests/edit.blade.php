@@ -1,4 +1,4 @@
-<form action="{{ route('job-order-requests.update', $jobOrderRequest->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('job-order-requests.update', $jobOrderRequest->id) }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.job_order_requests') }}" />
@@ -384,7 +384,7 @@
                                     value="{{ $packingItem->min_weight_empty_bags }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>Delivery Date:</label>
                                 <input type="date" name="packing_items[{{ $packingIndex }}][delivery_date]" class="form-control"
@@ -402,6 +402,20 @@
                                         </option>
                                     @endforeach
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Attachment:</label>
+                                <div class="existing-attachment-wrap mb-1">
+                                    @if($packingItem->attachment)
+                                        <a href="{{ asset('storage/' . $packingItem->attachment) }}" target="_blank" class="btn btn-sm btn-info">
+                                            <i class="ft-eye"></i> View Attachment
+                                        </a>
+                                        <input type="hidden" name="packing_items[{{ $packingIndex }}][old_attachment]" value="{{ $packingItem->attachment }}" class="old-attachment-input">
+                                    @endif
+                                </div>
+                                <input type="file" name="packing_items[{{ $packingIndex }}][attachment]" class="form-control packing-attachment" accept="image/*,application/pdf,.doc,.docx">
                             </div>
                         </div>
 
@@ -525,7 +539,8 @@
                                                         </td>
                                                         <td>
                                                             @if($subItem->attachment)
-                                                                <a href="{{ asset('storage/' . $subItem->attachment) }}" target="_blank" class="btn btn-sm btn-info">View</a>
+                                                                <a href="{{ asset('storage/' . $subItem->attachment) }}" target="_blank" class="btn btn-sm btn-info mb-1">View</a>
+                                                                <input type="hidden" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][old_attachment]" value="{{ $subItem->attachment }}" class="sub-old-attachment">
                                                             @endif
                                                             <input type="file" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][attachment]" 
                                                                 class="form-control form-control-sm sub-attachment">
@@ -1150,6 +1165,9 @@
 
             // Clear specific values and IDs
             newItem.find('input[type="hidden"].packing-item-ref').remove(); // Important: remove the ID of the cloned item
+            newItem.find('.existing-attachment-wrap').empty();
+            newItem.find('.old-attachment-input').remove();
+            newItem.find('input[type="file"]').val('');
             newItem.find('.bag-size, .no-of-bags').val('');
             newItem.find('.extra-bags, .empty-bags, .containers, .stuffing, .extra-bags-percentage, .min-weight').val('0');
             newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
@@ -1438,8 +1456,8 @@
         function updateOverallTotalRequestQty() {
             var sumKg = 0;
             $('#packingItems .packing-item').each(function() {
-                var bagSize = parseFloat($(this).find('.bag-size').val()) || 0;
-                sumKg += bagSize;
+                var totalKgs = parseFloat($(this).find('.total-kgs').val()) || 0;
+                sumKg += totalKgs;
             });
             var sumMt = sumKg / 1000;
             $('#totalRequestQty').text(sumKg.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }));
@@ -1455,7 +1473,7 @@
 
             // Calculate totals
             var totalBags = noOfBags + extraBags + emptyBags;
-            var totalKgs = bagSize;
+            var totalKgs = bagSize * noOfBags;
             var metricTons = totalKgs / 1000;
 
             // Update fields

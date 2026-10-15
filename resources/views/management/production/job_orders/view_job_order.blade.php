@@ -155,7 +155,7 @@
                     @if($jobOrder->packingItems && $jobOrder->packingItems->count() > 0)
                         @foreach($jobOrder->packingItems as $index => $item)
                         <tr class="section-header">
-                            <th colspan="21" class="text-center py-1">PACKING ITEM #{{ $index + 1 }}</th>
+                            <th colspan="22" class="text-center py-1">PACKING ITEM #{{ $index + 1 }}</th>
                         </tr>
                         <tr>
                             <th class="text-uppercase bg-light">Location</th>
@@ -180,6 +180,7 @@
                             <th class="text-uppercase bg-light">Fumigation By</th>
                             <th class="text-uppercase bg-light">Description</th>
                             <th class="text-uppercase bg-light">Location Instr.</th>
+                            <th class="text-uppercase bg-light">Attachment</th>
                         </tr>
                         <tr>
                             <td>{{ $item->companyLocation->name ?? $jobOrder->companyLocation->name ?? 'N/A' }}</td>
@@ -250,6 +251,15 @@
                             @if($item->location_instruction)
                                 <td class="small">{{ $item->location_instruction }}</td>
                             @endif
+                            <td>
+                                @if($item->attachment)
+                                    <a href="{{ asset('storage/' . $item->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">
+                                        <i class="ft-file"></i> View
+                                    </a>
+                                @else
+                                    -
+                                @endif
+                            </td>
                         </tr>
                 </tbody>
             </table>
@@ -260,7 +270,7 @@
                     @if($item->subItems && $item->subItems->count() > 0)
                         @foreach($item->subItems as $subIndex => $sub)
                             <tr class="sub-section-header">
-                                <th colspan="10" class="py-0 px-2 small font-italic text-center">MASTER PACKING ({{ $subIndex + 1 }})</th>
+                                <th colspan="11" class="py-0 px-2 small font-italic text-center">MASTER PACKING ({{ $subIndex + 1 }})</th>
                             </tr>
                             <tr>
                                 <th class="text-uppercase bg-light small pl-3">MP Bag</th>
@@ -273,6 +283,7 @@
                                 <th class="text-uppercase bg-light small pl-3">Packing Size (kg)</th>
                                 <th class="text-uppercase bg-light small pl-3">Total MP Bags</th>
                                 <th class="text-uppercase bg-light small pl-3">MP Bag Wt.</th>
+                                <th class="text-uppercase bg-light small pl-3">Attachment</th>
                             </tr>
                             <tr>
                                 <td class="small">{{ $sub->bagType->name ?? $sub->bagProduct->name ?? 'N/A' }}</td>
@@ -289,6 +300,15 @@
                                     {{ $sub->total_bags ? number_format($sub->total_bags) : '-' }} @if(($sub->extra_bags_percentage ?? 0) > 0) ({{ $sub->extra_bags_percentage }}% Extra) @endif
                                 </td>
                                 <td class="small">{{ $sub->empty_bag_weight ? $sub->empty_bag_weight . ' g' : '-' }}</td>
+                                <td class="small">
+                                    @if($sub->attachment)
+                                        <a href="{{ asset('storage/' . $sub->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">
+                                            <i class="ft-file"></i> View
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     @endif

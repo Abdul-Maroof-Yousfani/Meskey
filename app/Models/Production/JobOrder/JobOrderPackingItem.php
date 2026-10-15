@@ -37,7 +37,8 @@ class JobOrderPackingItem extends Model
         'min_weight_empty_bags',
         'extra_bags_percentage',
         'description',
-        'location_instruction'
+        'location_instruction',
+        'attachment',
     ];
     protected $casts = [
         // 'inspection_company_id' => 'array',
@@ -64,9 +65,9 @@ class JobOrderPackingItem extends Model
                 $model->total_kgs = $totalKgsFromSubItems;
                 $model->metric_tons = $model->total_kgs / 1000;
             } else {
-                // Total KGs is bag_size directly (not multiplied by no_of_bags)
+                // Total KGs is Packing Size * No. of Bags
                 $model->total_bags = ($model->no_of_bags ?? 0) + ($model->extra_bags ?? 0) + ($model->empty_bags ?? 0);
-                $model->total_kgs = (float) ($model->bag_size ?? 0);
+                $model->total_kgs = (float) ($model->bag_size ?? 0) * (float) ($model->no_of_bags ?? 0);
                 $model->metric_tons = $model->total_kgs / 1000;
             }
 

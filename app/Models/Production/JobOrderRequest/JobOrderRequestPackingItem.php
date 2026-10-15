@@ -38,6 +38,7 @@ class JobOrderRequestPackingItem extends Model
         'fumigation_company_id',
         'min_weight_empty_bags',
         'extra_bags_percentage',
+        'attachment',
     ];
 
     protected $casts = [

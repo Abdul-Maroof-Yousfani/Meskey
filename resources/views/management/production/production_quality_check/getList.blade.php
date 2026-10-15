@@ -85,7 +85,7 @@
                                 <i class="ft-edit"></i>
                             </button>
                             <button type="button" 
-                                onclick="deletemodal('{{ route('production-voucher.destroy', $voucher->id) }}','{{ route('get.production-voucher') }}')"
+                                onclick="deletemodal('{{ route('production-voucher.destroy', $voucher->id) }}','{{ route('get.production-quality-check') }}')"
                                 class="btn btn-outline-danger" title="Delete">
                                 <i class="ft-trash"></i>
                             </button>

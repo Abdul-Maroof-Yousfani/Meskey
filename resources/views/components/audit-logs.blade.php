@@ -92,7 +92,7 @@
                                                     {{ $change['label'] }}
                                                 </td>
                                                 @if (!$isCreate)
-                                                    <td class="text-danger" style="background-color: #fff5f5; word-break: break-all;">
+                                                    <td class="text-danger" style="background-color: #fff5f5; word-break: break-all; white-space: pre-line;">
                                                         @if ($change['old'] !== null && $change['old'] !== '')
                                                             <span style="text-decoration: line-through;">{{ $change['old'] }}</span>
                                                         @else
@@ -100,7 +100,7 @@
                                                         @endif
                                                     </td>
                                                 @endif
-                                                <td class="text-success font-weight-bold" style="background-color: #f0fff4; word-break: break-all;">
+                                                <td class="text-success font-weight-bold" style="background-color: #f0fff4; word-break: break-all; white-space: pre-line;">
                                                     @if ($change['new'] !== null && $change['new'] !== '')
                                                         <span>{{ $change['new'] }}</span>
                                                     @else

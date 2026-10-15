@@ -329,5 +329,61 @@ class ArrivalTicket extends Model
         return $this->hasOne(PurchaseSamplingRequest::class, 'arrival_purchase_order_id', 'arrival_purchase_order_id')
             ->latestOfMany();
     }
+
+    protected static function booted()
+    {
+        static::observe(\App\Observers\UniversalAuditObserver::class);
+    }
+
+    public function auditIdentifier(): string
+    {
+        return (string) ($this->unique_no ?: ($this->truck_no ? "Ticket (Truck #{$this->truck_no})" : "#{$this->id}"));
+    }
+
+    public static function auditLogConfig(): array
+    {
+        return [
+            'title' => 'Arrival Ticket Audit Logs',
+            'subtitle' => function ($model) {
+                $parts = ["Ticket #" . ($model->unique_no ?? $model->id)];
+                if ($model->truck_no) $parts[] = 'Truck: ' . $model->truck_no;
+                if ($model->bilty_no) $parts[] = 'Bilty: ' . $model->bilty_no;
+                if ($model->status) $parts[] = 'Status: ' . ucwords(str_replace(['_', '-'], ' ', $model->status));
+                return implode(' | ', $parts);
+            },
+            'empty_message' => 'No changes or updates have been recorded for this ticket yet.',
+            'field_labels' => [
+                'unique_no'                 => 'Ticket #',
+                'truck_no'                  => 'Truck #',
+                'bilty_no'                  => 'Bilty #',
+                'arrival_purchase_order_id' => 'Contract / PO',
+                'product_id'                => 'Product',
+                'location_id'               => 'Location',
+                'loading_date'              => 'Loading Date',
+                'loading_weight'            => 'Loading Weight',
+                'bags'                      => 'Bags',
+                'bag_weight'                => 'Bag Weight',
+                'first_weight'              => 'First Weight (Gross)',
+                'second_weight'             => 'Second Weight (Tare)',
+                'net_weight'                => 'Net Weight',
+                'first_qc_status'           => '1st QC Status',
+                'second_qc_status'          => '2nd QC Status',
+                'freight_status'            => 'Freight Status',
+                'arrival_slip_status'       => 'Arrival Slip Status',
+                'is_ticket_verified'        => 'Is Ticket Verified',
+                'ticket_verified_by'        => 'Ticket Verified By',
+                'verify_at'                 => 'Verified At',
+                'remarks'                   => 'Remarks',
+                'status'                    => 'Status',
+            ],
+            'relation_resolvers' => [
+                'arrival_purchase_order_id' => fn($val) => \App\Models\ArrivalPurchaseOrder::find($val)?->contract_no ?? $val,
+                'product_id'                => fn($val) => \App\Models\Product::find($val)?->name ?? $val,
+                'location_id'               => fn($val) => \App\Models\Master\CompanyLocation::find($val)?->name ?? $val,
+                'ticket_verified_by'        => fn($val) => \App\Models\User::find($val)?->name ?? $val,
+                'is_ticket_verified'        => fn($val) => ($val == 1 || $val === '1' || $val === true) ? 'Yes' : 'No',
+            ]
+        ];
+    }
 }
 
