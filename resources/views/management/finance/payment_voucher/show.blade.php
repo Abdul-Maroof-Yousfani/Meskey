@@ -297,11 +297,11 @@
 <div class="row bottom-button-bar">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-        @if (strtolower($paymentVoucher->am_approval_status ?? '') === 'approved')
+        {{-- @if (strtolower($paymentVoucher->am_approval_status ?? '') === 'approved') --}}
             <button type="button" class="btn btn-info mr-2" id="printButton">
                 <i class="ft-printer mr-1"></i> Print
             </button>
-        @endif
+        {{-- @endif --}}
     </div>
 </div>
 

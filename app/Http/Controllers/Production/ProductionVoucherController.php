@@ -1095,6 +1095,38 @@ class ProductionVoucherController extends Controller
                     ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
+            // Auto assign all performed Analysis on the same date to this production voucher
+            if ($productionVoucher->prod_date) {
+                $voucherDate = $productionVoucher->prod_date;
+
+                \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
+                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
+                        $q->where(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->orWhereNull('plant_id');
+                        });
+                    })
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+
+                \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
+                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
+                        $q->where(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->orWhereNull('plant_id');
+                        });
+                    })
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+
+                \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
+                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
+                        $q->where(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->orWhereNull('plant_id');
+                        });
+                    })
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -1635,6 +1667,38 @@ class ProductionVoucherController extends Controller
 
                 \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
                     ->whereDate('date', $productionVoucher->prod_date)
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+            }
+
+            // Auto assign all performed Analysis on the same date to this production voucher
+            if ($productionVoucher->prod_date) {
+                $voucherDate = $productionVoucher->prod_date;
+
+                \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
+                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
+                        $q->where(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->orWhereNull('plant_id');
+                        });
+                    })
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+
+                \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
+                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
+                        $q->where(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->orWhereNull('plant_id');
+                        });
+                    })
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+
+                \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
+                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
+                        $q->where(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->orWhereNull('plant_id');
+                        });
+                    })
                     ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
@@ -2199,5 +2263,238 @@ class ProductionVoucherController extends Controller
             ->get();
 
         return view('management.production.production_voucher.slot.getList', compact('slots', 'productionVoucher'));
+    }
+
+    public function getAnalysisQcView($id)
+    {
+        $productionVoucher = ProductionVoucher::with([
+            'product',
+            'plant',
+            'location',
+            'jobOrders.product',
+            'supervisor'
+        ])->findOrFail($id);
+
+        $voucherDate = $productionVoucher->prod_date ? \Carbon\Carbon::parse($productionVoucher->prod_date)->format('Y-m-d') : null;
+        $plantId = $productionVoucher->plant_id;
+
+        // Auto assign any unlinked analysis on this date to this voucher
+        if ($voucherDate) {
+            \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
+                ->when($plantId, fn($q) => $q->where(fn($sub) => $sub->where('plant_id', $plantId)->orWhereNull('plant_id')))
+                ->whereNull('production_voucher_id')
+                ->update(['production_voucher_id' => $productionVoucher->id]);
+
+            \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
+                ->when($plantId, fn($q) => $q->where(fn($sub) => $sub->where('plant_id', $plantId)->orWhereNull('plant_id')))
+                ->whereNull('production_voucher_id')
+                ->update(['production_voucher_id' => $productionVoucher->id]);
+
+            \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
+                ->when($plantId, fn($q) => $q->where(fn($sub) => $sub->where('plant_id', $plantId)->orWhereNull('plant_id')))
+                ->whereNull('production_voucher_id')
+                ->update(['production_voucher_id' => $productionVoucher->id]);
+        }
+
+        // 1. Production Analysis (Input & Output)
+        $analyses = \App\Models\Production\ProductionAnalysis::with([
+            'items.slabs.slabType',
+            'items.unit',
+            'product',
+            'brand',
+            'plant',
+            'location',
+            'analysisRequest.jobOrder'
+        ])
+        ->where(function ($q) use ($productionVoucher, $voucherDate, $plantId) {
+            $q->where('production_voucher_id', $productionVoucher->id);
+            if ($voucherDate) {
+                $q->orWhere(function ($sub) use ($voucherDate, $plantId) {
+                    $sub->whereDate('analysis_date', $voucherDate);
+                    if ($plantId) {
+                        $sub->where(fn($pSub) => $pSub->where('plant_id', $plantId)->orWhereNull('plant_id'));
+                    }
+                });
+            }
+        })
+        ->orderBy('created_at', 'asc')
+        ->get();
+
+        // 2. Production Machine Analysis
+        $machineAnalyses = \App\Models\Production\ProductionMachineAnalysis::with([
+            'items.slabs.slabType',
+            'machine',
+            'plant',
+            'companyLocation',
+            'analysisRequest',
+            'product'
+        ])
+        ->where(function ($q) use ($productionVoucher, $voucherDate, $plantId) {
+            $q->where('production_voucher_id', $productionVoucher->id);
+            if ($voucherDate) {
+                $q->orWhere(function ($sub) use ($voucherDate, $plantId) {
+                    $sub->whereDate('analysis_date', $voucherDate);
+                    if ($plantId) {
+                        $sub->where(fn($pSub) => $pSub->where('plant_id', $plantId)->orWhereNull('plant_id'));
+                    }
+                });
+            }
+        })
+        ->orderBy('created_at', 'asc')
+        ->get();
+
+        $inputTabs = collect();
+        $outputTabs = collect();
+        $machineTabs = collect();
+
+        // 1. Process Input & Output Analyses
+        $inputCounter = 1;
+        $outputCounter = 1;
+
+        foreach ($analyses as $analysis) {
+            $isInput = $analysis->production_analysis_type === 'input';
+            $analysisDateStr = $analysis->analysis_date ? \Carbon\Carbon::parse($analysis->analysis_date)->format('Y-m-d') : now()->format('Y-m-d');
+            
+            $items = $analysis->items;
+            if ($items->isEmpty()) {
+                $tabData = [
+                    'id' => ($isInput ? 'input-qc-' : 'output-qc-') . $analysis->id . '-0',
+                    'tab_title' => $isInput ? ("Input QC #{$inputCounter}" . ($analysis->product ? " - {$analysis->product->name}" : '')) : ("Output QC #{$outputCounter}" . ($analysis->product ? " - {$analysis->product->name}" : '')),
+                    'full_title' => $isInput ? ("Input Analysis #{$inputCounter}" . ($analysis->product ? " ({$analysis->product->name})" : '')) : ("Output Analysis #{$outputCounter}" . ($analysis->product ? " ({$analysis->product->name})" : '')),
+                    'time_formatted' => $analysis->created_at ? \Carbon\Carbon::parse($analysis->created_at)->format('M d, Y h:i A') : \Carbon\Carbon::parse($analysisDateStr)->format('M d, Y'),
+                    'type' => $analysis->production_analysis_type,
+                    'model' => $analysis,
+                    'slabs' => [],
+                    'remarks' => $analysis->remarks,
+                ];
+                if ($isInput) { 
+                    $inputTabs->push($tabData); 
+                    $inputCounter++; 
+                } else { 
+                    $outputTabs->push($tabData); 
+                    $outputCounter++; 
+                }
+            } else {
+                foreach ($items as $itemIndex => $item) {
+                    $timeFormatted = $item->analysis_time 
+                        ? \Carbon\Carbon::parse($analysisDateStr . ' ' . $item->analysis_time)->format('M d, Y h:i A')
+                        : ($analysis->created_at ? \Carbon\Carbon::parse($analysis->created_at)->format('M d, Y h:i A') : \Carbon\Carbon::parse($analysisDateStr)->format('M d, Y'));
+
+                    $slabs = [];
+                    foreach ($item->slabs as $slab) {
+                        $slabType = $slab->slabType;
+                        $slabs[] = [
+                            'name' => $slabType->name ?? ('Parameter #' . $slab->slab_type_id),
+                            'value' => $slab->production_analysis_value,
+                            'symbol' => $slabType->qc_symbol ?? '%',
+                        ];
+                    }
+
+                    $tabData = [
+                        'id' => ($isInput ? 'input-qc-' : 'output-qc-') . $analysis->id . '-' . $item->id,
+                        'tab_title' => $isInput 
+                            ? ("Input QC #{$inputCounter}" . ($analysis->product ? " - {$analysis->product->name}" : '')) 
+                            : ("Output QC #{$outputCounter}" . ($analysis->product ? " - {$analysis->product->name}" : '')),
+                        'full_title' => $isInput 
+                            ? ("Input Analysis #{$inputCounter}" . ($analysis->product ? " ({$analysis->product->name})" : '')) 
+                            : ("Output Analysis #{$outputCounter}" . ($analysis->product ? " ({$analysis->product->name})" : '')),
+                        'time_formatted' => $timeFormatted,
+                        'type' => $analysis->production_analysis_type,
+                        'model' => $analysis,
+                        'item' => $item,
+                        'unit' => $item->unit->name ?? null,
+                        'slabs' => $slabs,
+                        'remarks' => $analysis->remarks,
+                    ];
+
+                    if ($isInput) { 
+                        $inputTabs->push($tabData); 
+                        $inputCounter++; 
+                    } else { 
+                        $outputTabs->push($tabData); 
+                        $outputCounter++; 
+                    }
+                }
+            }
+        }
+
+        // 2. Process Machine Analyses
+        $machineCounter = 1;
+        foreach ($machineAnalyses as $mAnalysis) {
+            $machineName = $mAnalysis->machine->name ?? 'General Machine';
+            $prodSuffix = $mAnalysis->product ? " - {$mAnalysis->product->name}" : '';
+            $mAnalysisDateStr = $mAnalysis->analysis_date ? \Carbon\Carbon::parse($mAnalysis->analysis_date)->format('Y-m-d') : now()->format('Y-m-d');
+            
+            $items = $mAnalysis->items;
+            if ($items->isEmpty()) {
+                $machineTabs->push([
+                    'id' => 'machine-qc-' . $mAnalysis->id . '-0',
+                    'tab_title' => "Machine QC #{$machineCounter} - {$machineName}{$prodSuffix}",
+                    'full_title' => "Machine Analysis #{$machineCounter} ({$machineName}{$prodSuffix})",
+                    'time_formatted' => $mAnalysis->created_at ? \Carbon\Carbon::parse($mAnalysis->created_at)->format('M d, Y h:i A') : \Carbon\Carbon::parse($mAnalysisDateStr)->format('M d, Y'),
+                    'type' => 'machine',
+                    'model' => $mAnalysis,
+                    'slabs' => [],
+                    'remarks' => $mAnalysis->remarks,
+                ]);
+                $machineCounter++;
+            } else {
+                foreach ($items as $itemIndex => $item) {
+                    $timeFormatted = $item->analysis_time 
+                        ? \Carbon\Carbon::parse($mAnalysisDateStr . ' ' . $item->analysis_time)->format('M d, Y h:i A')
+                        : ($mAnalysis->created_at ? \Carbon\Carbon::parse($mAnalysis->created_at)->format('M d, Y h:i A') : \Carbon\Carbon::parse($mAnalysisDateStr)->format('M d, Y'));
+
+                    $slabs = [];
+                    foreach ($item->slabs as $slab) {
+                        $slabType = $slab->slabType;
+                        $slabs[] = [
+                            'name' => $slabType->name ?? ('Parameter #' . $slab->slab_type_id),
+                            'value' => $slab->analysis_value,
+                            'symbol' => $slabType->qc_symbol ?? '%',
+                        ];
+                    }
+
+                    $machineTabs->push([
+                        'id' => 'machine-qc-' . $mAnalysis->id . '-' . $item->id,
+                        'tab_title' => "Machine QC #{$machineCounter} - {$machineName}{$prodSuffix}",
+                        'full_title' => "Machine Analysis #{$machineCounter} ({$machineName}{$prodSuffix})",
+                        'time_formatted' => $timeFormatted,
+                        'type' => 'machine',
+                        'model' => $mAnalysis,
+                        'item' => $item,
+                        'unit' => $item->unit->name ?? null,
+                        'slabs' => $slabs,
+                        'remarks' => $mAnalysis->remarks,
+                    ]);
+                    $machineCounter++;
+                }
+            }
+        }
+
+        $qcGroups = collect([
+            'input' => [
+                'title' => 'Input QC',
+                'icon' => 'ft-arrow-down-left',
+                'badge' => 'badge-info',
+                'items' => $inputTabs,
+            ],
+            'output' => [
+                'title' => 'Output QC',
+                'icon' => 'ft-arrow-up-right',
+                'badge' => 'badge-success',
+                'items' => $outputTabs,
+            ],
+            'machine' => [
+                'title' => 'Machine QC',
+                'icon' => 'ft-cpu',
+                'badge' => 'badge-warning',
+                'items' => $machineTabs,
+            ],
+        ])->filter(fn($g) => $g['items']->isNotEmpty());
+
+        return view('management.production.production_voucher.partials.qc_checklist_modal', compact(
+            'productionVoucher',
+            'qcGroups'
+        ));
     }
 }

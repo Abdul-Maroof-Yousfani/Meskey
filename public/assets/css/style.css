@@ -1,4 +1,8 @@
 /*Modal*/
+.table{
+  color: black !important;
+  font-weight: 500 !important;
+}
 .model {
   display: none;
   position: fixed;
@@ -110,6 +114,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 table.table.tab-des {
@@ -712,13 +717,14 @@ body.drawer-opened {
   transition: color 0.3s ease;
 } */
 
-/* Green toggle when checked */
-.lock-arrival-wrapper .custom-control-input:checked~.custom-control-label::before {
+.lock-arrival-wrapper .custom-control-input:checked~.custom-control-label::before,
+.lock-arrival-switch .custom-control-input:checked~.custom-control-label::before {
   background-color: #28a745;
   border-color: #28a745;
 }
 
-.lock-arrival-wrapper .custom-control-input:checked~.custom-control-label::after {
+.lock-arrival-wrapper .custom-control-input:checked~.custom-control-label::after,
+.lock-arrival-switch .custom-control-input:checked~.custom-control-label::after {
   background-color: #fff;
 }
 

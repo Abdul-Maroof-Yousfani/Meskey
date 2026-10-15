@@ -15,6 +15,7 @@ Route::prefix('payment-voucher')->group(function () {
 });
 
 Route::resource('payment-voucher', PaymentVoucherController::class);
+Route::get('payment-voucher/{id}/audit-logs', [PaymentVoucherController::class, 'getAuditLogs'])->name('payment-voucher.audit-logs');
 
 Route::post("payment-voucher/bill/create", [PaymentVoucherController::class, "storeBill"])->name("payment-voucher.bill-store");
 Route::get("bill-payment-voucher/{id}/edit", [PaymentVoucherController::class, "editPaymentVoucher"])->name("payment-voucher.bill-edit");
@@ -51,6 +52,7 @@ Route::prefix('receipt-voucher')->group(function () {
     Route::post('get-customer-advances', [ReceiptVoucherController::class, 'getCustomerAdvances'])->name('receipt-voucher.get-customer-advances');
 });
 Route::resource('receipt-voucher', ReceiptVoucherController::class);
+Route::get('receipt-voucher/{id}/audit-logs', [ReceiptVoucherController::class, 'getAuditLogs'])->name('receipt-voucher.audit-logs');
 Route::get("/direct-receipt-voucher", [ReceiptVoucherController::class, "directReceiptVoucher"])->name("direct.receipt-voucher");
 Route::post("/direct-receipt-voucher/store", [ReceiptVoucherController::class, "direct_receipt_voucher"])->name("direct.receipt-voucher.store");
 Route::post('get-receipt-voucher', [ReceiptVoucherController::class, 'getList'])->name('get.receipt-vouchers');
@@ -68,5 +70,6 @@ Route::prefix('journal-voucher')->group(function () {
 });
 
 Route::resource('journal-voucher', JournalVoucherController::class);
+Route::get('journal-voucher/{id}/audit-logs', [JournalVoucherController::class, 'getAuditLogs'])->name('journal-voucher.audit-logs');
 Route::post('get-journal-voucher', [JournalVoucherController::class, 'getList'])->name('get.journal-vouchers');
 

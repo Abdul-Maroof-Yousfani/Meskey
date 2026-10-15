@@ -115,4 +115,19 @@ class ProductionVoucher extends Model
     {
         return $this->hasMany(ProductionVoucherMachineTime::class, 'production_voucher_id');
     }
+
+    public function analyses()
+    {
+        return $this->hasMany(ProductionAnalysis::class, 'production_voucher_id');
+    }
+
+    public function machineAnalyses()
+    {
+        return $this->hasMany(ProductionMachineAnalysis::class, 'production_voucher_id');
+    }
+
+    public function analysisRequests()
+    {
+        return $this->hasMany(ProductionAnalysisRequest::class, 'production_voucher_id');
+    }
 }

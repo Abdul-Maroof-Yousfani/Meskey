@@ -596,8 +596,10 @@ class ArrivalMasterRevertTestController extends Controller
             'sample_money' => 'required|numeric',
             'first_weight' => 'required|numeric',
             'second_weight' => 'required|numeric',
+            'net_weight' => 'nullable|numeric',
             'arrival_purchase_order_id' => 'nullable|integer',
-            'accounts_of' => 'required|string'
+            'accounts_of' => 'required|string',
+            'decision_id' => 'nullable'
         ]);
 
         $oldTicketAttributes = $arrivalTicket ? $arrivalTicket->getAttributes() : null;
@@ -608,7 +610,11 @@ class ArrivalMasterRevertTestController extends Controller
             if (!empty($requestData['arrival_purchase_order_id'])) {
                 $ArrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($requestData['arrival_purchase_order_id']);
                 $requestData['sauda_type_id'] = $ArrivalPurchaseOrder->sauda_type_id;
-                $requestData['decision_id'] = $ArrivalPurchaseOrder->decision_of_id;
+                $requestData['decision_id'] = $ArrivalPurchaseOrder->decision_of_id ?? $ArrivalPurchaseOrder->created_by ?? ($requestData['decision_id'] ?? null);
+            }
+
+            if (isset($requestData['first_weight']) && isset($requestData['second_weight'])) {
+                $requestData['net_weight'] = $requestData['second_weight'] - $requestData['first_weight'];
             }
             if (!empty($requestData['station'])) {
                 $station = Station::firstOrCreate(

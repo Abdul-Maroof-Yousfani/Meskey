@@ -127,9 +127,13 @@
 
             filterationCommon(`{{ route('get.receipt-vouchers') }}`);
 
+            $('#filterForm select').on('select2:select select2:clear', function() {
+                $(this).trigger('change');
+            });
+
             $('#resetFilters').on('click', function() {
                 $('#filterForm')[0].reset();
-                $('#filterForm select').val('all').trigger('change.select2');
+                $('#filterForm select').val('all').trigger('change.select2').trigger('change');
                 $('#filterForm input[type="text"]').val('');
                 $('#filterForm input[name="page"]').val(1);
                 $('#daterange').val('').trigger('change');

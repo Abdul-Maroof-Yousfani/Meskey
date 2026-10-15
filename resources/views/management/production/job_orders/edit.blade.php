@@ -8,8 +8,21 @@
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
-                <!-- Row 1: Export Order | Job Order No | Job Order Date -->
-                <div class="col-md-4">
+                <!-- Row 1: Company Location | Export Order | Job Order No | Job Order Date -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Company Location: <span class="text-danger">*</span></label>
+                        <select name="company_location_id" id="company_location_id" class="form-control select2" required>
+                            <option value="">Select Location</option>
+                            @foreach($companyLocations as $location)
+                                <option value="{{ $location->id }}" {{ ($jobOrder->company_location_id == $location->id || (empty($jobOrder->company_location_id) && $jobOrder->packingItems->first()?->company_location_id == $location->id)) ? 'selected' : '' }}>
+                                    {{ $location->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <fieldset>
                         <label>Export Order:</label>
                         <div class="input-group">
@@ -24,14 +37,14 @@
                         </div>
                     </fieldset>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order No:</label>
                         <input type="text" readonly name="job_order_no" class="form-control"
                             value="{{ $jobOrder->job_order_no }}">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order Date:</label>
                         <input readonly type="date" name="job_order_date" class="form-control"
@@ -51,8 +64,11 @@
                         <label>Attention To:</label>
                         <select name="attention_to[]" class="form-control select2" multiple>
                             <option value="">Select Users</option>
+                            @php
+                                $attentionToSelected = is_array($jobOrder->attention_to) ? $jobOrder->attention_to : (json_decode($jobOrder->attention_to, true) ?? []);
+                            @endphp
                             @foreach($users as $user)
-                                <option value="{{ $user->id }}" {{ in_array($user->id, json_decode($jobOrder->attention_to, true) ?? []) ? 'selected' : '' }}>
+                                <option value="{{ $user->id }}" {{ in_array($user->id, $attentionToSelected) ? 'selected' : '' }}>
                                     {{ $user->name }}
                                 </option>
                             @endforeach
@@ -186,20 +202,7 @@
             <div id="packingItems">
                 @foreach($jobOrder->packingItems as $packingIndex => $packingItem)
                     <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Location:</label>
-                            <select name="packing_items[{{ $packingIndex }}][company_location_id]"  class="form-control" >
-                                <option value="">Select Location</option>
-                                @foreach($companyLocations as $location)
-                                    <option value="{{ $location->id }}" {{ $packingItem->company_location_id == $location->id ? 'selected' : '' }}>
-                                        {{ $location->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <!-- <input type="hidden" value="{{ $packingItem->company_location_id }}" name="packing_items[{{ $packingIndex }}][company_location_id]"> -->
-                        </div>
-                    </div>
+                    <input type="hidden" name="packing_items[{{ $packingIndex }}][company_location_id]" class="packing-company-location-id" value="{{ $jobOrder->company_location_id ?? $packingItem->company_location_id }}">
                     <div class="col-md-2">
                             <div class="form-group">
                                 <label>Brand:</label>
@@ -575,9 +578,18 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Load From/Location:</label>
+                        @php
+                            $savedArrivalLocations = is_array($jobOrder->arrival_locations) 
+                                ? $jobOrder->arrival_locations 
+                                : (is_string($jobOrder->arrival_locations) ? (json_decode($jobOrder->arrival_locations, true) ?? []) : []);
+                            if (is_string($savedArrivalLocations)) {
+                                $savedArrivalLocations = json_decode($savedArrivalLocations, true) ?? [];
+                            }
+                            $savedArrivalLocations = collect($savedArrivalLocations)->flatten()->map(fn($v) => (string)$v)->all();
+                        @endphp
                         <select name="arrival_locations[]" class="form-control select2" multiple>
                             @foreach($arrivalLocations as $location)
-                                <option value="{{ $location->id }}" {{ in_array($location->id, json_decode($jobOrder->arrival_locations, true) ?? []) ? 'selected' : '' }}>
+                                <option value="{{ $location->id }}" {{ in_array((string)$location->id, $savedArrivalLocations) ? 'selected' : '' }}>
                                     {{ $location->name }}
                                 </option>
                             @endforeach
@@ -1128,6 +1140,7 @@
             newItem.find('.bag-size, .no-of-bags').val('');
             newItem.find('.extra-bags, .empty-bags, .containers, .stuffing, .extra-bags-percentage, .min-weight').val('0');
             newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
+            newItem.find('.packing-company-location-id').val($('#company_location_id').val());
 
             // Handle Select2 in the new item
             newItem.find('select').each(function () {
@@ -1164,7 +1177,7 @@
                 $(this).closest('.packing-item').remove();
                 // Re-index remaining items
                 reindexPackingItems();
-                $('select[name*="company_location_id"]').first().trigger('change');
+                $('#company_location_id').trigger('change');
             }
         });
 
@@ -1416,7 +1429,7 @@
 
             // Calculate totals
             var totalBags = noOfBags + extraBags + emptyBags;
-            var totalKgs = noOfBags * bagSize;
+            var totalKgs = bagSize;
             var metricTons = totalKgs / 1000;
 
             // Update fields
@@ -1568,27 +1581,38 @@
     });
 
     // Auto-populate arrival locations based on company location selection
-    $(document).on('change', 'select[name*="company_location_id"]', function() {
+    $(document).on('change', '#company_location_id, select[name*="company_location_id"]', function() {
         var locationIds = [];
+        var mainLoc = $('#company_location_id').val();
+        if (mainLoc) locationIds.push(mainLoc);
         $('select[name*="company_location_id"]').each(function() {
             var val = $(this).val();
-            if (val) locationIds.push(val);
+            if (val && !locationIds.includes(val)) locationIds.push(val);
         });
+
+        if (mainLoc) {
+            $('.packing-company-location-id').val(mainLoc);
+        }
         
         if (locationIds.length > 0) {
+            var arrivalSelect = $('select[name="arrival_locations[]"]');
+            var currentValues = (arrivalSelect.val() || []).map(String);
             $.ajax({
                 url: "{{ route('job-orders.get-arrival-locations') }}",
                 type: "GET",
-                data: { company_location_ids: locationIds },
+                data: {
+                    company_location_ids: locationIds,
+                    include_arrival_ids: currentValues
+                },
                 success: function(response) {
-                    var arrivalSelect = $('select[name="arrival_locations[]"]');
-                    var currentValues = arrivalSelect.val() || [];
+                    var currentValues = (arrivalSelect.val() || []).map(String);
                     arrivalSelect.empty();
                     $.each(response, function(index, location) {
-                        var isSelected = currentValues.includes(location.id.toString()) ? 'selected' : '';
-                        arrivalSelect.append('<option value="' + location.id + '" ' + isSelected + '>' + location.name + '</option>');
+                        var isSelected = currentValues.includes(location.id.toString());
+                        var newOption = new Option(location.name, location.id, isSelected, isSelected);
+                        arrivalSelect.append(newOption);
                     });
-                    arrivalSelect.trigger('change');
+                    arrivalSelect.val(currentValues).trigger('change');
                 }
             });
         } else {

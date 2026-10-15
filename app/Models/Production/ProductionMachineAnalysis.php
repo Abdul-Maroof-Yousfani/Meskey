@@ -21,10 +21,26 @@ class ProductionMachineAnalysis extends Model
         'arrival_location_id',
         'plant_id',
         'production_machine_id',
+        'product_id',
         'remarks',
         'analysis_request_id',
+        'production_voucher_id',
         'created_by'
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'product_id');
+    }
+
+    protected $casts = [
+        'analysis_date' => 'date',
+    ];
+
+    public function productionVoucher()
+    {
+        return $this->belongsTo(ProductionVoucher::class, 'production_voucher_id');
+    }
 
     public function analysisRequest()
     {

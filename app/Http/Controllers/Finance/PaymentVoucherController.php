@@ -218,7 +218,11 @@ class PaymentVoucherController extends Controller
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
 
+            $paymentVoucher->autoApprove();
+
             DB::commit();
+
+            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
 
             return response()->json([
                 'success' => 'Direct Payment Voucher created successfully!',
@@ -1025,7 +1029,11 @@ class PaymentVoucherController extends Controller
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
 
+            $paymentVoucher->autoApprove();
+
             DB::commit();
+
+            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
 
             return response()->json([
                 'success' => 'Direct Payment Voucher (Sale) created successfully!',
@@ -2174,6 +2182,8 @@ class PaymentVoucherController extends Controller
             $referenceNosStr = implode(', ', $allReferenceNos);
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
+
+            $paymentVoucher->autoApprove();
         });
 
         return response()->json([
@@ -2248,7 +2258,7 @@ class PaymentVoucherController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $sortedRequests) {
+        $paymentVoucher = DB::transaction(function () use ($request, $sortedRequests) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
@@ -2518,7 +2528,15 @@ class PaymentVoucherController extends Controller
             $combinedJvNarration = !empty($allJvNarrations) ? implode('; ', array_unique($allJvNarrations)) : null;
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
+
+            $paymentVoucher->autoApprove();
+
+            return $paymentVoucher;
         });
+
+        if ($paymentVoucher) {
+            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+        }
 
         return response()->json([
             'success' => 'Payment voucher created successfully!',
@@ -2630,7 +2648,7 @@ class PaymentVoucherController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $paymentVoucher = DB::transaction(function () use ($request) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
@@ -2704,7 +2722,15 @@ class PaymentVoucherController extends Controller
 
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
+
+            $paymentVoucher->autoApprove();
+
+            return $paymentVoucher;
         });
+
+        if ($paymentVoucher) {
+            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+        }
 
         return response()->json([
             'success' => 'Payment voucher created successfully!',
@@ -2732,7 +2758,7 @@ class PaymentVoucherController extends Controller
             'remarks' => 'nullable|string',
         ]);
         // dd($request->all());
-        DB::transaction(function () use ($request) {
+        $paymentVoucher = DB::transaction(function () use ($request) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
@@ -2772,7 +2798,15 @@ class PaymentVoucherController extends Controller
             }
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
+
+            $paymentVoucher->autoApprove();
+
+            return $paymentVoucher;
         });
+
+        if ($paymentVoucher) {
+            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+        }
 
         return response()->json([
             'success' => 'Payment voucher created successfully!',

@@ -57,6 +57,9 @@
     <script src="{{ asset('assets/js/custom.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/vendors/css/toastr.css') }}">
+    <script src="{{ asset('management/app-assets/vendors/js/toastr.min.js') }}"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
     <script>
         const SUBMISSION_ON_ENTER = @json(env('SUBMISSION_ON_ENTER', false));
@@ -305,7 +308,12 @@
         // Use setTimeout so that it runs after jQuery is loaded
         setTimeout(function() {
             fetchUnreadCount();
-            setInterval(fetchUnreadCount, 60000);
+
+            // =========================================================================
+            // AJAX Notification Polling (Commented out as requested - Replaced with Pusher)
+            // Pehle AJAX se har minute notification check hoti thi:
+            // setInterval(fetchUnreadCount, 60000);
+            // =========================================================================
 
             // 2. Fetch dropdown items on click
             $('#dropdownBasic1').on('click', function(e) {
@@ -364,20 +372,82 @@
                 });
             });
 
-            /*
             // ============================================
-            // PUSHER REAL-TIME BROADCAST SETUP
-            // Uncomment the code below when Pusher is configured
+            // PUSHER REAL-TIME NOTIFICATIONS
             // ============================================
-            if (typeof window.Echo !== 'undefined') {
-                window.Echo.private('App.Models.User.' + "{{ auth()->id() }}")
-                    .notification((notification) => {
-                        let countElement = $('#notification-badge-count');
-                        let currentCount = parseInt(countElement.text()) || 0;
-                        countElement.text(currentCount + 1).show();
-                    });
-            }
-            */
+            @if(env('PUSHER_APP_KEY'))
+            var pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
+                cluster: "{{ env('PUSHER_APP_CLUSTER', 'ap2') }}"
+            });
+            var channel = pusher.subscribe('notify-channel');
+            channel.bind('notify-event', function(data) {
+                var currentUserId = Number({{ auth()->user()->id ?? 0 }});
+                var isRecipient = !data.user_ids || data.user_ids.length === 0 || data.user_ids.map(Number).includes(currentUserId);
+
+                if (isRecipient) {
+                    var count = parseInt($('#notification-badge-count').text()) || 0;
+                    $('#notification-badge-count').text(count + 1).show();
+
+                    // 1. Windows Desktop Notification (Exactly same as AJAX implementation)
+                    var notifBody = data.clean_text || (data.message ? $('<div>').html(data.message).text().trim() : 'You have a new notification.');
+                    if ("Notification" in window) {
+                        if (Notification.permission === "granted") {
+                            let desktopNoti = new Notification("Meskey", {
+                                body: notifBody
+                            });
+                            desktopNoti.onclick = function() {
+                                window.focus();
+                                if (data.url) {
+                                    window.location.href = data.url;
+                                }
+                                this.close();
+                            };
+                        } else if (Notification.permission !== "denied") {
+                            Notification.requestPermission().then(function(perm) {
+                                if (perm === "granted") {
+                                    let desktopNoti = new Notification("Meskey", {
+                                        body: notifBody
+                                    });
+                                    desktopNoti.onclick = function() {
+                                        window.focus();
+                                        if (data.url) {
+                                            window.location.href = data.url;
+                                        }
+                                        this.close();
+                                    };
+                                }
+                            });
+                        }
+                    }
+
+                    if (data.id) {
+                        previousLatestId = data.id;
+                        localStorage.setItem('previousLatestId', previousLatestId);
+                    }
+
+                    // 2. In-app Toastr Notification
+                    if (typeof toastr !== 'undefined') {
+                        toastr.info(data.message, data.title || 'Meskey Notification', {
+                            timeOut: 8000,
+                            closeButton: true,
+                            progressBar: true,
+                            escapeHtml: false
+                        });
+                    }
+
+                    // 3. Refresh dropdown content if open
+                    if ($('#notification-dropdown-menu').hasClass('show')) {
+                        $.ajax({
+                            url: "{{ route('notifications.dropdown') }}",
+                            type: "GET",
+                            success: function(res) {
+                                $('#notification-dropdown-menu').html(res.html);
+                            }
+                        });
+                    }
+                }
+            });
+            @endif
         }, 1000);
     });
 </script>

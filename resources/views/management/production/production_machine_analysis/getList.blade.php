@@ -5,6 +5,7 @@
             <th>Company Location</th>
             <th>Arrival Location</th>
             <th>Plant</th>
+            <th>Product</th>
             <th>Machine</th>
             <th>Action</th>
         </tr>
@@ -16,6 +17,7 @@
                 <td>{{ $item->companyLocation->name ?? 'N/A' }}</td>
                 <td>{{ $item->arrivalLocation->name ?? 'N/A' }}</td>
                 <td>{{ $item->plant->name ?? 'N/A' }}</td>
+                <td>{{ $item->product->name ?? 'N/A' }}</td>
                 <td>{{ $item->machine->name ?? 'N/A' }}</td>
                 <td>
                     <div class="btn-group">
@@ -37,7 +39,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="6" class="text-center">No matching records found</td>
+                <td colspan="7" class="text-center">No matching records found</td>
             </tr>
         @endforelse
     </tbody>

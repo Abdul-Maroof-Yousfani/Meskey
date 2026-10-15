@@ -19,10 +19,28 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
         if ($this->filled('analysis_request_id')) {
             $req = \App\Models\Production\ProductionAnalysisRequest::find($this->analysis_request_id);
             if ($req) {
+                $arrivalLocId = $this->arrival_location_id ?: $req->arrival_location_id;
+                $plantId = $this->plant_id ?: $req->plant_id;
+                $date = $this->date ?: now()->format('Y-m-d');
+                $reqDate = $req->request_date?->format('Y-m-d');
+                $excludeId = $this->route('production_machine_analysis') ?: $this->route('id');
+
+                $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
+                    $arrivalLocId,
+                    $plantId,
+                    $date,
+                    $reqDate,
+                    $excludeId,
+                    'machine'
+                );
+
+                $resolvedProductId = $firstProduct ? $firstProduct->id : $this->product_id;
+
                 $this->merge([
                     'company_location_id' => $this->company_location_id ?: $req->company_location_id,
-                    'arrival_location_id' => $this->arrival_location_id ?: $req->arrival_location_id,
-                    'plant_id' => $this->plant_id ?: $req->plant_id,
+                    'arrival_location_id' => $arrivalLocId,
+                    'plant_id' => $plantId,
+                    'product_id' => $resolvedProductId ?: $this->product_id,
                 ]);
             }
         }
@@ -37,6 +55,7 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
     {
         return [
             'analysis_request_id' => 'required|exists:production_analysis_requests,id',
+            'product_id' => 'required|exists:products,id',
             'date' => 'required|date',
             'company_location_id' => 'required|exists:company_locations,id',
             'arrival_location_id' => 'required|exists:arrival_locations,id',

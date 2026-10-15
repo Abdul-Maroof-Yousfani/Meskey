@@ -26,6 +26,7 @@ class ProductionAnalysisRequest extends Model
         'arrival_location_id',
         'plant_id',
         'job_order_id',
+        'production_voucher_id',
         'type',
         'remarks',
         'status',
@@ -95,6 +96,11 @@ class ProductionAnalysisRequest extends Model
     public function machineAnalysis()
     {
         return $this->hasOne(ProductionMachineAnalysis::class, 'analysis_request_id');
+    }
+
+    public function productionVoucher()
+    {
+        return $this->belongsTo(ProductionVoucher::class, 'production_voucher_id');
     }
 
     public function getTypeNameAttribute(): string

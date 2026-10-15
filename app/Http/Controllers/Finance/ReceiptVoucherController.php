@@ -162,7 +162,7 @@ class ReceiptVoucherController extends Controller
         $canDirect = canAccess('direct-receipt-voucher-list') || auth()->user()->can('direct-receipt-voucher-list');
         abort_if(!$canNormal && !$canDirect, 403);
 
-        $receiptVouchers = ReceiptVoucher::with(['account', 'customer', 'items', 'bankDetails.account'])
+        $receiptVouchers = ReceiptVoucher::with(['account', 'customer.account', 'items', 'bankDetails.account'])
             ->when(!$canDirect && $canNormal, function ($q) {
                 $q->where(function($sq) {
                     $sq->where('is_direct', 0)->orWhereNull('is_direct');
@@ -199,17 +199,25 @@ class ReceiptVoucherController extends Controller
             ->when($request->filled('type') && $request->type !== 'all', function ($q) use ($request) {
                 $q->where('voucher_type', $request->type);
             })
-            // 4. account filter (by account_id)
+            // 4. account filter (by account_id - matches voucher account, customer account, bank details account, or items account)
             ->when($request->filled('account_id') && $request->account_id !== 'all', function ($q) use ($request) {
                 $accId = $request->account_id;
-                $q->where(function ($sq) use ($accId) {
+                $customerIds = \App\Models\Master\Customer::where('account_id', $accId)->pluck('id')->toArray();
+                $q->where(function ($sq) use ($accId, $customerIds) {
                     $sq->where('account_id', $accId)
+                       ->orWhereHas('customer', function ($cq) use ($accId) {
+                           $cq->where('account_id', $accId);
+                       })
                        ->orWhereHas('bankDetails', function ($bq) use ($accId) {
                            $bq->where('account_id', $accId);
                        })
                        ->orWhereHas('items', function ($iq) use ($accId) {
                            $iq->where('account_id', $accId);
                        });
+
+                    if (!empty($customerIds)) {
+                        $sq->orWhereIn('customer_id', $customerIds);
+                    }
                 });
             })
             // 5. bill filter (ref_bill_no)

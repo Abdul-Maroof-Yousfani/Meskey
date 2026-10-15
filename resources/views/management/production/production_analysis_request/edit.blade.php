@@ -109,12 +109,13 @@
         }
 
         let originalLocationId = "{{ $item->company_location_id }}";
+        let originalRequestDate = "{{ $item->request_date->format('Y-m-d') }}";
         let originalRequestNo = "{{ $item->request_no }}";
 
         function refreshRequestNumber() {
             let date = $('#edit_request_date').val();
             let locationId = $('#edit_company_location_id').val();
-            if (locationId == originalLocationId) {
+            if (locationId == originalLocationId && date == originalRequestDate) {
                 $('#edit_request_no').val(originalRequestNo);
                 return;
             }
@@ -130,7 +131,7 @@
             }
         }
 
-        $('#edit_request_date').on('change', refreshRequestNumber);
+        $('#edit_request_date').on('change input', refreshRequestNumber);
 
         // Company Location Change -> Load Arrival Locations & Job Orders
         $('#edit_company_location_id').on('change', function() {

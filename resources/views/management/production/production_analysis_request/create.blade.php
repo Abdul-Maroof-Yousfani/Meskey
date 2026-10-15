@@ -115,7 +115,7 @@
         }
 
         // Date change -> refresh request number
-        $('#request_date').on('change', function() {
+        $('#request_date').on('change input', function() {
             refreshRequestNumber();
         });
 

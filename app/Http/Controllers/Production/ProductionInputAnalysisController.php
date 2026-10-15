@@ -14,6 +14,8 @@ use App\Models\Production\ProductionAnalysis;
 use App\Models\Production\ProductionAnalysisItem;
 use App\Models\Production\ProductionAnalysisItemSlab;
 use App\Models\UnitOfMeasure;
+use App\Models\Product;
+use App\Models\Master\ProductSlab;
 use App\Http\Requests\Production\StoreProductionInputAnalysisRequest;
 use Illuminate\Support\Facades\DB;
 
@@ -73,13 +75,26 @@ class ProductionInputAnalysisController extends Controller
         }
         
         $units = UnitOfMeasure::all();
+        $products = Product::where('status', 'active')->get();
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
+
+        $fixedProduct = null;
+        if ($analysisRequest) {
+            $fixedProduct = ProductionAnalysis::getFirstProductForRun(
+                $analysisRequest->arrival_location_id,
+                $analysisRequest->plant_id,
+                now()->format('Y-m-d'),
+                $analysisRequest->request_date?->format('Y-m-d')
+            );
+        }
             
         return view('management.production.production_input_analysis.create', compact(
             'companyLocations', 
             'units', 
+            'products',
+            'fixedProduct',
             'productSlabTypes', 
             'preSelectedLocationId',
             'analysisRequests',
@@ -99,15 +114,32 @@ class ProductionInputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
+            $matchingVoucherId = \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
+                ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
+                    $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
+                })
+                ->latest('id')
+                ->value('id');
+
+            $firstProduct = ProductionAnalysis::getFirstProductForRun(
+                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                $request->plant_id ?: $analysisReq?->plant_id,
+                $request->date,
+                $analysisReq?->request_date?->format('Y-m-d')
+            );
+            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
                 'analysis_date' => $request->date,
                 'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
                 'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
                 'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
+                'product_id' => $finalProductId,
                 'remarks' => $request->remarks,
                 'production_analysis_type' => 'input',
                 'analysis_request_id' => $request->analysis_request_id ?? null,
+                'production_voucher_id' => $matchingVoucherId,
             ]);
 
             // If created against an Analysis Request, mark it completed & link Job Order if present
@@ -161,30 +193,65 @@ class ProductionInputAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'items.unit', 'items.slabs.slabType'])
+        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'items.unit', 'items.slabs.slabType'])
             ->findOrFail($id);
             
-        // Get general slab types
-        $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get();
+        $productSlabTypes = collect();
+        if ($item->product_id) {
+            $productSlabTypes = ProductSlab::with('slabType')
+                ->where('product_id', $item->product_id)
+                ->get()
+                ->unique('product_slab_type_id')
+                ->pluck('slabType')
+                ->filter()
+                ->values();
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $slabTypeIds = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
+            if ($slabTypeIds->isNotEmpty()) {
+                $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
+            }
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
+        }
 
         return view('management.production.production_input_analysis.show', compact('item', 'productSlabTypes'));
     }
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['items.slabs'])
+        $item = ProductionAnalysis::with(['items.slabs.slabType', 'product'])
                                     ->findOrFail($id);
         
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
+        $products = Product::where('status', 'active')->get();
 
-        $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
-                                            ->where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get();
+        $productSlabTypes = collect();
+        if ($item->product_id) {
+            $productSlabTypes = ProductSlab::with('slabType')
+                ->where('product_id', $item->product_id)
+                ->get()
+                ->unique('product_slab_type_id')
+                ->pluck('slabType')
+                ->filter()
+                ->values();
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $slabTypeIds = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
+            if ($slabTypeIds->isNotEmpty()) {
+                $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
+            }
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
+        }
         
         $analysisRequests = \App\Models\Production\ProductionAnalysisRequest::where('type', \App\Models\Production\ProductionAnalysisRequest::TYPE_INPUT)
             ->where(function ($q) use ($item) {
@@ -203,10 +270,21 @@ class ProductionInputAnalysisController extends Controller
             ->where('arrival_location_id', $item->arrival_location_id)
             ->get();
 
+        $fixedProduct = ProductionAnalysis::getFirstProductForRun(
+            $item->arrival_location_id,
+            $item->plant_id,
+            $item->analysis_date,
+            $item->analysisRequest?->request_date?->format('Y-m-d'),
+            $item->id,
+            'analysis'
+        );
+
         return view('management.production.production_input_analysis.edit', compact(
             'item',
             'productSlabTypes',
             'companyLocations', 
+            'products',
+            'fixedProduct',
             'units',
             'analysisRequests',
             'arrivalLocations',
@@ -226,12 +304,23 @@ class ProductionInputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
+            $firstProduct = ProductionAnalysis::getFirstProductForRun(
+                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
+                $request->plant_id ?: $analysisReq?->plant_id,
+                $request->date,
+                $analysisReq?->request_date?->format('Y-m-d'),
+                $analysis->id,
+                'analysis'
+            );
+            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+
             // Update Parent Record
             $analysis->update([
                 'analysis_date' => $request->date,
                 'location_id' => $request->location_id ?: $analysisReq?->company_location_id,
                 'arrival_location_id' => $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
                 'plant_id' => $request->plant_id ?: $analysisReq?->plant_id,
+                'product_id' => $finalProductId,
                 'remarks' => $request->remarks,
                 'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
@@ -303,7 +392,7 @@ class ProductionInputAnalysisController extends Controller
         $plantIdsFilter = $request->plant_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant'])
+        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product'])
             ->where('production_analysis_type', 'input')
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('location_id', $locationIdsFilter);
@@ -324,5 +413,77 @@ class ProductionInputAnalysisController extends Controller
             ->paginate($limit);
 
         return view('management.production.production_input_analysis.getList', compact('items'));
+    }
+
+    public function getSlabsByProduct(Request $request)
+    {
+        $productId = $request->product_id;
+        $slabs = ProductSlab::with('slabType')
+            ->where('product_id', $productId)
+            ->get()
+            ->unique('product_slab_type_id')
+            ->values();
+
+        if ($slabs->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
+            $slabTypes = $productSlabTypes->map(function($type) {
+                return [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'qc_symbol' => $type->qc_symbol,
+                ];
+            });
+            return response()->json($slabTypes);
+        }
+            
+        $slabTypes = $slabs->map(function($slab) {
+            return [
+                'id' => $slab->slabType->id,
+                'name' => $slab->slabType->name,
+                'qc_symbol' => $slab->slabType->qc_symbol,
+            ];
+        });
+        
+        return response()->json($slabTypes);
+    }
+
+    public function checkFixedProduct(Request $request)
+    {
+        $analysisReq = null;
+        if ($request->filled('analysis_request_id')) {
+            $analysisReq = \App\Models\Production\ProductionAnalysisRequest::with('jobOrder')->find($request->analysis_request_id);
+        }
+
+        $arrivalLocationId = $request->arrival_location_id ?: $analysisReq?->arrival_location_id;
+        $plantId = $request->plant_id ?: $analysisReq?->plant_id;
+        $date = $request->date ?: now()->format('Y-m-d');
+        $requestDate = $analysisReq?->request_date?->format('Y-m-d');
+        $excludeId = $request->exclude_id;
+        $excludeType = $request->exclude_type ?? 'analysis';
+
+        $firstProduct = ProductionAnalysis::getFirstProductForRun(
+            $arrivalLocationId,
+            $plantId,
+            $date,
+            $requestDate,
+            $excludeId,
+            $excludeType
+        );
+
+        if ($firstProduct) {
+            return response()->json([
+                'status' => 'success',
+                'is_fixed' => true,
+                'product_id' => $firstProduct->id,
+                'product_name' => $firstProduct->name,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'is_fixed' => false,
+            'suggested_product_id' => $analysisReq?->jobOrder?->product_id,
+            'product_id' => null,
+        ]);
     }
 }

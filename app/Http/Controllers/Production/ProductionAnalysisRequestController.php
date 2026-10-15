@@ -301,9 +301,12 @@ class ProductionAnalysisRequestController extends Controller
 
             $companyLocation = CompanyLocation::findOrFail($request->company_location_id);
 
-            // If location changed, regenerate request number location-wise
+            // If location or date changed, regenerate request number location-wise
+            $originalDate = $analysisRequest->request_date ? Carbon::parse($analysisRequest->request_date)->format('Y-m-d') : null;
+            $newDate = $request->request_date ? Carbon::parse($request->request_date)->format('Y-m-d') : null;
+
             $requestNo = $analysisRequest->request_no;
-            if ($analysisRequest->company_location_id != $request->company_location_id) {
+            if ($analysisRequest->company_location_id != $request->company_location_id || $originalDate !== $newDate) {
                 $requestNo = $this->generateNumber($request->request_date, $request->company_location_id);
             }
 

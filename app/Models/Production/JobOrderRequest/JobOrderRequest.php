@@ -1,0 +1,153 @@
+<?php
+
+namespace App\Models\Production\JobOrderRequest;
+
+use App\Models\Master\CropYear;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Master\{InspectionCompany, FumigationCompany, ArrivalLocation, CompanyLocation};
+use App\Models\Product;
+use App\Models\Acl\Company;
+use App\Models\User;
+use App\Models\Production\JobOrder\JobOrder;
+
+class JobOrderRequest extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $table = 'job_order_requests';
+
+    protected $fillable = [
+        'request_no',
+        'request_date',
+        'company_id',
+        'company_location_id',
+        'export_order_id',
+        'ref_no',
+        'attention_to',
+        'product_id',
+        'crop_year_id',
+        'remarks',
+        'order_description',
+        'other_specifications',
+        'inspection_company_id',
+        'loading_date',
+        'arrival_locations',
+        'packing_description',
+        'status',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected $casts = [
+        'inspection_company_id' => 'array',
+        'arrival_locations' => 'array',
+        'attention_to' => 'array',
+        'request_date' => 'date',
+        'loading_date' => 'date',
+    ];
+
+    public function companyLocation()
+    {
+        return $this->belongsTo(CompanyLocation::class, 'company_location_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function cropYear()
+    {
+        return $this->belongsTo(CropYear::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function exportOrder()
+    {
+        return $this->belongsTo(\App\Models\Export\ExportOrder::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function attentionUsers()
+    {
+        return User::whereIn('id', $this->attention_to ?? []);
+    }
+
+    public function inspectionCompanies()
+    {
+        return InspectionCompany::whereIn('id', $this->inspection_company_id ?? []);
+    }
+
+    public function arrivalLocationRecords()
+    {
+        return ArrivalLocation::whereIn('id', $this->arrival_locations ?? []);
+    }
+
+    public function packingItems()
+    {
+        return $this->hasMany(JobOrderRequestPackingItem::class);
+    }
+
+    public function specifications()
+    {
+        return $this->hasMany(JobOrderRequestSpecification::class);
+    }
+
+    public function containerProtectionItems()
+    {
+        return $this->belongsToMany(Product::class, 'job_order_request_container_protection_items', 'job_order_request_id', 'product_id')
+            ->withPivot('quantity_per_container')
+            ->withTimestamps();
+    }
+
+    public function jobOrders()
+    {
+        return $this->hasMany(JobOrder::class, 'job_order_request_id');
+    }
+
+    // Auto calculate totals: sum Packing Size (kg) only
+    public function getTotalBagsAttribute()
+    {
+        return $this->packingItems->sum('total_bags');
+    }
+
+    public function getTotalKgsAttribute()
+    {
+        return (float) $this->packingItems->sum('bag_size');
+    }
+
+    public function getTotalMetricTonsAttribute()
+    {
+        return round($this->total_kgs / 1000, 3);
+    }
+
+    public function getTotalContainersAttribute()
+    {
+        return $this->packingItems->sum('no_of_containers');
+    }
+
+    public function getConsumedKgsAttribute()
+    {
+        return (float) $this->jobOrders()
+            ->with('packingItems')
+            ->get()
+            ->sum(function ($jo) {
+                return $jo->packingItems->sum('total_kgs');
+            });
+    }
+
+    public function getRemainingKgsAttribute()
+    {
+        return max(0, (float) $this->total_kgs - $this->consumed_kgs);
+    }
+}

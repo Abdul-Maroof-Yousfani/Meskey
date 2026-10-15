@@ -450,8 +450,8 @@
                         <ul class="dropdown-menu">
                             @canAccess('production-drying-job-order')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('production-drying-job-order.create') }}"
-                                    onclick="loadPageContent('{{ route('production-drying-job-order.create') }}')" data-toggle="dropdown"><i
+                                    href="{{ route('production-drying-job-order.index') }}"
+                                    onclick="loadPageContent('{{ route('production-drying-job-order.index') }}')" data-toggle="dropdown"><i
                                         class="ft-arrow-right submenu-icon"></i>
                                     <span data-i18n="Task Board">Job Order</span>
                                 </a>
@@ -486,6 +486,13 @@
                                     data-i18n="dryingdd">Milling</span></a>
                         <ul class="dropdown-menu">
                             @canAccess('production-job-order')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('job-order-requests.index') }}"
+                                    onclick="loadPageContent('{{ route('job-order-requests.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Job Order Request</span>
+                                </a>
+                            </li>
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('job-orders.index') }}"
                                     onclick="loadPageContent('{{ route('job-orders.index') }}')" data-toggle="dropdown"><i

@@ -31,10 +31,12 @@ class JobOrder extends Model
         'crop_year_id',
         'other_specifications',
         'company_id',
-        'export_order_id'
+        'export_order_id',
+        'job_order_request_id',
     ];
 
     protected $casts = [
+        'attention_to' => 'array',
         'inspection_company_id' => 'array',
         'fumigation_company_id' => 'array',
         'arrival_locations' => 'array',
@@ -44,10 +46,10 @@ class JobOrder extends Model
     ];
 
 
-    // public function companyLocation()
-    // {
-    //     return $this->belongsTo(CompanyLocation::class, 'company_location_id');
-    // }
+    public function companyLocation()
+    {
+        return $this->belongsTo(CompanyLocation::class, 'company_location_id');
+    }
 
     public function product()
     {
@@ -101,6 +103,11 @@ class JobOrder extends Model
         return $this->belongsTo(\App\Models\Export\ExportOrder::class);
     }
 
+    public function jobOrderRequest()
+    {
+        return $this->belongsTo(\App\Models\Production\JobOrderRequest\JobOrderRequest::class, 'job_order_request_id');
+    }
+
     // Auto calculate total fields
     public function getTotalBagsAttribute()
     {
@@ -133,7 +140,9 @@ class JobOrder extends Model
       // Get company locations as comma separated string
       public function getCompanyLocationsStringAttribute()
       {
-        // company_locations_string
+          if ($this->companyLocation) {
+              return $this->companyLocation->name;
+          }
           $locations = $this->company_locations;
           return $locations->pluck('name')->implode(', ');
       }
