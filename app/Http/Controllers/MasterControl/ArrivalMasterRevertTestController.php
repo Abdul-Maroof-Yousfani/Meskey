@@ -180,7 +180,9 @@ class ArrivalMasterRevertTestController extends Controller
                 ->get();
 
             foreach ($allInitialRequests as $initialReq) {
-                $initialResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialReq->id)->get();
+                $initialResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialReq->id)
+                    ->ordered()
+                    ->get();
                 $initialCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialReq->id)->get();
 
                 $initialResults->map(function ($item) use ($slabs) {
@@ -197,7 +199,9 @@ class ArrivalMasterRevertTestController extends Controller
             }
 
             foreach ($allInnerRequests as $innerReq) {
-                $innerResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $innerReq->id)->get();
+                $innerResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $innerReq->id)
+                    ->ordered()
+                    ->get();
                 $innerCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $innerReq->id)->get();
 
                 $innerResults->map(function ($item) use ($slabs) {

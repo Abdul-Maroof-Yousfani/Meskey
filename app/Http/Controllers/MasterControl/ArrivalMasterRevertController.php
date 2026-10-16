@@ -113,7 +113,7 @@ class ArrivalMasterRevertController extends Controller
                 $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
             }
 
-            $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+            $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->ordered()->get();
             foreach ($results as $result) {
                 $matchingSlabs = [];
                 if ($productSlabCalculations) {

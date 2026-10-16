@@ -39,6 +39,26 @@ class ArrivalSamplingResult extends Model
         return $this->hasOne(ProductSlab::class, 'product_slab_type_id', 'product_slab_type_id');
     }
 
+    /**
+     * Scope a query to sort sampling results by related ProductSlabType's order.
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy(
+            ProductSlabType::selectRaw('CASE WHEN order_by IS NULL OR order_by = 0 THEN 1 ELSE 0 END')
+                ->whereColumn('product_slab_types.id', 'arrival_sampling_results.product_slab_type_id'),
+            'asc'
+        )->orderBy(
+            ProductSlabType::select('order_by')
+                ->whereColumn('product_slab_types.id', 'arrival_sampling_results.product_slab_type_id'),
+            'asc'
+        )->orderBy(
+            ProductSlabType::select('id')
+                ->whereColumn('product_slab_types.id', 'arrival_sampling_results.product_slab_type_id'),
+            'asc'
+        );
+    }
+
     protected static function booted()
     {
         static::created(function ($result) {

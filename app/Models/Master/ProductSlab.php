@@ -62,4 +62,24 @@ class ProductSlab extends Model
     {
         return $query->active()->where('is_export_enable', true);
     }
+
+    /**
+     * Scope a query to sort slabs by related ProductSlabType's order.
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy(
+            ProductSlabType::selectRaw('CASE WHEN order_by IS NULL OR order_by = 0 THEN 1 ELSE 0 END')
+                ->whereColumn('product_slab_types.id', 'product_slabs.product_slab_type_id'),
+            'asc'
+        )->orderBy(
+            ProductSlabType::select('order_by')
+                ->whereColumn('product_slab_types.id', 'product_slabs.product_slab_type_id'),
+            'asc'
+        )->orderBy(
+            ProductSlabType::select('id')
+                ->whereColumn('product_slab_types.id', 'product_slabs.product_slab_type_id'),
+            'asc'
+        );
+    }
 }
