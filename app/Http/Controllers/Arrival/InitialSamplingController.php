@@ -11,6 +11,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\QcReliefParameter;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Master\ProductSlabType;
 
 class InitialSamplingController extends Controller
 {
@@ -185,7 +186,9 @@ class InitialSamplingController extends Controller
                 return $group->sortBy('from')->first();
             });
 
-        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)
+            ->ordered()
+            ->get();
 
         $results->map(function ($item) use ($slabs) {
             $slab = $slabs->get($item->product_slab_type_id);

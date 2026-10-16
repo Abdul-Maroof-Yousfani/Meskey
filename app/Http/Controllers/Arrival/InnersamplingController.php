@@ -11,6 +11,7 @@ use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\Master\ProductSlab;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use App\Models\Master\ProductSlabType;
 
 class InnersamplingController extends Controller
 {
@@ -294,7 +295,9 @@ class InnersamplingController extends Controller
                 return $group->sortBy('from')->first();
             });
 
-        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
+        $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)
+            ->ordered()
+            ->get();
         $compulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $id)->get();
 
         $results->map(function ($item) use ($slabs) {
