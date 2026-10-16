@@ -148,7 +148,10 @@ class DeliveryOrderController extends Controller
                 ->sum('delivery_challan_delivery_order.qty');
         }
 
-        $remainingQty = max(0, $doQty - $dcQty);
+        $refundStats = function_exists('get_delivery_order_refund_stats') ? get_delivery_order_refund_stats($id) : null;
+        $allowedDoQty = (!empty($refundStats) && $refundStats['remaining_allowed_qty'] < $doQty) ? (float) $refundStats['remaining_allowed_qty'] : $doQty;
+
+        $remainingQty = max(0, $allowedDoQty - $dcQty);
 
         // Item-wise stats
         $itemStats = [];
@@ -165,7 +168,8 @@ class DeliveryOrderController extends Controller
                 })
                 ->sum('qty');
 
-            $iRemQty = max(0, $iDoQty - $iDcQty);
+            $iAllowedQty = (!empty($refundStats) && $refundStats['remaining_allowed_qty'] < $iDoQty) ? (float) $refundStats['remaining_allowed_qty'] : $iDoQty;
+            $iRemQty = max(0, $iAllowedQty - $iDcQty);
 
             $totalItemDoQty += $iDoQty;
             $totalItemDcQty += $iDcQty;
@@ -224,7 +228,8 @@ class DeliveryOrderController extends Controller
             'totalItemDoQty',
             'totalItemDcQty',
             'totalItemRemainingQty',
-            'totalItemBags'
+            'totalItemBags',
+            'refundStats'
         ));
     }
 

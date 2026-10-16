@@ -3,6 +3,7 @@ $(document).ready(function() {
     let saleAvailableAdvances = [];
     let saleAvailableSalesOrders = [];
     let saleAvailableBankAccounts = [];
+    let saleAvailableJvs = [];
     let saleRowCounter = 0;
 
     function notifyAlert(type, message) {
@@ -26,6 +27,7 @@ $(document).ready(function() {
 
     // Full exact URL templates using Laravel route() helper (guarantees correct base URL & prefix in XAMPP)
     const advancesUrlTemplate = "{{ route('direct.payment-voucher.customer-advances', ['accountId' => '__ID__']) }}";
+    const jvsUrlTemplate = "{{ route('direct.payment-voucher.customer-jvs', ['accountId' => '__ID__']) }}";
     const sosUrlTemplate = "{{ route('direct.payment-voucher.customer-sos', ['accountId' => '__ID__']) }}";
     const banksUrlTemplate = "{{ route('direct.payment-voucher.customer-banks', ['accountId' => '__ID__']) }}";
     const soDosUrlTemplate = "{{ route('direct.payment-voucher.so-dos', ['soId' => '__ID__']) }}";
@@ -139,42 +141,107 @@ $(document).ready(function() {
         });
     }
 
-    // Customer Account Change: Fetch Advances, Sales Orders, AND Bank Accounts in Parallel using absolute URLs
+    // Dynamic Column Visibility based on active row types
+    function updateSaleTableColumns() {
+        const rows = $('#saleVoucherEntriesBody tr.sale-entry-row');
+        if (rows.length === 0) {
+            $('.col-so, .col-do, .col-advance').show();
+            $('.col-jv').hide();
+            updateFooterColspan();
+            return;
+        }
+
+        let hasJv = false;
+        let hasDo = false;
+        let hasAdv = false;
+
+        rows.each(function() {
+            const type = $(this).find('.sale-row-type-select').val();
+            if (type === 'journal_voucher') hasJv = true;
+            else if (type === 'delivery_order') hasDo = true;
+            else if (type === 'excess_amount') hasAdv = true;
+        });
+
+        // Toggle Journal Voucher column
+        if (hasJv) {
+            $('.col-jv').show();
+        } else {
+            $('.col-jv').hide();
+        }
+
+        // Toggle Sales Order & Delivery Order columns
+        if (hasDo) {
+            $('.col-so, .col-do').show();
+        } else if (hasJv || hasAdv) {
+            $('.col-so, .col-do').hide();
+        } else {
+            $('.col-so, .col-do').show();
+        }
+
+        // Toggle Excess Advance column
+        if (hasAdv) {
+            $('.col-advance').show();
+        } else if (hasJv || hasDo) {
+            $('.col-advance').hide();
+        } else {
+            $('.col-advance').show();
+        }
+
+        updateFooterColspan();
+    }
+
+    function updateFooterColspan() {
+        const visibleCols = $('#saleVoucherEntriesTable thead th:visible').length;
+        const visibleColsBeforeNet = $('#saleVoucherEntriesTable thead th:not(:nth-last-child(-n+3)):visible').length;
+        $('#saleTotalColspan').attr('colspan', visibleColsBeforeNet || 7);
+        $('#saleAddBtnColspan').attr('colspan', visibleCols || 11);
+        $('#saleEmptyRow').attr('colspan', visibleCols || 11);
+    }
+
+    // Customer Account Change: Fetch Advances, JVs, Sales Orders, AND Bank Accounts in Parallel using absolute URLs
     $('#sale_customer_account_id').on('change', function() {
         const custAccId = $(this).val();
         if (!custAccId) {
             saleAvailableAdvances = [];
             saleAvailableSalesOrders = [];
             saleAvailableBankAccounts = [];
+            saleAvailableJvs = [];
             $saleBankAccountSelect.empty().append('<option value="">Select Bank Account</option>').trigger('change');
             $('#saleVoucherEntriesBody').html(`
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-3" id="saleEmptyRow">
+                    <td colspan="12" class="text-center text-muted py-3" id="saleEmptyRow">
                         Please select a Customer Account first to add adjustment items.
                     </td>
                 </tr>
             `);
             $('#sale_customer_selected_badge').hide();
             calculateSaleTotals();
+            updateSaleTableColumns();
             return;
         }
 
         $('#sale_customer_selected_badge').show().html('<i class="ft-loader spinner mr-1"></i> Loading customer details...');
 
-        let advData = null, soData = null, bankData = null;
+        let advData = null, soData = null, bankData = null, jvData = null;
 
         const p1 = $.get(advancesUrlTemplate.replace('__ID__', custAccId)).done(r => { advData = r; });
         const p2 = $.get(sosUrlTemplate.replace('__ID__', custAccId)).done(r => { soData = r; });
         const p3 = $.get(banksUrlTemplate.replace('__ID__', custAccId)).done(r => { bankData = r; });
+        const p4 = $.get(jvsUrlTemplate.replace('__ID__', custAccId)).done(r => { jvData = r; });
 
-        $.when(p1, p2, p3).always(function() {
+        $.when(p1, p2, p3, p4).always(function() {
             saleAvailableAdvances = (advData && advData.customer_advances) ? advData.customer_advances : [];
             saleAvailableSalesOrders = (soData && soData.sales_orders) ? soData.sales_orders : [];
             saleAvailableBankAccounts = (bankData && bankData.bank_accounts) ? bankData.bank_accounts : [];
+            saleAvailableJvs = (jvData && jvData.journal_vouchers) ? jvData.journal_vouchers : [];
 
             const customerName = (advData && advData.customer_name) ? advData.customer_name : 
-                                 ((soData && soData.customer_name) ? soData.customer_name : 'Customer');
-            $('#sale_customer_selected_badge').html(`<strong>${customerName}</strong> | Advances: ${saleAvailableAdvances.length} | Sales Orders: ${saleAvailableSalesOrders.length} | Banks: ${saleAvailableBankAccounts.length}`).show();
+                                 ((soData && soData.customer_name) ? soData.customer_name : 
+                                 ((jvData && jvData.customer_name) ? jvData.customer_name : 'Customer'));
+            
+            $('#sale_customer_selected_badge').html(
+                `<strong>${customerName}</strong> | JVs: ${saleAvailableJvs.length} | Advances: ${saleAvailableAdvances.length} | Sales Orders: ${saleAvailableSalesOrders.length} | Banks: ${saleAvailableBankAccounts.length}`
+            ).show();
 
             // Populate Customer Bank Accounts Dropdown
             $saleBankAccountSelect.empty().append('<option value="">Select Bank Account</option>');
@@ -199,10 +266,22 @@ $(document).ready(function() {
             }
             $saleBankAccountSelect.trigger('change');
 
-            // Reset lines and add first row
+            // Reset lines and add first row with smart default
             $('#saleVoucherEntriesBody').empty();
             saleRowCounter = 0;
-            addSaleEntryRow();
+
+            let initType = 'excess_amount';
+            if (saleAvailableJvs.length > 0 && saleAvailableAdvances.length === 0 && saleAvailableSalesOrders.length === 0) {
+                initType = 'journal_voucher';
+            } else if (saleAvailableAdvances.length > 0) {
+                initType = 'excess_amount';
+            } else if (saleAvailableSalesOrders.length > 0) {
+                initType = 'delivery_order';
+            } else if (saleAvailableJvs.length > 0) {
+                initType = 'journal_voucher';
+            }
+
+            addSaleEntryRow(initType);
         });
     });
 
@@ -213,7 +292,10 @@ $(document).ready(function() {
             $('#sale_customer_account_id').select2('open');
             return;
         }
-        addSaleEntryRow();
+
+        // Inherit the type of the last row if present
+        const lastRowType = $('#saleVoucherEntriesBody tr.sale-entry-row:last').find('.sale-row-type-select').val();
+        addSaleEntryRow(lastRowType || 'excess_amount');
     });
 
     function addSaleEntryRow(initialType = 'excess_amount') {
@@ -232,7 +314,16 @@ $(document).ready(function() {
             soOptionsHtml += `<option value="${so.id}">${so.text}</option>`;
         });
 
+        let jvOptionsHtml = '<option value="">Select Journal Voucher</option>';
+        saleAvailableJvs.forEach(jv => {
+            jvOptionsHtml += `<option value="${jv.jv_detail_id}" data-jv-id="${jv.jv_id}" data-remaining="${jv.remaining_amount}" data-jv-no="${jv.jv_no}" data-desc="${jv.description || ''}">
+                ${jv.text}
+            </option>`;
+        });
+
+        const isJv = (initialType === 'journal_voucher');
         const isExcess = (initialType === 'excess_amount');
+        const isDo = (initialType === 'delivery_order');
 
         const rowHtml = `
             <tr class="sale-entry-row" data-row-index="${rIndex}">
@@ -240,37 +331,38 @@ $(document).ready(function() {
                 <td>
                     <select name="row_type[${rIndex}]" class="form-control form-control-sm sale-row-type-select">
                         <option value="excess_amount" ${isExcess ? 'selected' : ''}>Excess Amount</option>
-                        <option value="delivery_order" ${!isExcess ? 'selected' : ''}>Delivery Order (DO)</option>
+                        <option value="delivery_order" ${isDo ? 'selected' : ''}>Delivery Order (DO)</option>
+                        <option value="journal_voucher" ${isJv ? 'selected' : ''}>Journal Voucher (JV)</option>
                     </select>
                 </td>
 
                 <!-- Column 2: Sales Order (Separate Column) -->
-                <td class="cell-so">
-                    <div class="so-active-box" style="${!isExcess ? '' : 'display: none;'}">
+                <td class="cell-so col-so">
+                    <div class="so-active-box" style="${isDo ? '' : 'display: none;'}">
                         <select name="sales_order_id[${rIndex}]" class="form-control form-control-sm sale-so-select select2-sale-row" style="width: 100%;">
                             ${soOptionsHtml}
                         </select>
                     </div>
-                    <div class="so-disabled-box" style="${isExcess ? '' : 'display: none;'}">
+                    <div class="so-disabled-box" style="${!isDo ? '' : 'display: none;'}">
                         <input type="text" class="form-control form-control-sm bg-light text-center text-muted" readonly value="—">
                     </div>
                 </td>
 
                 <!-- Column 3: Delivery Order (Separate Column) -->
-                <td class="cell-do">
-                    <div class="do-active-box" style="${!isExcess ? '' : 'display: none;'}">
+                <td class="cell-do col-do">
+                    <div class="do-active-box" style="${isDo ? '' : 'display: none;'}">
                         <select name="delivery_order_id[${rIndex}]" class="form-control form-control-sm sale-do-select select2-sale-row" style="width: 100%;">
                             <option value="">Select DO (or SO direct)</option>
                         </select>
                         <div class="do-status-note small text-muted mt-1" style="display: none;"></div>
                     </div>
-                    <div class="do-disabled-box" style="${isExcess ? '' : 'display: none;'}">
+                    <div class="do-disabled-box" style="${!isDo ? '' : 'display: none;'}">
                         <input type="text" class="form-control form-control-sm bg-light text-center text-muted" readonly value="—">
                     </div>
                 </td>
 
                 <!-- Column 4: Excess Advance (Separate Column) -->
-                <td class="cell-advance">
+                <td class="cell-advance col-advance">
                     <div class="adv-active-box" style="${isExcess ? '' : 'display: none;'}">
                         <select name="customer_advance_id[${rIndex}]" class="form-control form-control-sm sale-advance-select select2-sale-row" style="width: 100%;">
                             ${advanceOptionsHtml}
@@ -281,40 +373,53 @@ $(document).ready(function() {
                     </div>
                 </td>
 
-                <!-- Column 5: Available Bal -->
+                <!-- Column 5: Journal Voucher (Separate Column) -->
+                <td class="cell-jv col-jv" style="${isJv ? '' : 'display: none;'}">
+                    <div class="jv-active-box" style="${isJv ? '' : 'display: none;'}">
+                        <input type="hidden" name="journal_voucher_id[${rIndex}]" class="sale-jv-id-input">
+                        <select name="journal_voucher_detail_id[${rIndex}]" class="form-control form-control-sm sale-jv-select select2-sale-row" style="width: 100%;">
+                            ${jvOptionsHtml}
+                        </select>
+                    </div>
+                    <div class="jv-disabled-box" style="${!isJv ? '' : 'display: none;'}">
+                        <input type="text" class="form-control form-control-sm bg-light text-center text-muted" readonly value="—">
+                    </div>
+                </td>
+
+                <!-- Column 6: Available Bal -->
                 <td>
                     <input type="text" class="form-control form-control-sm sale-rem-bal text-right bg-light font-weight-bold" readonly placeholder="0.00">
                     <input type="hidden" class="sale-raw-rem-bal" value="0">
                 </td>
 
-                <!-- Column 6: Amount -->
+                <!-- Column 7: Amount -->
                 <td>
                     <input type="number" step="0.01" min="0.01" name="amount[${rIndex}]" class="form-control form-control-sm sale-amount-input text-right" required placeholder="0.00">
                 </td>
 
-                <!-- Column 7: Tax -->
+                <!-- Column 8: Tax -->
                 <td>
                     <select name="tax_id[${rIndex}]" class="form-control form-control-sm sale-tax-select select2-sale-row" style="width: 100%;">
                         ${taxOptionsHtml}
                     </select>
                 </td>
 
-                <!-- Column 8: Tax Amount -->
+                <!-- Column 9: Tax Amount -->
                 <td>
                     <input type="number" step="0.01" name="tax_amount[${rIndex}]" class="form-control form-control-sm sale-tax-amount text-right bg-light" readonly value="0.00">
                 </td>
 
-                <!-- Column 9: Net Amount -->
+                <!-- Column 10: Net Amount -->
                 <td>
                     <input type="number" step="0.01" name="net_amount[${rIndex}]" class="form-control form-control-sm sale-net-amount text-right bg-light font-weight-bold" readonly value="0.00">
                 </td>
 
-                <!-- Column 10: Description -->
+                <!-- Column 11: Description -->
                 <td>
                     <input type="text" name="description[${rIndex}]" class="form-control form-control-sm sale-desc-input" placeholder="Notes / reason">
                 </td>
 
-                <!-- Column 11: Action -->
+                <!-- Column 12: Action -->
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger sale-remove-row-btn" title="Remove row">
                         <i class="ft-trash-2"></i>
@@ -331,10 +436,11 @@ $(document).ready(function() {
             width: '100%'
         });
 
+        updateSaleTableColumns();
         calculateSaleTotals();
     }
 
-    // Toggle Row Type (Excess Amount vs Delivery Order) within a row
+    // Toggle Row Type (Excess Amount vs Delivery Order vs Journal Voucher) within a row
     $(document).on('change', '.sale-row-type-select', function() {
         const $row = $(this).closest('tr');
         const selectedType = $(this).val();
@@ -346,8 +452,8 @@ $(document).ready(function() {
         $row.find('.sale-tax-amount').val('0.00');
         $row.find('.sale-net-amount').val('0.00');
 
-        if (selectedType === 'excess_amount') {
-            // Show Advance, hide SO and DO
+        if (selectedType === 'journal_voucher') {
+            // Show JV, hide SO, DO, and Advance
             $row.find('.cell-so .so-active-box').hide();
             $row.find('.cell-so .so-disabled-box').show();
             $row.find('.cell-so .sale-so-select').val('').trigger('change.select2');
@@ -357,13 +463,40 @@ $(document).ready(function() {
             $row.find('.cell-do .sale-do-select').empty().append('<option value="">Select DO (or SO direct)</option>');
             $row.find('.cell-do .do-status-note').hide().empty();
 
-            $row.find('.cell-advance .adv-active-box').show();
-            $row.find('.cell-advance .adv-disabled-box').hide();
-        } else { // delivery_order
-            // Show SO and DO, hide Advance
             $row.find('.cell-advance .adv-active-box').hide();
             $row.find('.cell-advance .adv-disabled-box').show();
             $row.find('.cell-advance .sale-advance-select').val('').trigger('change.select2');
+
+            $row.find('.cell-jv .jv-active-box').show();
+            $row.find('.cell-jv .jv-disabled-box').hide();
+        } else if (selectedType === 'excess_amount') {
+            // Show Advance, hide SO, DO, and JV
+            $row.find('.cell-so .so-active-box').hide();
+            $row.find('.cell-so .so-disabled-box').show();
+            $row.find('.cell-so .sale-so-select').val('').trigger('change.select2');
+
+            $row.find('.cell-do .do-active-box').hide();
+            $row.find('.cell-do .do-disabled-box').show();
+            $row.find('.cell-do .sale-do-select').empty().append('<option value="">Select DO (or SO direct)</option>');
+            $row.find('.cell-do .do-status-note').hide().empty();
+
+            $row.find('.cell-jv .jv-active-box').hide();
+            $row.find('.cell-jv .jv-disabled-box').show();
+            $row.find('.cell-jv .sale-jv-select').val('').trigger('change.select2');
+            $row.find('.sale-jv-id-input').val('');
+
+            $row.find('.cell-advance .adv-active-box').show();
+            $row.find('.cell-advance .adv-disabled-box').hide();
+        } else { // delivery_order
+            // Show SO and DO, hide Advance and JV
+            $row.find('.cell-advance .adv-active-box').hide();
+            $row.find('.cell-advance .adv-disabled-box').show();
+            $row.find('.cell-advance .sale-advance-select').val('').trigger('change.select2');
+
+            $row.find('.cell-jv .jv-active-box').hide();
+            $row.find('.cell-jv .jv-disabled-box').show();
+            $row.find('.cell-jv .sale-jv-select').val('').trigger('change.select2');
+            $row.find('.sale-jv-id-input').val('');
 
             $row.find('.cell-so .so-active-box').show();
             $row.find('.cell-so .so-disabled-box').hide();
@@ -372,7 +505,32 @@ $(document).ready(function() {
             $row.find('.cell-do .do-disabled-box').hide();
         }
 
+        updateSaleTableColumns();
         calculateSaleTotals();
+    });
+
+    // Journal Voucher selection change in row
+    $(document).on('change', '.sale-jv-select', function() {
+        const $row = $(this).closest('tr');
+        const $selected = $(this).find('option:selected');
+        const jvId = $selected.data('jv-id') || '';
+        const jvNo = $selected.data('jv-no') || '';
+        const remaining = parseFloat($selected.data('remaining')) || 0;
+
+        $row.find('.sale-jv-id-input').val(jvId);
+        $row.find('.sale-raw-rem-bal').val(remaining);
+        $row.find('.sale-rem-bal').val(remaining > 0 ? remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
+        $row.find('.sale-amount-input').attr('max', remaining.toFixed(2));
+
+        if (remaining > 0 && !$row.find('.sale-amount-input').val()) {
+            $row.find('.sale-amount-input').val(remaining.toFixed(2));
+        }
+
+        if (jvNo && !$row.find('.sale-desc-input').val()) {
+            $row.find('.sale-desc-input').val('Refund against JV #' + jvNo);
+        }
+
+        calculateRowAmounts($row);
     });
 
     // Advance selection change in row
@@ -380,6 +538,7 @@ $(document).ready(function() {
         const $row = $(this).closest('tr');
         const $selected = $(this).find('option:selected');
         const remaining = parseFloat($selected.data('remaining')) || 0;
+        const voucherNo = $selected.text().split(' ')[0] || '';
 
         $row.find('.sale-raw-rem-bal').val(remaining);
         $row.find('.sale-rem-bal').val(remaining > 0 ? remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
@@ -388,6 +547,11 @@ $(document).ready(function() {
         if (remaining > 0 && !$row.find('.sale-amount-input').val()) {
             $row.find('.sale-amount-input').val(remaining.toFixed(2));
         }
+
+        if (voucherNo && !$row.find('.sale-desc-input').val()) {
+            $row.find('.sale-desc-input').val('Refund of Excess Payment (' + voucherNo + ')');
+        }
+
         calculateRowAmounts($row);
     });
 
@@ -532,13 +696,14 @@ $(document).ready(function() {
         if ($('#saleVoucherEntriesBody tr.sale-entry-row').length === 0) {
             $('#saleVoucherEntriesBody').html(`
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-3" id="saleEmptyRow">
+                    <td colspan="12" class="text-center text-muted py-3" id="saleEmptyRow">
                         No items added. Click "Add Line Item" to add an adjustment item.
                     </td>
                 </tr>
             `);
         }
 
+        updateSaleTableColumns();
         calculateSaleTotals();
     });
 
@@ -565,7 +730,14 @@ $(document).ready(function() {
             const amount = parseFloat($(this).find('.sale-amount-input').val()) || 0;
             const maxAllowed = parseFloat($(this).find('.sale-raw-rem-bal').val()) || 0;
 
-            if (rowType === 'excess_amount') {
+            if (rowType === 'journal_voucher') {
+                const jvDetailId = $(this).find('.sale-jv-select').val();
+                if (!jvDetailId) {
+                    notifyAlert('error', `Row #${idx + 1}: Please select a Journal Voucher.`);
+                    hasError = true;
+                    return false;
+                }
+            } else if (rowType === 'excess_amount') {
                 const advId = $(this).find('.sale-advance-select').val();
                 if (!advId) {
                     notifyAlert('error', `Row #${idx + 1}: Please select an Excess Payment voucher.`);

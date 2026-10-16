@@ -66,6 +66,10 @@ class PaymentVoucher extends Model
                 }
             }
         );
+
+        static::deleting(function ($model) {
+            \Illuminate\Support\Facades\DB::table('settlement_adjustments')->where('voucher_no', $model->unique_no)->delete();
+        });
     }
 
     public function account()
@@ -186,7 +190,15 @@ class PaymentVoucher extends Model
                     })
                     ->sum('amount');
 
-                $doAvailable = max(0, $totalRemainingAmount - $otherRefunded);
+                // Deduct JV adjustments on this DO
+                $otherJvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $item->delivery_order_id)
+                    ->whereHas('journalVoucher', function ($q) {
+                        $q->whereNull('deleted_at');
+                        $q->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('debit_amount');
+
+                $doAvailable = max(0, $totalRemainingAmount - $otherRefunded - $otherJvAdjusted);
 
                 if ($amount > $doAvailable + 0.01) {
                     return "Cannot approve Payment Voucher {$this->unique_no}: Delivery Order {$doRef} only has Rs. " . number_format($doAvailable, 2) . " returnable balance, but this voucher refunds Rs. " . number_format($amount, 2) . ".";
@@ -217,6 +229,56 @@ class PaymentVoucher extends Model
 
                 if ($amount > $available + 0.01) {
                     return "Cannot approve Payment Voucher {$this->unique_no}: Excess Payment {$advRef} only has Rs. " . number_format($available, 2) . " available balance, but this voucher refunds Rs. " . number_format($amount, 2) . ".";
+                }
+            }
+
+            // Case 4: Journal Voucher refund
+            if ($item->journal_voucher_id || $item->journal_voucher_detail_id || $item->reference_type === 'journal_voucher') {
+                $jvDetailId = $item->journal_voucher_detail_id ?: $item->reference_id;
+                $jvDetail = \App\Models\JournalVoucherDetail::with('journalVoucher')->find($jvDetailId);
+                if (!$jvDetail && $item->journal_voucher_id) {
+                    $jvDetail = \App\Models\JournalVoucherDetail::where('journal_voucher_id', $item->journal_voucher_id)
+                        ->where('credit_amount', '>', 0)
+                        ->first();
+                }
+
+                $creditAmt = $jvDetail ? (float) $jvDetail->credit_amount : 0;
+                $jvNo = $jvDetail?->journalVoucher?->jv_no ?: ('JV #' . $item->journal_voucher_id);
+
+                $settlementSpent = (float) \Illuminate\Support\Facades\DB::table('settlement_adjustments')
+                    ->where('reference_type', 'journal_voucher')
+                    ->where('reference_id', $jvDetail ? $jvDetail->journal_voucher_id : $item->journal_voucher_id)
+                    ->where('voucher_no', '!=', $this->unique_no)
+                    ->sum('amount');
+
+                $otherDpvRefunded = (float) \App\Models\PaymentVoucherData::where(function ($q) use ($item, $jvDetail) {
+                    if ($jvDetail) {
+                        $q->where('journal_voucher_detail_id', $jvDetail->id)
+                          ->orWhere('reference_id', $jvDetail->id);
+                    }
+                    if ($item->journal_voucher_id) {
+                        $q->orWhere('journal_voucher_id', $item->journal_voucher_id);
+                    }
+                })
+                ->where('payment_voucher_id', '!=', $this->id)
+                ->whereHas('paymentVoucher', function ($q) {
+                    $q->whereNull('deleted_at')
+                      ->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('net_amount');
+
+                $otherJvAdjusted = (float) \App\Models\JournalVoucherDetail::where('reference_jv_id', $jvDetail ? $jvDetail->journal_voucher_id : $item->journal_voucher_id)
+                    ->whereHas('journalVoucher', function ($q) {
+                        $q->whereNull('deleted_at');
+                        $q->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('debit_amount');
+
+                $jvAvailable = max(0, $creditAmt - max($settlementSpent, ($otherDpvRefunded + $otherJvAdjusted)));
+                $netAmount = (float) ($item->net_amount ?: $item->amount);
+
+                if ($netAmount > $jvAvailable + 0.01) {
+                    return "Cannot approve Payment Voucher {$this->unique_no}: Journal Voucher {$jvNo} only has Rs. " . number_format($jvAvailable, 2) . " available balance, but this voucher refunds Rs. " . number_format($netAmount, 2) . ".";
                 }
             }
         }
@@ -306,7 +368,13 @@ class PaymentVoucher extends Model
 
         // CASE 1: Direct Payment Voucher for Sale (Sale Returns / Customer Excess Advances)
         if ($this->module_type === 'dpv_for_sale') {
-            $this->loadMissing(['paymentVoucherData.customerAdvance', 'paymentVoucherData.salesOrder', 'paymentVoucherData.deliveryOrder', 'paymentVoucherData.account']);
+            $this->loadMissing([
+                'paymentVoucherData.customerAdvance',
+                'paymentVoucherData.salesOrder',
+                'paymentVoucherData.deliveryOrder',
+                'paymentVoucherData.journalVoucher',
+                'paymentVoucherData.account'
+            ]);
 
             $totalAmount = 0;
             foreach ($this->paymentVoucherData as $item) {
@@ -316,7 +384,10 @@ class PaymentVoucher extends Model
                 $targetAccId = $item->account_id ?: $this->request_account_id;
                 $desc = $item->description;
 
-                if ($item->customer_advance_id || $item->reference_type === 'customer_advance') {
+                if ($item->journal_voucher_id || $item->reference_type === 'journal_voucher') {
+                    $jvNo = $item->journalVoucher?->jv_no ?? '';
+                    $itemRemarks = "DPV JV Refund" . ($jvNo ? " ({$jvNo})" : "") . " - " . ($desc ?: 'Refund of JV Adjustment');
+                } elseif ($item->customer_advance_id || $item->reference_type === 'customer_advance') {
                     $advNo = $item->customerAdvance?->voucher_no ?? '';
                     $itemRemarks = "DPV Excess Refund" . ($advNo ? " ({$advNo})" : "") . " - " . ($desc ?: 'Refund');
                 } else {
@@ -703,6 +774,9 @@ class PaymentVoucher extends Model
             }
             $adj->delete();
         }
+
+        // Revert settlement_adjustments created for this voucher
+        \Illuminate\Support\Facades\DB::table('settlement_adjustments')->where('voucher_no', $this->unique_no)->delete();
 
         // If DOs or SOs were auto-closed by this DPV, re-open them if undelivered items exist
         if ($this->module_type === 'dpv_for_sale') {

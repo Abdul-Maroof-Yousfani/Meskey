@@ -38,6 +38,8 @@ class JournalVoucherController extends Controller
                 'journalVoucherDetails.receiptVoucher.customer',
                 'journalVoucherDetails.customerAdvance.customer',
                 'journalVoucherDetails.salesOrder.customer',
+                'journalVoucherDetails.deliveryOrder.customer',
+                'journalVoucherDetails.referenceJournalVoucher',
                 'createdBy'
             ])
             ->when($request->filled('jv_no'), function ($q) use ($request) {
@@ -77,6 +79,9 @@ class JournalVoucherController extends Controller
                         })
                         ->orWhereHas('salesOrder', function ($soq) use ($customerId) {
                             $soq->where('customer_id', $customerId);
+                        })
+                        ->orWhereHas('deliveryOrder', function ($doq) use ($customerId) {
+                            $doq->where('customer_id', $customerId);
                         });
                         if ($custAccId) {
                             $sq->orWhere('acc_id', $custAccId);
@@ -103,6 +108,12 @@ class JournalVoucherController extends Controller
                         })
                         ->orWhereHas('journalVoucherDetails.salesOrder.customer', function ($cq) use ($searchTerm) {
                             $cq->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('journalVoucherDetails.deliveryOrder.customer', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('journalVoucherDetails.deliveryOrder', function ($doq) use ($searchTerm) {
+                            $doq->where('reference_no', 'like', $searchTerm);
                         });
                 });
             })
@@ -300,18 +311,99 @@ class JournalVoucherController extends Controller
 
             $salesOrders = SalesOrder::where('customer_id', $customer->id)
                 ->where('am_approval_status', 'approved')
-                ->select('id', 'reference_no')
+                ->select('id', 'reference_no', 'status')
                 ->latest('id')
                 ->get()
-                ->map(function($so) {
+                ->map(function($so) use ($excludeJvId) {
+                    $remAdvance = $this->getSalesOrderRemainingAdvance($so->id, $excludeJvId);
+                    $statusLabel = $so->status ? ' (' . ucfirst($so->status) . ')' : '';
                     return [
                         'id' => $so->id,
                         'reference_no' => $so->reference_no,
                         'unique_no' => $so->reference_no,
-                        'text' => $so->reference_no,
+                        'remaining_amount' => $remAdvance,
+                        'formatted_remaining' => number_format($remAdvance, 2),
+                        'text' => $so->reference_no . $statusLabel . ($remAdvance > 0 ? ' (Rem: Rs. ' . number_format($remAdvance, 2) . ')' : ''),
                         'type' => 'sales_order'
                     ];
                 });
+
+            // Customer's Approved Credit JVs
+            $custAccIds = [$account->id];
+            if ($customer && $customer->account_id && !in_array($customer->account_id, $custAccIds)) {
+                $custAccIds[] = $customer->account_id;
+            }
+
+            $jvDetails = JournalVoucherDetail::with(['journalVoucher'])
+                ->whereIn('acc_id', $custAccIds)
+                ->where('credit_amount', '>', 0)
+                ->whereHas('journalVoucher', function ($q) {
+                    $q->where('am_approval_status', 'approved');
+                })
+                ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                    $q->where('journal_voucher_id', '!=', $excludeJvId);
+                })
+                ->latest('id')
+                ->get();
+
+            $availableJvs = [];
+            foreach ($jvDetails as $detail) {
+                $jv = $detail->journalVoucher;
+                if (!$jv) continue;
+
+                $creditAmount = (float) $detail->credit_amount;
+
+                $spentQuery = DB::table('settlement_adjustments')
+                    ->where('reference_type', 'journal_voucher')
+                    ->where('reference_id', $jv->id);
+
+                if ($excludeJvNo) {
+                    $spentQuery->where('voucher_no', '!=', $excludeJvNo);
+                }
+                $settlementSpent = (float) $spentQuery->sum('amount');
+
+                $refundQuery = DB::table('payment_voucher_data')
+                    ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                    ->whereNull('payment_vouchers.deleted_at')
+                    ->whereNull('payment_voucher_data.deleted_at')
+                    ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                    ->where(function ($q) use ($detail, $jv) {
+                        $q->where('payment_voucher_data.journal_voucher_detail_id', $detail->id)
+                          ->orWhere('payment_voucher_data.journal_voucher_id', $jv->id);
+                    });
+                $pvDataSpent = (float) $refundQuery->sum('net_amount');
+
+                $otherJvSpentQuery = JournalVoucherDetail::join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                    ->whereNull('journal_vouchers.deleted_at')
+                    ->whereNull('journal_voucher_details.deleted_at')
+                    ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+                    ->where(function ($q) use ($jv, $detail) {
+                        $q->where('journal_voucher_details.reference_jv_id', $jv->id)
+                          ->orWhere('journal_voucher_details.reference_jv_detail_id', $detail->id);
+                    });
+                if ($excludeJvId) {
+                    $otherJvSpentQuery->where('journal_vouchers.id', '!=', $excludeJvId);
+                }
+                $jvSpent = (float) $otherJvSpentQuery->sum('journal_voucher_details.debit_amount');
+
+                $alreadySpent = max($settlementSpent, $pvDataSpent, $jvSpent);
+                $remainingAmount = max(0, $creditAmount - $alreadySpent);
+
+                if ($remainingAmount > 0.01) {
+                    $jvDateFormatted = $jv->jv_date ? $jv->jv_date->format('d-M-Y') : 'N/A';
+                    $availableJvs[] = [
+                        'id' => $jv->id,
+                        'detail_id' => $detail->id,
+                        'jv_no' => $jv->jv_no,
+                        'credit_amount' => $creditAmount,
+                        'remaining_amount' => round($remainingAmount, 2),
+                        'formatted_remaining' => number_format($remainingAmount, 2),
+                        'description' => $detail->description ?: ($jv->description ?: ''),
+                        'text' => "{$jv->jv_no} ({$jvDateFormatted}) - Rem: Rs. " . number_format($remainingAmount, 2),
+                        'type' => 'journal_voucher'
+                    ];
+                }
+            }
 
             return [
                 'table_name' => 'customers',
@@ -320,6 +412,7 @@ class JournalVoucherController extends Controller
                 'receipt_vouchers' => $receiptVouchers,
                 'customer_advances' => $customerAdvances,
                 'sales_orders' => $salesOrders,
+                'journal_vouchers' => $availableJvs,
                 'grns' => collect([])
             ];
         }
@@ -341,16 +434,16 @@ class JournalVoucherController extends Controller
                     'supplier_id' => null,
                     'supplier_name' => null,
                     'receipt_vouchers' => collect([]),
+                    'customer_advances' => collect([]),
                     'sales_orders' => collect([]),
+                    'journal_vouchers' => collect([]),
                     'grns' => collect([])
                 ];
             }
 
             // Direct query using supplier_id from grn_numbers table
             $data = GrnNumber::where('supplier_id', $supplier->id)
-            // $data = GrnNumber::with('paymentRequestData.paymentRequests.paymentVoucherData.paymentVoucher')
                 ->whereNotNull('unique_no')
-                // ->whereHas('paymentRequestData.paymentRequests')
                 ->whereHas('paymentRequestData.paymentRequests', function ($pr) {
                     $pr->where('status', 'approved')
                     ->where(function ($q) {
@@ -359,7 +452,6 @@ class JournalVoucherController extends Controller
                     });
                 })
                 ->latest('id')
-                // ->limit(5)
                 ->get()
                 ->map(function ($grn) use ($excludeJvId) {
                     $limitInfo = $this->getGrnAvailableLimit($grn->id, $excludeJvId);
@@ -386,6 +478,7 @@ class JournalVoucherController extends Controller
                 'receipt_vouchers' => collect([]),
                 'customer_advances' => collect([]),
                 'sales_orders' => collect([]),
+                'journal_vouchers' => collect([]),
                 'grns' => $data
             ];
         }
@@ -397,6 +490,7 @@ class JournalVoucherController extends Controller
             'receipt_vouchers' => collect([]),
             'customer_advances' => collect([]),
             'sales_orders' => collect([]),
+            'journal_vouchers' => collect([]),
             'grns' => collect([])
         ];
     }
@@ -408,6 +502,341 @@ class JournalVoucherController extends Controller
     {
         $data = $this->fetchAccountRelatedData($request->acc_id, $request->jv_id);
         return response()->json(array_merge(['success' => true], $data));
+    }
+
+    /**
+     * AJAX endpoint to get Delivery Orders and direct returnable advance for a Sales Order.
+     */
+    public function getSoDeliveryOrders(Request $request, $soId)
+    {
+        $salesOrder = SalesOrder::with(['sales_order_data.item'])->findOrFail($soId);
+        $excludeJvId = $request->query('exclude_jv_id');
+
+        $deliveryOrders = \App\Models\Sales\DeliveryOrder::with(['delivery_order_data.item'])
+            ->where('so_id', $soId)
+            ->where('am_approval_status', '!=', 'rejected')
+            ->where(function ($q) {
+                $q->whereNull('is_auto_created_from_so')
+                    ->orWhere('is_auto_created_from_so', '!=', 1);
+            })
+            ->get();
+
+        $dos = [];
+        foreach ($deliveryOrders as $do) {
+            // Active DOs with an associated Loading Program cannot be adjusted via JV unless closed
+            if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                continue;
+            }
+
+            $totalDoQty = 0;
+            $totalDcQty = 0;
+            $totalRemainingQty = 0;
+            $totalRemainingAmount = 0;
+            $totalDispatchedValue = 0;
+
+            foreach ($do->delivery_order_data as $itemData) {
+                $iDoQty = (float) $itemData->qty;
+                $iDcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $itemData->id)
+                    ->whereHas('deliveryChallan', function ($q) {
+                        $q->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('qty');
+
+                $iRemQty = max(0, $iDoQty - $iDcQty);
+                $iRate = (float) $itemData->rate;
+                $iRemAmt = $iRemQty * $iRate;
+
+                $totalDoQty += $iDoQty;
+                $totalDcQty += $iDcQty;
+                $totalRemainingQty += $iRemQty;
+                $totalRemainingAmount += $iRemAmt;
+                $totalDispatchedValue += ($iDcQty * $iRate);
+            }
+
+            $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher as dorv')
+                ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+                ->whereNull('rv.deleted_at')
+                ->where('rv.am_approval_status', 'approved')
+                ->where('dorv.delivery_order_id', $do->id)
+                ->sum('dorv.amount');
+
+            if ($attachedRvAmount > 0) {
+                $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+                $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
+            }
+
+            // Deduct DPV refunds for this DO
+            $alreadyRefunded = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $do->id)
+                ->whereHas('paymentVoucher', function ($q) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('amount');
+
+            // Deduct previous JV adjustments for this DO
+            $alreadyJvAdjusted = (float) JournalVoucherDetail::where('delivery_order_id', $do->id)
+                ->whereHas('journalVoucher', function ($q) use ($excludeJvId) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                    if ($excludeJvId) {
+                        $q->where('id', '!=', $excludeJvId);
+                    }
+                })
+                ->sum('debit_amount');
+
+            $totalDeductions = $alreadyRefunded + $alreadyJvAdjusted;
+            $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
+            $refundedQty = $firstRate > 0 ? ($totalDeductions / $firstRate) : 0;
+
+            $totalRemainingAmount = max(0, $totalRemainingAmount - $totalDeductions);
+            $totalRemainingQty = max(0, $totalRemainingQty - $refundedQty);
+
+            if ($totalRemainingQty > 0 || $totalRemainingAmount > 0.01) {
+                $statusText = $do->do_status === 'closed' ? ' [Closed]' : ($do->am_approval_status === 'pending' ? ' [Pending Approval]' : '');
+                $dos[] = [
+                    'id' => $do->id,
+                    'reference_no' => $do->reference_no ?: ('DO #' . $do->id),
+                    'do_status' => $do->do_status,
+                    'am_approval_status' => $do->am_approval_status,
+                    'do_qty' => $totalDoQty,
+                    'dc_qty' => $totalDcQty,
+                    'remaining_qty' => round($totalRemainingQty, 2),
+                    'remaining_amount' => round($totalRemainingAmount, 2),
+                    'formatted_remaining' => number_format($totalRemainingAmount, 2),
+                    'text' => ($do->reference_no ?: ('DO #' . $do->id)) . " (Rem: " . round($totalRemainingQty, 2) . " Qty | Rs. " . number_format($totalRemainingAmount, 2) . "){$statusText}"
+                ];
+            }
+        }
+
+        // Direct SO returnable advance
+        $soTotalQty = 0;
+        foreach ($salesOrder->sales_order_data as $soItem) {
+            $soTotalQty += (float) $soItem->qty;
+        }
+        $firstSoRate = (float) ($salesOrder->sales_order_data->first()->rate ?? 1);
+        $soRemainingAmount = $this->getSalesOrderRemainingAdvance($salesOrder, $excludeJvId);
+        $soRemainingQty = $firstSoRate > 0 ? round($soRemainingAmount / $firstSoRate, 2) : 0;
+
+        return response()->json([
+            'success' => true,
+            'so_id' => $salesOrder->id,
+            'so_reference_no' => $salesOrder->reference_no,
+            'so_status' => $salesOrder->status,
+            'so_total_qty' => $soTotalQty,
+            'so_remaining_qty' => round($soRemainingQty, 2),
+            'so_remaining_amount' => round($soRemainingAmount, 2),
+            'so_formatted_remaining' => number_format($soRemainingAmount, 2),
+            'has_dos' => count($dos) > 0,
+            'delivery_orders' => $dos
+        ]);
+    }
+
+    /**
+     * Calculate returnable advance on a Sales Order.
+     */
+    public function getSalesOrderRemainingAdvance($salesOrder, $excludeJvId = null)
+    {
+        $soId = is_object($salesOrder) ? $salesOrder->id : $salesOrder;
+
+        // 1. Total advance received for this SO from approved RVs
+        $soRvAdvance = (float) DB::table('receipt_voucher_items')
+            ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
+            ->whereNull('receipt_vouchers.deleted_at')
+            ->where('receipt_vouchers.am_approval_status', 'approved')
+            ->where('receipt_voucher_items.reference_type', 'sale_order')
+            ->where('receipt_voucher_items.reference_id', $soId)
+            ->sum('receipt_voucher_items.net_amount');
+
+        // 2. Advance attached/consumed by Delivery Orders for this SO
+        $soDoAdvanceConsumed = (float) DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
+            ->where('do_tbl.so_id', $soId)
+            ->where('do_tbl.am_approval_status', '!=', 'rejected')
+            ->sum('dorv.amount');
+
+        // 3. Other JVs adjusting this SO
+        $rvIdsForSo = DB::table('receipt_voucher_items')
+            ->where('reference_type', 'sale_order')
+            ->where('reference_id', $soId)
+            ->pluck('receipt_voucher_id')
+            ->toArray();
+
+        $soOtherJvAdjusted = (float) DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+            ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                $q->where('journal_vouchers.id', '!=', $excludeJvId);
+            })
+            ->where(function ($q) use ($soId, $rvIdsForSo) {
+                $q->where('journal_voucher_details.sales_order_id', $soId)
+                  ->whereNull('journal_voucher_details.delivery_order_id');
+                if (!empty($rvIdsForSo)) {
+                    $q->orWhere(function ($sub) use ($rvIdsForSo) {
+                        $sub->whereIn('journal_voucher_details.receipt_voucher_id', $rvIdsForSo)
+                            ->whereNull('journal_voucher_details.sales_order_id')
+                            ->whereNull('journal_voucher_details.delivery_order_id');
+                    });
+                }
+            })
+            ->sum('journal_voucher_details.debit_amount');
+
+        // 4. DPV refunds for this SO
+        $soDpvRefunded = (float) \App\Models\PaymentVoucherData::where('sales_order_id', $soId)
+            ->whereNull('delivery_order_id')
+            ->whereHas('paymentVoucher', function ($q) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('amount');
+
+        $remSoAdvance = max(0, $soRvAdvance - $soDoAdvanceConsumed - $soOtherJvAdjusted - $soDpvRefunded);
+        return round($remSoAdvance, 2);
+    }
+
+    /**
+     * Calculate returnable advance on a Delivery Order.
+     */
+    public function getDeliveryOrderRemainingAdvance($deliveryOrder, $excludeJvId = null)
+    {
+        $do = is_object($deliveryOrder) ? $deliveryOrder : \App\Models\Sales\DeliveryOrder::with(['delivery_order_data.item'])->find($deliveryOrder);
+        if (!$do) return 0;
+
+        // Active DOs with an associated Loading Program cannot be adjusted via JV unless closed
+        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+            return 0;
+        }
+
+        $totalDoQty = 0;
+        $totalDcQty = 0;
+        $totalRemainingQty = 0;
+        $totalRemainingAmount = 0;
+        $totalDispatchedValue = 0;
+
+        foreach ($do->delivery_order_data as $itemData) {
+            $iDoQty = (float) $itemData->qty;
+            $iDcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $itemData->id)
+                ->whereHas('deliveryChallan', function ($q) {
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('qty');
+
+            $iRemQty = max(0, $iDoQty - $iDcQty);
+            $iRate = (float) $itemData->rate;
+            $iRemAmt = $iRemQty * $iRate;
+
+            $totalDoQty += $iDoQty;
+            $totalDcQty += $iDcQty;
+            $totalRemainingQty += $iRemQty;
+            $totalRemainingAmount += $iRemAmt;
+            $totalDispatchedValue += ($iDcQty * $iRate);
+        }
+
+        $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+            ->whereNull('rv.deleted_at')
+            ->where('rv.am_approval_status', 'approved')
+            ->where('dorv.delivery_order_id', $do->id)
+            ->sum('dorv.amount');
+
+        if ($attachedRvAmount > 0) {
+            $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+            $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
+        }
+
+        // Deduct DPV refunds for this DO
+        $alreadyRefunded = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $do->id)
+            ->whereHas('paymentVoucher', function ($q) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('amount');
+
+        // Deduct previous JV adjustments for this DO
+        $alreadyJvAdjusted = (float) JournalVoucherDetail::where('delivery_order_id', $do->id)
+            ->whereHas('journalVoucher', function ($q) use ($excludeJvId) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+                if ($excludeJvId) {
+                    $q->where('id', '!=', $excludeJvId);
+                }
+            })
+            ->sum('debit_amount');
+
+        $totalDeductions = $alreadyRefunded + $alreadyJvAdjusted;
+        $totalRemainingAmount = max(0, $totalRemainingAmount - $totalDeductions);
+        return round($totalRemainingAmount, 2);
+    }
+
+    /**
+     * Calculate remaining credit balance of a Journal Voucher.
+     */
+    public function getJournalVoucherRemainingCredit($jvIdOrDetailId, $excludeJvId = null, $detailId = null)
+    {
+        $jv = JournalVoucher::find($jvIdOrDetailId);
+        if ($jv) {
+            $jvDetail = JournalVoucherDetail::with('journalVoucher')
+                ->where('journal_voucher_id', $jv->id)
+                ->when($detailId, function($q) use ($detailId) {
+                    $q->where('id', $detailId);
+                })
+                ->where('credit_amount', '>', 0)
+                ->first();
+        } else {
+            $jvDetail = JournalVoucherDetail::with('journalVoucher')
+                ->where('id', $jvIdOrDetailId)
+                ->where('credit_amount', '>', 0)
+                ->first();
+            $jv = $jvDetail?->journalVoucher;
+        }
+
+        if (!$jvDetail || !$jv) {
+            return 0;
+        }
+        $creditAmount = (float) $jvDetail->credit_amount;
+
+        $excludeJvNo = null;
+        if ($excludeJvId) {
+            $exJv = JournalVoucher::find($excludeJvId);
+            $excludeJvNo = $exJv ? $exJv->jv_no : null;
+        }
+
+        $spentQuery = DB::table('settlement_adjustments')
+            ->where('reference_type', 'journal_voucher')
+            ->where('reference_id', $jv->id);
+
+        if ($excludeJvNo) {
+            $spentQuery->where('voucher_no', '!=', $excludeJvNo);
+        }
+        $settlementSpent = (float) $spentQuery->sum('amount');
+
+        $refundQuery = DB::table('payment_voucher_data')
+            ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+            ->whereNull('payment_vouchers.deleted_at')
+            ->whereNull('payment_voucher_data.deleted_at')
+            ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+            ->where(function ($q) use ($jvDetail, $jv) {
+                $q->where('payment_voucher_data.journal_voucher_detail_id', $jvDetail->id)
+                  ->orWhere('payment_voucher_data.journal_voucher_id', $jv->id);
+            });
+        $pvDataSpent = (float) $refundQuery->sum('net_amount');
+
+        $otherJvSpentQuery = JournalVoucherDetail::join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+            ->where(function ($q) use ($jv, $jvDetail) {
+                $q->where('journal_voucher_details.reference_jv_id', $jv->id)
+                  ->orWhere('journal_voucher_details.reference_jv_detail_id', $jvDetail->id);
+            });
+        if ($excludeJvId) {
+            $otherJvSpentQuery->where('journal_vouchers.id', '!=', $excludeJvId);
+        }
+        $jvSpent = (float) $otherJvSpentQuery->sum('journal_voucher_details.debit_amount');
+
+        $alreadySpent = max($settlementSpent, $pvDataSpent, $jvSpent);
+        return round(max(0, $creditAmount - $alreadySpent), 2);
     }
 
     /**
@@ -513,6 +942,8 @@ class JournalVoucherController extends Controller
         $seenRvIds = [];
         $advTotalUsage = [];
         $soTotalUsage = [];
+        $doTotalUsage = [];
+        $jvTotalUsage = [];
 
         foreach ($request->details as $index => $detail) {
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
@@ -588,7 +1019,28 @@ class JournalVoucherController extends Controller
                 $advTotalUsage[$advId] = ($advTotalUsage[$advId] ?? 0) + $lineAmount;
             }
 
-            if (!empty($detail['sales_order_id'])) {
+            if (!empty($detail['delivery_order_id'])) {
+                $doId = $detail['delivery_order_id'];
+                $do = \App\Models\Sales\DeliveryOrder::find($doId);
+                if (!$do) {
+                    return "Line " . ($index + 1) . ": Delivery Order was not found.";
+                }
+                if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                    return "Line " . ($index + 1) . ": Adjustment cannot be made for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to adjust.";
+                }
+                $doTotalUsage[$doId] = ($doTotalUsage[$doId] ?? 0) + $lineAmount;
+            }
+
+            if (!empty($detail['reference_jv_id'])) {
+                $refJvId = $detail['reference_jv_id'];
+                $refJv = JournalVoucher::find($refJvId);
+                if (!$refJv) {
+                    return "Line " . ($index + 1) . ": Journal Voucher was not found.";
+                }
+                $jvTotalUsage[$refJvId] = ($jvTotalUsage[$refJvId] ?? 0) + $lineAmount;
+            }
+
+            if (!empty($detail['sales_order_id']) && empty($detail['delivery_order_id'])) {
                 $soId = $detail['sales_order_id'];
                 $so = SalesOrder::find($soId);
                 if (!$so) {
@@ -680,57 +1132,29 @@ class JournalVoucherController extends Controller
             $so = SalesOrder::find($soId);
             if (!$so) continue;
 
-            $soRvAdvance = (float) DB::table('receipt_voucher_items')
-                ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
-                ->whereNull('receipt_vouchers.deleted_at')
-                ->where('receipt_vouchers.am_approval_status', 'approved')
-                ->where('receipt_voucher_items.reference_type', 'sale_order')
-                ->where('receipt_voucher_items.reference_id', $soId)
-                ->sum('receipt_voucher_items.net_amount');
-
-            $soDoAdvanceConsumed = (float) DB::table('delivery_order_receipt_voucher as dorv')
-                ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
-                ->where('do_tbl.so_id', $soId)
-                ->where('do_tbl.am_approval_status', '!=', 'rejected')
-                ->sum('dorv.amount');
-
-            $rvIdsForSo = DB::table('receipt_voucher_items')
-                ->where('reference_type', 'sale_order')
-                ->where('reference_id', $soId)
-                ->pluck('receipt_voucher_id')
-                ->toArray();
-
-            $soOtherJvAdjusted = (float) DB::table('journal_voucher_details')
-                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                ->whereNull('journal_vouchers.deleted_at')
-                ->whereNull('journal_voucher_details.deleted_at')
-                ->where('journal_vouchers.am_approval_status', 'approved')
-                ->when($excludeJvId, function ($q) use ($excludeJvId) {
-                    $q->where('journal_vouchers.id', '!=', $excludeJvId);
-                })
-                ->where(function ($q) use ($soId, $rvIdsForSo) {
-                    $q->where('journal_voucher_details.sales_order_id', $soId);
-                    if (!empty($rvIdsForSo)) {
-                        $q->orWhere(function ($sub) use ($rvIdsForSo) {
-                            $sub->whereIn('journal_voucher_details.receipt_voucher_id', $rvIdsForSo)
-                                ->whereNull('journal_voucher_details.sales_order_id');
-                        });
-                    }
-                })
-                ->sum('journal_voucher_details.debit_amount');
-
-            $soDpvRefunded = (float) \App\Models\PaymentVoucherData::where('sales_order_id', $soId)
-                ->whereNull('delivery_order_id')
-                ->whereHas('paymentVoucher', function ($q) {
-                    $q->whereNull('deleted_at');
-                    $q->where('am_approval_status', '!=', 'rejected');
-                })
-                ->sum('amount');
-
-            $remSoAdvance = max(0, $soRvAdvance - $soDoAdvanceConsumed - $soOtherJvAdjusted - $soDpvRefunded);
-
+            $remSoAdvance = $this->getSalesOrderRemainingAdvance($soId, $excludeJvId);
             if (round($totalEntered, 2) > round($remSoAdvance + 0.01, 2)) {
                 return "The entered amount (" . number_format($totalEntered, 2) . ") for Sales Order {$so->reference_no} exceeds its remaining advance balance of " . number_format($remSoAdvance, 2) . ".";
+            }
+        }
+
+        foreach ($doTotalUsage as $doId => $totalEntered) {
+            $do = \App\Models\Sales\DeliveryOrder::find($doId);
+            if (!$do) continue;
+
+            $remDoAdvance = $this->getDeliveryOrderRemainingAdvance($do, $excludeJvId);
+            if (round($totalEntered, 2) > round($remDoAdvance + 0.01, 2)) {
+                return "The entered amount (" . number_format($totalEntered, 2) . ") for Delivery Order {$do->reference_no} exceeds its remaining advance balance of " . number_format($remDoAdvance, 2) . ".";
+            }
+        }
+
+        foreach ($jvTotalUsage as $refJvId => $totalEntered) {
+            $refJv = JournalVoucher::find($refJvId);
+            if (!$refJv) continue;
+
+            $remJvAmount = $this->getJournalVoucherRemainingCredit($refJvId, $excludeJvId);
+            if (round($totalEntered, 2) > round($remJvAmount + 0.01, 2)) {
+                return "The entered amount (" . number_format($totalEntered, 2) . ") for Journal Voucher {$refJv->jv_no} exceeds its available balance of " . number_format($remJvAmount, 2) . ".";
             }
         }
 
@@ -800,6 +1224,9 @@ class JournalVoucherController extends Controller
             'details.*.receipt_voucher_id' => 'nullable|exists:receipt_vouchers,id',
             'details.*.customer_advance_id' => 'nullable|exists:customer_advances,id',
             'details.*.sales_order_id' => 'nullable|exists:sales_orders,id',
+            'details.*.delivery_order_id' => 'nullable|exists:delivery_order,id',
+            'details.*.reference_jv_id' => 'nullable|exists:journal_vouchers,id',
+            'details.*.reference_jv_detail_id' => 'nullable|exists:journal_voucher_details,id',
             'details.*.order_id' => 'nullable',
             'details.*.voucher_id' => 'nullable',
             'details.*.voucher_no' => 'nullable|string',
@@ -897,9 +1324,9 @@ class JournalVoucherController extends Controller
                     'jv_status' => 'approved',
                     'am_approval_status' => 'pending',
                     'am_change_made' => 1,
-                    'created_by' => Auth::user()->id,
+                    'created_by' => Auth::user()->id ?? 1,
                     'approve_user_id' => null,
-                    'company_id' => Auth::user()->current_company_id ?? null
+                    'company_id' => Auth::user()?->current_company_id ?? 1
                 ]);
 
                 foreach ($request->details as $detail) {
@@ -913,6 +1340,9 @@ class JournalVoucherController extends Controller
                     $voucherNo = $detail['voucher_no'] ?? null;
                     $voucherType = $detail['voucher_type'] ?? null;
                     $salesOrderId = $detail['sales_order_id'] ?? null;
+                    $deliveryOrderId = $detail['delivery_order_id'] ?? null;
+                    $referenceJvId = $detail['reference_jv_id'] ?? null;
+                    $referenceJvDetailId = $detail['reference_jv_detail_id'] ?? null;
                     $receiptVoucherId = $detail['receipt_voucher_id'] ?? null;
                     $customerAdvanceId = $detail['customer_advance_id'] ?? null;
                     $orderId = $detail['order_id'] ?? null;
@@ -938,6 +1368,49 @@ class JournalVoucherController extends Controller
                                     'customer_advance_id' => $adv->id,
                                     'voucher_no' => $journalVoucher->jv_no,
                                     'amount' => $adjAmount
+                                ]);
+                            }
+                        }
+                    }
+
+                    if ($deliveryOrderId) {
+                        $do = \App\Models\Sales\DeliveryOrder::find($deliveryOrderId);
+                        if ($do) {
+                            if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                                throw new \Exception("Row #" . ($index + 1) . ": Adjustment cannot be made for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to adjust.");
+                            }
+                            $voucherId = $do->id;
+                            $voucherNo = $do->reference_no ?: ('DO #' . $do->id);
+                            $voucherType = 'delivery_order';
+                            if (!$salesOrderId && $do->so_id) {
+                                $salesOrderId = $do->so_id;
+                            }
+                        }
+                    }
+
+                    if ($referenceJvId) {
+                        $refJv = JournalVoucher::find($referenceJvId);
+                        if ($refJv) {
+                            $voucherId = $refJv->id;
+                            $voucherNo = $refJv->jv_no;
+                            $voucherType = 'journal_voucher';
+
+                            if (!$referenceJvDetailId) {
+                                $refDet = JournalVoucherDetail::where('journal_voucher_id', $refJv->id)
+                                    ->where('credit_amount', '>', 0)
+                                    ->first();
+                                $referenceJvDetailId = $refDet?->id;
+                            }
+
+                            $adjAmount = max($debitAmount, $creditAmount);
+                            if ($adjAmount > 0) {
+                                DB::table('settlement_adjustments')->insert([
+                                    'reference_type' => 'journal_voucher',
+                                    'reference_id' => $refJv->id,
+                                    'voucher_no' => $journalVoucher->jv_no,
+                                    'amount' => $adjAmount,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
                                 ]);
                             }
                         }
@@ -982,6 +1455,9 @@ class JournalVoucherController extends Controller
                         'receipt_voucher_id' => $receiptVoucherId,
                         'customer_advance_id' => $customerAdvanceId,
                         'sales_order_id' => $salesOrderId,
+                        'delivery_order_id' => $deliveryOrderId,
+                        'reference_jv_id' => $referenceJvId,
+                        'reference_jv_detail_id' => $referenceJvDetailId,
                         'voucher_id' => $voucherId,
                         'voucher_no' => $voucherNo,
                         'voucher_type' => $voucherType,
@@ -1018,6 +1494,8 @@ class JournalVoucherController extends Controller
             'journalVoucherDetails.receiptVoucher',
             'journalVoucherDetails.customerAdvance',
             'journalVoucherDetails.salesOrder',
+            'journalVoucherDetails.deliveryOrder',
+            'journalVoucherDetails.referenceJournalVoucher',
             'approveUser',
             'deleteUser',
             'createdBy'
@@ -1038,7 +1516,7 @@ class JournalVoucherController extends Controller
      */
     public function edit($id)
     {
-        $journalVoucher = JournalVoucher::with(['journalVoucherDetails.account'])->findOrFail($id);
+        $journalVoucher = JournalVoucher::with(['journalVoucherDetails.account', 'journalVoucherDetails.deliveryOrder', 'journalVoucherDetails.referenceJournalVoucher'])->findOrFail($id);
 
         // Prevent editing approved or rejected vouchers
         $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? 'pending');
@@ -1052,13 +1530,17 @@ class JournalVoucherController extends Controller
         $rowRvs = [];
         $rowAdvances = [];
         $rowSos = [];
+        $rowDos = [];
+        $rowJvs = [];
         $rowOrders = [];
         foreach ($journalVoucher->journalVoucherDetails as $index => $detail) {
             $related = $this->fetchAccountRelatedData($detail->acc_id, $id);
             $rowRvs[$index] = collect($related['receipt_vouchers']);
             $rowAdvances[$index] = collect($related['customer_advances']);
             $rowSos[$index] = collect($related['sales_orders']);
+            $rowJvs[$index] = collect($related['journal_vouchers']);
             $rowOrders[$index] = collect([]);
+            $rowDos[$index] = collect([]);
 
             $tableName = strtolower($detail->account->table_name ?? ($related['table_name'] ?? ''));
 
@@ -1147,6 +1629,50 @@ class JournalVoucherController extends Controller
                     ]);
                 }
             }
+
+            // Load DOs for this line's SO
+            if ($detail->sales_order_id) {
+                try {
+                    $soDosResp = $this->getSoDeliveryOrders(request(), $detail->sales_order_id);
+                    $soDosJson = $soDosResp->getData(true);
+                    if (!empty($soDosJson['delivery_orders'])) {
+                        $rowDos[$index] = collect($soDosJson['delivery_orders']);
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            if ($detail->delivery_order_id && !$rowDos[$index]->contains('id', $detail->delivery_order_id)) {
+                $currDo = $detail->deliveryOrder ?: \App\Models\Sales\DeliveryOrder::find($detail->delivery_order_id);
+                if ($currDo) {
+                    $currAmount = (float) max($detail->debit_amount, $detail->credit_amount);
+                    $rowDos[$index]->prepend([
+                        'id' => $currDo->id,
+                        'reference_no' => $currDo->reference_no ?: ('DO #' . $currDo->id),
+                        'remaining_amount' => $currAmount,
+                        'formatted_remaining' => number_format($currAmount, 2),
+                        'text' => ($currDo->reference_no ?: ('DO #' . $currDo->id)) . " (Current: Rs. " . number_format($currAmount, 2) . ")",
+                    ]);
+                }
+            }
+
+            // Ensure current selected Reference JV is present
+            if ($detail->reference_jv_id && !$rowJvs[$index]->contains('id', $detail->reference_jv_id)) {
+                $currRefJv = $detail->referenceJournalVoucher ?: JournalVoucher::find($detail->reference_jv_id);
+                if ($currRefJv) {
+                    $currAmount = (float) max($detail->debit_amount, $detail->credit_amount);
+                    $rowJvs[$index]->prepend([
+                        'id' => $currRefJv->id,
+                        'detail_id' => $detail->reference_jv_detail_id,
+                        'jv_no' => $currRefJv->jv_no,
+                        'credit_amount' => $currAmount,
+                        'remaining_amount' => $currAmount,
+                        'formatted_remaining' => number_format($currAmount, 2),
+                        'description' => $currRefJv->description ?: '',
+                        'text' => "{$currRefJv->jv_no} (Current: Rs. " . number_format($currAmount, 2) . ")",
+                        'type' => 'journal_voucher'
+                    ]);
+                }
+            }
         }
 
         $data = [
@@ -1155,6 +1681,8 @@ class JournalVoucherController extends Controller
             'rowRvs' => $rowRvs,
             'rowAdvances' => $rowAdvances,
             'rowSos' => $rowSos,
+            'rowDos' => $rowDos,
+            'rowJvs' => $rowJvs,
             'rowOrders' => $rowOrders,
             'receiptVouchers' => collect([]),
             'customerAdvances' => collect([]),
@@ -1187,6 +1715,9 @@ class JournalVoucherController extends Controller
             'details.*.receipt_voucher_id' => 'nullable|exists:receipt_vouchers,id',
             'details.*.customer_advance_id' => 'nullable|exists:customer_advances,id',
             'details.*.sales_order_id' => 'nullable|exists:sales_orders,id',
+            'details.*.delivery_order_id' => 'nullable|exists:delivery_order,id',
+            'details.*.reference_jv_id' => 'nullable|exists:journal_vouchers,id',
+            'details.*.reference_jv_detail_id' => 'nullable|exists:journal_voucher_details,id',
             'details.*.order_id' => 'nullable',
             'details.*.voucher_id' => 'nullable',
             'details.*.voucher_no' => 'nullable|string',
@@ -1272,7 +1803,7 @@ class JournalVoucherController extends Controller
                     'jv_status' => 'approved',
                     'am_approval_status' => 'pending',
                     'am_change_made' => 1,
-                    'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
+                    'company_id' => Auth::user()?->current_company_id ?? $journalVoucher->company_id
                 ]);
 
                 // Revert old customer advance adjustments for this JV
@@ -1287,6 +1818,9 @@ class JournalVoucherController extends Controller
                     }
                     $adj->delete();
                 }
+
+                // Revert previous settlement_adjustments for this JV
+                DB::table('settlement_adjustments')->where('voucher_no', $journalVoucher->jv_no)->delete();
 
                 // Delete old details
                 JournalVoucherDetail::where('journal_voucher_id', $journalVoucher->id)->delete();
@@ -1308,6 +1842,9 @@ class JournalVoucherController extends Controller
                     $voucherNo = $detail['voucher_no'] ?? null;
                     $voucherType = $detail['voucher_type'] ?? null;
                     $salesOrderId = $detail['sales_order_id'] ?? null;
+                    $deliveryOrderId = $detail['delivery_order_id'] ?? null;
+                    $referenceJvId = $detail['reference_jv_id'] ?? null;
+                    $referenceJvDetailId = $detail['reference_jv_detail_id'] ?? null;
                     $receiptVoucherId = $detail['receipt_voucher_id'] ?? null;
                     $customerAdvanceId = $detail['customer_advance_id'] ?? null;
                     $orderId = $detail['order_id'] ?? null;
@@ -1333,6 +1870,49 @@ class JournalVoucherController extends Controller
                                     'customer_advance_id' => $adv->id,
                                     'voucher_no' => $journalVoucher->jv_no,
                                     'amount' => $adjAmount
+                                ]);
+                            }
+                        }
+                    }
+
+                    if ($deliveryOrderId) {
+                        $do = \App\Models\Sales\DeliveryOrder::find($deliveryOrderId);
+                        if ($do) {
+                            if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                                throw new \Exception("Row #" . ($index + 1) . ": Adjustment cannot be made for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to adjust.");
+                            }
+                            $voucherId = $do->id;
+                            $voucherNo = $do->reference_no ?: ('DO #' . $do->id);
+                            $voucherType = 'delivery_order';
+                            if (!$salesOrderId && $do->so_id) {
+                                $salesOrderId = $do->so_id;
+                            }
+                        }
+                    }
+
+                    if ($referenceJvId) {
+                        $refJv = JournalVoucher::find($referenceJvId);
+                        if ($refJv) {
+                            $voucherId = $refJv->id;
+                            $voucherNo = $refJv->jv_no;
+                            $voucherType = 'journal_voucher';
+
+                            if (!$referenceJvDetailId) {
+                                $refDet = JournalVoucherDetail::where('journal_voucher_id', $refJv->id)
+                                    ->where('credit_amount', '>', 0)
+                                    ->first();
+                                $referenceJvDetailId = $refDet?->id;
+                            }
+
+                            $adjAmount = max($debitAmount, $creditAmount);
+                            if ($adjAmount > 0) {
+                                DB::table('settlement_adjustments')->insert([
+                                    'reference_type' => 'journal_voucher',
+                                    'reference_id' => $refJv->id,
+                                    'voucher_no' => $journalVoucher->jv_no,
+                                    'amount' => $adjAmount,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
                                 ]);
                             }
                         }
@@ -1377,6 +1957,9 @@ class JournalVoucherController extends Controller
                         'receipt_voucher_id' => $receiptVoucherId,
                         'customer_advance_id' => $customerAdvanceId,
                         'sales_order_id' => $salesOrderId,
+                        'delivery_order_id' => $deliveryOrderId,
+                        'reference_jv_id' => $referenceJvId,
+                        'reference_jv_detail_id' => $referenceJvDetailId,
                         'voucher_id' => $voucherId,
                         'voucher_no' => $voucherNo,
                         'voucher_type' => $voucherType,
@@ -1490,6 +2073,9 @@ class JournalVoucherController extends Controller
             }
             $adj->delete();
         }
+
+        // Revert any settlement adjustments made by this voucher
+        DB::table('settlement_adjustments')->where('voucher_no', $journalVoucher->jv_no)->delete();
 
         $journalVoucher->update([
             'delete_user_id' => optional(Auth::user())->id

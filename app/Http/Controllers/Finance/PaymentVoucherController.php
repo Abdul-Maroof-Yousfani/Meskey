@@ -251,10 +251,16 @@ class PaymentVoucherController extends Controller
 
         if ($payment_voucher->module_type === 'dpv_for_sale') {
             $customerAccounts = $accounts;
-            $items = $payment_voucher->paymentVoucherData()->with(['customerAdvance', 'salesOrder', 'deliveryOrder'])->get();
+            $items = $payment_voucher->paymentVoucherData()->with(['customerAdvance', 'salesOrder', 'deliveryOrder', 'journalVoucher'])->get();
 
             $firstItem = $items->first();
-            $saleMode = ($firstItem && $firstItem->reference_type === 'customer_advance') ? 'excess_amount' : 'delivery_order';
+            if ($firstItem && ($firstItem->reference_type === 'journal_voucher' || $firstItem->journal_voucher_id)) {
+                $saleMode = 'journal_voucher';
+            } elseif ($firstItem && $firstItem->reference_type === 'customer_advance') {
+                $saleMode = 'excess_amount';
+            } else {
+                $saleMode = 'delivery_order';
+            }
             $customerAccountId = $payment_voucher->request_account_id ?? ($firstItem?->account_id);
 
             $customer = $this->resolveCustomerFromAccountId($customerAccountId);
@@ -488,6 +494,105 @@ class PaymentVoucherController extends Controller
         ]);
     }
 
+    public function getCustomerJournalVouchers(Request $request, $accountId)
+    {
+        $account = Account::find($accountId);
+        if (!$account) {
+            return response()->json([
+                'success' => true,
+                'journal_vouchers' => []
+            ]);
+        }
+
+        $customer = $this->resolveCustomerFromAccountId($accountId);
+        $customerName = $customer ? $customer->name : $account->name;
+
+        $accountIds = [$account->id];
+        if ($customer && $customer->account_id && !in_array($customer->account_id, $accountIds)) {
+            $accountIds[] = $customer->account_id;
+        }
+
+        $excludePvId = $request->query('exclude_pv_id');
+
+        $jvDetails = \App\Models\JournalVoucherDetail::with(['journalVoucher'])
+            ->whereIn('acc_id', $accountIds)
+            ->where('credit_amount', '>', 0)
+            ->whereHas('journalVoucher', function ($q) {
+                $q->where('am_approval_status', 'approved');
+            })
+            ->latest('id')
+            ->get();
+
+        $availableJvs = [];
+
+        foreach ($jvDetails as $detail) {
+            $jv = $detail->journalVoucher;
+            if (!$jv) continue;
+
+            $creditAmount = (float) $detail->credit_amount;
+
+            $spentQuery = DB::table('settlement_adjustments')
+                ->where('reference_type', 'journal_voucher')
+                ->where('reference_id', $jv->id);
+
+            if ($excludePvId) {
+                $exPv = PaymentVoucher::find($excludePvId);
+                if ($exPv) {
+                    $spentQuery->where('voucher_no', '!=', $exPv->unique_no);
+                }
+            }
+            $settlementSpent = (float) $spentQuery->sum('amount');
+
+            $refundQuery = PaymentVoucherData::where(function ($q) use ($detail, $jv) {
+                $q->where('journal_voucher_detail_id', $detail->id)
+                  ->orWhere(function ($sq) use ($jv, $detail) {
+                      $sq->where('journal_voucher_id', $jv->id)
+                         ->where('account_id', $detail->acc_id);
+                  })
+                  ->orWhere(function ($sq) use ($detail) {
+                      $sq->where('reference_type', 'journal_voucher')
+                         ->where('reference_id', $detail->id);
+                  });
+            })
+            ->whereHas('paymentVoucher', function ($q) {
+                $q->whereNull('deleted_at')
+                  ->where('am_approval_status', '!=', 'rejected');
+            });
+
+            if ($excludePvId) {
+                $refundQuery->where('payment_voucher_id', '!=', $excludePvId);
+            }
+
+            $pvDataSpent = (float) $refundQuery->sum('net_amount');
+
+            $alreadyRefunded = max($settlementSpent, $pvDataSpent);
+
+            $remainingAmount = max(0, $creditAmount - $alreadyRefunded);
+
+            if ($remainingAmount > 0.01) {
+                $jvDateFormatted = $jv->jv_date ? $jv->jv_date->format('d-M-Y') : 'N/A';
+                $availableJvs[] = [
+                    'id' => $jv->id,
+                    'jv_id' => $jv->id,
+                    'jv_detail_id' => $detail->id,
+                    'jv_no' => $jv->jv_no,
+                    'jv_date' => $jvDateFormatted,
+                    'credit_amount' => $creditAmount,
+                    'remaining_amount' => round($remainingAmount, 2),
+                    'formatted_remaining' => number_format($remainingAmount, 2),
+                    'description' => $detail->description ?: ($jv->description ?: ''),
+                    'text' => "{$jv->jv_no} ({$jvDateFormatted}) - Rem: Rs. " . number_format($remainingAmount, 2),
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'customer_name' => $customerName,
+            'journal_vouchers' => $availableJvs,
+        ]);
+    }
+
     public function getCustomerSalesOrders(Request $request, $accountId)
     {
         $customer = $this->resolveCustomerFromAccountId($accountId);
@@ -554,11 +659,13 @@ class PaymentVoucherController extends Controller
             ->whereNull('journal_voucher_details.deleted_at')
             ->where('journal_vouchers.am_approval_status', 'approved')
             ->where(function ($q) use ($soId, $rvIdsForSo) {
-                $q->where('journal_voucher_details.sales_order_id', $soId);
+                $q->where('journal_voucher_details.sales_order_id', $soId)
+                  ->whereNull('journal_voucher_details.delivery_order_id');
                 if (!empty($rvIdsForSo)) {
                     $q->orWhere(function ($sub) use ($rvIdsForSo) {
                         $sub->whereIn('journal_voucher_details.receipt_voucher_id', $rvIdsForSo)
-                            ->whereNull('journal_voucher_details.sales_order_id');
+                            ->whereNull('journal_voucher_details.sales_order_id')
+                            ->whereNull('journal_voucher_details.delivery_order_id');
                     });
                 }
             })
@@ -600,6 +707,11 @@ class PaymentVoucherController extends Controller
 
         $dos = [];
         foreach ($deliveryOrders as $do) {
+            // Active DOs with an associated Loading Program cannot be refunded via DPV unless closed
+            if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                continue;
+            }
+
             $totalDoQty = 0;
             $totalDcQty = 0;
             $totalRemainingQty = 0;
@@ -650,10 +762,19 @@ class PaymentVoucherController extends Controller
                 })
                 ->sum('amount');
 
-            $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
-            $refundedQty = $firstRate > 0 ? ($alreadyRefunded / $firstRate) : 0;
+            // Deduct previous JV adjustments for this DO
+            $alreadyJvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $do->id)
+                ->whereHas('journalVoucher', function ($q) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('debit_amount');
 
-            $totalRemainingAmount = max(0, $totalRemainingAmount - $alreadyRefunded);
+            $totalDeductions = $alreadyRefunded + $alreadyJvAdjusted;
+            $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
+            $refundedQty = $firstRate > 0 ? ($totalDeductions / $firstRate) : 0;
+
+            $totalRemainingAmount = max(0, $totalRemainingAmount - $totalDeductions);
             $totalRemainingQty = max(0, $totalRemainingQty - $refundedQty);
 
             if ($totalRemainingQty > 0 || $totalRemainingAmount > 0.01) {
@@ -700,6 +821,14 @@ class PaymentVoucherController extends Controller
     public function getDoStatsForPayment(Request $request, $doId)
     {
         $do = DeliveryOrder::with(['delivery_order_data.item'])->findOrFail($doId);
+
+        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Delivery Order ({$do->reference_no}) is active and has an associated Loading Program. Payment cannot be refunded unless DO is closed."
+            ], 422);
+        }
+
         $excludeVoucherNo = $request->query('exclude_voucher_no');
 
         $totalDoQty = 0;
@@ -752,10 +881,19 @@ class PaymentVoucherController extends Controller
             })
             ->sum('amount');
 
-        $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
-        $refundedQty = $firstRate > 0 ? ($alreadyRefunded / $firstRate) : 0;
+        // Deduct previous JV adjustments for this DO
+        $alreadyJvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $do->id)
+            ->whereHas('journalVoucher', function ($q) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('debit_amount');
 
-        $totalRemainingAmount = max(0, $totalRemainingAmount - $alreadyRefunded);
+        $totalDeductions = $alreadyRefunded + $alreadyJvAdjusted;
+        $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
+        $refundedQty = $firstRate > 0 ? ($totalDeductions / $firstRate) : 0;
+
+        $totalRemainingAmount = max(0, $totalRemainingAmount - $totalDeductions);
         $totalRemainingQty = max(0, $totalRemainingQty - $refundedQty);
 
         return response()->json([
@@ -828,7 +966,7 @@ class PaymentVoucherController extends Controller
             'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
             'bank_account_id' => 'nullable',
             'bank_account_type' => 'nullable|string',
-            'row_type.*' => 'required|in:excess_amount,delivery_order',
+            'row_type.*' => 'required|in:excess_amount,delivery_order,journal_voucher',
             'amount.*' => 'required|numeric|min:0.01',
             'tax_id.*' => 'nullable|exists:taxes,id',
             'description.*' => 'nullable|string',
@@ -871,7 +1009,76 @@ class PaymentVoucherController extends Controller
                 $netAmount = (float) ($request->net_amount[$index] ?? ($amount + $taxAmount));
                 $desc = $request->description[$index] ?? '';
 
-                if ($rowType === 'excess_amount') {
+                if ($rowType === 'journal_voucher') {
+                    $jvDetailId = $request->journal_voucher_detail_id[$index] ?? null;
+                    if (!$jvDetailId) {
+                        throw new \Exception("Please select a Journal Voucher for row #" . ($index + 1));
+                    }
+
+                    $jvDetail = \App\Models\JournalVoucherDetail::with('journalVoucher')->lockForUpdate()->find($jvDetailId);
+                    if (!$jvDetail || !$jvDetail->journalVoucher) {
+                        throw new \Exception("Journal Voucher record not found for row #" . ($index + 1));
+                    }
+
+                    if ($jvDetail->journalVoucher->am_approval_status !== 'approved') {
+                        throw new \Exception("Row #" . ($index + 1) . ": Journal Voucher ({$jvDetail->journalVoucher->jv_no}) must be approved to issue payment.");
+                    }
+
+                    $creditAmt = (float) $jvDetail->credit_amount;
+                    $settlementSpent = (float) DB::table('settlement_adjustments')
+                        ->where('reference_type', 'journal_voucher')
+                        ->where('reference_id', $jvDetail->journal_voucher_id)
+                        ->sum('amount');
+
+                    $alreadyRefunded = (float) PaymentVoucherData::where(function ($q) use ($jvDetail) {
+                        $q->where('journal_voucher_detail_id', $jvDetail->id)
+                          ->orWhere(function ($sq) use ($jvDetail) {
+                              $sq->where('journal_voucher_id', $jvDetail->journal_voucher_id)
+                                 ->where('account_id', $jvDetail->acc_id);
+                          })
+                          ->orWhere(function ($sq) use ($jvDetail) {
+                              $sq->where('reference_type', 'journal_voucher')
+                                 ->where('reference_id', $jvDetail->id);
+                          });
+                    })
+                    ->whereHas('paymentVoucher', function ($q) {
+                        $q->whereNull('deleted_at')
+                          ->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('net_amount');
+
+                    $maxAllowed = max(0, $creditAmt - max($settlementSpent, $alreadyRefunded));
+
+                    if ($netAmount > $maxAllowed + 0.01) {
+                        throw new \Exception("Row #" . ($index + 1) . ": Amount cannot exceed the remaining balance of Journal Voucher ({$jvDetail->journalVoucher->jv_no}) which is Rs. " . number_format($maxAllowed, 2));
+                    }
+
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $paymentVoucher->id,
+                        'account_id' => $request->customer_account_id,
+                        'amount' => $amount,
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'net_amount' => $netAmount,
+                        'description' => $desc ?: "Refund against JV #{$jvDetail->journalVoucher->jv_no}",
+                        'reference_type' => 'journal_voucher',
+                        'reference_id' => $jvDetail->id,
+                        'journal_voucher_id' => $jvDetail->journal_voucher_id,
+                        'journal_voucher_detail_id' => $jvDetail->id,
+                        'customer_advance_id' => null,
+                        'sales_order_id' => null,
+                        'delivery_order_id' => null,
+                    ]);
+
+                    DB::table('settlement_adjustments')->insert([
+                        'reference_type' => 'journal_voucher',
+                        'reference_id' => $jvDetail->journal_voucher_id,
+                        'voucher_no' => $uniqueNo,
+                        'amount' => $netAmount,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } elseif ($rowType === 'excess_amount') {
                     $advId = $request->customer_advance_id[$index] ?? null;
                     if (!$advId) {
                         throw new \Exception("Please select an Excess Payment voucher for row #" . ($index + 1));
@@ -921,6 +1128,11 @@ class PaymentVoucherController extends Controller
                     $maxAllowed = 0;
                     if ($doId) {
                         $do = DeliveryOrder::with(['delivery_order_data'])->findOrFail($doId);
+
+                        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                            throw new \Exception("Row #" . ($index + 1) . ": Payment cannot be issued for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to refund.");
+                        }
+
                         $totalDispatchedValue = 0;
                         foreach ($do->delivery_order_data as $dod) {
                             $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
@@ -976,52 +1188,9 @@ class PaymentVoucherController extends Controller
                         'delivery_order_id' => $doId,
                     ]);
 
-                    // Auto-close DO if remaining balance is fully refunded
-                    if ($doId) {
-                        $doObj = DeliveryOrder::with('delivery_order_data')->find($doId);
-                        if ($doObj) {
-                            $doRemAmt = 0;
-                            $totalDispatchedVal = 0;
-                            foreach ($doObj->delivery_order_data as $dod) {
-                                $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
-                                    ->whereHas('deliveryChallan', function ($q) {
-                                        $q->where('am_approval_status', '!=', 'rejected');
-                                    })
-                                    ->sum('qty');
-                                $doRemAmt += max(0, (float)$dod->qty - $dcQty) * (float)$dod->rate;
-                                $totalDispatchedVal += $dcQty * (float)$dod->rate;
-                            }
-                            $attRv = (float) DB::table('delivery_order_receipt_voucher')
-                                ->where('delivery_order_id', $doId)
-                                ->sum('amount');
-                            if ($attRv > 0) {
-                                $doRemAmt = max($doRemAmt, max(0, $attRv - $totalDispatchedVal));
-                            }
-                            $totRef = (float) PaymentVoucherData::where('delivery_order_id', $doId)
-                                ->whereHas('paymentVoucher', function($q) { $q->whereNull('deleted_at'); })
-                                ->sum('amount');
-                            if ($totRef >= $doRemAmt - 0.01) {
-                                $doObj->update(['do_status' => 'closed']);
-                            }
-                        }
-                    }
+                    // Note: do_status is intentionally kept active per user requirement; lock is enforced at Second Weighbridge
 
-                    // Auto-close SO if all items are fully consumed
-                    if ($soId) {
-                        $soObj = SalesOrder::with('sales_order_data')->find($soId);
-                        if ($soObj) {
-                            $allConsumed = true;
-                            foreach ($soObj->sales_order_data as $sod) {
-                                if (delivery_order_qty_balance($sod->id) > 0.01) {
-                                    $allConsumed = false;
-                                    break;
-                                }
-                            }
-                            if ($allConsumed) {
-                                $soObj->update(['status' => 'closed', 'contract_status' => 'closed']);
-                            }
-                        }
-                    }
+                    // DO and SO statuses are managed through their standard dispatch/fulfillment flows
                 }
 
                 $totalAmount += $netAmount;
@@ -1067,7 +1236,7 @@ class PaymentVoucherController extends Controller
             'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
             'bank_account_id' => 'nullable',
             'bank_account_type' => 'nullable|string',
-            'row_type.*' => 'required|in:excess_amount,delivery_order',
+            'row_type.*' => 'required|in:excess_amount,delivery_order,journal_voucher',
             'amount.*' => 'required|numeric|min:0.01',
             'tax_id.*' => 'nullable|exists:taxes,id',
             'description.*' => 'nullable|string',
@@ -1106,6 +1275,12 @@ class PaymentVoucherController extends Controller
                 $adj->delete();
             }
 
+            // Revert previous settlement_adjustments for this voucher
+            DB::table('settlement_adjustments')
+                ->where('voucher_no', $payment_voucher->unique_no)
+                ->where('reference_type', 'journal_voucher')
+                ->delete();
+
             // Delete old items
             $payment_voucher->paymentVoucherData()->delete();
 
@@ -1118,7 +1293,78 @@ class PaymentVoucherController extends Controller
                 $netAmount = (float) ($request->net_amount[$index] ?? ($amount + $taxAmount));
                 $desc = $request->description[$index] ?? '';
 
-                if ($rowType === 'excess_amount') {
+                if ($rowType === 'journal_voucher') {
+                    $jvDetailId = $request->journal_voucher_detail_id[$index] ?? null;
+                    if (!$jvDetailId) {
+                        throw new \Exception("Please select a Journal Voucher for row #" . ($index + 1));
+                    }
+
+                    $jvDetail = \App\Models\JournalVoucherDetail::with('journalVoucher')->lockForUpdate()->find($jvDetailId);
+                    if (!$jvDetail || !$jvDetail->journalVoucher) {
+                        throw new \Exception("Journal Voucher record not found for row #" . ($index + 1));
+                    }
+
+                    if ($jvDetail->journalVoucher->am_approval_status !== 'approved') {
+                        throw new \Exception("Row #" . ($index + 1) . ": Journal Voucher ({$jvDetail->journalVoucher->jv_no}) must be approved to issue payment.");
+                    }
+
+                    $creditAmt = (float) $jvDetail->credit_amount;
+                    $settlementSpent = (float) DB::table('settlement_adjustments')
+                        ->where('reference_type', 'journal_voucher')
+                        ->where('reference_id', $jvDetail->journal_voucher_id)
+                        ->where('voucher_no', '!=', $payment_voucher->unique_no)
+                        ->sum('amount');
+
+                    $alreadyRefunded = (float) PaymentVoucherData::where(function ($q) use ($jvDetail) {
+                        $q->where('journal_voucher_detail_id', $jvDetail->id)
+                          ->orWhere(function ($sq) use ($jvDetail) {
+                              $sq->where('journal_voucher_id', $jvDetail->journal_voucher_id)
+                                 ->where('account_id', $jvDetail->acc_id);
+                          })
+                          ->orWhere(function ($sq) use ($jvDetail) {
+                              $sq->where('reference_type', 'journal_voucher')
+                                 ->where('reference_id', $jvDetail->id);
+                          });
+                    })
+                    ->where('payment_voucher_id', '!=', $payment_voucher->id)
+                    ->whereHas('paymentVoucher', function ($q) {
+                        $q->whereNull('deleted_at')
+                          ->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('net_amount');
+
+                    $maxAllowed = max(0, $creditAmt - max($settlementSpent, $alreadyRefunded));
+
+                    if ($netAmount > $maxAllowed + 0.01) {
+                        throw new \Exception("Row #" . ($index + 1) . ": Amount cannot exceed the remaining balance of Journal Voucher ({$jvDetail->journalVoucher->jv_no}) which is Rs. " . number_format($maxAllowed, 2));
+                    }
+
+                    PaymentVoucherData::create([
+                        'payment_voucher_id' => $payment_voucher->id,
+                        'account_id' => $request->customer_account_id,
+                        'amount' => $amount,
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'net_amount' => $netAmount,
+                        'description' => $desc ?: "Refund against JV #{$jvDetail->journalVoucher->jv_no}",
+                        'reference_type' => 'journal_voucher',
+                        'reference_id' => $jvDetail->id,
+                        'journal_voucher_id' => $jvDetail->journal_voucher_id,
+                        'journal_voucher_detail_id' => $jvDetail->id,
+                        'customer_advance_id' => null,
+                        'sales_order_id' => null,
+                        'delivery_order_id' => null,
+                    ]);
+
+                    DB::table('settlement_adjustments')->insert([
+                        'reference_type' => 'journal_voucher',
+                        'reference_id' => $jvDetail->journal_voucher_id,
+                        'voucher_no' => $payment_voucher->unique_no,
+                        'amount' => $netAmount,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } elseif ($rowType === 'excess_amount') {
                     $advId = $request->customer_advance_id[$index] ?? null;
                     if (!$advId) {
                         throw new \Exception("Please select an Excess Payment voucher for row #" . ($index + 1));
@@ -1168,6 +1414,11 @@ class PaymentVoucherController extends Controller
                     $maxAllowed = 0;
                     if ($doId) {
                         $do = DeliveryOrder::with(['delivery_order_data'])->findOrFail($doId);
+
+                        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+                            throw new \Exception("Row #" . ($index + 1) . ": Payment cannot be issued for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to refund.");
+                        }
+
                         $totalDispatchedValue = 0;
                         foreach ($do->delivery_order_data as $dod) {
                             $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
@@ -1224,52 +1475,9 @@ class PaymentVoucherController extends Controller
                         'delivery_order_id' => $doId,
                     ]);
 
-                    // Auto-close DO if remaining balance is fully refunded
-                    if ($doId) {
-                        $doObj = DeliveryOrder::with('delivery_order_data')->find($doId);
-                        if ($doObj) {
-                            $doRemAmt = 0;
-                            $totalDispatchedVal = 0;
-                            foreach ($doObj->delivery_order_data as $dod) {
-                                $dcQty = (float) DeliveryChallanData::where('do_data_id', $dod->id)
-                                    ->whereHas('deliveryChallan', function ($q) {
-                                        $q->where('am_approval_status', '!=', 'rejected');
-                                    })
-                                    ->sum('qty');
-                                $doRemAmt += max(0, (float)$dod->qty - $dcQty) * (float)$dod->rate;
-                                $totalDispatchedVal += $dcQty * (float)$dod->rate;
-                            }
-                            $attRv = (float) DB::table('delivery_order_receipt_voucher')
-                                ->where('delivery_order_id', $doId)
-                                ->sum('amount');
-                            if ($attRv > 0) {
-                                $doRemAmt = max($doRemAmt, max(0, $attRv - $totalDispatchedVal));
-                            }
-                            $totRef = (float) PaymentVoucherData::where('delivery_order_id', $doId)
-                                ->whereHas('paymentVoucher', function($q) { $q->whereNull('deleted_at'); })
-                                ->sum('amount');
-                            if ($totRef >= $doRemAmt - 0.01) {
-                                $doObj->update(['do_status' => 'closed']);
-                            }
-                        }
-                    }
+                    // Note: do_status is intentionally kept active per user requirement; lock is enforced at Second Weighbridge
 
-                    // Auto-close SO if all items are fully consumed
-                    if ($soId) {
-                        $soObj = SalesOrder::with('sales_order_data')->find($soId);
-                        if ($soObj) {
-                            $allConsumed = true;
-                            foreach ($soObj->sales_order_data as $sod) {
-                                if (delivery_order_qty_balance($sod->id) > 0.01) {
-                                    $allConsumed = false;
-                                    break;
-                                }
-                            }
-                            if ($allConsumed) {
-                                $soObj->update(['status' => 'closed', 'contract_status' => 'closed']);
-                            }
-                        }
-                    }
+                    // DO and SO statuses are managed through their standard dispatch/fulfillment flows
                 }
 
                 $totalAmount += $netAmount;

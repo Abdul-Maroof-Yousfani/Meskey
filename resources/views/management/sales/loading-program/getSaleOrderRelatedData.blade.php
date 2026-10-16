@@ -85,24 +85,42 @@
                 @foreach($DeliveryOrders as $index => $do)
                     <div class="tab-pane fade do-pane" id="do-content-{{ $do->id }}" data-do-id="{{ $do->id }}" role="tabpanel" aria-labelledby="do-tab-{{ $do->id }}" style="display: none;">
                         <div class="row">
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            @php
+                                $doRefStats = function_exists('get_delivery_order_refund_stats') ? get_delivery_order_refund_stats($do->id) : null;
+                            @endphp
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Delivery Order No:</label>
                                     <input type="text" value="{{ $do->reference_no }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Total Qty:</label>
                                     <input type="text" value="{{ round($do->delivery_order_data_sum_qty) }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-4">
-                                <div class="form-group">
-                                    <label>Balance Qty:</label>
-                                    <input type="text" value="{{ min(getLoadingProgramBalance($do->id), get_second_weighbridge_balance_by_delivery_order($do->id)) }}" disabled class="form-control" readonly />
+                            @if(!empty($doRefStats) && ($doRefStats['refunded_amount'] ?? 0) > 0)
+                                <div class="col-xs-12 col-sm-6 col-md-3">
+                                    <div class="form-group">
+                                        <label class="text-danger">Adjusted Qty:</label>
+                                        <input type="text" value="-{{ round($doRefStats['refunded_qty']) }} Bags (Rs. {{ number_format($doRefStats['refunded_amount']) }})" disabled class="form-control text-danger font-weight-bold" readonly />
+                                    </div>
                                 </div>
-                            </div>
+                                <div class="col-xs-12 col-sm-6 col-md-3">
+                                    <div class="form-group">
+                                        <label class="text-success">Net Balance Qty:</label>
+                                        <input type="text" value="{{ min(getLoadingProgramBalance($do->id), get_second_weighbridge_balance_by_delivery_order($do->id)) }} Bags" disabled class="form-control text-success font-weight-bold" readonly />
+                                    </div>
+                                </div>
+                            @else
+                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>Balance Qty:</label>
+                                        <input type="text" value="{{ min(getLoadingProgramBalance($do->id), get_second_weighbridge_balance_by_delivery_order($do->id)) }}" disabled class="form-control" readonly />
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach

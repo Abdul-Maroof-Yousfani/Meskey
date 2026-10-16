@@ -36,6 +36,7 @@ Route::put("/direct-payment-voucher/{payment_voucher}", [PaymentVoucherControlle
 // Direct Payment Voucher For Sale (Tab 2)
 Route::prefix('direct-payment-voucher')->group(function () {
     Route::get('customer-advances/{accountId}', [PaymentVoucherController::class, 'getCustomerExcessAdvances'])->name('direct.payment-voucher.customer-advances');
+    Route::get('customer-jvs/{accountId}', [PaymentVoucherController::class, 'getCustomerJournalVouchers'])->name('direct.payment-voucher.customer-jvs');
     Route::get('customer-banks/{accountId}', [PaymentVoucherController::class, 'getCustomerBankAccounts'])->name('direct.payment-voucher.customer-banks');
     Route::get('customer-sos/{accountId}', [PaymentVoucherController::class, 'getCustomerSalesOrders'])->name('direct.payment-voucher.customer-sos');
     Route::get('so-dos/{soId}', [PaymentVoucherController::class, 'getSoDeliveryOrders'])->name('direct.payment-voucher.so-dos');
@@ -64,6 +65,7 @@ Route::put("/direct-receipt-voucher/{receipt_voucher}", [ReceiptVoucherControlle
 Route::prefix('journal-voucher')->group(function () {
     Route::post('generate-jv-number', [JournalVoucherController::class, 'generateJvNumber'])->name('journal-voucher.generate-jv-number');
     Route::get('get-account-related-data', [JournalVoucherController::class, 'getAccountRelatedData'])->name('journal-voucher.get-account-related-data');
+    Route::get('so-dos/{soId}', [JournalVoucherController::class, 'getSoDeliveryOrders'])->name('journal-voucher.so-dos');
     Route::match(['get', 'post'], 'check-grn-limit', [JournalVoucherController::class, 'checkGrnLimit'])->name('journal-voucher.check-grn-limit');
     Route::post('{id}/approve', [JournalVoucherController::class, 'approve'])->name('journal-voucher.approve');
     Route::post('{id}/reject', [JournalVoucherController::class, 'reject'])->name('journal-voucher.reject');

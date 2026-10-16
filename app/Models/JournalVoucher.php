@@ -117,6 +117,12 @@ class JournalVoucher extends Model
             if ($detail->salesOrder && $detail->salesOrder->customer) {
                 $customers->push($detail->salesOrder->customer->name);
             }
+            if ($detail->deliveryOrder && $detail->deliveryOrder->customer) {
+                $customers->push($detail->deliveryOrder->customer->name);
+            }
+            if ($detail->referenceJournalVoucher) {
+                $customers->push($detail->referenceJournalVoucher->customer_name);
+            }
             if ($detail->account && strtolower($detail->account->table_name ?? '') === 'customers') {
                 $customers->push($detail->account->name);
             }
@@ -153,7 +159,13 @@ class JournalVoucher extends Model
                     $detailVoucherType = $detail->voucher_type;
 
                     if (empty($voucherNo)) {
-                        if ($detail->customer_advance_id && $detail->customerAdvance) {
+                        if ($detail->delivery_order_id && $detail->deliveryOrder) {
+                            $voucherNo = $detail->deliveryOrder->reference_no ?: ('DO #' . $detail->delivery_order_id);
+                            $detailVoucherType = 'delivery_order';
+                        } elseif ($detail->reference_jv_id && $detail->referenceJournalVoucher) {
+                            $voucherNo = $detail->referenceJournalVoucher->jv_no;
+                            $detailVoucherType = 'journal_voucher';
+                        } elseif ($detail->customer_advance_id && $detail->customerAdvance) {
                             $voucherNo = $detail->customerAdvance->voucher_no;
                             $detailVoucherType = 'excess_payment';
                         } elseif ($detail->receipt_voucher_id && $detail->receiptVoucher) {
@@ -270,6 +282,8 @@ class JournalVoucher extends Model
             $adj->delete();
         }
 
+        \Illuminate\Support\Facades\DB::table('settlement_adjustments')->where('voucher_no', $this->jv_no)->delete();
+
         $this->update($updateData);
     }
 
@@ -283,6 +297,22 @@ class JournalVoucher extends Model
         if ($module && isset($module->approval_column)) {
             $updateData[$module->approval_column] = 'reverted';
         }
+
+        // Revert any customer advance adjustments made by this JV
+        $adjustments = \App\Models\CustomerAdvanceAdjustment::where('voucher_no', $this->jv_no)->get();
+        foreach ($adjustments as $adj) {
+            $adv = \App\Models\CustomerAdvance::find($adj->customer_advance_id);
+            if ($adv) {
+                $adv->used_amount -= $adj->amount;
+                $adv->remaining_amount += $adj->amount;
+                $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                $adv->save();
+            }
+            $adj->delete();
+        }
+
+        \Illuminate\Support\Facades\DB::table('settlement_adjustments')->where('voucher_no', $this->jv_no)->delete();
+
         $this->update($updateData);
     }
 
@@ -303,11 +333,15 @@ class JournalVoucher extends Model
     {
         $this->loadMissing([
             'journalVoucherDetails.salesOrder',
+            'journalVoucherDetails.deliveryOrder',
+            'journalVoucherDetails.referenceJournalVoucher',
             'journalVoucherDetails.receiptVoucher',
             'journalVoucherDetails.customerAdvance'
         ]);
 
         $soUsage = [];
+        $doUsage = [];
+        $refJvUsage = [];
         $rvUsage = [];
         $advUsage = [];
 
@@ -317,8 +351,14 @@ class JournalVoucher extends Model
                 continue;
             }
 
-            if ($detail->sales_order_id) {
+            if ($detail->delivery_order_id) {
+                $doUsage[$detail->delivery_order_id] = ($doUsage[$detail->delivery_order_id] ?? 0) + $debit;
+            } elseif ($detail->sales_order_id) {
                 $soUsage[$detail->sales_order_id] = ($soUsage[$detail->sales_order_id] ?? 0) + $debit;
+            }
+
+            if ($detail->reference_jv_id) {
+                $refJvUsage[$detail->reference_jv_id] = ($refJvUsage[$detail->reference_jv_id] ?? 0) + $debit;
             }
 
             if ($detail->receipt_voucher_id) {
@@ -330,7 +370,7 @@ class JournalVoucher extends Model
             }
         }
 
-        // Validate SO limits
+        // Validate SO limits (direct SO adjustments without DO)
         foreach ($soUsage as $soId => $requiredDebit) {
             $so = \App\Models\Sales\SalesOrder::find($soId);
             $soRef = $so ? ($so->reference_no ?: "SO #{$soId}") : "SO #{$soId}";
@@ -365,11 +405,13 @@ class JournalVoucher extends Model
                 ->where('journal_vouchers.am_approval_status', 'approved')
                 ->where('journal_vouchers.id', '!=', $this->id)
                 ->where(function ($q) use ($soId, $rvIdsForSo) {
-                    $q->where('journal_voucher_details.sales_order_id', $soId);
+                    $q->where('journal_voucher_details.sales_order_id', $soId)
+                      ->whereNull('journal_voucher_details.delivery_order_id');
                     if (!empty($rvIdsForSo)) {
                         $q->orWhere(function ($sub) use ($rvIdsForSo) {
                             $sub->whereIn('journal_voucher_details.receipt_voucher_id', $rvIdsForSo)
-                                ->whereNull('journal_voucher_details.sales_order_id');
+                                ->whereNull('journal_voucher_details.sales_order_id')
+                                ->whereNull('journal_voucher_details.delivery_order_id');
                         });
                     }
                 })
@@ -388,6 +430,109 @@ class JournalVoucher extends Model
 
             if ($requiredDebit > $available + 0.01) {
                 return "Cannot approve Journal Voucher {$this->jv_no}: Sales Order {$soRef} only has Rs. " . number_format($available, 2) . " available advance balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ". Payment has already been refunded via Payment Voucher or consumed.";
+            }
+        }
+
+        // Validate DO limits
+        foreach ($doUsage as $doId => $requiredDebit) {
+            $do = \App\Models\Sales\DeliveryOrder::with(['delivery_order_data.item'])->find($doId);
+            if (!$do) continue;
+
+            $totalDoQty = 0;
+            $totalDcQty = 0;
+            $totalRemainingQty = 0;
+            $totalRemainingAmount = 0;
+            $totalDispatchedValue = 0;
+
+            foreach ($do->delivery_order_data as $itemData) {
+                $iDoQty = (float) $itemData->qty;
+                $iDcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $itemData->id)
+                    ->whereHas('deliveryChallan', function ($q) {
+                        $q->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->sum('qty');
+
+                $iRemQty = max(0, $iDoQty - $iDcQty);
+                $iRate = (float) $itemData->rate;
+                $iRemAmt = $iRemQty * $iRate;
+
+                $totalDoQty += $iDoQty;
+                $totalDcQty += $iDcQty;
+                $totalRemainingQty += $iRemQty;
+                $totalRemainingAmount += $iRemAmt;
+                $totalDispatchedValue += ($iDcQty * $iRate);
+            }
+
+            $attachedRvAmount = (float) \Illuminate\Support\Facades\DB::table('delivery_order_receipt_voucher as dorv')
+                ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+                ->whereNull('rv.deleted_at')
+                ->where('rv.am_approval_status', 'approved')
+                ->where('dorv.delivery_order_id', $do->id)
+                ->sum('dorv.amount');
+
+            if ($attachedRvAmount > 0) {
+                $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
+                $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
+            }
+
+            $alreadyRefunded = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $do->id)
+                ->whereHas('paymentVoucher', function ($q) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('amount');
+
+            $alreadyJvAdjusted = (float) JournalVoucherDetail::where('delivery_order_id', $do->id)
+                ->whereHas('journalVoucher', function ($q) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', 'approved');
+                    $q->where('id', '!=', $this->id);
+                })
+                ->sum('debit_amount');
+
+            $available = max(0, $totalRemainingAmount - ($alreadyRefunded + $alreadyJvAdjusted));
+            if ($requiredDebit > $available + 0.01) {
+                return "Cannot approve Journal Voucher {$this->jv_no}: Delivery Order {$do->reference_no} only has Rs. " . number_format($available, 2) . " available advance balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ".";
+            }
+        }
+
+        // Validate Reference JV limits
+        foreach ($refJvUsage as $refJvId => $requiredDebit) {
+            $refJv = JournalVoucher::find($refJvId);
+            if (!$refJv) continue;
+
+            $refDetail = JournalVoucherDetail::where('journal_voucher_id', $refJvId)
+                ->where('credit_amount', '>', 0)
+                ->first();
+            $creditAmount = (float) ($refDetail ? $refDetail->credit_amount : 0);
+
+            $settlementSpent = (float) \Illuminate\Support\Facades\DB::table('settlement_adjustments')
+                ->where('reference_type', 'journal_voucher')
+                ->where('reference_id', $refJvId)
+                ->where('voucher_no', '!=', $this->jv_no)
+                ->sum('amount');
+
+            $pvDataSpent = (float) \Illuminate\Support\Facades\DB::table('payment_voucher_data')
+                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                ->whereNull('payment_vouchers.deleted_at')
+                ->whereNull('payment_voucher_data.deleted_at')
+                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                ->where('payment_voucher_data.journal_voucher_id', $refJvId)
+                ->sum('payment_voucher_data.net_amount');
+
+            $otherJvSpent = (float) JournalVoucherDetail::join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                ->whereNull('journal_vouchers.deleted_at')
+                ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_vouchers.am_approval_status', 'approved')
+                ->where('journal_vouchers.id', '!=', $this->id)
+                ->where('journal_voucher_details.reference_jv_id', $refJvId)
+                ->sum('journal_voucher_details.debit_amount');
+
+            $alreadySpent = max($settlementSpent, $pvDataSpent, $otherJvSpent);
+            $available = max(0, $creditAmount - $alreadySpent);
+
+            if ($requiredDebit > $available + 0.01) {
+                return "Cannot approve Journal Voucher {$this->jv_no}: Reference Journal Voucher {$refJv->jv_no} only has Rs. " . number_format($available, 2) . " available credit balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ".";
             }
         }
 

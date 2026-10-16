@@ -8,7 +8,7 @@
     $totalDebits = 0;
     $totalCredits = 0;
     foreach($journalVoucher->journalVoucherDetails as $detail) {
-        if(!empty($detail->receipt_voucher_id) || !empty($detail->customer_advance_id) || (!empty($detail->sales_order_id) && empty($detail->voucher_type))) {
+        if(!empty($detail->receipt_voucher_id) || !empty($detail->customer_advance_id) || !empty($detail->delivery_order_id) || !empty($detail->reference_jv_id) || (!empty($detail->sales_order_id) && empty($detail->voucher_type))) {
             $isReceiving = true;
         }
         if(!empty($detail->voucher_no)) {
@@ -119,9 +119,9 @@
                                         <tr>
                                             <th>Account</th>
                                             @if($isReceiving)
-                                                <th>Receipt Voucher</th>
-                                                <th>Excess Amount</th>
-                                                <th>Sales order</th>
+                                                <th style="width: 170px;">Adjustment Type</th>
+                                                <th style="width: 220px;">Reference Document</th>
+                                                <th style="width: 200px;">Delivery Order</th>
                                             @elseif($hasOrders)
                                                 <th>Order / GRN</th>
                                             @endif
@@ -138,17 +138,40 @@
                                                     <br><small class="text-muted">({{ $detail->account->unique_no ?? 'N/A' }})</small>
                                                 </td>
                                                 @if($isReceiving)
-                                                    <td>{{ optional($detail->receiptVoucher)->unique_no ?? '—' }}</td>
-                                                    <td>
-                                                        @if($detail->customerAdvance)
-                                                            <span class="badge badge-info">{{ $detail->customerAdvance->voucher_no }}</span>
-                                                        @elseif($detail->voucher_type === 'customer_advance')
-                                                            <span class="badge badge-info">{{ $detail->voucher_no }}</span>
-                                                        @else
-                                                            —
-                                                        @endif
-                                                    </td>
-                                                    <td>{{ optional($detail->salesOrder)->reference_no ?? '—' }}</td>
+                                                    @php
+                                                        $typeLabel = '—';
+                                                        $typeBadge = 'secondary';
+                                                        $refDoc = '—';
+                                                        $doDoc = '—';
+
+                                                        if (!empty($detail->receipt_voucher_id)) {
+                                                            $typeLabel = 'Receipt Voucher';
+                                                            $typeBadge = 'primary';
+                                                            $refDoc = optional($detail->receiptVoucher)->unique_no ?? ('RV #' . $detail->receipt_voucher_id);
+                                                        } elseif (!empty($detail->customer_advance_id) || ($detail->voucher_type === 'customer_advance')) {
+                                                            $typeLabel = 'Excess Amount';
+                                                            $typeBadge = 'info';
+                                                            $refDoc = optional($detail->customerAdvance)->voucher_no ?? ($detail->voucher_no ?? '—');
+                                                        } elseif (!empty($detail->reference_jv_id) || ($detail->voucher_type === 'journal_voucher')) {
+                                                            $typeLabel = 'Journal Voucher';
+                                                            $typeBadge = 'warning';
+                                                            $refDoc = optional($detail->referenceJournalVoucher)->jv_no ?? ($detail->voucher_no ?? '—');
+                                                        } elseif (!empty($detail->sales_order_id) || !empty($detail->delivery_order_id)) {
+                                                            $typeLabel = 'SO / DO';
+                                                            $typeBadge = 'success';
+                                                            $refDoc = optional($detail->salesOrder)->reference_no ?? ($detail->voucher_no ?? '—');
+                                                            if ($detail->deliveryOrder) {
+                                                                $doDoc = $detail->deliveryOrder->reference_no ?: ('DO #' . $detail->deliveryOrder->id);
+                                                            } elseif ($detail->voucher_type === 'delivery_order') {
+                                                                $doDoc = $detail->voucher_no ?: 'DO Attached';
+                                                            } else {
+                                                                $doDoc = 'Direct SO Advance';
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    <td><span class="badge badge-{{ $typeBadge }}">{{ $typeLabel }}</span></td>
+                                                    <td>{{ $refDoc }}</td>
+                                                    <td>{{ $doDoc }}</td>
                                                 @elseif($hasOrders)
                                                     <td>{{ $detail->voucher_no ?? '—' }}</td>
                                                 @endif

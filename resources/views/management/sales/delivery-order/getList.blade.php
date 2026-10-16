@@ -59,9 +59,18 @@
                         @endif
                     </td>
 
+                    @php
+                        $doRefundStats = function_exists('get_delivery_order_refund_stats') ? get_delivery_order_refund_stats($group['id']) : null;
+                    @endphp
                     <td class="text-right align-middle">
                         {{ round($itemRow['item_data']->qty) }}
                         <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
+                        @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                            <br>
+                            <span class="badge badge-success" style="font-size: 0.72rem;" title="Adjusted: {{ round($doRefundStats['refunded_qty']) }} Bags">
+                                Net: {{ round($doRefundStats['remaining_allowed_qty']) }}
+                            </span>
+                        @endif
                     </td>
 
                     <td class="text-right align-middle">
@@ -72,6 +81,12 @@
 
                     <td class="text-right align-middle">
                         {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 0) }}
+                        @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                            <br>
+                            <span class="badge badge-info" style="font-size: 0.72rem; font-weight: 600;" title="Adjusted/Refunded: Rs. {{ number_format($doRefundStats['refunded_amount']) }}">
+                                Net: Rs. {{ number_format($doRefundStats['remaining_allowed_value']) }}
+                            </span>
+                        @endif
                     </td>
 
                     {{-- Date & Status - Show only on first row --}}

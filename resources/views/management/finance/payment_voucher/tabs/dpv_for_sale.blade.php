@@ -95,17 +95,18 @@
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="font-weight-bold mb-0">Sales Adjustment Details (Excess Amount / Delivery Order)</label>
+                <label class="font-weight-bold mb-0">Sales Adjustment Details (Excess Amount / Delivery Order / Journal Voucher)</label>
                 <span class="badge badge-light" id="sale_customer_selected_badge" style="display: none;"></span>
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered table-striped" id="saleVoucherEntriesTable" style="min-width: 1200px;">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 12%;">Adjustment Type <span class="text-danger">*</span></th>
-                            <th style="width: 16%;">Sales Order</th>
-                            <th style="width: 16%;">Delivery Order</th>
-                            <th style="width: 16%;">Excess Advance</th>
+                            <th style="width: 13%;">Adjustment Type <span class="text-danger">*</span></th>
+                            <th class="col-so" style="width: 14%;">Sales Order</th>
+                            <th class="col-do" style="width: 14%;">Delivery Order</th>
+                            <th class="col-advance" style="width: 14%;">Excess Advance</th>
+                            <th class="col-jv" style="width: 25%; display: none;">Journal Voucher (JV)</th>
                             <th style="width: 9%;" class="text-right">Available Bal</th>
                             <th style="width: 9%;" class="text-right">Amount <span class="text-danger">*</span></th>
                             <th style="width: 7%;">Tax</th>
@@ -117,19 +118,19 @@
                     </thead>
                     <tbody id="saleVoucherEntriesBody">
                         <tr>
-                            <td colspan="11" class="text-center text-muted py-3" id="saleEmptyRow">
+                            <td colspan="12" class="text-center text-muted py-3" id="saleEmptyRow">
                                 Please select a Customer Account first to add adjustment items.
                             </td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="8" class="text-right"><strong>Total Net Amount:</strong></td>
+                            <td colspan="8" class="text-right" id="saleTotalColspan"><strong>Total Net Amount:</strong></td>
                             <td class="text-right"><strong id="saleTotalNetAmount" class="text-primary font-medium-2">0.00</strong></td>
                             <td colspan="2"></td>
                         </tr>
                         <tr>
-                            <td colspan="11">
+                            <td colspan="12" id="saleAddBtnColspan">
                                 <button type="button" class="btn btn-sm btn-primary" id="saleAddRowBtn">
                                     <i class="ft-plus"></i> Add Line Item
                                 </button>

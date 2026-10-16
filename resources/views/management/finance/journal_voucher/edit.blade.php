@@ -38,7 +38,7 @@
                                     <div class="form-group">
                                         <label for="jv_date">Date</label>
                                         <input type="date" name="jv_date" id="jv_date" class="form-control" 
-                                            value="{{ $journalVoucher->jv_date->format('Y-m-d') }}" required>
+                                            value="{{ $journalVoucher->jv_date ? $journalVoucher->jv_date->format('Y-m-d') : date('Y-m-d') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -68,15 +68,7 @@
                                                 @php
                                                     $isReceiving = false;
                                                     foreach($journalVoucher->journalVoucherDetails as $detail) {
-                                                        if(!empty($detail->receipt_voucher_id)) {
-                                                            $isReceiving = true;
-                                                            break;
-                                                        }
-                                                        if(!empty($detail->customer_advance_id)) {
-                                                            $isReceiving = true;
-                                                            break;
-                                                        }
-                                                        if(!empty($detail->sales_order_id) && empty($detail->voucher_type)) {
+                                                        if(!empty($detail->receipt_voucher_id) || !empty($detail->customer_advance_id) || !empty($detail->delivery_order_id) || !empty($detail->reference_jv_id) || (!empty($detail->sales_order_id) && empty($detail->voucher_type))) {
                                                             $isReceiving = true;
                                                             break;
                                                         }
@@ -91,9 +83,9 @@
                                                 <thead>
                                                     <tr>
                                                         <th>Account</th>
-                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 180px;">Receipt Voucher</th>
-                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 180px;">Excess Amount</th>
-                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 180px;">Sales order</th>
+                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 170px;">Adjustment Type</th>
+                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 220px;">Reference / SO</th>
+                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 200px;">Delivery Order</th>
                                                         <th class="order-col" style="{{ $isReceiving ? 'display: none;' : '' }}; width: 200px;">Orders</th>
                                                         <th>Description</th>
                                                         <th>Debit</th>
@@ -103,7 +95,23 @@
                                                 </thead>
                                                 <tbody id="journalEntriesBody">
                                                     @foreach ($journalVoucher->journalVoucherDetails as $index => $detail)
-                                                        <tr>
+                                                        @php
+                                                            $rowType = '';
+                                                            if (!empty($detail->receipt_voucher_id)) {
+                                                                $rowType = 'receipt_voucher';
+                                                            } elseif (!empty($detail->customer_advance_id) || ($detail->voucher_type === 'customer_advance')) {
+                                                                $rowType = 'excess_amount';
+                                                            } elseif (!empty($detail->reference_jv_id) || ($detail->voucher_type === 'journal_voucher')) {
+                                                                $rowType = 'journal_voucher';
+                                                            } elseif (!empty($detail->sales_order_id) || !empty($detail->delivery_order_id) || ($detail->voucher_type === 'delivery_order') || ($detail->voucher_type === 'sales_order' && empty($detail->order_id))) {
+                                                                $rowType = 'so_do';
+                                                            }
+                                                        @endphp
+                                                        <tr data-initial-rvs='@json($rowRvs[$index] ?? [])'
+                                                            data-initial-advances='@json($rowAdvances[$index] ?? [])'
+                                                            data-initial-sos='@json($rowSos[$index] ?? [])'
+                                                            data-initial-jvs='@json($rowJvs[$index] ?? [])'
+                                                            data-initial-grns='@json($rowOrders[$index] ?? [])'>
                                                             <td>
                                                                 <select name="details[{{ $index }}][acc_id]" class="form-control select2 account-select" required>
                                                                     <option value="">Select Account</option>
@@ -117,23 +125,27 @@
                                                                 </select>
                                                             </td>
                                                             <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
-                                                                <select name="details[{{ $index }}][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 100%;" {{ !empty($detail->customer_advance_id) ? 'disabled' : '' }}>
-                                                                    <option value="">Select Receipt Voucher</option>
-                                                                    @if(isset($rowRvs[$index]))
+                                                                <select class="form-control select2 adjustment-type-select" style="width: 100%;">
+                                                                    <option value="">Select Type</option>
+                                                                    <option value="receipt_voucher" {{ $rowType === 'receipt_voucher' ? 'selected' : '' }}>Receipt Voucher (RV)</option>
+                                                                    <option value="excess_amount" {{ $rowType === 'excess_amount' ? 'selected' : '' }}>Excess Amount</option>
+                                                                    <option value="so_do" {{ $rowType === 'so_do' ? 'selected' : '' }}>SO / DO</option>
+                                                                    <option value="journal_voucher" {{ $rowType === 'journal_voucher' ? 'selected' : '' }}>Journal Voucher (JV)</option>
+                                                                </select>
+                                                            </td>
+                                                            <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
+                                                                <select class="form-control select2 ref-doc-select" style="width: 100%;" {{ empty($rowType) ? 'disabled' : '' }}>
+                                                                    <option value="">{{ empty($rowType) ? 'Select Type First' : 'Select Reference' }}</option>
+                                                                    @if($rowType === 'receipt_voucher' && isset($rowRvs[$index]))
                                                                         @foreach ($rowRvs[$index] as $rv)
                                                                             <option value="{{ $rv['id'] }}" 
                                                                                 data-remaining-amount="{{ $rv['remaining_amount'] }}"
+                                                                                data-unique-no="{{ $rv['unique_no'] ?? '' }}"
                                                                                 @selected($detail->receipt_voucher_id == $rv['id'])>
                                                                                 {{ $rv['text'] }}
                                                                             </option>
                                                                         @endforeach
-                                                                    @endif
-                                                                </select>
-                                                            </td>
-                                                            <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
-                                                                <select name="details[{{ $index }}][customer_advance_id]" class="form-control select2 excess-amount-select" style="width: 100%;" {{ !empty($detail->receipt_voucher_id) ? 'disabled' : '' }}>
-                                                                    <option value="">Select Excess Amount</option>
-                                                                    @if(isset($rowAdvances[$index]))
+                                                                    @elseif($rowType === 'excess_amount' && isset($rowAdvances[$index]))
                                                                         @foreach ($rowAdvances[$index] as $adv)
                                                                             @php
                                                                                 $isAdvSelected = ($detail->customer_advance_id == $adv['id']) || ($detail->voucher_type === 'customer_advance' && $detail->voucher_id == $adv['id']);
@@ -145,19 +157,53 @@
                                                                                 {{ $adv['text'] }}
                                                                             </option>
                                                                         @endforeach
-                                                                    @endif
-                                                                </select>
-                                                            </td>
-                                                            <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
-                                                                <select name="details[{{ $index }}][sales_order_id]" class="form-control select2 sales-order-select" style="width: 100%;">
-                                                                    <option value="">Select Sales Order</option>
-                                                                    @if(isset($rowSos[$index]))
+                                                                    @elseif($rowType === 'so_do' && isset($rowSos[$index]))
                                                                         @foreach ($rowSos[$index] as $so)
                                                                             <option value="{{ $so['id'] }}" 
                                                                                 @selected($detail->sales_order_id == $so['id'])>
                                                                                 {{ $so['text'] }}
                                                                             </option>
                                                                         @endforeach
+                                                                    @elseif($rowType === 'journal_voucher' && isset($rowJvs[$index]))
+                                                                        @foreach ($rowJvs[$index] as $jv)
+                                                                            <option value="{{ $jv['id'] }}" 
+                                                                                data-remaining-amount="{{ $jv['remaining_amount'] }}"
+                                                                                data-unique-no="{{ $jv['jv_no'] ?? '' }}"
+                                                                                data-detail-id="{{ $jv['detail_id'] ?? '' }}"
+                                                                                @selected($detail->reference_jv_id == $jv['id'])>
+                                                                                {{ $jv['text'] }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    @endif
+                                                                </select>
+                                                            </td>
+                                                            <td class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}">
+                                                                @php
+                                                                    $hasDos = isset($rowDos[$index]) && count($rowDos[$index]) > 0;
+                                                                    $isSoDo = ($rowType === 'so_do');
+                                                                @endphp
+                                                                <select class="form-control select2 do-select" style="width: 100%;" {{ (!$isSoDo || empty($detail->sales_order_id)) ? 'disabled' : '' }}>
+                                                                    @if(!$isSoDo)
+                                                                        <option value="">N/A</option>
+                                                                    @else
+                                                                        @if($hasDos)
+                                                                            <option value="">Select Delivery Order</option>
+                                                                            @foreach ($rowDos[$index] as $do)
+                                                                                <option value="{{ $do['id'] }}"
+                                                                                    data-remaining-amount="{{ $do['remaining_amount'] }}"
+                                                                                    data-reference-no="{{ $do['reference_no'] ?? '' }}"
+                                                                                    @selected($detail->delivery_order_id == $do['id'])>
+                                                                                    {{ $do['text'] }}
+                                                                                </option>
+                                                                            @endforeach
+                                                                            <option value="direct_so" @selected(empty($detail->delivery_order_id) && !empty($detail->sales_order_id))>
+                                                                                Direct SO Advance
+                                                                            </option>
+                                                                        @else
+                                                                            <option value="direct_so" selected>
+                                                                                Direct SO Advance
+                                                                            </option>
+                                                                        @endif
                                                                     @endif
                                                                 </select>
                                                             </td>
@@ -201,6 +247,12 @@
                                                             </td>
                                                             <td>
                                                                 <input type="text" name="details[{{ $index }}][description]" class="form-control description-input" placeholder="Line description" value="{{ $detail->description }}">
+                                                                <input type="hidden" name="details[{{ $index }}][receipt_voucher_id]" class="receipt-voucher-id-input" value="{{ $detail->receipt_voucher_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][customer_advance_id]" class="customer-advance-id-input" value="{{ $detail->customer_advance_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][sales_order_id]" class="sales-order-id-input" value="{{ $detail->sales_order_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][delivery_order_id]" class="delivery-order-id-input" value="{{ $detail->delivery_order_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][reference_jv_id]" class="reference-jv-id-input" value="{{ $detail->reference_jv_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][reference_jv_detail_id]" class="reference-jv-detail-id-input" value="{{ $detail->reference_jv_detail_id }}">
                                                             </td>
                                                             <td>
                                                                 <input type="number" name="details[{{ $index }}][debit_amount]" 
@@ -269,22 +321,23 @@
     <script>
         $(document).ready(function () {
             let rowCount = $('#journalEntriesBody tr').length;
+            const currentJvId = '{{ $journalVoucher->id }}';
 
-            // Global map to store loaded RV remaining balances by RV ID
+            // Global maps for fast lookup
             window.rvMap = window.rvMap || {};
             @if(isset($rowRvs))
                 @foreach($rowRvs as $rvList)
                     @foreach($rvList as $rvItem)
                         window.rvMap[{{ $rvItem['id'] }}] = {
                             id: {{ $rvItem['id'] }},
-                            remaining_amount: {{ $rvItem['remaining_amount'] }},
-                            text: "{{ addslashes($rvItem['text']) }}"
+                            remaining_amount: {{ $rvItem['remaining_amount'] ?? 0 }},
+                            unique_no: "{{ addslashes($rvItem['unique_no'] ?? '') }}",
+                            text: "{{ addslashes($rvItem['text'] ?? '') }}"
                         };
                     @endforeach
                 @endforeach
             @endif
 
-            // Global map to store loaded Customer Advance / Excess limits by Advance ID
             window.advMap = window.advMap || {};
             @if(isset($rowAdvances))
                 @foreach($rowAdvances as $advList)
@@ -299,7 +352,34 @@
                 @endforeach
             @endif
 
-            // Global map to store loaded GRN limits by GRN ID and unique number
+            window.soMap = window.soMap || {};
+            @if(isset($rowSos))
+                @foreach($rowSos as $soList)
+                    @foreach($soList as $soItem)
+                        window.soMap[{{ $soItem['id'] }}] = {
+                            id: {{ $soItem['id'] }},
+                            reference_no: "{{ addslashes($soItem['reference_no'] ?? '') }}",
+                            text: "{{ addslashes($soItem['text'] ?? '') }}"
+                        };
+                    @endforeach
+                @endforeach
+            @endif
+
+            window.jvMap = window.jvMap || {};
+            @if(isset($rowJvs))
+                @foreach($rowJvs as $jvList)
+                    @foreach($jvList as $jvItem)
+                        window.jvMap[{{ $jvItem['id'] }}] = {
+                            id: {{ $jvItem['id'] }},
+                            detail_id: {{ $jvItem['detail_id'] ?? 'null' }},
+                            jv_no: "{{ addslashes($jvItem['jv_no'] ?? '') }}",
+                            remaining_amount: {{ $jvItem['remaining_amount'] ?? 0 }},
+                            text: "{{ addslashes($jvItem['text'] ?? '') }}"
+                        };
+                    @endforeach
+                @endforeach
+            @endif
+
             window.grnMap = window.grnMap || {};
             @if(isset($rowOrders))
                 @foreach($rowOrders as $orderList)
@@ -319,19 +399,29 @@
                 @endforeach
             @endif
 
-            const currentJvId = '{{ $journalVoucher->id }}';
-
-            // Initialize select2 with 100% width
+            // Initialize select2
             $('.select2').select2({ width: '100%' });
 
-            // Toggle receiving columns
+            // Attach pre-loaded initial account data to rows
+            $('#journalEntriesBody tr').each(function() {
+                const $row = $(this);
+                $row.data('accountData', {
+                    receipt_vouchers: $row.data('initial-rvs') || [],
+                    customer_advances: $row.data('initial-advances') || [],
+                    sales_orders: $row.data('initial-sos') || [],
+                    journal_vouchers: $row.data('initial-jvs') || [],
+                    grns: $row.data('initial-grns') || []
+                });
+            });
+
             function toggleReceivingColumns() {
                 if ($('#receivingToggle').is(':checked')) {
                     $('.receiving-col').show();
                     $('.order-col').hide();
+                    $('.order-select').val('').trigger('change.select2');
+                    $('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
                     $('#journalEntriesTable tfoot tr td:first-child').attr('colspan', 5);
                     $('#addRow').closest('td').attr('colspan', 8);
-                    // Refresh select2 inside receiving columns so width is 100%
                     $('.receiving-col .select2').each(function() {
                         if ($(this).hasClass("select2-hidden-accessible")) {
                             $(this).select2('destroy');
@@ -341,9 +431,12 @@
                 } else {
                     $('.receiving-col').hide();
                     $('.order-col').show();
+                    $('.adjustment-type-select').val('').trigger('change.select2');
+                    $('.ref-doc-select').empty().append(new Option('Select Type First', '')).prop('disabled', true).trigger('change.select2');
+                    $('.do-select').empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                    $('.receipt-voucher-id-input, .customer-advance-id-input, .sales-order-id-input, .delivery-order-id-input, .reference-jv-id-input, .reference-jv-detail-id-input').val('');
                     $('#journalEntriesTable tfoot tr td:first-child').attr('colspan', 3);
                     $('#addRow').closest('td').attr('colspan', 6);
-                    // Refresh select2 inside order columns so width is 100%
                     $('.order-col .select2').each(function() {
                         if ($(this).hasClass("select2-hidden-accessible")) {
                             $(this).select2('destroy');
@@ -354,313 +447,20 @@
             }
 
             $('#receivingToggle').change(function () {
-                if ($(this).is(':checked')) {
-                    $('.order-select').val('').trigger('change');
-                    $('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
-                } else {
-                    $('.receipt-voucher-select').val('').trigger('change');
-                    $('.excess-amount-select').val('').trigger('change');
-                    $('.sales-order-select').val('').trigger('change');
-                }
                 toggleReceivingColumns();
             });
 
-            // Helper to get RV remaining amount reliably
-            function getRvRemainingForSelect($rvSelect) {
-                if (!$rvSelect || !$rvSelect.length) return null;
-                const rvId = $rvSelect.val();
-                if (!rvId) return null;
-
-                if (window.rvMap && window.rvMap[rvId] && window.rvMap[rvId].remaining_amount !== undefined) {
-                    const num = parseFloat(window.rvMap[rvId].remaining_amount);
-                    if (!isNaN(num)) return num;
-                }
-
-                const $opt = $rvSelect.find('option:selected');
-                if ($opt.length) {
-                    const attr = $opt.attr('data-remaining-amount') || $opt.data('remaining-amount');
-                    if (attr !== null && attr !== undefined && attr !== '') {
-                        const num = parseFloat(attr);
-                        if (!isNaN(num)) return num;
-                    }
-                    const text = $opt.text();
-                    const match = text.match(/(?:Rem|Current):\s*([\d,]+(?:\.\d+)?)/i);
-                    if (match && match[1]) {
-                        const num = parseFloat(match[1].replace(/,/g, ''));
-                        if (!isNaN(num)) return num;
-                    }
-                }
-
-                const selectElem = $rvSelect[0];
-                if (selectElem && selectElem.selectedIndex >= 0) {
-                    const opt = selectElem.options[selectElem.selectedIndex];
-                    if (opt) {
-                        const attr = opt.getAttribute('data-remaining-amount');
-                        if (attr !== null && attr !== undefined && attr !== '') {
-                            const num = parseFloat(attr);
-                            if (!isNaN(num)) return num;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            // Function to get active RV remaining balance for the row, or across the voucher (for adjusting SO row)
-            function getActiveRvRemainingAmount($row) {
-                const $thisRowRv = $row ? $row.find('.receipt-voucher-select') : null;
-                if ($thisRowRv && $thisRowRv.length && $thisRowRv.val()) {
-                    const val = getRvRemainingForSelect($thisRowRv);
-                    if (val !== null && val > 0) return val;
-                }
-
-                let voucherRvRemaining = null;
-                $('.receipt-voucher-select').each(function() {
-                    if ($(this).val()) {
-                        const val = getRvRemainingForSelect($(this));
-                        if (val !== null && val > 0) {
-                            voucherRvRemaining = val;
-                            return false;
-                        }
-                    }
-                });
-
-                return voucherRvRemaining;
-            }
-
-            // Helper to get Customer Advance / Excess remaining amount reliably from select
-            function getAdvRemainingForSelect($advSelect) {
-                if (!$advSelect || !$advSelect.length) return null;
-                const advId = $advSelect.val();
-                if (!advId) return null;
-
-                if (window.advMap && window.advMap[advId] && window.advMap[advId].remaining_amount !== undefined) {
-                    const num = parseFloat(window.advMap[advId].remaining_amount);
-                    if (!isNaN(num)) return num;
-                }
-
-                const $opt = $advSelect.find('option:selected');
-                if ($opt.length) {
-                    const attr = $opt.attr('data-remaining-amount') || $opt.data('remaining-amount');
-                    if (attr !== null && attr !== undefined && attr !== '') {
-                        const num = parseFloat(attr);
-                        if (!isNaN(num)) return num;
-                    }
-                    const text = $opt.text();
-                    const match = text.match(/(?:Rem|Excess|Current):\s*([\d,]+(?:\.\d+)?)/i);
-                    if (match && match[1]) {
-                        const num = parseFloat(match[1].replace(/,/g, ''));
-                        if (!isNaN(num)) return num;
-                    }
-                }
-
-                const selectElem = $advSelect[0];
-                if (selectElem && selectElem.selectedIndex >= 0) {
-                    const opt = selectElem.options[selectElem.selectedIndex];
-                    if (opt) {
-                        const attr = opt.getAttribute('data-remaining-amount');
-                        if (attr !== null && attr !== undefined && attr !== '') {
-                            const num = parseFloat(attr);
-                            if (!isNaN(num)) return num;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            // Calculate sum of available balances of all selected RVs and Advances in the voucher
-            function getTotalActiveReceivingLimit() {
-                let total = 0;
-                let hasAny = false;
-                $('#journalEntriesBody tr').each(function() {
-                    const $r = $(this);
-                    const $rvSel = $r.find('.receipt-voucher-select');
-                    const $advSel = $r.find('.excess-amount-select');
-                    if ($rvSel.length && $rvSel.val()) {
-                        const rem = getRvRemainingForSelect($rvSel);
-                        if (rem !== null && rem > 0) {
-                            total += rem;
-                            hasAny = true;
-                        }
-                    } else if ($advSel.length && $advSel.val()) {
-                        const rem = getAdvRemainingForSelect($advSel);
-                        if (rem !== null && rem > 0) {
-                            total += rem;
-                            hasAny = true;
-                        }
-                    }
-                });
-                return hasAny ? total : null;
-            }
-
-            // Function to get active Advance remaining balance for the row
-            function getActiveAdvRemainingAmount($row) {
-                const $thisRowAdv = $row ? $row.find('.excess-amount-select') : null;
-                if ($thisRowAdv && $thisRowAdv.length && $thisRowAdv.val()) {
-                    const val = getAdvRemainingForSelect($thisRowAdv);
-                    if (val !== null && val > 0) return val;
-                }
-                return null;
-            }
-
-            // Standard SweetAlert Warning Popup for RV
-            let warningPopupTimeout = null;
-            function showRvLimitWarning(limit) {
-                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
-                    return; // Avoid multiple overlapping popups
-                }
-                if (warningPopupTimeout) clearTimeout(warningPopupTimeout);
-                warningPopupTimeout = setTimeout(function() {
-                    if (typeof Swal !== 'undefined' && !Swal.isVisible()) {
-                        const formatted = Number(limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Amount Exceeds RV Balance',
-                            text: 'Amount cannot exceed Receipt Voucher remaining balance of ' + formatted,
-                            confirmButtonColor: '#D95000'
-                        });
-                    }
-                }, 250);
-            }
-
-            // Standard SweetAlert Warning Popup for Excess Amount
-            let advWarningPopupTimeout = null;
-            function showAdvLimitWarning(limit) {
-                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
-                    return;
-                }
-                if (advWarningPopupTimeout) clearTimeout(advWarningPopupTimeout);
-                advWarningPopupTimeout = setTimeout(function() {
-                    if (typeof Swal !== 'undefined' && !Swal.isVisible()) {
-                        const formatted = Number(limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Amount Exceeds Excess Balance',
-                            text: 'Amount cannot exceed Excess Amount available balance of ' + formatted,
-                            confirmButtonColor: '#D95000'
-                        });
-                    }
-                }, 250);
-            }
-
-            // Standard SweetAlert Warning Popup for GRN
-            let grnWarningTimeout = null;
-            function showGrnLimitWarning(limit, grnNo) {
-                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
-                    return; // Avoid multiple overlapping popups
-                }
-                if (grnWarningTimeout) clearTimeout(grnWarningTimeout);
-                grnWarningTimeout = setTimeout(function() {
-                    if (typeof Swal !== 'undefined' && !Swal.isVisible()) {
-                        const formatted = Number(limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        const title = grnNo ? 'Debit Exceeds GRN Limit (' + grnNo + ')' : 'Debit Exceeds GRN Limit';
-                        Swal.fire({
-                            icon: 'warning',
-                            title: title,
-                            text: 'Debit amount cannot exceed approved GRN available balance of ' + formatted,
-                            confirmButtonColor: '#D95000'
-                        });
-                    }
-                }, 250);
-            }
-
-            // Helper to get GRN info and limit reliably from order select
-            function getGrnInfoForSelect($orderSelect) {
-                if (!$orderSelect || !$orderSelect.length) return null;
-                const orderId = $orderSelect.val();
-                if (!orderId) return null;
-
-                const $opt = $orderSelect.find('option:selected');
-                const type = $opt.attr('data-type') || $orderSelect.closest('tr').find('.voucher-type-input').val();
-                if (type !== 'grn') return null;
-
-                let remaining = null;
-                if (window.grnMap && window.grnMap[orderId] && window.grnMap[orderId].remaining_amount !== undefined) {
-                    const num = parseFloat(window.grnMap[orderId].remaining_amount);
-                    if (!isNaN(num)) remaining = num;
-                }
-                if (remaining === null) {
-                    const uniqueNo = $opt.attr('data-unique-no');
-                    if (uniqueNo && window.grnMap && window.grnMap[uniqueNo] && window.grnMap[uniqueNo].remaining_amount !== undefined) {
-                        const num = parseFloat(window.grnMap[uniqueNo].remaining_amount);
-                        if (!isNaN(num)) remaining = num;
-                    }
-                }
-                if (remaining === null) {
-                    const attr = $opt.attr('data-remaining-amount') || $opt.data('remaining-amount');
-                    if (attr !== null && attr !== undefined && attr !== '') {
-                        const num = parseFloat(attr);
-                        if (!isNaN(num)) return num;
-                    }
-                }
-                if (remaining === null) {
-                    const text = $opt.text();
-                    const match = text.match(/Rem:\s*([\d,]+(?:\.\d+)?)/i);
-                    if (match && match[1]) {
-                        const num = parseFloat(match[1].replace(/,/g, ''));
-                        if (!isNaN(num)) return num;
-                    }
-                }
-
-                const uniqueNo = $opt.attr('data-unique-no') || $opt.text();
-                return {
-                    id: orderId,
-                    unique_no: uniqueNo,
-                    remaining_amount: remaining
-                };
-            }
-
-            // Real-time amount validator & clamper for debit/credit inputs
-            function validateAndClampInput($input) {
-                const $row = $input.closest('tr');
-                const isReceiving = $('#receivingToggle').is(':checked');
-
-                if (isReceiving) {
-                    const hasRowAdv = $row.find('.excess-amount-select').val();
-                    const hasRowRv = $row.find('.receipt-voucher-select').val();
-
-                    let effectiveLimit = null;
-                    let isAdvLimit = false;
-
-                    if (hasRowAdv) {
-                        effectiveLimit = getAdvRemainingForSelect($row.find('.excess-amount-select'));
-                        isAdvLimit = true;
-                    } else if (hasRowRv) {
-                        effectiveLimit = getRvRemainingForSelect($row.find('.receipt-voucher-select'));
-                        isAdvLimit = false;
-                    } else {
-                        // Balancing row without a selected voucher (e.g. Credit row to transfer account)
-                        effectiveLimit = getTotalActiveReceivingLimit();
-                    }
-
-                    if (effectiveLimit !== null && effectiveLimit > 0) {
-                        $input.attr('max', effectiveLimit.toFixed(2));
-                        const enteredVal = parseFloat($input.val()) || 0;
-                        if (enteredVal > (effectiveLimit + 0.001)) {
-                            $input.val(effectiveLimit.toFixed(2));
-                            if (hasRowAdv) {
-                                showAdvLimitWarning(effectiveLimit);
-                            } else if (hasRowRv) {
-                                showRvLimitWarning(effectiveLimit);
-                            }
-                        }
-                    }
-                } else if ($input.hasClass('debit-input')) {
-                    const grnInfo = getGrnInfoForSelect($row.find('.order-select'));
-                    if (grnInfo && grnInfo.id) {
-                        const remaining = grnInfo.remaining_amount;
-                        if (remaining !== null && !isNaN(remaining)) {
-                            $input.attr('max', Number(remaining).toFixed(2));
-                            const enteredVal = parseFloat($input.val()) || 0;
-                            if (enteredVal > (remaining + 0.001)) {
-                                $input.val(remaining > 0 ? Number(remaining).toFixed(2) : '');
-                                showGrnLimitWarning(remaining, grnInfo.unique_no);
-                            }
-                        }
-                    }
+            function showWarningPopup(title, text) {
+                if (typeof Swal !== 'undefined' && !Swal.isVisible()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: title,
+                        text: text,
+                        confirmButtonColor: '#D95000'
+                    });
                 }
             }
 
-            // Cleanly update Select2 options without breaking container
             function updateSelect2Dropdown($select, items, placeholder, selectedId, isLoading = false) {
                 if ($select.hasClass("select2-hidden-accessible") || $select.data('select2')) {
                     $select.select2('destroy');
@@ -681,11 +481,16 @@
                             $(opt).attr('data-unique-no', item.unique_no);
                         } else if (item.reference_no !== undefined) {
                             $(opt).attr('data-unique-no', item.reference_no);
+                        } else if (item.jv_no !== undefined) {
+                            $(opt).attr('data-unique-no', item.jv_no);
                         } else if (item.voucher_no !== undefined) {
                             $(opt).attr('data-unique-no', item.voucher_no);
                         }
                         if (item.voucher_no !== undefined) {
                             $(opt).attr('data-voucher-no', item.voucher_no);
+                        }
+                        if (item.detail_id !== undefined) {
+                            $(opt).attr('data-detail-id', item.detail_id);
                         }
                         if (item.type !== undefined) {
                             $(opt).attr('data-type', item.type);
@@ -708,48 +513,20 @@
                 }
             }
 
-            // Function to load account-specific data for a row
-            function loadAccountData($row, accId, selectedRvId, selectedAdvId, selectedSoId, selectedOrderId) {
-                const $rvSelect = $row.find('.receipt-voucher-select');
-                const $advSelect = $row.find('.excess-amount-select');
-                const $soSelect = $row.find('.sales-order-select');
+            function loadAccountData($row, accId) {
                 const $orderSelect = $row.find('.order-select');
 
                 if (!accId) {
-                    if ($rvSelect.length) {
-                        updateSelect2Dropdown($rvSelect, [], 'Select Receipt Voucher (Select Account First)', null);
-                    }
-                    if ($advSelect.length) {
-                        updateSelect2Dropdown($advSelect, [], 'Select Excess Amount (Select Account First)', null);
-                    }
-                    if ($soSelect.length) {
-                        updateSelect2Dropdown($soSelect, [], 'Select Sales Order (Select Account First)', null);
-                    }
+                    $row.removeData('accountData');
                     if ($orderSelect.length) {
                         updateSelect2Dropdown($orderSelect, [], 'Select Order (Select Account First)', null);
                     }
+                    populateRefDocDropdown($row);
                     return;
                 }
 
-                if ($rvSelect.length) {
-                    updateSelect2Dropdown($rvSelect, [], 'Loading Receipt Vouchers...', null, true);
-                }
-                if ($advSelect.length) {
-                    updateSelect2Dropdown($advSelect, [], 'Loading Excess Amounts...', null, true);
-                }
-                if ($soSelect.length) {
-                    updateSelect2Dropdown($soSelect, [], 'Loading Sales Orders...', null, true);
-                }
                 if ($orderSelect.length) {
-                    const selectedOpt = $row.find('.account-select option:selected');
-                    const tbl = (selectedOpt.attr('data-table-name') || '').toLowerCase();
-                    let loadingMsg = 'Loading Orders...';
-                    if (tbl === 'suppliers') {
-                        loadingMsg = 'Loading GRNs...';
-                    } else if (tbl === 'customers') {
-                        loadingMsg = 'Loading Sale Orders...';
-                    }
-                    updateSelect2Dropdown($orderSelect, [], loadingMsg, null, true);
+                    updateSelect2Dropdown($orderSelect, [], 'Loading Orders...', null, true);
                 }
 
                 $.ajax({
@@ -757,21 +534,31 @@
                     type: 'GET',
                     data: {
                         acc_id: accId,
-                        jv_id: '{{ $journalVoucher->id }}'
+                        jv_id: currentJvId
                     },
                     success: function (res) {
+                        $row.data('accountData', res);
+
                         if (res.receipt_vouchers) {
                             res.receipt_vouchers.forEach(function (rv) {
                                 window.rvMap[rv.id] = rv;
                             });
                         }
-
                         if (res.customer_advances) {
                             res.customer_advances.forEach(function (adv) {
                                 window.advMap[adv.id] = adv;
                             });
                         }
-
+                        if (res.sales_orders) {
+                            res.sales_orders.forEach(function (so) {
+                                window.soMap[so.id] = so;
+                            });
+                        }
+                        if (res.journal_vouchers) {
+                            res.journal_vouchers.forEach(function (jv) {
+                                window.jvMap[jv.id] = jv;
+                            });
+                        }
                         if (res.grns) {
                             res.grns.forEach(function (grn) {
                                 window.grnMap[grn.id] = grn;
@@ -781,56 +568,26 @@
                             });
                         }
 
-                        if ($rvSelect.length) {
-                            const rvPlaceholder = (res.receipt_vouchers && res.receipt_vouchers.length > 0)
-                                ? 'Select Receipt Voucher'
-                                : 'No Receipt Vouchers Available';
-                            updateSelect2Dropdown($rvSelect, res.receipt_vouchers || [], rvPlaceholder, selectedRvId);
-                        }
-
-                        if ($advSelect.length) {
-                            const advPlaceholder = (res.customer_advances && res.customer_advances.length > 0)
-                                ? 'Select Excess Amount'
-                                : 'No Excess Amounts Available';
-                            updateSelect2Dropdown($advSelect, res.customer_advances || [], advPlaceholder, selectedAdvId);
-                        }
-
-                        if ($soSelect.length) {
-                            const soPlaceholder = (res.sales_orders && res.sales_orders.length > 0)
-                                ? 'Select Sales Order'
-                                : 'No Sales Orders Available';
-                            updateSelect2Dropdown($soSelect, res.sales_orders || [], soPlaceholder, selectedSoId);
-                        }
-
+                        // Populate Order dropdown for Receiving Toggle OFF mode
                         if ($orderSelect.length) {
                             const tableName = (res.table_name || '').toLowerCase();
                             if (tableName === 'customers') {
                                 const orders = res.sales_orders || [];
-                                const orderPlaceholder = orders.length > 0
-                                    ? 'Select Sale Order'
-                                    : 'No Sale Orders Available';
-                                updateSelect2Dropdown($orderSelect, orders, orderPlaceholder, selectedOrderId);
+                                const orderPlaceholder = orders.length > 0 ? 'Select Sale Order' : 'No Sale Orders Available';
+                                updateSelect2Dropdown($orderSelect, orders, orderPlaceholder, null);
                             } else if (tableName === 'suppliers') {
                                 const grns = res.grns || [];
-                                const grnPlaceholder = grns.length > 0
-                                    ? 'Select GRN'
-                                    : 'No GRNs Available';
-                                updateSelect2Dropdown($orderSelect, grns, grnPlaceholder, selectedOrderId);
+                                const grnPlaceholder = grns.length > 0 ? 'Select GRN' : 'No GRNs Available';
+                                updateSelect2Dropdown($orderSelect, grns, grnPlaceholder, null);
                             } else {
                                 updateSelect2Dropdown($orderSelect, [], 'No Orders Available', null);
                             }
                         }
+
+                        // If adjustment type is already selected, populate reference dropdown
+                        populateRefDocDropdown($row);
                     },
                     error: function () {
-                        if ($rvSelect.length) {
-                            updateSelect2Dropdown($rvSelect, [], 'Error loading Receipt Vouchers', null);
-                        }
-                        if ($advSelect.length) {
-                            updateSelect2Dropdown($advSelect, [], 'Error loading Excess Amounts', null);
-                        }
-                        if ($soSelect.length) {
-                            updateSelect2Dropdown($soSelect, [], 'Error loading Sales Orders', null);
-                        }
                         if ($orderSelect.length) {
                             updateSelect2Dropdown($orderSelect, [], 'Error loading Orders', null);
                         }
@@ -838,14 +595,212 @@
                 });
             }
 
-            // Handle Account selection change
+            function populateRefDocDropdown($row) {
+                const type = $row.find('.adjustment-type-select').val();
+                const $refSelect = $row.find('.ref-doc-select');
+                const $doSelect = $row.find('.do-select');
+                const accData = $row.data('accountData') || {};
+
+                if (!type) {
+                    updateSelect2Dropdown($refSelect, [], 'Select Type First', null, true);
+                    $doSelect.empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                    return;
+                }
+
+                if (type === 'receipt_voucher') {
+                    const items = accData.receipt_vouchers || [];
+                    const placeholder = items.length ? 'Select Receipt Voucher' : 'No Receipt Vouchers Available';
+                    updateSelect2Dropdown($refSelect, items, placeholder, null);
+                    $doSelect.empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                } else if (type === 'excess_amount') {
+                    const items = accData.customer_advances || [];
+                    const placeholder = items.length ? 'Select Excess Amount' : 'No Excess Amounts Available';
+                    updateSelect2Dropdown($refSelect, items, placeholder, null);
+                    $doSelect.empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                } else if (type === 'so_do') {
+                    const items = accData.sales_orders || [];
+                    const placeholder = items.length ? 'Select Sales Order' : 'No Sales Orders Available';
+                    updateSelect2Dropdown($refSelect, items, placeholder, null);
+                    $doSelect.empty().append(new Option('Select SO First', '')).prop('disabled', true).trigger('change.select2');
+                } else if (type === 'journal_voucher') {
+                    const items = accData.journal_vouchers || [];
+                    const placeholder = items.length ? 'Select Journal Voucher' : 'No Credit JVs Available';
+                    updateSelect2Dropdown($refSelect, items, placeholder, null);
+                    $doSelect.empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                }
+            }
+
+            function setRowDebitAmount($row, amount) {
+                const num = parseFloat(amount);
+                if (!isNaN(num) && num > 0) {
+                    $row.find('.debit-input').attr('max', num.toFixed(2)).val(num.toFixed(2));
+                    $row.find('.credit-input').val('').removeAttr('max');
+
+                    const $allRows = $('#journalEntriesBody tr');
+                    if ($allRows.length === 2) {
+                        const $otherRow = $allRows.not($row);
+                        const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
+                        const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
+                        if (otherCredit > 0 || otherDebit === 0) {
+                            $otherRow.find('.credit-input').val(num.toFixed(2));
+                            $otherRow.find('.debit-input').val('');
+                        }
+                    }
+                } else {
+                    $row.find('.debit-input').removeAttr('max').val('');
+                    $row.find('.credit-input').val('');
+                }
+                calculateTotals();
+            }
+
             $(document).on('change', '.account-select', function () {
                 const $row = $(this).closest('tr');
                 const accId = $(this).val();
-                loadAccountData($row, accId, null, null, null, null);
+                loadAccountData($row, accId);
             });
 
-            // Listen for order selection change to populate voucher columns & check GRN limit
+            $(document).on('change', '.adjustment-type-select', function () {
+                const $row = $(this).closest('tr');
+                $row.find('.receipt-voucher-id-input, .customer-advance-id-input, .sales-order-id-input, .delivery-order-id-input, .reference-jv-id-input, .reference-jv-detail-id-input').val('');
+                $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                $row.find('.debit-input').removeAttr('max').val('');
+                $row.find('.credit-input').removeAttr('max').val('');
+                populateRefDocDropdown($row);
+                calculateTotals();
+            });
+
+            $(document).on('change', '.ref-doc-select', function () {
+                const $refSelect = $(this);
+                const $row = $refSelect.closest('tr');
+                const type = $row.find('.adjustment-type-select').val();
+                const val = $refSelect.val();
+                const $doSelect = $row.find('.do-select');
+
+                if (!val) {
+                    $row.find('.receipt-voucher-id-input, .customer-advance-id-input, .sales-order-id-input, .delivery-order-id-input, .reference-jv-id-input, .reference-jv-detail-id-input').val('');
+                    $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                    $row.find('.debit-input').removeAttr('max').val('');
+                    if (type === 'so_do') {
+                        $doSelect.empty().append(new Option('Select SO First', '')).prop('disabled', true).trigger('change.select2');
+                    }
+                    calculateTotals();
+                    return;
+                }
+
+                const $selectedOpt = $refSelect.find('option:selected');
+                const remAmountAttr = $selectedOpt.attr('data-remaining-amount');
+                const remAmount = remAmountAttr !== undefined ? parseFloat(remAmountAttr) : 0;
+
+                if (type === 'receipt_voucher') {
+                    $row.find('.receipt-voucher-id-input').val(val);
+                    $row.find('.voucher-id-input').val(val);
+                    $row.find('.voucher-no-input').val($selectedOpt.attr('data-unique-no') || $selectedOpt.text());
+                    $row.find('.voucher-type-input').val('receipt_voucher');
+                    setRowDebitAmount($row, remAmount);
+                } else if (type === 'excess_amount') {
+                    $row.find('.customer-advance-id-input').val(val);
+                    $row.find('.voucher-id-input').val(val);
+                    $row.find('.voucher-no-input').val($selectedOpt.attr('data-voucher-no') || $selectedOpt.text());
+                    $row.find('.voucher-type-input').val('customer_advance');
+                    setRowDebitAmount($row, remAmount);
+                } else if (type === 'journal_voucher') {
+                    const detailId = $selectedOpt.attr('data-detail-id') || (window.jvMap && window.jvMap[val] ? window.jvMap[val].detail_id : null);
+                    $row.find('.reference-jv-id-input').val(val);
+                    $row.find('.reference-jv-detail-id-input').val(detailId || '');
+                    $row.find('.voucher-id-input').val(val);
+                    $row.find('.voucher-no-input').val($selectedOpt.attr('data-unique-no') || $selectedOpt.text());
+                    $row.find('.voucher-type-input').val('journal_voucher');
+                    setRowDebitAmount($row, remAmount);
+                } else if (type === 'so_do') {
+                    $row.find('.sales-order-id-input').val(val);
+                    $doSelect.empty().append(new Option('Loading Delivery Orders...', '')).prop('disabled', true).trigger('change.select2');
+
+                    const soDosUrl = '{{ route("journal-voucher.so-dos", ":soId") }}'.replace(':soId', val);
+                    $.ajax({
+                        url: soDosUrl,
+                        type: 'GET',
+                        data: {
+                            exclude_jv_id: currentJvId
+                        },
+                        success: function (res) {
+                            if (res.success) {
+                                $doSelect.empty();
+                                if (res.delivery_orders && res.delivery_orders.length > 0) {
+                                    $doSelect.append(new Option('Select Delivery Order', ''));
+                                    res.delivery_orders.forEach(function (doItem) {
+                                        const opt = new Option(doItem.text, doItem.id);
+                                        $(opt).attr('data-remaining-amount', doItem.remaining_amount);
+                                        $(opt).attr('data-reference-no', doItem.reference_no);
+                                        $doSelect.append(opt);
+                                    });
+
+                                    if (res.so_remaining_amount > 0.01) {
+                                        const optDirect = new Option(`Direct SO Advance (Rem: Rs. ${res.so_formatted_remaining})`, 'direct_so');
+                                        $(optDirect).attr('data-remaining-amount', res.so_remaining_amount);
+                                        $(optDirect).attr('data-reference-no', res.so_reference_no);
+                                        $doSelect.append(optDirect);
+                                    }
+
+                                    $doSelect.prop('disabled', false).trigger('change.select2');
+                                } else {
+                                    // No DOs created for this SO -> Auto adjust direct SO advance
+                                    const directText = `No DOs (Direct SO Rem: Rs. ${res.so_formatted_remaining})`;
+                                    const opt = new Option(directText, 'direct_so', true, true);
+                                    $(opt).attr('data-remaining-amount', res.so_remaining_amount);
+                                    $(opt).attr('data-reference-no', res.so_reference_no);
+                                    $doSelect.append(opt).prop('disabled', true).trigger('change.select2');
+
+                                    $row.find('.delivery-order-id-input').val('');
+                                    $row.find('.voucher-id-input').val(val);
+                                    $row.find('.voucher-no-input').val(res.so_reference_no);
+                                    $row.find('.voucher-type-input').val('sales_order');
+
+                                    setRowDebitAmount($row, res.so_remaining_amount);
+                                }
+                            }
+                        },
+                        error: function () {
+                            $doSelect.empty().append(new Option('Error loading DOs', '')).prop('disabled', true).trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+            $(document).on('change', '.do-select', function () {
+                const $doSelect = $(this);
+                const $row = $doSelect.closest('tr');
+                const val = $doSelect.val();
+
+                if (!val) {
+                    $row.find('.delivery-order-id-input').val('');
+                    $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                    $row.find('.debit-input').removeAttr('max').val('');
+                    calculateTotals();
+                    return;
+                }
+
+                const $selectedOpt = $doSelect.find('option:selected');
+                const remAmountAttr = $selectedOpt.attr('data-remaining-amount');
+                const remAmount = remAmountAttr !== undefined ? parseFloat(remAmountAttr) : 0;
+                const refNo = $selectedOpt.attr('data-reference-no') || $selectedOpt.text();
+
+                if (val === 'direct_so') {
+                    const soId = $row.find('.sales-order-id-input').val();
+                    $row.find('.delivery-order-id-input').val('');
+                    $row.find('.voucher-id-input').val(soId);
+                    $row.find('.voucher-no-input').val(refNo);
+                    $row.find('.voucher-type-input').val('sales_order');
+                    setRowDebitAmount($row, remAmount);
+                } else {
+                    $row.find('.delivery-order-id-input').val(val);
+                    $row.find('.voucher-id-input').val(val);
+                    $row.find('.voucher-no-input').val(refNo);
+                    $row.find('.voucher-type-input').val('delivery_order');
+                    setRowDebitAmount($row, remAmount);
+                }
+            });
+
+            // Listen for order selection change (Toggle OFF mode)
             $(document).on('change', '.order-select', function () {
                 const $row = $(this).closest('tr');
                 const $selected = $(this).find('option:selected');
@@ -866,7 +821,7 @@
                             data: {
                                 _token: '{{ csrf_token() }}',
                                 grn_id: val,
-                                jv_id: typeof currentJvId !== 'undefined' ? currentJvId : null,
+                                jv_id: currentJvId,
                                 debit_amount: currentDebit
                             },
                             success: function (res) {
@@ -875,11 +830,10 @@
                                     window.grnMap[res.unique_no] = res;
                                     $selected.attr('data-remaining-amount', res.available_amount);
                                     $row.find('.debit-input').attr('max', res.available_amount.toFixed(2));
-
                                     const enteredDebit = parseFloat($row.find('.debit-input').val()) || 0;
                                     if (enteredDebit > (res.available_amount + 0.001)) {
                                         $row.find('.debit-input').val(res.available_amount > 0 ? res.available_amount.toFixed(2) : '');
-                                        showGrnLimitWarning(res.available_amount, res.unique_no);
+                                        showWarningPopup('Debit Exceeds GRN Limit (' + res.unique_no + ')', 'Debit amount cannot exceed approved GRN available balance of ' + Number(res.available_amount).toLocaleString('en-US', { minimumFractionDigits: 2 }));
                                         calculateTotals();
                                     }
                                 }
@@ -889,93 +843,49 @@
                         $row.find('.debit-input').removeAttr('max');
                     }
                 } else {
-                    $row.find('.voucher-id-input').val('');
-                    $row.find('.voucher-no-input').val('');
-                    $row.find('.voucher-type-input').val('');
+                    $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
                     $row.find('.debit-input').removeAttr('max');
                 }
             });
 
-            // Receipt Voucher selection handler: auto-fill, mutual exclusivity, and enforce max
-            $(document).on('change', '.receipt-voucher-select', function () {
-                const $rvSelect = $(this);
-                const $row = $rvSelect.closest('tr');
-                const rvId = $rvSelect.val();
-                const remainingAmount = getRvRemainingForSelect($rvSelect);
-                const $advSelect = $row.find('.excess-amount-select');
-
-                if (rvId) {
-                    if ($advSelect.length) {
-                        $advSelect.val('').trigger('change.select2');
-                        $advSelect.prop('disabled', true);
-                    }
-
-                    if (remainingAmount !== null && !isNaN(remainingAmount) && remainingAmount > 0) {
-                        $row.find('.debit-input').attr('max', remainingAmount.toFixed(2)).val(remainingAmount.toFixed(2));
-                        $row.find('.credit-input').val('').removeAttr('max');
-
-                        const $allRows = $('#journalEntriesBody tr');
-                        if ($allRows.length === 2) {
-                            const $otherRow = $allRows.not($row);
-                            const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
-                            const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
-                            if (otherCredit > 0 || $otherRow.find('.sales-order-select').length > 0 || otherDebit === 0) {
-                                $otherRow.find('.credit-input').val(remainingAmount.toFixed(2));
-                                $otherRow.find('.debit-input').val('');
-                            }
+            function getRowLimit($row) {
+                const isReceiving = $('#receivingToggle').is(':checked');
+                if (isReceiving) {
+                    const type = $row.find('.adjustment-type-select').val();
+                    if (type === 'so_do') {
+                        const doVal = $row.find('.do-select').val();
+                        if (doVal) {
+                            const opt = $row.find('.do-select option:selected');
+                            const rem = parseFloat(opt.attr('data-remaining-amount'));
+                            if (!isNaN(rem)) return { limit: rem, label: doVal === 'direct_so' ? 'Sales Order' : 'Delivery Order' };
                         }
+                    } else if (type) {
+                        const opt = $row.find('.ref-doc-select option:selected');
+                        const rem = parseFloat(opt.attr('data-remaining-amount'));
+                        let label = 'Document';
+                        if (type === 'receipt_voucher') label = 'Receipt Voucher';
+                        else if (type === 'excess_amount') label = 'Excess Amount';
+                        else if (type === 'journal_voucher') label = 'Journal Voucher';
+                        if (!isNaN(rem)) return { limit: rem, label: label };
                     }
-                } else {
-                    if ($advSelect.length) {
-                        $advSelect.prop('disabled', false);
-                    }
-                    $row.find('.debit-input').removeAttr('max').val('');
-                    $row.find('.credit-input').val('');
                 }
-                calculateTotals();
-            });
+                return null;
+            }
 
-            // Excess Amount selection handler: auto-fill, mutual exclusivity, and enforce max
-            $(document).on('change', '.excess-amount-select', function () {
-                const $advSelect = $(this);
-                const $row = $advSelect.closest('tr');
-                const advId = $advSelect.val();
-                const remainingAmount = getAdvRemainingForSelect($advSelect);
-                const $rvSelect = $row.find('.receipt-voucher-select');
+            function validateAndClampInput($input) {
+                const $row = $input.closest('tr');
+                const limitInfo = getRowLimit($row);
 
-                if (advId) {
-                    if ($rvSelect.length) {
-                        $rvSelect.val('').trigger('change.select2');
-                        $rvSelect.prop('disabled', true);
+                if (limitInfo && limitInfo.limit !== null && limitInfo.limit > 0) {
+                    $input.attr('max', limitInfo.limit.toFixed(2));
+                    const enteredVal = parseFloat($input.val()) || 0;
+                    if (enteredVal > (limitInfo.limit + 0.001)) {
+                        $input.val(limitInfo.limit.toFixed(2));
+                        const formatted = Number(limitInfo.limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        showWarningPopup(`Amount Exceeds ${limitInfo.label} Balance`, `Amount cannot exceed ${limitInfo.label} remaining balance of ${formatted}`);
                     }
-
-                    if (remainingAmount !== null && !isNaN(remainingAmount) && remainingAmount > 0) {
-                        $row.find('.debit-input').attr('max', remainingAmount.toFixed(2)).val(remainingAmount.toFixed(2));
-                        $row.find('.credit-input').val('').removeAttr('max');
-
-                        const $allRows = $('#journalEntriesBody tr');
-                        if ($allRows.length === 2) {
-                            const $otherRow = $allRows.not($row);
-                            const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
-                            const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
-                            if (otherCredit > 0 || otherDebit === 0) {
-                                $otherRow.find('.credit-input').val(remainingAmount.toFixed(2));
-                                $otherRow.find('.debit-input').val('');
-                            }
-                        }
-                    }
-                } else {
-                    if ($rvSelect.length) {
-                        $rvSelect.prop('disabled', false);
-                    }
-                    $row.find('.debit-input').removeAttr('max').val('');
-                    $row.find('.credit-input').val('');
                 }
-                calculateTotals();
-            });
-
-            // Set initial state
-            toggleReceivingColumns();
+            }
 
             // Add new row
             $('#addRow').click(function () {
@@ -994,18 +904,22 @@
                             </select>
                         </td>
                         <td class="receiving-col" style="${receivingDisplayStyle}">
-                            <select name="details[${rowCount}][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 100%;">
-                                <option value="">Select Receipt Voucher (Select Account First)</option>
+                            <select class="form-control select2 adjustment-type-select" style="width: 100%;">
+                                <option value="">Select Type</option>
+                                <option value="receipt_voucher">Receipt Voucher (RV)</option>
+                                <option value="excess_amount">Excess Amount</option>
+                                <option value="so_do">SO / DO</option>
+                                <option value="journal_voucher">Journal Voucher (JV)</option>
                             </select>
                         </td>
                         <td class="receiving-col" style="${receivingDisplayStyle}">
-                            <select name="details[${rowCount}][customer_advance_id]" class="form-control select2 excess-amount-select" style="width: 100%;">
-                                <option value="">Select Excess Amount (Select Account First)</option>
+                            <select class="form-control select2 ref-doc-select" style="width: 100%;" disabled>
+                                <option value="">Select Type First</option>
                             </select>
                         </td>
                         <td class="receiving-col" style="${receivingDisplayStyle}">
-                            <select name="details[${rowCount}][sales_order_id]" class="form-control select2 sales-order-select" style="width: 100%;">
-                                <option value="">Select Sales Order (Select Account First)</option>
+                            <select class="form-control select2 do-select" style="width: 100%;" disabled>
+                                <option value="">N/A</option>
                             </select>
                         </td>
                         <td class="order-col" style="${orderDisplayStyle}">
@@ -1018,6 +932,12 @@
                         </td>
                         <td>
                             <input type="text" name="details[${rowCount}][description]" class="form-control description-input" placeholder="Line description">
+                            <input type="hidden" name="details[${rowCount}][receipt_voucher_id]" class="receipt-voucher-id-input">
+                            <input type="hidden" name="details[${rowCount}][customer_advance_id]" class="customer-advance-id-input">
+                            <input type="hidden" name="details[${rowCount}][sales_order_id]" class="sales-order-id-input">
+                            <input type="hidden" name="details[${rowCount}][delivery_order_id]" class="delivery-order-id-input">
+                            <input type="hidden" name="details[${rowCount}][reference_jv_id]" class="reference-jv-id-input">
+                            <input type="hidden" name="details[${rowCount}][reference_jv_detail_id]" class="reference-jv-detail-id-input">
                         </td>
                         <td>
                             <input type="number" name="details[${rowCount}][debit_amount]" class="form-control debit-input" step="0.01" min="0" placeholder="0.00">
@@ -1048,7 +968,6 @@
                 }
             });
 
-            // Force only one of debit/credit to have value & clamp against RV limit in real-time
             $(document).on('input', '.debit-input', function () {
                 const $row = $(this).closest('tr');
                 const debitValue = parseFloat($(this).val()) || 0;
@@ -1072,51 +991,17 @@
             $(document).on('blur change', '.debit-input, .credit-input', function () {
                 validateAndClampInput($(this));
                 calculateTotals();
-
-                // If debit was changed on a GRN row, do server-side verification check
-                const $input = $(this);
-                if ($input.hasClass('debit-input') && !$('#receivingToggle').is(':checked')) {
-                    const $row = $input.closest('tr');
-                    const grnInfo = getGrnInfoForSelect($row.find('.order-select'));
-                    const debitVal = parseFloat($input.val()) || 0;
-                    if (grnInfo && grnInfo.id && debitVal > 0) {
-                        $.ajax({
-                            url: '{{ route("journal-voucher.check-grn-limit") }}',
-                            type: 'POST',
-                            data: {
-                                _token: '{{ csrf_token() }}',
-                                grn_id: grnInfo.id,
-                                jv_id: typeof currentJvId !== 'undefined' ? currentJvId : null,
-                                debit_amount: debitVal
-                            },
-                            success: function (res) {
-                                if (res.success) {
-                                    window.grnMap[res.grn_id] = res;
-                                    window.grnMap[res.unique_no] = res;
-                                    $input.attr('max', res.available_amount.toFixed(2));
-                                    if (res.is_exceeded) {
-                                        $input.val(res.available_amount > 0 ? res.available_amount.toFixed(2) : '');
-                                        showGrnLimitWarning(res.available_amount, res.unique_no);
-                                        calculateTotals();
-                                    }
-                                }
-                            }
-                        });
-                    }
-                }
             });
 
-            // Update remove buttons visibility
             function updateRemoveButtons() {
-                const rowCount = $('#journalEntriesBody tr').length;
-                if (rowCount > 2) {
+                const count = $('#journalEntriesBody tr').length;
+                if (count > 2) {
                     $('.remove-row').show();
                 } else {
                     $('.remove-row').hide();
                 }
             }
 
-            // Calculate totals
             function calculateTotals() {
                 let totalDebits = 0;
                 let totalCredits = 0;
@@ -1184,102 +1069,12 @@
                     });
                     return false;
                 }
-
-                // Check that no RV or Excess amount exceeds its remaining balance (when Receiving is active)
-                if ($('#receivingToggle').is(':checked')) {
-                    let limitExceeded = false;
-                    let limitExceededMsg = '';
-                    $('#journalEntriesBody tr').each(function (index) {
-                        const $r = $(this);
-                        const $advSel = $r.find('.excess-amount-select');
-                        const $rvSel = $r.find('.receipt-voucher-select');
-
-                        let maxLimit = null;
-                        let limitLabel = '';
-
-                        if ($advSel.length && $advSel.val()) {
-                            maxLimit = getAdvRemainingForSelect($advSel);
-                            limitLabel = 'Excess Amount';
-                        } else if ($rvSel.length && $rvSel.val()) {
-                            maxLimit = getRvRemainingForSelect($rvSel);
-                            limitLabel = 'Receipt Voucher';
-                        }
-
-                        if (maxLimit !== null && maxLimit > 0) {
-                            const debitAmount = parseFloat($r.find('.debit-input').val()) || 0;
-                            const creditAmount = parseFloat($r.find('.credit-input').val()) || 0;
-                            const enteredAmount = Math.max(debitAmount, creditAmount);
-                            if (enteredAmount > (maxLimit + 0.01)) {
-                                limitExceeded = true;
-                                limitExceededMsg = `Line ${index + 1}: Entered amount (${enteredAmount.toFixed(2)}) exceeds ${limitLabel} remaining balance of ${maxLimit.toFixed(2)}.`;
-                                return false;
-                            }
-                        }
-                    });
-
-                    if (limitExceeded) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Validation Error',
-                            text: limitExceededMsg,
-                            confirmButtonColor: '#D95000'
-                        });
-                        return false;
-                    }
-                } else {
-                    // Check that no GRN debit exceeds its approved limit
-                    let grnExceeded = false;
-                    let grnExceededMsg = '';
-                    const grnDebitsEntered = {};
-
-                    $('#journalEntriesBody tr').each(function (index) {
-                        const $orderSelect = $(this).find('.order-select');
-                        const grnInfo = getGrnInfoForSelect($orderSelect);
-                        if (grnInfo && grnInfo.id) {
-                            const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
-                            if (debitAmount > 0) {
-                                grnDebitsEntered[grnInfo.id] = grnDebitsEntered[grnInfo.id] || {
-                                    unique_no: grnInfo.unique_no,
-                                    remaining_amount: grnInfo.remaining_amount,
-                                    totalDebit: 0,
-                                    line: index + 1
-                                };
-                                grnDebitsEntered[grnInfo.id].totalDebit += debitAmount;
-                            }
-                        }
-                    });
-
-                    for (const gid in grnDebitsEntered) {
-                        const item = grnDebitsEntered[gid];
-                        if (item.remaining_amount !== null && !isNaN(item.remaining_amount)) {
-                            if (item.totalDebit > (item.remaining_amount + 0.01)) {
-                                grnExceeded = true;
-                                grnExceededMsg = `Line ${item.line}: Entered debit amount (${item.totalDebit.toFixed(2)}) for GRN ${item.unique_no} exceeds approved balance of ${Number(item.remaining_amount).toFixed(2)}.`;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (grnExceeded) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Validation Error',
-                            text: grnExceededMsg,
-                            confirmButtonColor: '#D95000'
-                        });
-                        return false;
-                    }
-                }
             });
 
-            // Initialize
+            // Set initial state
+            toggleReceivingColumns();
             updateRemoveButtons();
             calculateTotals();
         });
     </script>
 @endsection
-

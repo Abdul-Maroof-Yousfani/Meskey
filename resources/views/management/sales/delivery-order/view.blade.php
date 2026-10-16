@@ -53,6 +53,49 @@
         </div>
     @endif
 
+    @php
+        $doRefundStats = function_exists('get_delivery_order_refund_stats') ? get_delivery_order_refund_stats($delivery_order->id) : null;
+    @endphp
+    @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+        <div class="card border-info my-2 shadow-sm" style="border-left: 5px solid #00bcd4 !important; background: #f0f9ff; border-radius: 6px;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="fw-bold text-dark">
+                        <i class="fa fa-info-circle text-info me-1"></i>
+                        <strong>Payment Adjustments & Refunds Summary</strong>
+                    </div>
+                    <span class="badge badge-info px-2 py-1" style="font-size: 11px;">
+                        Deliverable: {{ round($doRefundStats['remaining_allowed_qty']) }} / {{ round($delivery_order->delivery_order_data->sum('qty')) }} Bags
+                    </span>
+                </div>
+                <div class="row text-center text-md-start">
+                    <div class="col-6 col-md-3 mb-1">
+                        <small class="text-muted text-uppercase d-block fw-bold" style="font-size: 10px;">Original DO Value</small>
+                        <span class="fw-bold text-dark" style="font-size: 15px;">Rs. {{ number_format($doRefundStats['total_value']) }}</span>
+                    </div>
+                    <div class="col-6 col-md-3 mb-1">
+                        <small class="text-danger text-uppercase d-block fw-bold" style="font-size: 10px;">Adjusted / Refunded</small>
+                        <span class="fw-bold text-danger" style="font-size: 15px;">- Rs. {{ number_format($doRefundStats['refunded_amount']) }}</span>
+                        <small class="d-block text-muted" style="font-size: 10px;">
+                            (DPV: Rs. {{ number_format($doRefundStats['dpv_amount']) }} | JV: Rs. {{ number_format($doRefundStats['jv_amount']) }})
+                        </small>
+                    </div>
+                    <div class="col-6 col-md-3 mb-1">
+                        <small class="text-success text-uppercase d-block fw-bold" style="font-size: 10px;">Net Deliverable Value</small>
+                        <span class="fw-bold text-success" style="font-size: 15px;">Rs. {{ number_format($doRefundStats['remaining_allowed_value']) }}</span>
+                    </div>
+                    <div class="col-6 col-md-3 mb-1">
+                        <small class="text-primary text-uppercase d-block fw-bold" style="font-size: 10px;">Net Deliverable Qty</small>
+                        <span class="fw-bold text-primary" style="font-size: 15px;">{{ round($doRefundStats['remaining_allowed_qty']) }} Bags</span>
+                        <small class="d-block text-muted" style="font-size: 10px;">
+                            ({{ round($doRefundStats['refunded_qty']) }} Bags Adjusted)
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row">
@@ -333,6 +376,12 @@
                                 <td>
                                     <input type="text" class="form-control" value="{{ $data->no_of_bags }}"
                                         readonly>
+                                    @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                                        <div class="mt-1">
+                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -{{ round($doRefundStats['refunded_qty']) }} Bags</span><br>
+                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Deliverable: {{ round($doRefundStats['remaining_allowed_qty']) }} Bags</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" value="{{ round($data->qty) }}" readonly>
@@ -352,6 +401,12 @@
                                 <td>
                                     <input type="number" class="form-control"
                                         value="{{ round($data->rate * ($data->qty ?? 0))  }}" readonly>
+                                    @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                                        <div class="mt-1">
+                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -Rs. {{ number_format($doRefundStats['refunded_amount']) }}</span><br>
+                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Net Deliverable: Rs. {{ number_format($doRefundStats['remaining_allowed_value']) }}</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <input type="text" class="form-control"

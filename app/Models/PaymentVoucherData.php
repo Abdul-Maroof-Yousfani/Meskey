@@ -25,6 +25,8 @@ class PaymentVoucherData extends Model
         'customer_advance_id',
         'sales_order_id',
         'delivery_order_id',
+        'journal_voucher_id',
+        'journal_voucher_detail_id',
     ];
 
     public function paymentVoucher()
@@ -55,5 +57,15 @@ class PaymentVoucherData extends Model
     public function deliveryOrder()
     {
         return $this->belongsTo(\App\Models\Sales\DeliveryOrder::class, 'delivery_order_id');
+    }
+
+    public function journalVoucher()
+    {
+        return $this->belongsTo(\App\Models\JournalVoucher::class, 'journal_voucher_id');
+    }
+
+    public function journalVoucherDetail()
+    {
+        return $this->belongsTo(\App\Models\JournalVoucherDetail::class, 'journal_voucher_detail_id');
     }
 }

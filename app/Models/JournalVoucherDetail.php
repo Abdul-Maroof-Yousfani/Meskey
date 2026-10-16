@@ -19,6 +19,9 @@ class JournalVoucherDetail extends Model
         'receipt_voucher_id',
         'customer_advance_id',
         'sales_order_id',
+        'delivery_order_id',
+        'reference_jv_id',
+        'reference_jv_detail_id',
         'voucher_id',
         'voucher_no',
         'voucher_type',
@@ -54,6 +57,21 @@ class JournalVoucherDetail extends Model
     public function salesOrder()
     {
         return $this->belongsTo(SalesOrder::class, 'sales_order_id');
+    }
+
+    public function deliveryOrder()
+    {
+        return $this->belongsTo(\App\Models\Sales\DeliveryOrder::class, 'delivery_order_id');
+    }
+
+    public function referenceJournalVoucher()
+    {
+        return $this->belongsTo(JournalVoucher::class, 'reference_jv_id');
+    }
+
+    public function referenceJournalVoucherDetail()
+    {
+        return $this->belongsTo(JournalVoucherDetail::class, 'reference_jv_detail_id');
     }
 
     public function customerAdvance()

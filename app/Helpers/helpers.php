@@ -385,9 +385,12 @@ if (!function_exists("getLoadingProgramBalance")) {
             ->get();
 
         foreach ($dos as $d) {
-            $doCapacities[$d->id] = ($d->type == 'export_order')
-                ? $d->exportPackingItems->sum("metric_tons")
-                : $d->delivery_order_data->sum("qty");
+            $baseCapacity = ($d->type == 'export_order')
+                ? (float) $d->exportPackingItems->sum("metric_tons")
+                : (float) $d->delivery_order_data->sum("qty");
+
+            $refundStats = get_delivery_order_refund_stats($d->id);
+            $doCapacities[$d->id] = min($baseCapacity, (float) $refundStats['remaining_allowed_qty']);
             $doUsed[$d->id] = 0;
         }
 
@@ -1060,6 +1063,110 @@ function delivery_order_balance($sale_order_data_id)
     return max(0, (int) round($balance));
 }
 
+function get_delivery_order_refund_stats($delivery_order_id)
+{
+    $do = DeliveryOrder::withoutGlobalScopes()
+        ->with(['delivery_order_data', 'exportPackingItems'])
+        ->find($delivery_order_id);
+
+    if (!$do) {
+        return [
+            'total_value' => 0,
+            'total_qty' => 0,
+            'refunded_amount' => 0,
+            'dpv_amount' => 0,
+            'jv_amount' => 0,
+            'refunded_qty' => 0,
+            'is_fully_refunded' => false,
+            'remaining_allowed_qty' => 0,
+            'remaining_allowed_value' => 0,
+        ];
+    }
+
+    $isExport = ($do->type === 'export_order');
+    if ($isExport) {
+        $totalQty = (float) $do->exportPackingItems->sum('metric_tons');
+        $totalValue = (float) ($do->advance_amount ?: 0);
+    } else {
+        $totalQty = (float) $do->delivery_order_data->sum('qty');
+        $totalValue = (float) $do->delivery_order_data->sum(function ($d) {
+            return (float)$d->qty * (float)$d->rate;
+        });
+        if ($totalValue <= 0 && $do->advance_amount > 0) {
+            $totalValue = (float) $do->advance_amount;
+        }
+    }
+
+    $attachedRvAmount = (float) \Illuminate\Support\Facades\DB::table('delivery_order_receipt_voucher')
+        ->where('delivery_order_id', $do->id)
+        ->sum('amount');
+    $effectiveValue = max($totalValue, $attachedRvAmount, (float)($do->advance_amount ?? 0));
+
+    $dpvRefund = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $do->id)
+        ->whereHas('paymentVoucher', function ($q) {
+            $q->whereNull('deleted_at');
+            $q->where('am_approval_status', '!=', 'rejected');
+        })
+        ->sum('amount');
+
+    $jvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $do->id)
+        ->whereHas('journalVoucher', function ($q) {
+            $q->whereNull('deleted_at');
+            $q->where('am_approval_status', '!=', 'rejected');
+        })
+        ->sum('debit_amount');
+
+    $settlementAdjusted = (float) \Illuminate\Support\Facades\DB::table('settlement_adjustments')
+        ->where('reference_type', 'delivery_order')
+        ->where('reference_id', $do->id)
+        ->sum('amount');
+
+    $totalRefundedAmount = max($dpvRefund + $jvAdjusted, $settlementAdjusted);
+
+    $refundedQty = 0;
+    $isFullyRefunded = false;
+
+    if ($effectiveValue > 0 && $totalRefundedAmount > 0) {
+        if ($totalRefundedAmount >= ($effectiveValue - 0.01)) {
+            $refundedQty = $totalQty;
+            $isFullyRefunded = true;
+        } else {
+            $ratio = min(1.0, $totalRefundedAmount / $effectiveValue);
+            $refundedQty = $ratio * $totalQty;
+        }
+    } elseif ($totalRefundedAmount > 0 && $effectiveValue <= 0) {
+        $refundedQty = $totalQty;
+        $isFullyRefunded = true;
+    }
+
+    $remainingAllowedQty = max(0, $totalQty - $refundedQty);
+    $remainingAllowedValue = max(0, $effectiveValue - $totalRefundedAmount);
+
+    return [
+        'total_value' => $effectiveValue,
+        'total_qty' => $totalQty,
+        'refunded_amount' => $totalRefundedAmount,
+        'dpv_amount' => $dpvRefund,
+        'jv_amount' => $jvAdjusted,
+        'refunded_qty' => $refundedQty,
+        'is_fully_refunded' => $isFullyRefunded,
+        'remaining_allowed_qty' => $remainingAllowedQty,
+        'remaining_allowed_value' => $remainingAllowedValue,
+    ];
+}
+
+function delivery_order_has_loading_program($delivery_order_id)
+{
+    if (empty($delivery_order_id)) {
+        return false;
+    }
+
+    return \Illuminate\Support\Facades\DB::table('loading_programs')->where('delivery_order_id', $delivery_order_id)->exists()
+        || \Illuminate\Support\Facades\DB::table('loading_program_delivery_order')->where('delivery_order_id', $delivery_order_id)->exists()
+        || \Illuminate\Support\Facades\DB::table('loading_program_items')->where('delivery_order_id', $delivery_order_id)->exists()
+        || \Illuminate\Support\Facades\DB::table('loading_program_item_delivery_order')->where('delivery_order_id', $delivery_order_id)->exists();
+}
+
 function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_order_id = null)
 {
     $item = $loadingSlip->loadingProgramItem;
@@ -1100,16 +1207,19 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
     foreach ($deliveryOrders as $do) {
         if (!$do)
             continue;
+        $refundStats = get_delivery_order_refund_stats($do->id);
+        $allowedQty = (float) $refundStats['remaining_allowed_qty'];
+
         if ($do->type == 'export_order') {
-            $overall_quantities += $do->exportPackingItems->sum("metric_tons");
+            $overall_quantities += $allowedQty;
             $spent_quantities += ($do->saleSecondWeighbridge->sum("net_weight") / 1000);
         } else {
-            $overall_quantities += $do->delivery_order_data->sum("qty");
+            $overall_quantities += $allowedQty;
             $spent_quantities += $do->saleSecondWeighbridge->sum("net_weight");
         }
     }
 
-    return $overall_quantities - $spent_quantities;
+    return max(0, $overall_quantities - $spent_quantities);
 }
 
 function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
@@ -1118,15 +1228,16 @@ function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
     if (!$delivery_order)
         return 0;
 
+    $refundStats = get_delivery_order_refund_stats($delivery_order_id);
+    $overall_quantities = (float) $refundStats['remaining_allowed_qty'];
+
     if ($delivery_order->type == 'export_order') {
-        $overall_quantities = $delivery_order->exportPackingItems->sum("metric_tons");
         $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight") / 1000;
     } else {
-        $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
         $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
     }
 
-    return $overall_quantities - $spent_quantities;
+    return max(0, $overall_quantities - $spent_quantities);
 }
 
 function get_second_weighbridge_balance_kg(LoadingSlip $loadingSlip, $delivery_order_id = null)
