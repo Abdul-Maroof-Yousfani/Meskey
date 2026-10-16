@@ -292,7 +292,7 @@ class ProductSlabController extends Controller
             $compulsoryParams = ArrivalCompulsoryQcParam::get();
             $slabs = ProductSlab::generalEnabled()
                 ->where('product_id', $request->product_id)
-                ->orderBy('product_slab_type_id', 'asc')
+                ->Ordered()
                 ->get()
                 ->groupBy('product_slab_type_id')
                 ->map(function ($group) {
