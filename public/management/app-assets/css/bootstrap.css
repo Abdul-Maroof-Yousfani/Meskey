@@ -2193,7 +2193,7 @@ pre code {
 }
 
 .form-control::placeholder {
-  color: #BDBDBD;
+  color: #353535;
   opacity: 1;
 }
 
