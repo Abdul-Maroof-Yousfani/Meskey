@@ -226,6 +226,158 @@ class SalesOrder extends Model
         });
     }
 
+    /**
+     * Get all factory/arrival location IDs assigned to the given user.
+     * Checks company_user_role pivot, users.arrival_location_ids, and users.arrival_location_id.
+     */
+    public static function getUserFactoryLocationIds($user = null): array
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return [];
+        }
+
+        $locs = [];
+        $currentCompanyId = $user->current_company_id ?? session('company_id') ?? 1;
+
+        // 1. Current Company pivot arrival_locations (Authoritative in Meskey)
+        if ($currentCompanyId) {
+            $company = $user->relationLoaded('companies')
+                ? $user->companies->where('id', $currentCompanyId)->first()
+                : (method_exists($user, 'companies') ? $user->companies()->where('company_id', $currentCompanyId)->first() : null);
+
+            if ($company && isset($company->pivot->arrival_locations) && $company->pivot->arrival_locations !== null) {
+                $pArrivals = json_decode($company->pivot->arrival_locations, true);
+                if (is_array($pArrivals)) {
+                    return array_values(array_unique(array_filter(array_map('intval', $pArrivals))));
+                }
+            }
+        }
+
+        // 2. Helper fallback if pivot was not loaded/empty and current user is logged in
+        if (function_exists('getUserCurrentCompanyArrivalLocations') && auth()->check() && auth()->id() === $user->id) {
+            try {
+                $companyLocs = getUserCurrentCompanyArrivalLocations();
+                if (!empty($companyLocs) && is_array($companyLocs)) {
+                    return array_values(array_unique(array_filter(array_map('intval', $companyLocs))));
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 3. Direct arrival_location_ids on users table (fallback if company pivot wasn't found)
+        if (!empty($user->arrival_location_ids)) {
+            $arrIds = is_array($user->arrival_location_ids)
+                ? $user->arrival_location_ids
+                : (json_decode($user->arrival_location_ids, true) ?: []);
+
+            $compLocs = [];
+            if (!empty($arrIds) && is_array($arrIds)) {
+                foreach ($arrIds as $val) {
+                    if (is_array($val)) {
+                        $compLocs = array_merge($compLocs, $val);
+                    } elseif (is_numeric($val)) {
+                        $compLocs[] = (int)$val;
+                    }
+                }
+            }
+            if (!empty($compLocs)) {
+                return array_values(array_unique(array_filter(array_map('intval', $compLocs))));
+            }
+        }
+
+        // 4. Direct arrival_location_id on users table (final fallback)
+        if (!empty($user->arrival_location_id)) {
+            return [(int)$user->arrival_location_id];
+        }
+
+        return [];
+    }
+
+    /**
+     * Scope query to only Sale Orders visible to the given user based on parent-child and factory permissions.
+     */
+    public function scopeVisibleToUser($query, $user = null)
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // Super-admin: sees everything without conditions
+        $isSuperAdmin = $user->user_type === 'super-admin'
+            || (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'super-admin', 'Admin', 'admin']));
+
+        if ($isSuperAdmin) {
+            return $query;
+        }
+
+        $userFactoryIds = static::getUserFactoryLocationIds($user);
+        $parentId = $user->parent_user_id;
+        $childUserIds = \App\Models\User::where('parent_user_id', $user->id)->pluck('id')->toArray();
+
+        $matchFactory = function ($q, array $factoryIds) {
+            if (empty($factoryIds)) {
+                return $q->whereRaw('1 = 0');
+            }
+            return $q->where(function ($subQ) use ($factoryIds) {
+                $subQ->whereIn('sales_orders.arrival_location_id', $factoryIds)
+                     ->orWhereHas('factories', function ($fq) use ($factoryIds) {
+                         $fq->whereIn('arrival_location_id', $factoryIds);
+                     });
+            });
+        };
+
+        return $query->where(function ($q) use ($user, $parentId, $childUserIds, $userFactoryIds, $matchFactory) {
+            // 1. Own created SOs (or where user is parent_user_id and created_by is null)
+            $q->where(function ($sub) use ($user) {
+                $sub->where('sales_orders.created_by', $user->id)
+                    ->orWhere(function ($ssub) use ($user) {
+                        $ssub->where('sales_orders.parent_user_id', $user->id)
+                             ->whereNull('sales_orders.created_by');
+                    });
+            });
+
+            // 2. All SOs created by their children (Parent sees ALL child SOs regardless of location/factory)
+            if (!empty($childUserIds)) {
+                $q->orWhereIn('sales_orders.created_by', $childUserIds);
+            }
+
+            // 3. SOs created by their parent (Child only sees parent SOs matching child's assigned factories)
+            if (!empty($parentId)) {
+                $q->orWhere(function ($parentQ) use ($parentId, $userFactoryIds, $matchFactory) {
+                    $parentQ->where(function ($sub) use ($parentId) {
+                        $sub->where('sales_orders.created_by', $parentId)
+                            ->orWhere(function ($ssub) use ($parentId) {
+                                $ssub->where('sales_orders.parent_user_id', $parentId)
+                                     ->whereNull('sales_orders.created_by');
+                            });
+                    });
+                    $matchFactory($parentQ, $userFactoryIds);
+                });
+            }
+        });
+    }
+
+    /**
+     * Check if a specific Sale Order instance is accessible by the given user.
+     */
+    public function isAccessibleByUser($user = null): bool
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        $isSuperAdmin = $user->user_type === 'super-admin'
+            || (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'super-admin', 'Admin', 'admin']));
+
+        if ($isSuperAdmin) {
+            return true;
+        }
+
+        return static::visibleToUser($user)->where('sales_orders.id', $this->id)->exists();
+    }
+
     protected function onApprovalComplete()
     {
         $this->traitOnApprovalComplete();

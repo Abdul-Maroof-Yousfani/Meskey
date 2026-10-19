@@ -163,35 +163,30 @@
                                 </button>
                                 @endcanAccess
                                 @php
-                                    $canEdit = (auth()->user()->id == $group['created_by_id']) 
-                                        || (auth()->user()->user_type == 'admin') 
-                                        || (method_exists(auth()->user(), 'hasAnyRole') && auth()->user()->hasAnyRole(['Admin', 'Super Admin', 'admin', 'super-admin']));
                                     $isLockedPendingHO = ($stage === 'headoffice_pending');
                                 @endphp
-                                @canAccess('sale-order-create')
-                                    @if($canEdit && !$isLockedPendingHO)
+                                @if(canAccess('sale-order-create') || (auth()->check() && auth()->user()->can('sale-order-create')))
+                                    @if(!$isLockedPendingHO)
                                         <button
                                             onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order',false, '90%')"
                                             class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                             <i class="ft-edit"></i>
                                         </button>
-                                    @elseif($canEdit && $isLockedPendingHO)
+                                    @else
                                         <button type="button" class="btn btn-sm btn-secondary"
                                             onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order',false, '90%')"
                                             title="Stage 1 Approved. Locked pending Head Office approval." style="margin-right: 10px; opacity: 0.7;">
                                             <i class="ft-lock"></i>
                                         </button>
                                     @endif
-                                    @if(auth()->user()->id == $group['created_by_id'])
-                                        @if(($status === 'pending' && $stage === 'stage_1_pending') || $status === 'reverted' || $stage === 'reverted')
-                                            <button
-                                                onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')"
-                                                type="button" class="btn btn-sm btn-danger" title="Delete">
-                                                <i class="ft-trash-2"></i>
-                                            </button>
-                                        @endif
+                                    @if(($status === 'pending' && $stage === 'stage_1_pending') || $status === 'reverted' || $stage === 'reverted')
+                                        <button
+                                            onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')"
+                                            type="button" class="btn btn-sm btn-danger" title="Delete">
+                                            <i class="ft-trash-2"></i>
+                                        </button>
                                     @endif
-                                @endcanAccess
+                                @endif
                             </div>
                         </td>
                     @endif

@@ -113,17 +113,19 @@ class SaleOrderController extends Controller
     public function index()
     {
         abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
-        $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
+        $customerIds = SalesOrder::visibleToUser()->distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
 
-        $itemIds = \App\Models\Sales\SalesOrderData::distinct()->pluck('item_id')->filter();
+        $soIds = SalesOrder::visibleToUser()->pluck('id');
+        $itemIds = \App\Models\Sales\SalesOrderData::whereIn('sale_order_id', $soIds)->distinct()->pluck('item_id')->filter();
         $items = Product::whereIn('id', $itemIds)->get();
 
         $locationIds = \App\Models\Procurement\Store\Location::where('locationable_type', SalesOrder::class)
+            ->whereIn('locationable_id', $soIds)
             ->distinct()->pluck('location_id')->filter();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
 
-        $inquiryIds = SalesOrder::distinct()->pluck('inquiry_id')->filter();
+        $inquiryIds = SalesOrder::visibleToUser()->distinct()->pluck('inquiry_id')->filter();
         $saleInquiries = SalesInquiry::whereIn('id', $inquiryIds)->select('id', 'inquiry_no')->get();
 
         return view('management.sales.orders.index', compact('customers', 'items', 'companyLocations', 'saleInquiries'));
@@ -168,9 +170,9 @@ class SaleOrderController extends Controller
     public function edit(int $id)
     {
         abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
-        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker', 'preSaleInspection'])->find($id);
+        $sale_order = SalesOrder::visibleToUser()->with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker', 'preSaleInspection'])->find($id);
         if (!$sale_order) {
-            abort(404, 'Sale Order not found');
+            abort(403, 'Unauthorized access to this Sale Order.');
         }
 
         if ($sale_order->so_approval_stage === 'headoffice_pending') {
@@ -209,7 +211,10 @@ class SaleOrderController extends Controller
     public function view(Request $request, int $id)
     {
         abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
-        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker', 'preSaleInspection')->find($id);
+        $sale_order = SalesOrder::visibleToUser()->with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker', 'preSaleInspection')->find($id);
+        if (!$sale_order) {
+            abort(403, 'Unauthorized access to this Sale Order.');
+        }
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
@@ -235,7 +240,7 @@ class SaleOrderController extends Controller
     public function getDoStats(Request $request, int $id)
     {
         abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
-        $sale_order = SalesOrder::with([
+        $sale_order = SalesOrder::visibleToUser()->with([
             'delivery_orders' => function ($q) {
                 $q->with([
                     'delivery_order_data.item',
@@ -543,9 +548,9 @@ class SaleOrderController extends Controller
         abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
         DB::beginTransaction();
         try {
-            $sales_order = SalesOrder::find($id);
+            $sales_order = SalesOrder::visibleToUser()->find($id);
             if (!$sales_order) {
-                return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
+                return response()->json(['error' => 'Sale Order not found or unauthorized.', 'message' => 'Sale Order not found or unauthorized.'], 403);
             }
 
             $oldAuditValues = $this->buildSalesOrderAuditValues($sales_order);
@@ -973,9 +978,9 @@ class SaleOrderController extends Controller
     public function destroy(int $id)
     {
         abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
-        $sales_order = SalesOrder::find($id);
+        $sales_order = SalesOrder::visibleToUser()->find($id);
         if (!$sales_order) {
-            return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
+            return response()->json(['error' => 'Sale Order not found or unauthorized.', 'message' => 'Sale Order not found or unauthorized.'], 403);
         }
         if (in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
@@ -1025,7 +1030,8 @@ class SaleOrderController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation', 'broker'])
+        $SalesOrders = SalesOrder::visibleToUser()
+            ->with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation', 'broker'])
             ->when($request->filled('search_for_filter'), function ($q) use ($request) {
                 $searchTerm = '%' . strtolower($request->search_for_filter) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -1394,7 +1400,7 @@ class SaleOrderController extends Controller
      */
     public function getAuditLogs(Request $request, $id)
     {
-        $salesOrder = SalesOrder::with(['customer'])->findOrFail($id);
+        $salesOrder = SalesOrder::visibleToUser()->with(['customer'])->findOrFail($id);
 
         $logs = AuditLog::with('user')
             ->where(function ($q) use ($salesOrder) {
