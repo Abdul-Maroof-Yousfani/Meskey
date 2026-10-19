@@ -29,6 +29,7 @@ use App\Http\Controllers\Master\{
     CompanyLocationController,
     DivisionController,
     QcReliefController,
+    ArrivalQcReliefController,
     TruckSizeRangeController,
     VendorsController,
     FumigationCompanyController,
@@ -181,6 +182,11 @@ Route::prefix('qc-relief')->group(function () {
     Route::get('/get-parameters', [QcReliefController::class, 'getParameters'])->name('qc-relief.get-parameters');
     Route::post('/save-parameters', [QcReliefController::class, 'saveParameters'])->name('qc-relief.save-parameters');
 });
+
+// Arrival QC Relief
+Route::resource('arrival-qc-relief', ArrivalQcReliefController::class);
+Route::post('/get-arrival-qc-relief', [ArrivalQcReliefController::class, 'getList'])->name('get.arrival-qc-relief');
+
 
 // hscodes
 Route::resource('hs-code', HsCodeController::class);

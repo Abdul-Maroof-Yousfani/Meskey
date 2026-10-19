@@ -1660,6 +1660,12 @@
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Basic">Qc Relief</span></a>
                             </li>
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('arrival-qc-relief.index') }}"
+                                    onclick="loadPageContent('{{ route('arrival-qc-relief.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Arrival QC Relief</span></a>
+                            </li>
                             @endcanAccess
                             @canAccess('weighbridge-amount')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
