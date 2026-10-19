@@ -5,13 +5,10 @@ namespace App\Http\Controllers\Arrival;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Arrival\ArrivalSamplingResultRequest;
 use Illuminate\Http\Request;
-use App\Models\Arrival\ArrivalSamplingRequest;
-use App\Models\Arrival\ArrivalSamplingResult;
-use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
-use App\Models\Master\ProductSlab;
+use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSamplingResultForCompulsury, ArrivalTicket};
+use App\Models\Master\{ProductSlab, ProductSlabType, ArrivalQcReliefParameter};
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
-use App\Models\Master\ProductSlabType;
 
 class InnersamplingController extends Controller
 {
@@ -108,13 +105,62 @@ class InnersamplingController extends Controller
             $createdCompulsuryData = [];
             $initialStatus = 'pending';
 
+            $arrivalTicket = $ArrivalSamplingRequest->arrivalTicket ?? ArrivalTicket::find($ArrivalSamplingRequest->arrival_ticket_id);
+            $productId = $request->arrival_product_id ?? $ArrivalSamplingRequest->arrival_product_id ?? optional($arrivalTicket)->qc_product;
+            $locationId = $arrivalTicket ? $arrivalTicket->location_id : null;
+
+            $ticketDate = $arrivalTicket?->created_at ? $arrivalTicket->created_at->format('Y-m-d') : null;
+
+            // Fetch all active relief rules for this product, matching location (or all locations), and ticket date in a single query
+            $reliefRules = ArrivalQcReliefParameter::where('product_id', $productId)
+                ->where('is_active', true)
+                ->when($ticketDate, function ($dateQ) use ($ticketDate) {
+                    return $dateQ->where('start_date', '<=', $ticketDate)
+                                 ->where('end_date', '>=', $ticketDate);
+                })
+                ->where(function ($locQ) use ($locationId) {
+                    $locQ->where('location_id', $locationId)
+                         ->orWhereNull('location_id');
+                })
+                ->get();
+
             if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
                 foreach ($request->product_slab_type_id as $key => $slabTypeId) {
+                    $reliefDeduction = null;
+                    $checklistValue = $request->checklist_value[$key] ?? null;
+
+                    if (is_numeric($checklistValue)) {
+                        $val = $checklistValue;
+
+                        // Match rules by slab type and measured range in memory
+                        $matchingRules = $reliefRules->filter(function ($r) use ($slabTypeId, $val) {
+                            return $r->slab_type_id == $slabTypeId
+                                && $r->from_range <= $val
+                                && $r->to_range >= $val;
+                        });
+
+                        // Location-specific rule takes precedence over "All Locations" (location_id null)
+                        $rule = $matchingRules->firstWhere('location_id', $locationId)
+                            ?: $matchingRules->firstWhere('location_id', null);
+
+                        if ($rule) {
+                            if ($rule->relief_type === 'minus_amount') {
+                                // If minus type: direct relief deduction
+                                $reliefDeduction = ($rule->relief_value ?: $rule->fixed_value);
+                            } else {
+                                // If fixed type: checklist_value - fixed amount
+                                $fixedAmount = ($rule->fixed_value ?: $rule->relief_value);
+                                $reliefDeduction = max(0, $val - $fixedAmount);
+                            }
+                        }
+                    }
+
                     $createdSamplingData[] = ArrivalSamplingResult::create([
                         'company_id' => $request->company_id,
                         'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                         'product_slab_type_id' => $slabTypeId,
-                        'checklist_value' => $request->checklist_value[$key] ?? null,
+                        'checklist_value' => $checklistValue,
+                        'relief_deduction' => $reliefDeduction,
                     ]);
                 }
             }

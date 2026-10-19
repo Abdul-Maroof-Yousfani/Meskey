@@ -8,7 +8,7 @@ use App\Models\Master\ProductSlab;
 use Illuminate\Http\Request;
 use App\Http\Requests\Arrival\ArrivalInitialSamplingResultRequest;
 use App\Models\Arrival\ArrivalTicket;
-use App\Models\Master\QcReliefParameter;
+use App\Models\Master\ArrivalQcReliefParameter;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Master\ProductSlabType;
@@ -183,24 +183,79 @@ class InitialSamplingController extends Controller
             'result_posted_at' => now(),
         ]);
 
-        if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
-            $reliefParameters = QcReliefParameter::where('product_id', $request->arrival_product_id)
-                ->where('parameter_type', 'slab')
-                ->get()
-                ->keyBy('slab_type_id');
+        // if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
+        //     $reliefParameters = QcReliefParameter::where('product_id', $request->arrival_product_id)
+        //         ->where('parameter_type', 'slab')
+        //         ->get()
+        //         ->keyBy('slab_type_id');
 
+        //     foreach ($request->product_slab_type_id as $key => $slabTypeId) {
+        //         $reliefDeduction = 0;
+
+        //         if (isset($reliefParameters[$slabTypeId])) {
+        //             $reliefDeduction = $reliefParameters[$slabTypeId]->relief_percentage;
+        //         }
+
+        //         ArrivalSamplingResult::create([
+        //             'company_id' => $request->company_id,
+        //             'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
+        //             'product_slab_type_id' => $slabTypeId,
+        //             'checklist_value' => $request->checklist_value[$key] ?? null,
+        //             'relief_deduction' => $reliefDeduction, // save in this direct if type minus if fixed then $request->checklist_value[$key] - fix amount and save
+        //         ]);
+        //     }
+        // }
+        if (!empty($request->product_slab_type_id) && !empty($request->checklist_value)) {
+            $ticketDate = $arrivalTicket->created_at ? $arrivalTicket->created_at->format('Y-m-d') : null;
+
+            // Fetch all active relief rules for this product, matching location (or all locations), and ticket date in a single query outside the loop
+            $reliefRules = ArrivalQcReliefParameter::where('product_id', $request->arrival_product_id)
+                ->where('is_active', true)
+                ->when($ticketDate, function ($dateQ) use ($ticketDate) {
+                    return $dateQ->where('start_date', '<=', $ticketDate)
+                                 ->where('end_date', '>=', $ticketDate);
+                })
+                ->where(function ($locQ) use ($arrivalTicket) {
+                    $locQ->where('location_id', $arrivalTicket->location_id)
+                         ->orWhereNull('location_id');
+                })
+                ->get();
+                // dd($reliefRules);
             foreach ($request->product_slab_type_id as $key => $slabTypeId) {
                 $reliefDeduction = 0;
+                $checklistValue = $request->checklist_value[$key] ?? null;
 
-                if (isset($reliefParameters[$slabTypeId])) {
-                    $reliefDeduction = $reliefParameters[$slabTypeId]->relief_percentage;
+                if (is_numeric($checklistValue)) {
+                    $val = $checklistValue;
+
+                    // Match rules by slab type and measured range in memory
+                    $matchingRules = $reliefRules->filter(function ($r) use ($slabTypeId, $val) {
+                        return $r->slab_type_id == $slabTypeId
+                            && $r->from_range <= $val
+                            && $r->to_range >= $val;
+                    });
+
+                    // Location-specific rule takes precedence over "All Locations" (location_id null)
+                    $rule = $matchingRules->firstWhere('location_id', $arrivalTicket->location_id)
+                        ?: $matchingRules->firstWhere('location_id', null);
+
+                    if ($rule) {
+                        if ($rule->relief_type === 'minus_amount') {
+                            // If minus type: direct relief deduction
+                            $reliefDeduction = ($rule->relief_value ?: $rule->fixed_value);
+                        } else {
+                            // If fixed type: checklist_value - fixed amount
+                            $fixedAmount = ($rule->fixed_value ?: $rule->relief_value);
+                            $reliefDeduction = max(0, $val - $fixedAmount);
+                        }
+                    }
                 }
 
                 ArrivalSamplingResult::create([
                     'company_id' => $request->company_id,
                     'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                     'product_slab_type_id' => $slabTypeId,
-                    'checklist_value' => $request->checklist_value[$key] ?? null,
+                    'checklist_value' => $checklistValue,
                     'relief_deduction' => $reliefDeduction,
                 ]);
             }
