@@ -3,7 +3,15 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.milling-rates') }}" />
 
     <div class="row form-mar">
-        
+        @if ($millingRate->isExpired() && !$millingRate->hasSuccessor())
+            <div class="col-12">
+                <div class="alert alert-danger mb-3 p-2 font-weight-bold" role="alert">
+                    <i class="ft-alert-triangle mr-2"></i>
+                    <strong>Action Required:</strong> This milling rate expired on {{ $millingRate->to_date ? $millingRate->to_date->format('d M, Y') : '-' }} and no subsequent active milling rate is configured for Commodity "{{ $millingRate->product->name ?? 'N/A' }}". Please update the effective dates or define a new consecutive milling rate.
+                </div>
+            </div>
+        @endif
+
         <div class="col-xs-12 col-sm-12 col-md-4">
             <div class="form-group">
                 <label>Location:</label>
@@ -37,6 +45,32 @@
                         <option value="{{ $plant->id }}" {{$millingRate->plant_id == $plant->id ? 'selected' : ''}}>{{ $plant->name }}</option>
                     @endforeach
                 </select>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-4">
+            <div class="form-group">
+                <label>Commodity / Product: <span class="text-danger">*</span></label>
+                <select name="product_id" id="product_id" class="form-control select2" required>
+                    <option value="">Select Commodity</option>
+                    @foreach($products as $prod)
+                        <option value="{{ $prod->id }}" {{$millingRate->product_id == $prod->id ? 'selected' : ''}}>{{ $prod->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-4">
+            <div class="form-group">
+                <label>Effective From Date: <span class="text-danger">*</span></label>
+                <input type="date" name="from_date" id="from_date_edit" class="form-control" required value="{{ $millingRate->from_date ? $millingRate->from_date->format('Y-m-d') : '' }}" />
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-4">
+            <div class="form-group">
+                <label>Effective To Date: <span class="text-danger">*</span></label>
+                <input type="date" name="to_date" id="to_date_edit" class="form-control" required value="{{ $millingRate->to_date ? $millingRate->to_date->format('Y-m-d') : '' }}" />
             </div>
         </div>
 
@@ -112,6 +146,16 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        if($('#from_date_edit').val()) {
+            $('#to_date_edit').attr('min', $('#from_date_edit').val());
+        }
+        $('#from_date_edit').change(function() {
+            $('#to_date_edit').attr('min', $(this).val());
+            if($('#to_date_edit').val() && $('#to_date_edit').val() < $(this).val()) {
+                $('#to_date_edit').val($(this).val());
+            }
+        });
 
         $('.variable-toggle').change(function() {
             var targetId = $(this).data('target');

@@ -1073,12 +1073,15 @@ function get_delivery_order_refund_stats($delivery_order_id)
         return [
             'total_value' => 0,
             'total_qty' => 0,
+            'total_bags' => 0,
             'refunded_amount' => 0,
             'dpv_amount' => 0,
             'jv_amount' => 0,
             'refunded_qty' => 0,
+            'refunded_bags' => 0,
             'is_fully_refunded' => false,
             'remaining_allowed_qty' => 0,
+            'remaining_allowed_bags' => 0,
             'remaining_allowed_value' => 0,
         ];
     }
@@ -1086,21 +1089,31 @@ function get_delivery_order_refund_stats($delivery_order_id)
     $isExport = ($do->type === 'export_order');
     if ($isExport) {
         $totalQty = (float) $do->exportPackingItems->sum('metric_tons');
+        $totalBags = $totalQty;
         $totalValue = (float) ($do->advance_amount ?: 0);
+        $effectiveValue = $totalValue;
     } else {
         $totalQty = (float) $do->delivery_order_data->sum('qty');
+        $totalBags = (float) $do->delivery_order_data->sum('no_of_bags');
         $totalValue = (float) $do->delivery_order_data->sum(function ($d) {
             return (float)$d->qty * (float)$d->rate;
         });
-        if ($totalValue <= 0 && $do->advance_amount > 0) {
-            $totalValue = (float) $do->advance_amount;
+
+        $attachedRvAmount = (float) \Illuminate\Support\Facades\DB::table('delivery_order_receipt_voucher')
+            ->where('delivery_order_id', $do->id)
+            ->sum('amount');
+
+        // The true value of a Delivery Order is the value of its goods (delivery_order_data).
+        // If goods value is 0 (fallback), use attached net RV or net advance amount.
+        // It must NOT exceed goods value, because advance_amount can include withhold that is not part of DO goods.
+        if ($totalValue > 0) {
+            $effectiveValue = $totalValue;
+        } elseif ($attachedRvAmount > 0) {
+            $effectiveValue = $attachedRvAmount;
+        } else {
+            $effectiveValue = (float) max(0, ($do->advance_amount ?? 0) - ($do->withhold_amount ?? 0));
         }
     }
-
-    $attachedRvAmount = (float) \Illuminate\Support\Facades\DB::table('delivery_order_receipt_voucher')
-        ->where('delivery_order_id', $do->id)
-        ->sum('amount');
-    $effectiveValue = max($totalValue, $attachedRvAmount, (float)($do->advance_amount ?? 0));
 
     $dpvRefund = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $do->id)
         ->whereHas('paymentVoucher', function ($q) {
@@ -1124,33 +1137,41 @@ function get_delivery_order_refund_stats($delivery_order_id)
     $totalRefundedAmount = max($dpvRefund + $jvAdjusted, $settlementAdjusted);
 
     $refundedQty = 0;
+    $refundedBags = 0;
     $isFullyRefunded = false;
 
     if ($effectiveValue > 0 && $totalRefundedAmount > 0) {
         if ($totalRefundedAmount >= ($effectiveValue - 0.01)) {
             $refundedQty = $totalQty;
+            $refundedBags = $totalBags;
             $isFullyRefunded = true;
         } else {
             $ratio = min(1.0, $totalRefundedAmount / $effectiveValue);
             $refundedQty = $ratio * $totalQty;
+            $refundedBags = $ratio * $totalBags;
         }
     } elseif ($totalRefundedAmount > 0 && $effectiveValue <= 0) {
         $refundedQty = $totalQty;
+        $refundedBags = $totalBags;
         $isFullyRefunded = true;
     }
 
     $remainingAllowedQty = max(0, $totalQty - $refundedQty);
+    $remainingAllowedBags = max(0, $totalBags - $refundedBags);
     $remainingAllowedValue = max(0, $effectiveValue - $totalRefundedAmount);
 
     return [
         'total_value' => $effectiveValue,
         'total_qty' => $totalQty,
+        'total_bags' => $totalBags,
         'refunded_amount' => $totalRefundedAmount,
         'dpv_amount' => $dpvRefund,
         'jv_amount' => $jvAdjusted,
         'refunded_qty' => $refundedQty,
+        'refunded_bags' => $refundedBags,
         'is_fully_refunded' => $isFullyRefunded,
         'remaining_allowed_qty' => $remainingAllowedQty,
+        'remaining_allowed_bags' => $remainingAllowedBags,
         'remaining_allowed_value' => $remainingAllowedValue,
     ];
 }

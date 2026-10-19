@@ -900,6 +900,7 @@ class DeliveryOrderController extends Controller
                 ->whereNull('payment_voucher_data.deleted_at')
                 ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
                 ->where('payment_voucher_data.sales_order_id', $sale_order_id)
+                ->whereNull('payment_voucher_data.delivery_order_id')
                 ->sum('payment_voucher_data.net_amount');
 
             $remainingDpvToDeduct = $dpvRefunded;
@@ -909,13 +910,31 @@ class DeliveryOrderController extends Controller
                     ->where("reference_id", $sale_order_id)
                     ->sum("net_amount");
 
-                $spent = DB::table('delivery_order_receipt_voucher')
+                $doSpent = (float) DB::table('delivery_order_receipt_voucher')
                     ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
                     ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
                     ->where('delivery_order.so_id', $sale_order_id)
                     ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                     ->where('delivery_order.am_approval_status', '!=', 'rejected')
                     ->sum('delivery_order_receipt_voucher.amount');
+
+                $doIds = DB::table('delivery_order_receipt_voucher')
+                    ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
+                    ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
+                    ->where('delivery_order.so_id', $sale_order_id)
+                    ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
+                    ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                    ->pluck('delivery_order.id');
+
+                $doRefunds = (float) DB::table('payment_voucher_data')
+                    ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                    ->whereNull('payment_vouchers.deleted_at')
+                    ->whereNull('payment_voucher_data.deleted_at')
+                    ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                    ->whereIn('payment_voucher_data.delivery_order_id', $doIds)
+                    ->sum('payment_voucher_data.net_amount');
+
+                $spent = max(0, $doSpent - $doRefunds);
 
                 $jv_spent = DB::table('journal_voucher_details')
                     ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
@@ -1145,9 +1164,15 @@ class DeliveryOrderController extends Controller
                         ->where('receipt_voucher_id', $rv->id)
                         ->sum('debit_amount');
 
-                    $spent += $jv_spent;
+                    $thisDoRefund = (float) DB::table('payment_voucher_data')
+                        ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                        ->whereNull('payment_vouchers.deleted_at')
+                        ->whereNull('payment_voucher_data.deleted_at')
+                        ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                        ->where('payment_voucher_data.delivery_order_id', $delivery_order->id)
+                        ->sum('payment_voucher_data.net_amount');
 
-                    $rv->remaining_amount = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpvRefunded));
+                    $rv->remaining_amount = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpvRefunded) - $thisDoRefund);
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
                     $rv->date = $rv->rv_date->format('Y-m-d');
@@ -1392,7 +1417,15 @@ class DeliveryOrderController extends Controller
                                 ->whereNull('payment_voucher_data.delivery_order_id')
                                 ->sum('payment_voucher_data.net_amount');
 
-                            $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded));
+                            $thisDoRefund = (float) DB::table('payment_voucher_data')
+                                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                                ->whereNull('payment_vouchers.deleted_at')
+                                ->whereNull('payment_voucher_data.deleted_at')
+                                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                                ->where('payment_voucher_data.delivery_order_id', $delivery_order->id)
+                                ->sum('payment_voucher_data.net_amount');
+
+                            $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded) - $thisDoRefund);
 
                             if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();

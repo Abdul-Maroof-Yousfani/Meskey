@@ -65,7 +65,7 @@
                         <strong>Payment Adjustments & Refunds Summary</strong>
                     </div>
                     <span class="badge badge-info px-2 py-1" style="font-size: 11px;">
-                        Deliverable: {{ round($doRefundStats['remaining_allowed_qty']) }} / {{ round($delivery_order->delivery_order_data->sum('qty')) }} Bags
+                        Deliverable: {{ round($doRefundStats['remaining_allowed_bags'] ?? $doRefundStats['remaining_allowed_qty']) }} / {{ round($delivery_order->delivery_order_data->sum('no_of_bags') ?: $delivery_order->delivery_order_data->sum('qty')) }} Bags
                     </span>
                 </div>
                 <div class="row text-center text-md-start">
@@ -86,9 +86,9 @@
                     </div>
                     <div class="col-6 col-md-3 mb-1">
                         <small class="text-primary text-uppercase d-block fw-bold" style="font-size: 10px;">Net Deliverable Qty</small>
-                        <span class="fw-bold text-primary" style="font-size: 15px;">{{ round($doRefundStats['remaining_allowed_qty']) }} Bags</span>
+                        <span class="fw-bold text-primary" style="font-size: 15px;">{{ round($doRefundStats['remaining_allowed_bags'] ?? $doRefundStats['remaining_allowed_qty']) }} Bags</span>
                         <small class="d-block text-muted" style="font-size: 10px;">
-                            ({{ round($doRefundStats['refunded_qty']) }} Bags Adjusted)
+                            ({{ round($doRefundStats['refunded_bags'] ?? $doRefundStats['refunded_qty']) }} Bags Adjusted)
                         </small>
                     </div>
                 </div>
@@ -377,14 +377,29 @@
                                     <input type="text" class="form-control" value="{{ $data->no_of_bags }}"
                                         readonly>
                                     @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                                        @php
+                                            $itemQtyRatio = ($doRefundStats['total_qty'] ?? 0) > 0 ? ((float)$data->qty / (float)$doRefundStats['total_qty']) : 0;
+                                            $rowAdjBags = round(($doRefundStats['refunded_bags'] ?? $doRefundStats['refunded_qty']) * $itemQtyRatio);
+                                            $rowDelivBags = max(0, round((float)$data->no_of_bags - $rowAdjBags));
+                                        @endphp
                                         <div class="mt-1">
-                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -{{ round($doRefundStats['refunded_qty']) }} Bags</span><br>
-                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Deliverable: {{ round($doRefundStats['remaining_allowed_qty']) }} Bags</span>
+                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -{{ $rowAdjBags }} Bags</span><br>
+                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Deliverable: {{ $rowDelivBags }} Bags</span>
                                         </div>
                                     @endif
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" value="{{ round($data->qty) }}" readonly>
+                                    @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                                        @php
+                                            $rowAdjQty = round(($doRefundStats['refunded_qty'] ?? 0) * $itemQtyRatio);
+                                            $rowDelivQty = max(0, round((float)$data->qty - $rowAdjQty));
+                                        @endphp
+                                        <div class="mt-1">
+                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -{{ $rowAdjQty }} KG</span><br>
+                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Deliverable: {{ $rowDelivQty }} KG</span>
+                                        </div>
+                                    @endif
                                     <span style="font-size: 14px;;">Used Quantity:
                                         {{ round(delivery_order_qty_used($data->so_data_id))  }}</span>
                                     <br />
@@ -402,9 +417,15 @@
                                     <input type="number" class="form-control"
                                         value="{{ round($data->rate * ($data->qty ?? 0))  }}" readonly>
                                     @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
+                                        @php
+                                            $rowTotalVal = (float)$data->rate * ((float)$data->qty ?? 0);
+                                            $itemValRatio = ($doRefundStats['total_value'] ?? 0) > 0 ? ($rowTotalVal / (float)$doRefundStats['total_value']) : 0;
+                                            $rowAdjAmt = round(($doRefundStats['refunded_amount'] ?? 0) * $itemValRatio);
+                                            $rowNetVal = max(0, round($rowTotalVal - $rowAdjAmt));
+                                        @endphp
                                         <div class="mt-1">
-                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -Rs. {{ number_format($doRefundStats['refunded_amount']) }}</span><br>
-                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Net Deliverable: Rs. {{ number_format($doRefundStats['remaining_allowed_value']) }}</span>
+                                            <span class="text-danger" style="font-size: 11px; font-weight: 600;">Adjusted: -Rs. {{ number_format($rowAdjAmt) }}</span><br>
+                                            <span class="text-success" style="font-size: 12px; font-weight: bold;">Net Deliverable: Rs. {{ number_format($rowNetVal) }}</span>
                                         </div>
                                     @endif
                                 </td>

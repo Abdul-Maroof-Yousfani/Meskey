@@ -103,11 +103,11 @@
         <div class="alert alert-info py-2 px-3 mb-3 border-info" style="border-radius: 6px; background-color: #f0f9ff;">
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <strong><i class="fa fa-info-circle text-info mr-1"></i> Payment Adjustments & Refunds Applied</strong>
-                <span class="badge badge-info">Net Deliverable: {{ round($refundStats['remaining_allowed_qty']) }} Bags</span>
+                <span class="badge badge-info">Net Deliverable: {{ round($refundStats['remaining_allowed_bags'] ?? $refundStats['remaining_allowed_qty']) }} Bags</span>
             </div>
             <div class="row" style="font-size: 12px;">
                 <div class="col-md-3"><strong>Original Value:</strong> Rs. {{ number_format($refundStats['total_value']) }}</div>
-                <div class="col-md-3 text-danger"><strong>Adjusted/Refunded:</strong> -Rs. {{ number_format($refundStats['refunded_amount']) }} ({{ round($refundStats['refunded_qty']) }} Bags)</div>
+                <div class="col-md-3 text-danger"><strong>Adjusted/Refunded:</strong> -Rs. {{ number_format($refundStats['refunded_amount']) }} ({{ round($refundStats['refunded_bags'] ?? $refundStats['refunded_qty']) }} Bags)</div>
                 <div class="col-md-3 text-success"><strong>Net Deliverable Value:</strong> Rs. {{ number_format($refundStats['remaining_allowed_value']) }}</div>
                 <div class="col-md-3"><strong>DPV:</strong> Rs. {{ number_format($refundStats['dpv_amount']) }} | <strong>JV:</strong> Rs. {{ number_format($refundStats['jv_amount']) }}</div>
             </div>

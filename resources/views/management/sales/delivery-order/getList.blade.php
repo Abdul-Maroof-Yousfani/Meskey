@@ -61,14 +61,27 @@
 
                     @php
                         $doRefundStats = function_exists('get_delivery_order_refund_stats') ? get_delivery_order_refund_stats($group['id']) : null;
+                        $rowAdjQty = 0;
+                        $rowNetQty = (float) $itemRow['item_data']->qty;
+                        $rowAdjAmt = 0;
+                        $rowNetAmt = (float) ($itemRow["item_data"]->rate * $itemRow["item_data"]->qty);
+                        if (!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0) {
+                            $itemQtyRatio = ($doRefundStats['total_qty'] ?? 0) > 0 ? ((float)$itemRow['item_data']->qty / (float)$doRefundStats['total_qty']) : 0;
+                            $rowAdjQty = round(($doRefundStats['refunded_qty'] ?? 0) * $itemQtyRatio);
+                            $rowNetQty = max(0, round((float)$itemRow['item_data']->qty - $rowAdjQty));
+
+                            $itemValRatio = ($doRefundStats['total_value'] ?? 0) > 0 ? ($rowNetAmt / (float)$doRefundStats['total_value']) : 0;
+                            $rowAdjAmt = round(($doRefundStats['refunded_amount'] ?? 0) * $itemValRatio);
+                            $rowNetAmt = max(0, round($rowNetAmt - $rowAdjAmt));
+                        }
                     @endphp
                     <td class="text-right align-middle">
                         {{ round($itemRow['item_data']->qty) }}
                         <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                         @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
                             <br>
-                            <span class="badge badge-success" style="font-size: 0.72rem;" title="Adjusted: {{ round($doRefundStats['refunded_qty']) }} Bags">
-                                Net: {{ round($doRefundStats['remaining_allowed_qty']) }}
+                            <span class="badge badge-success" style="font-size: 0.72rem;" title="Adjusted: -{{ $rowAdjQty }} {{ $itemRow['item']->unitOfMeasure->name ?? 'KG' }}">
+                                Net: {{ $rowNetQty }}
                             </span>
                         @endif
                     </td>
@@ -83,8 +96,8 @@
                         {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 0) }}
                         @if(!empty($doRefundStats) && ($doRefundStats['refunded_amount'] ?? 0) > 0)
                             <br>
-                            <span class="badge badge-info" style="font-size: 0.72rem; font-weight: 600;" title="Adjusted/Refunded: Rs. {{ number_format($doRefundStats['refunded_amount']) }}">
-                                Net: Rs. {{ number_format($doRefundStats['remaining_allowed_value']) }}
+                            <span class="badge badge-info" style="font-size: 0.72rem; font-weight: 600;" title="Adjusted/Refunded: -Rs. {{ number_format($rowAdjAmt) }}">
+                                Net: Rs. {{ number_format($rowNetAmt) }}
                             </span>
                         @endif
                     </td>

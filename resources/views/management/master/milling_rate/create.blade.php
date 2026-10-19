@@ -34,6 +34,32 @@
             </div>
         </div>
 
+        <div class="col-xs-12 col-sm-12 col-md-4">
+            <div class="form-group">
+                <label>Commodity / Product: <span class="text-danger">*</span></label>
+                <select name="product_id" id="product_id" class="form-control select2" required>
+                    <option value="">Select Commodity</option>
+                    @foreach($products as $prod)
+                        <option value="{{ $prod->id }}" {{ request('product_id') == $prod->id ? 'selected' : '' }}>{{ $prod->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-4">
+            <div class="form-group">
+                <label>Effective From Date: <span class="text-danger">*</span></label>
+                <input type="date" name="from_date" id="from_date" class="form-control" required value="{{ date('Y-m-d') }}" />
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-4">
+            <div class="form-group">
+                <label>Effective To Date: <span class="text-danger">*</span></label>
+                <input type="date" name="to_date" id="to_date" class="form-control" required />
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Title:</label>
@@ -108,6 +134,19 @@
                 $('#' + targetId).hide().find('input').val('').removeAttr('required');
             }
         });
+
+        $('#from_date').on('change', function() {
+            var fromVal = $(this).val();
+            if (fromVal) {
+                $('#to_date').attr('min', fromVal);
+                if ($('#to_date').val() && $('#to_date').val() < fromVal) {
+                    $('#to_date').val(fromVal);
+                }
+            }
+        });
+        if ($('#from_date').val()) {
+            $('#to_date').attr('min', $('#from_date').val());
+        }
     });
 
     function getSubLocations(locationId) {

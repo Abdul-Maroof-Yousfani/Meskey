@@ -1,4 +1,13 @@
 <div class="row form-mar">
+    @if ($millingRate->isExpired() && !$millingRate->hasSuccessor())
+        <div class="col-12">
+            <div class="alert alert-danger mb-3 p-2 font-weight-bold" role="alert">
+                <i class="ft-alert-triangle mr-2"></i>
+                <strong>Attention:</strong> This milling rate expired on {{ $millingRate->to_date ? $millingRate->to_date->format('d M, Y') : '-' }} and no subsequent active milling rate is configured for Commodity "{{ $millingRate->product->name ?? 'N/A' }}".
+            </div>
+        </div>
+    @endif
+
     <div class="col-xs-12 col-sm-12 col-md-4">
         <div class="form-group">
             <label>Location:</label>
@@ -17,6 +26,27 @@
         <div class="form-group">
             <label>Plant:</label>
             <input type="text" value="{{ $millingRate->plant->name ?? '' }}" class="form-control" readonly />
+        </div>
+    </div>
+
+    <div class="col-xs-12 col-sm-12 col-md-4">
+        <div class="form-group">
+            <label>Commodity / Product:</label>
+            <input type="text" value="{{ $millingRate->product->name ?? 'N/A' }}" class="form-control font-weight-bold text-primary" readonly />
+        </div>
+    </div>
+
+    <div class="col-xs-12 col-sm-12 col-md-4">
+        <div class="form-group">
+            <label>Effective From Date:</label>
+            <input type="text" value="{{ $millingRate->from_date ? $millingRate->from_date->format('d M, Y') : 'N/A' }}" class="form-control" readonly />
+        </div>
+    </div>
+
+    <div class="col-xs-12 col-sm-12 col-md-4">
+        <div class="form-group">
+            <label>Effective To Date:</label>
+            <input type="text" value="{{ $millingRate->to_date ? $millingRate->to_date->format('d M, Y') : 'N/A' }}" class="form-control" readonly />
         </div>
     </div>
 
