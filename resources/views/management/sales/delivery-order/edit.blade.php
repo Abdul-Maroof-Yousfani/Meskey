@@ -316,7 +316,7 @@
         <div class="col-12 text-right mb-2">
             <div class="form-group" style="float: right; width: 200px; text-align: left;">
                 <label>DO Status:</label>
-                <select name="do_status" id="do_status" class="form-control" onchange="checkDoStatus(this)" {{-- $delivery_order->do_status == 'closed' ? 'disabled' : '' --}}>
+                <select name="do_status" id="do_status" class="form-control" onchange="checkDoStatus(this)" {{ $delivery_order->do_status == 'closed' ? 'disabled' : '' }}>
                     <option value="active" {{ $delivery_order->do_status == 'active' ? 'selected' : '' }}>Active</option>
                     <option value="closed" {{ $delivery_order->do_status == 'closed' ? 'selected' : '' }}>Closed</option>
                 </select>
