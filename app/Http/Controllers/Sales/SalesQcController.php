@@ -92,6 +92,7 @@ class SalesQcController extends Controller
                 $query->whereIn('arrival_location_id', $locations);
             })
             ->whereDoesntHaveClosedSaleOrder()
+            ->WhereDeliveryStatusNotClosed()
             ->whereDoesntHave('salesQc')
             ->with([
                 'loadingProgram.deliveryOrder.customer',

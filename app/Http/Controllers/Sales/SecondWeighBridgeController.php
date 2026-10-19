@@ -89,6 +89,7 @@ class SecondWeighBridgeController extends Controller
 
         // Get loading slips that have accepted dispatch QC but don't have a second weighbridge yet
         $LoadingSlips = LoadingSlip::whereDoesntHave('secondWeighbridge')
+            ->WhereDoStatusNotClosed()
             ->whereHas('loadingProgramItem', function ($query) use ($isSuperAdmin, $locations) {
                 $query->when(!$isSuperAdmin, function ($q) use ($locations) {
                     $q->whereIn('arrival_location_id', $locations);

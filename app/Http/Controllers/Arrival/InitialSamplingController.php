@@ -12,6 +12,7 @@ use App\Models\Master\QcReliefParameter;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Master\ProductSlabType;
+use Carbon\Carbon;
 
 class InitialSamplingController extends Controller
 {
@@ -31,19 +32,73 @@ class InitialSamplingController extends Controller
     {
         $isResampling = request()->route()->getName() === 'get.initial-resampling';
 
-        $samplingRequests = ArrivalSamplingRequest::with('arrivalTicket')
+        $query = ArrivalSamplingRequest::with(['arrivalTicket.qcProduct', 'arrivalProduct'])
             ->where('is_done', 'yes');
 
         if ($isResampling) {
-            $samplingRequests->where('is_re_sampling', 'yes');
+            $query->where('is_re_sampling', 'yes');
         }
 
-        $samplingRequests = $samplingRequests->where('sampling_type', 'initial')
+        $samplingRequests = $query->where('sampling_type', 'initial')
+            ->when($request->filled('daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange);
+                if (count($dates) === 2) {
+                    try {
+                        $startDate = Carbon::createFromFormat('m/d/Y', trim($dates[0]))->startOfDay();
+                        $endDate = Carbon::createFromFormat('m/d/Y', trim($dates[1]))->endOfDay();
+                    } catch (\Exception $e) {
+                        try {
+                            $startDate = Carbon::parse(trim($dates[0]))->startOfDay();
+                            $endDate = Carbon::parse(trim($dates[1]))->endOfDay();
+                        } catch (\Exception $e2) {
+                            return;
+                        }
+                    }
+                    $q->whereBetween('arrival_sampling_requests.created_at', [$startDate, $endDate]);
+                }
+            })
+            ->when($request->filled('unique_no'), function ($q) use ($request) {
+                $uniqueNo = ltrim(trim($request->unique_no), '#');
+                $q->whereHas('arrivalTicket', function ($sq) use ($uniqueNo) {
+                    $sq->where('unique_no', 'like', '%' . $uniqueNo . '%');
+                });
+            })
+            ->when($request->filled('commodity'), function ($q) use ($request) {
+                $commodity = $request->commodity;
+                $q->where(function ($subQ) use ($commodity) {
+                    $subQ->where('arrival_product_id', $commodity)
+                        ->orWhereHas('arrivalTicket', function ($ticketQ) use ($commodity) {
+                            $ticketQ->where('qc_product', $commodity)
+                                ->orWhere('product_id', $commodity)
+                                ->orWhereHas('qcProduct', function ($prodQ) use ($commodity) {
+                                    $prodQ->where('name', $commodity);
+                                })
+                                ->orWhereHas('product', function ($prodQ) use ($commodity) {
+                                    $prodQ->where('name', $commodity);
+                                });
+                        })
+                        ->orWhereHas('arrivalProduct', function ($prodQ) use ($commodity) {
+                            $prodQ->where('name', $commodity);
+                        });
+                });
+            })
+            ->when($request->filled('remark'), function ($q) use ($request) {
+                $remarkTerm = '%' . $request->remark . '%';
+                $q->where(function ($sq) use ($remarkTerm) {
+                    $sq->where('remark', 'like', $remarkTerm)
+                        ->orWhereHas('arrivalTicket', function ($ticketQ) use ($remarkTerm) {
+                            $ticketQ->where('remarks', 'like', $remarkTerm);
+                        });
+                });
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
-                $q->whereHas('arrivalTicket', function ($sq) use ($searchTerm) {
-                    $sq->where('unique_no', 'like', $searchTerm)
-                        ->orWhere('supplier_name', 'like', $searchTerm);
+                $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('remark', 'like', $searchTerm)
+                        ->orWhereHas('arrivalTicket', function ($ticketQ) use ($searchTerm) {
+                            $ticketQ->where('unique_no', 'like', $searchTerm)
+                                ->orWhere('supplier_name', 'like', $searchTerm);
+                        });
                 });
             })
              // Yahan relation through company_location_id check karen
@@ -55,7 +110,7 @@ class InitialSamplingController extends Controller
             ->whereHas('arrivalTicket', function ($q) {
                 $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
-            ->latest()
+            ->latest('arrival_sampling_requests.created_at')
             ->paginate(request('per_page', 25));
 
         return view('management.arrival.initial_sampling.getList', compact('samplingRequests', 'isResampling'));

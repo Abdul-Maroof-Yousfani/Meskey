@@ -97,6 +97,7 @@ class DispatchQCController extends Controller
                 $query->whereIn('arrival_location_id', $locations);
             })
             ->whereDoesntHaveClosedSaleOrder()
+            ->WhereDeliveryStatusNotClosed()
             ->whereDoesntHave('dispatchQcs', function ($q) {
                 // Exclude tickets that have an accepted QC
                 $q->where('status', 'accept');

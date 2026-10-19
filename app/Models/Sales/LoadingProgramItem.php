@@ -238,4 +238,11 @@ class LoadingProgramItem extends Model
             $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
         });
     }
+    public function scopeWhereDeliveryStatusNotClosed($query)
+    {
+        return $query->whereHas('deliveryOrders', function ($q) {
+            $q->where('do_status', '!=', 'closed');
+        });
+    }
+  
 }

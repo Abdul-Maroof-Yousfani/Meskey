@@ -98,6 +98,7 @@ class FirstWeighBridgeController extends Controller
                 $query->where('type', 'sale_order');
             })
                 ->whereDoesntHaveClosedSaleOrder()
+                ->WhereDeliveryStatusNotClosed()
                 ->whereDoesntHave('firstWeighbridge')
                 ->when(!$isSuperAdmin, function ($query) use ($locations) {
                     $query->whereIn('arrival_location_id', $locations);

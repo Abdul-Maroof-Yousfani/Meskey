@@ -99,6 +99,7 @@ class LoadingSlipController extends Controller
                 $query->whereIn('arrival_location_id', $locations);
             })
             ->whereDoesntHaveClosedSaleOrder()
+            ->WhereDeliveryStatusNotClosed()
             ->whereDoesntHave('loadingSlip')
             ->with([
                 'loadingProgram.deliveryOrder.customer',

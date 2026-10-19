@@ -122,4 +122,9 @@ class LoadingSlip extends Model
         // If no dispatch QC exists or latest is rejected, editing is allowed
         return true;
     }
+    public function scopeWhereDoStatusNotClosed($query){
+        return $query->whereHas('loadingProgramItem.deliveryOrders', function ($q) {
+            $q->where('do_status', '!=', 'closed');
+        });
+    }
 }

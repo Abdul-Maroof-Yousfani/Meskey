@@ -1321,6 +1321,7 @@ class DeliveryChallanController extends Controller
                 'loadingSlip.secondWeighbridge'
             ])
             ->whereDoesntHaveClosedSaleOrder()
+            ->WhereDeliveryStatusNotClosed()
             ->whereHas("loadingSlip.secondWeighbridge")
             ->when(!$isSuperAdmin, function ($q) use ($locations) {
                 $q->whereIn('arrival_location_id', $locations);
@@ -1916,4 +1917,5 @@ class DeliveryChallanController extends Controller
 
         return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
-}
+
+    }
