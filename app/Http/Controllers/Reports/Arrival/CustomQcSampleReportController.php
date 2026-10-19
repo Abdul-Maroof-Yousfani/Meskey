@@ -14,6 +14,12 @@ use Illuminate\Http\Request;
 
 class CustomQcSampleReportController extends Controller
 {
+
+
+    public function __construct()
+    {
+        $this->middleware('check.company:arrival-custom-qc-sample-report');
+    }
     public function index()
     {
         $commodities = Product::all();
@@ -74,8 +80,8 @@ class CustomQcSampleReportController extends Controller
             })
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
-                    $subQuery->whereIn('purchase_tickets.product_id', (array)$request->commodity_id)
-                        ->orWhereIn('purchase_tickets.qc_product', (array)$request->commodity_id);
+                    $subQuery->whereIn('purchase_tickets.product_id', (array) $request->commodity_id)
+                        ->orWhereIn('purchase_tickets.qc_product', (array) $request->commodity_id);
                 });
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
@@ -85,7 +91,7 @@ class CustomQcSampleReportController extends Controller
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->whereHas('purchaseOrder', function ($sq) use ($request) {
-                    $sq->whereIn('company_location_id', (array)$request->company_location_id);
+                    $sq->whereIn('company_location_id', (array) $request->company_location_id);
                 });
             })
             ->when($request->filled('station_id'), function ($q) use ($request) {
@@ -114,10 +120,14 @@ class CustomQcSampleReportController extends Controller
 
         $commodityIds = [];
         foreach ($tickets as $t) {
-            if ($t->qc_product) $commodityIds[] = $t->qc_product;
-            if ($t->product_id) $commodityIds[] = $t->product_id;
-            if ($t->purchaseOrder?->qc_product) $commodityIds[] = $t->purchaseOrder->qc_product;
-            if ($t->purchaseOrder?->product_id) $commodityIds[] = $t->purchaseOrder->product_id;
+            if ($t->qc_product)
+                $commodityIds[] = $t->qc_product;
+            if ($t->product_id)
+                $commodityIds[] = $t->product_id;
+            if ($t->purchaseOrder?->qc_product)
+                $commodityIds[] = $t->purchaseOrder->qc_product;
+            if ($t->purchaseOrder?->product_id)
+                $commodityIds[] = $t->purchaseOrder->product_id;
         }
         $commodityIds = array_values(array_unique(array_filter($commodityIds)));
 

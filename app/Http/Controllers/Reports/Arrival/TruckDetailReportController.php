@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 
 class TruckDetailReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:arrival-truck-detail-report');
+    }
     public function index()
     {
         $commodities = Product::all();
@@ -91,7 +95,7 @@ class TruckDetailReportController extends Controller
                 return $q->where('arrival_tickets.unique_no', 'like', '%' . $request->arrival_ticket_no . '%');
             })
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
-                $commodityIds = array_filter((array)$request->commodity_id);
+                $commodityIds = array_filter((array) $request->commodity_id);
                 if (!empty($commodityIds)) {
                     return $q->whereIn(\Illuminate\Support\Facades\DB::raw('COALESCE(arrival_tickets.qc_product, arrival_tickets.product_id)'), $commodityIds);
                 }
@@ -103,7 +107,7 @@ class TruckDetailReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                $locationIds = array_filter((array)$request->company_location_id);
+                $locationIds = array_filter((array) $request->company_location_id);
                 if (!empty($locationIds)) {
                     return $q->whereIn('arrival_tickets.location_id', $locationIds);
                 }

@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 
 class TruckDetailGateReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:arrival-truck-detail-gate-report');
+    }
     public function index()
     {
         $commodities = Product::all();

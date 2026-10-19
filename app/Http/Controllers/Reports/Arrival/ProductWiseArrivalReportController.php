@@ -39,7 +39,7 @@ class ProductWiseArrivalReportController extends Controller
             ->whereIn('arrival_tickets.document_approval_status', ['fully_approved', 'half_approved'])
             ->where('arrival_tickets.second_weighbridge_status', 'completed')
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.product_id', (array)$request->commodity_id);
+                return $q->whereIn('arrival_tickets.product_id', (array) $request->commodity_id);
             })
             ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);

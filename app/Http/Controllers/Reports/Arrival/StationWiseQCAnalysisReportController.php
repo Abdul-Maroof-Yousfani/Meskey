@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 
 class StationWiseQCAnalysisReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:arrival-station-wise-qc-analysis-report');
+    }
     public function index()
     {
         $commodities = Product::all();

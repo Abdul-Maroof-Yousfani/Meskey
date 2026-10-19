@@ -12,6 +12,10 @@ use Illuminate\Http\Request;
 
 class GalaQcReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:gala-qc-analysis-report');
+    }
     public function index()
     {
         $commodities = Product::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();

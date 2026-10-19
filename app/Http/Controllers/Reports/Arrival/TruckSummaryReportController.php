@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class TruckSummaryReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:arrival-truck-summary-report');
+    }
     public function index()
     {
         $commodities = Product::all();
@@ -104,7 +108,7 @@ class TruckSummaryReportController extends Controller
                     (arrival_tickets.first_qc_status != 'rejected') THEN 1 END) as in_process")
             )
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
-                $commodityIds = array_filter((array)$request->commodity_id);
+                $commodityIds = array_filter((array) $request->commodity_id);
                 if (!empty($commodityIds)) {
                     return $q->whereIn(DB::raw('COALESCE(arrival_tickets.qc_product, arrival_tickets.product_id)'), $commodityIds);
                 }
@@ -116,7 +120,7 @@ class TruckSummaryReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                $locationIds = array_filter((array)$request->company_location_id);
+                $locationIds = array_filter((array) $request->company_location_id);
                 if (!empty($locationIds)) {
                     return $q->whereIn('arrival_tickets.location_id', $locationIds);
                 }
