@@ -133,14 +133,14 @@
                                 @endcanAccess
                                 @canAccess('sales-delivery-order-create')
                                 @if(auth()->user()->id == $group['created_by_id'] || auth()->user()->user_type === 'super-admin' || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('admin'))
-                                    @if(isset($group['sale_order']) && $group['sale_order']->do_status !== 'closed')
+                                    @if(isset($group['sale_order']) && $group['sale_order']->do_status !== 'closed' || 1==1) 
                                         @if(!$group['sale_order']->is_auto_created_from_so)
                                             <button
                                                 onclick="openModal(this,'{{ route('sales.delivery-order.edit', ['delivery_order' => $group['id']]) }}','Edit Delivery Order', false, '90%')"
                                                 class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                 <i class="ft-edit"></i>
                                             </button>
-                                        @endif
+                                        @endif 
 
                                         @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         <button
