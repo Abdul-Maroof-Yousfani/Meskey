@@ -54,7 +54,9 @@ class GalaQcReportController extends Controller
             12 => 'December',
         ];
 
-        return view('management.reports.arrival.gala-qc.index', compact('commodities', 'locations', 'years', 'months'));
+        $product_slab_types = collect();
+
+        return view('management.reports.arrival.gala-qc.index', compact('commodities', 'locations', 'years', 'months', 'product_slab_types'));
     }
 
     public function getList(Request $request)
@@ -323,10 +325,15 @@ class GalaQcReportController extends Controller
             }
         }
 
+        $product_slab_types = collect();
+        $overallSlabAverages = [];
+
         return view('management.reports.arrival.gala-qc.get_gala_qc', compact(
             'galaData',
             'totalNetWeight',
-            'overallAverages'
+            'overallAverages',
+            'product_slab_types',
+            'overallSlabAverages'
         ));
     }
 }

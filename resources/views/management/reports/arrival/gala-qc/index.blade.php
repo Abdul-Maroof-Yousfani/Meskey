@@ -92,15 +92,15 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Status filter --}}
+                                            {{-- Status filter (supports multiple items matching screenshot Status2) --}}
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Status:</label>
-                                                    <select name="status_id" id="status_id" class="form-control selectWithoutAjax">
-                                                        <option value="all">All Statuses</option>
-                                                        <option value="fully_approved" {{ request('status_id') == 'fully_approved' ? 'selected' : '' }}>OK</option>
-                                                        <option value="half_approved" {{ request('status_id') == 'half_approved' ? 'selected' : '' }}>Reject Half</option>
-                                                        <option value="rejected" {{ request('status_id') == 'rejected' ? 'selected' : '' }}>Reject Full</option>
+                                                    <select name="status_id[]" id="status_id" multiple class="form-control selectWithoutAjax">
+                                                        <option value="all" selected>All</option>
+                                                        <option value="fully_approved">OK</option>
+                                                        <option value="half_approved">Reject Half</option>
+                                                        <option value="rejected">Reject Full</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -122,9 +122,12 @@
                                         <tr>
                                             <th>Galaa #</th>
                                             <th>Net Weight</th>
-                                            @foreach ($product_slab_types as $slab)
-                                                <th>{{ $slab->name }} @if(!empty($slab->qc_symbol))({{ $slab->qc_symbol }})@endif</th>
-                                            @endforeach
+                                            <th>Average of Inner Broken</th>
+                                            <th>Average of Inner Moisture (15% max)</th>
+                                            <th>Damage: Creamish / grey / Tip) max 2%</th>
+                                            <th>Damage: YELLOW max 1%</th>
+                                            <th>Under Milled (5% max)</th>
+                                            <th>Average of Chalky (5% max)</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -141,6 +144,7 @@
         $(document).ready(function () {
             $('.selectWithoutAjax').select2();
 
+            // Commodity "All" logic
             $('#commodity_id').on('select2:select', function (e) {
                 if (e.params.data.id === 'all') {
                     $(this).val(['all']).trigger('change');
@@ -152,6 +156,26 @@
             });
 
             $('#commodity_id').on('select2:unselect', function (e) {
+                setTimeout(() => {
+                    let vals = $(this).val() || [];
+                    if (vals.length === 0) {
+                        $(this).val(['all']).trigger('change');
+                    }
+                }, 1);
+            });
+
+            // Status "All" logic
+            $('#status_id').on('select2:select', function (e) {
+                if (e.params.data.id === 'all') {
+                    $(this).val(['all']).trigger('change');
+                } else {
+                    let vals = $(this).val() || [];
+                    vals = vals.filter(v => v !== 'all');
+                    $(this).val(vals).trigger('change');
+                }
+            });
+
+            $('#status_id').on('select2:unselect', function (e) {
                 setTimeout(() => {
                     let vals = $(this).val() || [];
                     if (vals.length === 0) {
