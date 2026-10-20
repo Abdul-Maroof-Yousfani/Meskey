@@ -314,6 +314,9 @@ class SalesOrder extends Model
         $userFactoryIds = static::getUserFactoryLocationIds($user);
         $parentId = $user->parent_user_id;
         $childUserIds = \App\Models\User::where('parent_user_id', $user->id)->pluck('id')->toArray();
+        $siblingUserIds = !empty($parentId)
+            ? \App\Models\User::where('parent_user_id', $parentId)->where('id', '!=', $user->id)->pluck('id')->toArray()
+            : [];
 
         $matchFactory = function ($q, array $factoryIds) {
             if (empty($factoryIds)) {
@@ -327,7 +330,7 @@ class SalesOrder extends Model
             });
         };
 
-        return $query->where(function ($q) use ($user, $parentId, $childUserIds, $userFactoryIds, $matchFactory) {
+        return $query->where(function ($q) use ($user, $parentId, $childUserIds, $siblingUserIds, $userFactoryIds, $matchFactory) {
             // 1. Own created SOs (or where user is parent_user_id and created_by is null)
             $q->where(function ($sub) use ($user) {
                 $sub->where('sales_orders.created_by', $user->id)
@@ -342,17 +345,19 @@ class SalesOrder extends Model
                 $q->orWhereIn('sales_orders.created_by', $childUserIds);
             }
 
-            // 3. SOs created by their parent (Child only sees parent SOs matching child's assigned factories)
+            // 3. SOs created by their parent or siblings (Child sees parent and sibling SOs matching child's assigned factories)
             if (!empty($parentId)) {
-                $q->orWhere(function ($parentQ) use ($parentId, $userFactoryIds, $matchFactory) {
-                    $parentQ->where(function ($sub) use ($parentId) {
-                        $sub->where('sales_orders.created_by', $parentId)
+                $familyUserIds = array_merge([$parentId], $siblingUserIds);
+
+                $q->orWhere(function ($familyQ) use ($parentId, $familyUserIds, $userFactoryIds, $matchFactory) {
+                    $familyQ->where(function ($sub) use ($parentId, $familyUserIds) {
+                        $sub->whereIn('sales_orders.created_by', $familyUserIds)
                             ->orWhere(function ($ssub) use ($parentId) {
                                 $ssub->where('sales_orders.parent_user_id', $parentId)
                                      ->whereNull('sales_orders.created_by');
                             });
                     });
-                    $matchFactory($parentQ, $userFactoryIds);
+                    $matchFactory($familyQ, $userFactoryIds);
                 });
             }
         });
