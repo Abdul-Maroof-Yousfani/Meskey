@@ -65,21 +65,8 @@ class InitialSamplingController extends Controller
             })
             ->when($request->filled('commodity'), function ($q) use ($request) {
                 $commodity = $request->commodity;
-                $q->where(function ($subQ) use ($commodity) {
-                    $subQ->where('arrival_product_id', $commodity)
-                        ->orWhereHas('arrivalTicket', function ($ticketQ) use ($commodity) {
-                            $ticketQ->where('qc_product', $commodity)
-                                ->orWhere('product_id', $commodity)
-                                ->orWhereHas('qcProduct', function ($prodQ) use ($commodity) {
-                                    $prodQ->where('name', $commodity);
-                                })
-                                ->orWhereHas('product', function ($prodQ) use ($commodity) {
-                                    $prodQ->where('name', $commodity);
-                                });
-                        })
-                        ->orWhereHas('arrivalProduct', function ($prodQ) use ($commodity) {
-                            $prodQ->where('name', $commodity);
-                        });
+                $q->whereHas('arrivalTicket', function ($ticketQ) use ($commodity) {
+                    $ticketQ->where('qc_product', $commodity);
                 });
             })
             ->when($request->filled('remark'), function ($q) use ($request) {
@@ -94,10 +81,16 @@ class InitialSamplingController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 $q->where(function ($sq) use ($searchTerm) {
+                    // Own columns
                     $sq->where('remark', 'like', $searchTerm)
+                        ->orWhere('created_at', 'like', $searchTerm)
+                        // Ticket No
                         ->orWhereHas('arrivalTicket', function ($ticketQ) use ($searchTerm) {
-                            $ticketQ->where('unique_no', 'like', $searchTerm)
-                                ->orWhere('supplier_name', 'like', $searchTerm);
+                            $ticketQ->where('unique_no', 'like', $searchTerm);
+                        })
+                        // Product name
+                        ->orWhereHas('arrivalTicket.qcProduct', function ($productQ) use ($searchTerm) {
+                            $productQ->where('name', 'like', $searchTerm);
                         });
                 });
             })
