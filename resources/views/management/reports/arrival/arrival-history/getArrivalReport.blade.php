@@ -37,6 +37,7 @@
         <th>{{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
         <th>Inner {{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
     @endforeach
+    <th>Filling Bags</th>
     @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
         <th>{{ $compulsory_slab_type->name }}</th>
     @endforeach
@@ -313,7 +314,7 @@
                     @endif
                 </td>
             @endforeach
-
+            <td>{{ $row->approvals->filling_bags_no ?? '' }}</td>
             <!-- ========================================== -->
             <!-- COMPULSORY QC DEDUCTIONS -->
             <!-- ========================================== -->

@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 
 class ArrivalReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:master-arrival-report');
+    }
     public function index()
     {
 
