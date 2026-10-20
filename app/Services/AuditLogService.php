@@ -212,7 +212,6 @@ class AuditLogService
 
             $relatedParamIds = \App\Models\Master\ArrivalQcReliefParameter::withTrashed()
                 ->where('product_id', $model->product_id)
-                ->when($model->location_id, fn($q) => $q->where('location_id', $model->location_id), fn($q) => $q->whereNull('location_id'))
                 ->pluck('id')
                 ->toArray();
             if (!empty($relatedParamIds)) {
