@@ -10,6 +10,7 @@ use App\Models\Master\Miller;
 use App\Models\Master\ProductSlabType;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Services\ArrivalDashboardService;
 
 class QcAnalysisReportController extends Controller
 {
@@ -32,6 +33,15 @@ class QcAnalysisReportController extends Controller
         ini_set('max_execution_time', 300);
 
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin && $authUser) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
 
         $tickets = ArrivalTicket::select('arrival_tickets.*')
             ->with([
@@ -101,6 +111,9 @@ class QcAnalysisReportController extends Controller
                     return $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
                         ->whereDate('arrival_tickets.created_at', '<=', $endDate);
                 }
+            })
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());

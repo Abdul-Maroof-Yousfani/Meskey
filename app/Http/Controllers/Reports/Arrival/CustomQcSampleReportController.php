@@ -11,6 +11,7 @@ use App\Models\Master\Supplier;
 use App\Models\Product;
 use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
+use App\Services\ArrivalDashboardService;
 
 class CustomQcSampleReportController extends Controller
 {
@@ -47,6 +48,15 @@ class CustomQcSampleReportController extends Controller
         ini_set('max_execution_time', 300);
 
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin && $authUser) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
 
         $tickets = PurchaseTicket::select('purchase_tickets.*')
             ->with([
@@ -107,6 +117,14 @@ class CustomQcSampleReportController extends Controller
                     return $q->whereDate('purchase_tickets.created_at', '>=', $startDate)
                         ->whereDate('purchase_tickets.created_at', '<=', $endDate);
                 }
+            })
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereHas('purchaseOrder', function ($poQuery) use ($decisionUserIds) {
+                    $poQuery->where(function ($sub) use ($decisionUserIds) {
+                        $sub->whereIn('decision_of_id', $decisionUserIds)
+                            ->orWhereIn('created_by', $decisionUserIds);
+                    });
+                });
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where(function ($sq) {

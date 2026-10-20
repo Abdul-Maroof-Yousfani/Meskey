@@ -9,6 +9,7 @@ use App\Models\Master\ArrivalSubLocation;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\CompanyLocation;
+use App\Services\ArrivalDashboardService;
 
 class SamplingWorkflowTurnaroundReportController extends Controller
 {
@@ -16,7 +17,9 @@ class SamplingWorkflowTurnaroundReportController extends Controller
     {
         $commodities = Product::all();
         $stations = Station::all();
-        $warehouses = ArrivalSubLocation::get();
+        $warehouses = ArrivalSubLocation::when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
+        })->get();
         $locations = CompanyLocation::when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
@@ -28,6 +31,15 @@ class SamplingWorkflowTurnaroundReportController extends Controller
     {
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin && $authUser) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
 
         $tickets = ArrivalTicket::select('arrival_tickets.*')
             ->with([
@@ -43,6 +55,9 @@ class SamplingWorkflowTurnaroundReportController extends Controller
                 },
                 'lastInitialSampling',
             ])
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);
+            })
             ->when($request->filled('station_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.station_id', $request->station_id);
             })

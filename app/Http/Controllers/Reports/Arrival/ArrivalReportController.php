@@ -15,6 +15,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\Account\Transaction;
 use DB;
 use Illuminate\Http\Request;
+use App\Services\ArrivalDashboardService;
 
 class ArrivalReportController extends Controller
 {
@@ -41,6 +42,16 @@ class ArrivalReportController extends Controller
         ini_set('max_execution_time', 300); // 5 minutes
 
         $isOnlyVerified = str()->contains($request->route()->getName(), 'verified');
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
+
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
             ->leftJoin('grn_numbers', function ($join) {
@@ -128,6 +139,9 @@ class ArrivalReportController extends Controller
                 $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
                 return $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
                     ->whereDate('arrival_tickets.created_at', '<=', $endDate);
+            })
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());

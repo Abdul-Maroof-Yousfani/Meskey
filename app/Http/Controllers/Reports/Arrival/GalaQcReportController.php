@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Reports\Arrival;
 use App\Http\Controllers\Controller;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\CompanyLocation;
-use App\Models\Master\ProductSlabType;
 use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Services\ArrivalDashboardService;
 
 class GalaQcReportController extends Controller
 {
@@ -26,8 +26,6 @@ class GalaQcReportController extends Controller
         $locations = CompanyLocation::when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
-
-        $product_slab_types = ProductSlabType::getForArrivalReport();
 
         // Get distinct years from arrival tickets, with fallback to current & previous years
         $dbYears = ArrivalTicket::selectRaw('DISTINCT YEAR(created_at) as yr')
@@ -56,7 +54,7 @@ class GalaQcReportController extends Controller
             12 => 'December',
         ];
 
-        return view('management.reports.arrival.gala-qc.index', compact('commodities', 'locations', 'years', 'months', 'product_slab_types'));
+        return view('management.reports.arrival.gala-qc.index', compact('commodities', 'locations', 'years', 'months'));
     }
 
     public function getList(Request $request)
@@ -64,11 +62,22 @@ class GalaQcReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin && $authUser) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
+
         $query = ArrivalTicket::select('arrival_tickets.*')
             ->with([
                 'approvals.gala',
+                'innerSampling.slabResults.slabType',
                 'latestInnerSampling.slabResults.slabType',
                 'lastInitialSampling.slabResults.slabType',
+                'initialSampling.slabResults.slabType',
                 'qcProduct',
                 'product',
             ])
@@ -86,10 +95,10 @@ class GalaQcReportController extends Controller
                     });
                 }
             })
-            // Location filter
+            // Location filter (replacing Warehouse filter as instructed)
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 $locationIds = array_filter((array) $request->company_location_id);
-                if (!empty($locationIds)) {
+                if (!empty($locationIds) && !in_array('all', $locationIds)) {
                     $q->whereIn('arrival_tickets.location_id', $locationIds);
                 }
             })
@@ -101,7 +110,7 @@ class GalaQcReportController extends Controller
             ->when($request->filled('month') && $request->month !== 'all', function ($q) use ($request) {
                 $q->whereMonth('arrival_tickets.created_at', $request->month);
             })
-            // Date Range filter
+            // Date Range filter (fallback if year or month not set)
             ->when($request->filled('daterange') && (!$request->filled('year') || $request->year === 'all') && (!$request->filled('month') || $request->month === 'all'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 if (count($dates) == 2) {
@@ -111,19 +120,41 @@ class GalaQcReportController extends Controller
                         ->whereDate('arrival_tickets.created_at', '<=', $endDate);
                 }
             })
-            // Status filter
-            ->when($request->filled('status_id') && $request->status_id !== 'all', function ($q) use ($request) {
-                if ($request->status_id === 'fully_approved') {
-                    $q->where('arrival_tickets.document_approval_status', 'fully_approved');
-                } elseif ($request->status_id === 'half_approved') {
-                    $q->where('arrival_tickets.document_approval_status', 'half_approved');
-                } elseif ($request->status_id === 'rejected') {
-                    $q->where(function ($sq) {
-                        $sq->where('arrival_tickets.first_qc_status', 'rejected')
-                            ->orWhere('arrival_tickets.status', 'Reject Full')
-                            ->orWhere('arrival_tickets.status', 'rejected');
+            // Status filter (Multiple items / single item support)
+            ->when($request->filled('status_id'), function ($q) use ($request) {
+                $statuses = array_filter((array) $request->status_id);
+                if (!empty($statuses) && !in_array('all', $statuses)) {
+                    $q->where(function ($sub) use ($statuses) {
+                        $hasClause = false;
+                        if (in_array('fully_approved', $statuses)) {
+                            $sub->where('arrival_tickets.document_approval_status', 'fully_approved');
+                            $hasClause = true;
+                        }
+                        if (in_array('half_approved', $statuses)) {
+                            if ($hasClause) {
+                                $sub->orWhere('arrival_tickets.document_approval_status', 'half_approved');
+                            } else {
+                                $sub->where('arrival_tickets.document_approval_status', 'half_approved');
+                                $hasClause = true;
+                            }
+                        }
+                        if (in_array('rejected', $statuses)) {
+                            $rejCallback = function ($sq) {
+                                $sq->where('arrival_tickets.first_qc_status', 'rejected')
+                                    ->orWhere('arrival_tickets.status', 'Reject Full')
+                                    ->orWhere('arrival_tickets.status', 'rejected');
+                            };
+                            if ($hasClause) {
+                                $sub->orWhere($rejCallback);
+                            } else {
+                                $sub->where($rejCallback);
+                            }
+                        }
                     });
                 }
+            })
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);
             })
             // User location restriction
             ->when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
@@ -132,130 +163,170 @@ class GalaQcReportController extends Controller
 
         $tickets = $query->orderBy('arrival_tickets.created_at', 'asc')->get();
 
-        // Get dynamic ProductSlabTypes
-        $commodityIds = $tickets->pluck('qc_product')
-            ->merge($tickets->pluck('product_id'))
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
+        // Helper to extract the 6 QC parameters for a ticket
+        $extractQcValues = function ($ticket) {
+            $innerSampling = $ticket->innerSampling ?: $ticket->latestInnerSampling;
+            $initialSampling = $ticket->lastInitialSampling ?: $ticket->initialSampling;
 
-        if (empty($commodityIds) && $request->filled('commodity_id')) {
-            $commodityIds = array_filter((array) $request->commodity_id);
-            $commodityIds = array_values(array_diff($commodityIds, ['all']));
-        }
+            $findSlab = function ($sampling, $slabIds, $nameKeywords, $excludeKeywords = []) {
+                if (!$sampling || !$sampling->slabResults) {
+                    return null;
+                }
+                foreach ($sampling->slabResults as $sr) {
+                    if (!$sr->slabType) {
+                        continue;
+                    }
+                    $name = strtolower(trim($sr->slabType->name));
+                    $id = (int) $sr->product_slab_type_id;
 
-        $product_slab_types = ProductSlabType::getForCommodities($commodityIds);
-        if ($product_slab_types->isEmpty()) {
-            $product_slab_types = ProductSlabType::getForArrivalReport($request->company_location_id, $commodityIds);
-            if ($product_slab_types->isEmpty()) {
-                $product_slab_types = ProductSlabType::ordered()->get();
-            }
+                    $excluded = false;
+                    foreach ($excludeKeywords as $ex) {
+                        if (stripos($name, strtolower($ex)) !== false) {
+                            $excluded = true;
+                            break;
+                        }
+                    }
+                    if ($excluded) {
+                        continue;
+                    }
+
+                    if (in_array($id, (array) $slabIds)) {
+                        $val = $sr->checklist_value;
+                        if ($val !== null && $val !== '' && is_numeric($val)) {
+                            return (float) $val;
+                        }
+                    }
+
+                    foreach ($nameKeywords as $kw) {
+                        if (stripos($name, strtolower($kw)) !== false) {
+                            $val = $sr->checklist_value;
+                            if ($val !== null && $val !== '' && is_numeric($val)) {
+                                return (float) $val;
+                            }
+                        }
+                    }
+                }
+                return null;
+            };
+
+            // 1. Inner Broken (Slab 1, priority inner, fallback initial, exclude B3)
+            $innerBroken = $findSlab($innerSampling, [1], ['broken'], ['broken b3', 'b3'])
+                ?? $findSlab($initialSampling, [1], ['broken'], ['broken b3', 'b3']);
+
+            // 2. Inner Moisture (Slab 2, priority inner, fallback initial)
+            $innerMoisture = $findSlab($innerSampling, [2], ['moisture'])
+                ?? $findSlab($initialSampling, [2], ['moisture']);
+
+            // 3. Damage Creamish / grey / Tip (Slab 4, exclude B2, grain, water)
+            $damageCreamish = $findSlab($innerSampling, [4], ['damage'], ['damage b2', 'b2', 'grain', 'water'])
+                ?? $findSlab($initialSampling, [4], ['damage'], ['damage b2', 'b2', 'grain', 'water']);
+
+            // 4. Damage Yellow (Slab 10 'Damage B2', or 'yellow')
+            $damageYellow = $findSlab($innerSampling, [10], ['damage b2', 'yellow'])
+                ?? $findSlab($initialSampling, [10], ['damage b2', 'yellow']);
+
+            // 5. Under Milled (Slab 5)
+            $underMilled = $findSlab($innerSampling, [5], ['under milled', 'undermilled'])
+                ?? $findSlab($initialSampling, [5], ['under milled', 'undermilled']);
+
+            // 6. Chalky (Slab 3)
+            $chalky = $findSlab($innerSampling, [3], ['chalky'])
+                ?? $findSlab($initialSampling, [3], ['chalky']);
+
+            return [
+                'inner_broken' => $innerBroken,
+                'inner_moisture' => $innerMoisture,
+                'damage_creamish' => $damageCreamish,
+                'damage_yellow' => $damageYellow,
+                'under_milled' => $underMilled,
+                'chalky' => $chalky,
+            ];
+        };
+
+        // Cache QC values and arrived net weight on each ticket
+        foreach ($tickets as $t) {
+            $t->extracted_qc = $extractQcValues($t);
+            $t->calculated_weight = (float) ($t->arrived_net_weight ?: ($t->net_weight ?: 0));
         }
 
         // Group tickets by Gala
         $grouped = $tickets->groupBy(function ($ticket) {
             return $ticket->approvals?->gala?->name ?? ($ticket->approvals?->gala_name ?? 'Unknown Gala');
-        })->sortKeys();
-
-        $galaData = [];
-        $totalNetWeight = (float) $tickets->sum(function ($t) {
-            return (float) ($t->arrived_net_weight ?: 0);
         });
 
-        foreach ($grouped as $galaName => $items) {
-            // Net Weight strictly from arrived_net_weight as requested
-            $netWeight = (float) $items->sum(function ($t) {
-                return (float) ($t->arrived_net_weight ?: 0);
-            });
+        $qcKeys = ['inner_broken', 'inner_moisture', 'damage_creamish', 'damage_yellow', 'under_milled', 'chalky'];
+        $galaData = [];
 
-            $slabAverages = [];
-            foreach ($product_slab_types as $slab) {
-                $weightedValues = [];
-                $testedWeights = [];
-                $rawValues = [];
+        $allWeighted = array_fill_keys($qcKeys, []);
+        $allWeights = array_fill_keys($qcKeys, []);
+        $allRaws = array_fill_keys($qcKeys, []);
+        $totalNetWeight = 0;
+
+        foreach ($grouped as $galaName => $items) {
+            $galaWeight = (float) $items->sum('calculated_weight');
+            $totalNetWeight += $galaWeight;
+
+            $galaAverages = [];
+            foreach ($qcKeys as $key) {
+                $weightedVals = [];
+                $weights = [];
+                $rawVals = [];
 
                 foreach ($items as $t) {
-                    $tWeight = (float) ($t->arrived_net_weight ?: 0);
-                    $sampling = $t->latestInnerSampling ?: $t->lastInitialSampling;
-                    if ($sampling && $sampling->slabResults) {
-                        foreach ($sampling->slabResults as $sr) {
-                            if ($sr->product_slab_type_id == $slab->id && $sr->checklist_value !== null && $sr->checklist_value !== '') {
-                                $val = (float) $sr->checklist_value;
-                                if ($val > 0) {
-                                    $rawValues[] = $val;
-                                    $weightedValues[] = $val * $tWeight;
-                                    $testedWeights[] = $tWeight;
-                                }
-                                break;
-                            }
-                        }
+                    $w = $t->calculated_weight;
+                    $v = $t->extracted_qc[$key] ?? null;
+
+                    if ($v !== null && $v > 0) {
+                        $rawVals[] = $v;
+                        $weightedVals[] = $v * $w;
+                        $weights[] = $w;
+
+                        $allRaws[$key][] = $v;
+                        $allWeighted[$key][] = $v * $w;
+                        $allWeights[$key][] = $w;
                     }
                 }
 
-                $sumWeight = array_sum($testedWeights);
-                if ($sumWeight > 0) {
-                    $slabAverages[$slab->id] = array_sum($weightedValues) / $sumWeight;
-                } elseif (count($rawValues) > 0) {
-                    $slabAverages[$slab->id] = array_sum($rawValues) / count($rawValues);
+                $sumW = array_sum($weights);
+                if ($sumW > 0) {
+                    $galaAverages[$key] = array_sum($weightedVals) / $sumW;
+                } elseif (count($rawVals) > 0) {
+                    $galaAverages[$key] = array_sum($rawVals) / count($rawVals);
                 } else {
-                    $slabAverages[$slab->id] = 0;
+                    $galaAverages[$key] = 0;
                 }
             }
 
             $galaData[] = [
                 'gala_name' => $galaName,
-                'net_weight' => $netWeight,
-                'slab_averages' => $slabAverages,
+                'net_weight' => $galaWeight,
+                'averages' => $galaAverages,
                 'count_tickets' => $items->count(),
             ];
         }
 
-        // Sort rows by Net Weight descending
+        // Natural sort by Gala name
         usort($galaData, function ($a, $b) {
-            return $b['net_weight'] <=> $a['net_weight'];
+            return strnatcasecmp($a['gala_name'], $b['gala_name']);
         });
 
-        // Calculate Overall Totals for all slabs
-        $overallSlabAverages = [];
-        foreach ($product_slab_types as $slab) {
-            $allWeightedValues = [];
-            $allTestedWeights = [];
-            $allRawValues = [];
-
-            foreach ($tickets as $t) {
-                $tWeight = (float) ($t->arrived_net_weight ?: 0);
-                $sampling = $t->latestInnerSampling ?: $t->lastInitialSampling;
-                if ($sampling && $sampling->slabResults) {
-                    foreach ($sampling->slabResults as $sr) {
-                        if ($sr->product_slab_type_id == $slab->id && $sr->checklist_value !== null && $sr->checklist_value !== '') {
-                            $val = (float) $sr->checklist_value;
-                            if ($val > 0) {
-                                $allRawValues[] = $val;
-                                $allWeightedValues[] = $val * $tWeight;
-                                $allTestedWeights[] = $tWeight;
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-            $sumWeight = array_sum($allTestedWeights);
-            if ($sumWeight > 0) {
-                $overallSlabAverages[$slab->id] = array_sum($allWeightedValues) / $sumWeight;
-            } elseif (count($allRawValues) > 0) {
-                $overallSlabAverages[$slab->id] = array_sum($allRawValues) / count($allRawValues);
+        // Overall Totals / Averages row
+        $overallAverages = [];
+        foreach ($qcKeys as $key) {
+            $sumW = array_sum($allWeights[$key]);
+            if ($sumW > 0) {
+                $overallAverages[$key] = array_sum($allWeighted[$key]) / $sumW;
+            } elseif (count($allRaws[$key]) > 0) {
+                $overallAverages[$key] = array_sum($allRaws[$key]) / count($allRaws[$key]);
             } else {
-                $overallSlabAverages[$slab->id] = 0;
+                $overallAverages[$key] = 0;
             }
         }
 
         return view('management.reports.arrival.gala-qc.get_gala_qc', compact(
             'galaData',
-            'product_slab_types',
             'totalNetWeight',
-            'overallSlabAverages'
+            'overallAverages'
         ));
     }
 }

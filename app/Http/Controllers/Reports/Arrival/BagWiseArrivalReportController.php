@@ -13,6 +13,7 @@ use App\Models\SaudaType;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\ArrivalDashboardService;
 
 class BagWiseArrivalReportController extends Controller
 {
@@ -39,6 +40,15 @@ class BagWiseArrivalReportController extends Controller
     {
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin && $authUser) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
 
         $query = ArrivalTicket::join('arrival_approves', 'arrival_tickets.id', '=', 'arrival_approves.arrival_ticket_id')
             ->leftJoin('bag_types', 'arrival_approves.bag_type_id', '=', 'bag_types.id')
@@ -71,6 +81,9 @@ class BagWiseArrivalReportController extends Controller
                     return $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
                         ->whereDate('arrival_tickets.created_at', '<=', $endDate);
                 }
+            })
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);
             })
             ->when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());

@@ -808,6 +808,9 @@ class ArrivalDashboardService
             if ($children->isNotEmpty()) {
                 $ids = array_merge($ids, $children->pluck('id')->toArray());
             }
+            if ($parentUser && $parentUser->children->isNotEmpty()) {
+                $ids = array_merge($ids, $parentUser->children->pluck('id')->toArray());
+            }
             return [true, array_values(array_unique($ids))];
         }
 

@@ -233,7 +233,7 @@ class TicketController extends Controller
         $isSuperAdmin = $authUser->user_type === 'super-admin';
 
         if (!$isSuperAdmin) {
-            $requestData['location_id'] = $authUser->company_location_id;
+            $requestData['location_id'] = $authUser->company_location_id ?: $request->company_location_id;
         } else {
             $requestData['location_id'] = $request->company_location_id;
         }

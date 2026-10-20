@@ -9,6 +9,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Services\ArrivalDashboardService;
 
 class WeighbridgeSampleMoneyReportController extends Controller
 {
@@ -28,6 +29,15 @@ class WeighbridgeSampleMoneyReportController extends Controller
     {
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
+
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $isOutSourcePurchaser = false;
+        $decisionUserIds = [];
+        if (!$isSuperAdmin && $authUser) {
+            [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
+                ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
 
         $tickets = ArrivalTicket::select('arrival_tickets.*')
             ->with([
@@ -94,6 +104,9 @@ class WeighbridgeSampleMoneyReportController extends Controller
                             ->orWhere('arrival_tickets.second_weighbridge_status', '!=', 'completed');
                     });
                 }
+            })
+            ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
+                return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);
             })
             ->when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
