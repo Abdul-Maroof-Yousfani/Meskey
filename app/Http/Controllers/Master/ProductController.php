@@ -67,7 +67,12 @@ class ProductController extends Controller
         ])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
-                return $q->where('name', 'like', $searchTerm);
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm)
+                        ->orWhereHas('children', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm);
+                        });
+                });
             })
             ->where('company_id', $request->company_id)
             ->whereNull('parent_id')
