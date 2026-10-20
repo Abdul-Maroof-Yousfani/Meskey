@@ -34,7 +34,21 @@ class ArrivalLocationTransferController extends Controller
         $arrival_locations = ArrivalLocationTransfer::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
+                // Own column
+                $sq->where('created_at', 'like', $searchTerm)
+                    // Ticket No & Truck No
+                    ->orWhereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                        $ticketQuery->where('unique_no', 'like', $searchTerm)
+                            ->orWhere('truck_no', 'like', $searchTerm);
+                    })
+                    // Location name
+                    ->orWhereHas('arrivalLocation', function ($locationQuery) use ($searchTerm) {
+                        $locationQuery->where('name', 'like', $searchTerm);
+                    })
+                    // Created By name
+                    ->orWhereHas('createdBy', function ($userQuery) use ($searchTerm) {
+                        $userQuery->where('name', 'like', $searchTerm);
+                    });
             });
         })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {

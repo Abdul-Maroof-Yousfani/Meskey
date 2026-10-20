@@ -40,11 +40,23 @@ class FirstWeighbridgeController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
-                        $ticketQuery->where('unique_no', 'like', $searchTerm);
-                            // ->orWhere('supplier_name', 'like', $searchTerm);
-                    });
-                    // $sq->where('name', 'like', $searchTerm);
+                    // Own columns
+                    $sq->where('weight', 'like', $searchTerm)
+                        ->orWhere('created_at', 'like', $searchTerm)
+                        ->orWhereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                            $ticketQuery->where('unique_no', 'like', $searchTerm)
+                                ->orWhere('truck_no', 'like', $searchTerm)
+                                // Product name
+                                ->orWhereHas('qcProduct', function ($productQuery) use ($searchTerm) {
+                                    $productQuery->where('name', 'like', $searchTerm);
+                                })
+                                // Arrival Location name
+                                ->orWhereHas('unloadingLocation', function ($ulQuery) use ($searchTerm) {
+                                    $ulQuery->whereHas('arrivalLocation', function ($locQuery) use ($searchTerm) {
+                                        $locQuery->where('name', 'like', $searchTerm);
+                                    });
+                                });
+                        });
                 });
             })
             ->where('company_id', $request->company_id)

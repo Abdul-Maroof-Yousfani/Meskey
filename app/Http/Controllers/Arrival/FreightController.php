@@ -34,15 +34,19 @@ class FreightController extends Controller
                 $searchTerm = '%' . $request->search . '%';
 
                 $q->where(function ($sq) use ($searchTerm) {
-                    $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
-                        $aq->where('unique_no', 'like', $searchTerm)
-                            ->orWhere("truck_no", 'like', $searchTerm)
-                            ->orWhere('bilty_no', 'like', $searchTerm)
-                            ->orWhere('accounts_of_name', 'like', $searchTerm)
-                            ->orWhereHas('miller', function ($millerQuery) use ($searchTerm) {
-                                $millerQuery->where('name', 'like', $searchTerm);
-                            });
-                    });
+                    // Own column
+                    $sq->where('net_freight', 'like', $searchTerm)
+                        // Ticket No, Truck No, Bilty No, Accounts Of
+                        ->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
+                            $aq->where('unique_no', 'like', $searchTerm)
+                                ->orWhere('truck_no', 'like', $searchTerm)
+                                ->orWhere('bilty_no', 'like', $searchTerm)
+                                ->orWhere('accounts_of_name', 'like', $searchTerm)
+                                // Miller name
+                                ->orWhereHas('miller', function ($millerQuery) use ($searchTerm) {
+                                    $millerQuery->where('name', 'like', $searchTerm);
+                                });
+                        });
                 });
             })
             ->where('company_id', $request->company_id)
