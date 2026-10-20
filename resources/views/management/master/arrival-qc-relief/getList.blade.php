@@ -59,6 +59,10 @@
                         </label>
                     </td>
                     <td>
+                        <a onclick="openModal(this,'{{ route('arrival-qc-relief.audit-logs', $group->id) }}','Audit Logs: {{ $group->product->name ?? 'Arrival QC Relief' }}', false, '55%')"
+                            class="primary p-1 text-center mr-2 position-relative cursor-pointer" title="View Audit Logs">
+                            <i class="fa fa-history font-medium-3"></i>
+                        </a>
                         <a onclick="openModal(this,'{{ route('arrival-qc-relief.edit', $group->id) }}','Edit Arrival QC Relief', false, '70%')"
                             class="info p-1 text-center mr-2 position-relative cursor-pointer" title="Edit">
                             <i class="ft-edit font-medium-3"></i>

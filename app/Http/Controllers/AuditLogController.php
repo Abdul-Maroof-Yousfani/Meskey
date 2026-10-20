@@ -67,6 +67,12 @@ class AuditLogController extends Controller
             $options = [];
             if (in_array($modelType, ['payment-request', 'payment_request', 'ticket-payment-request'])) {
                 $options['title'] = 'Payment Request Audit Logs';
+            } elseif (in_array($modelType, ['arrival-qc-relief', 'arrival_qc_relief'])) {
+                $productName = $model->product?->name ?? 'Product';
+                $locationName = $model->location?->name ?? 'All Locations';
+                $options['title'] = "Arrival QC Relief Audit Logs: {$productName}";
+                $options['subtitle'] = "Location: {$locationName} | Period: " . ($model->start_date ? $model->start_date->format('d M Y') : 'N/A') . ' to ' . ($model->end_date ? $model->end_date->format('d M Y') : 'N/A');
+                $options['exclude_create'] = true;
             }
 
             return AuditLogService::renderLogs($model, $options);

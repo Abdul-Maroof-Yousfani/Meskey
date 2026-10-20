@@ -186,6 +186,10 @@ Route::prefix('qc-relief')->group(function () {
 // Arrival QC Relief
 Route::resource('arrival-qc-relief', ArrivalQcReliefController::class);
 Route::post('/get-arrival-qc-relief', [ArrivalQcReliefController::class, 'getList'])->name('get.arrival-qc-relief');
+Route::get('/arrival-qc-relief/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])
+    ->defaults('modelType', 'arrival-qc-relief')
+    ->name('arrival-qc-relief.audit-logs');
+
 
 
 // hscodes

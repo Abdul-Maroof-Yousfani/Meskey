@@ -206,6 +206,19 @@ class AuditLogService
         } elseif ($modelBasename === 'SalesOrder') {
             $foreignKeys[] = 'sale_order_id';
             $foreignKeys[] = 'sales_order_id';
+        } elseif ($modelBasename === 'ArrivalQcReliefParameter') {
+            $foreignKeys[] = 'arrival_qc_relief_id';
+            $foreignKeys[] = 'arrival_qc_relief_parameter_id';
+
+            $relatedParamIds = \App\Models\Master\ArrivalQcReliefParameter::withTrashed()
+                ->where('product_id', $model->product_id)
+                ->when($model->location_id, fn($q) => $q->where('location_id', $model->location_id), fn($q) => $q->whereNull('location_id'))
+                ->pluck('id')
+                ->toArray();
+            if (!empty($relatedParamIds)) {
+                $extraModelTypeIds[\App\Models\Master\ArrivalQcReliefParameter::class] = $relatedParamIds;
+                $extraModelTypeIds['ArrivalQcReliefParameter'] = $relatedParamIds;
+            }
         }
 
         $modelUniqueNo = $model->unique_no ?? $model->code ?? $model->contract_no ?? null;
@@ -236,6 +249,13 @@ class AuditLogService
             })
             ->orderBy('created_at', 'desc')
             ->get();
+
+        if ($modelBasename === 'ArrivalQcReliefParameter' || !empty($options['exclude_create'])) {
+            $logs = $logs->reject(function ($log) {
+                $act = strtolower($log->action ?? '');
+                return str_contains($act, 'create') || str_contains($act, 'store');
+            })->values();
+        }
 
         $fieldLabels = array_merge(self::defaultFieldLabels(), $options['field_labels'] ?? []);
         $skipKeys = array_merge(
@@ -804,6 +824,8 @@ class AuditLogService
             'user'                    => \App\Models\User::class,
             'user-test'               => \App\Models\User::class,
             'users-test'              => \App\Models\User::class,
+            'arrival-qc-relief'       => \App\Models\Master\ArrivalQcReliefParameter::class,
+            'arrival_qc_relief'       => \App\Models\Master\ArrivalQcReliefParameter::class,
         ];
 
         if (isset($map[$modelType])) {
@@ -955,6 +977,14 @@ class AuditLogService
             'closing_trucks_qty'            => 'Closing Trucks Qty',
             'sample_money'                  => 'Sample Money',
             'sample_money_type'             => 'Sample Money Type',
+            'valid_period'                  => 'Valid Period',
+            'configured_parameters'         => 'Configured Parameters',
+            'parameter_name'                => 'Parameter Name',
+            'relief_type'                   => 'Relief Type',
+            'relief_value'                  => 'Relief Value',
+            'from_range'                    => 'From Range',
+            'to_range'                      => 'To Range',
+            'fixed_value'                   => 'Fixed Value',
         ];
     }
 

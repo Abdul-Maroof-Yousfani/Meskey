@@ -3,6 +3,12 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-qc-relief') }}" />
 
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('arrival-qc-relief.audit-logs', $id) }}','Audit Logs: {{ $first->product->name ?? 'Arrival QC Relief' }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
+
     <!-- Info Alert Box (Matching Reference Image Style) -->
     <div class="alert alert-info mb-3 border-0 shadow-xs">
         <div class="d-flex align-items-center mb-1">

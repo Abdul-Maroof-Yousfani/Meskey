@@ -7,6 +7,7 @@ use App\Models\Master\ArrivalQcReliefParameter;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlabType;
 use App\Models\Product;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -279,6 +280,7 @@ class ArrivalQcReliefController extends Controller
 
         return view('management.master.arrival-qc-relief.edit', compact(
             'id',
+            'first',
             'products',
             'locations',
             'slab_types',
@@ -307,6 +309,8 @@ class ArrivalQcReliefController extends Controller
         $origLocationId = $first->location_id;
         $origStartDate = $first->start_date ? $first->start_date->format('Y-m-d') : null;
         $origEndDate = $first->end_date ? $first->end_date->format('Y-m-d') : null;
+
+        $oldValues = $this->buildReliefAuditValues($origProductId, $origLocationId, $origStartDate, $origEndDate);
 
         $newLocationId = ($request->location_id === 'all' || empty($request->location_id)) ? null : $request->location_id;
 
@@ -401,6 +405,34 @@ class ArrivalQcReliefController extends Controller
 
             DB::commit();
 
+            $newValues = $this->buildReliefAuditValues(
+                $request->product_id,
+                $newLocationId,
+                $request->start_date,
+                $request->end_date
+            );
+
+            $newFirst = ArrivalQcReliefParameter::where('product_id', $request->product_id)
+                ->when($newLocationId, fn($q) => $q->where('location_id', $newLocationId), fn($q) => $q->whereNull('location_id'))
+                ->whereDate('start_date', $request->start_date)
+                ->whereDate('end_date', $request->end_date)
+                ->first();
+
+            $product = Product::find($request->product_id);
+            $location = $newLocationId ? CompanyLocation::find($newLocationId) : null;
+            $productName = $product?->name ?? 'Product';
+            $locationName = $location?->name ?? 'All Locations';
+            $targetId = $newFirst ? $newFirst->id : $first->id;
+
+            AuditLogService::logCustom(
+                'arrival_qc_relief_updated',
+                "Arrival QC Relief configuration updated for '{$productName}' ({$locationName}).",
+                ArrivalQcReliefParameter::class,
+                (int) $targetId,
+                $oldValues,
+                $newValues
+            );
+
             return response()->json([
                 'success' => 'Arrival QC Relief Configuration updated successfully.'
             ]);
@@ -419,16 +451,35 @@ class ArrivalQcReliefController extends Controller
     public function destroy($id)
     {
         $first = ArrivalQcReliefParameter::findOrFail($id);
+        $origProductId = $first->product_id;
+        $origLocationId = $first->location_id;
+        $origStartDate = $first->start_date ? $first->start_date->format('Y-m-d') : null;
+        $origEndDate = $first->end_date ? $first->end_date->format('Y-m-d') : null;
+
+        $oldValues = $this->buildReliefAuditValues($origProductId, $origLocationId, $origStartDate, $origEndDate);
+        $product = Product::find($origProductId);
+        $location = $origLocationId ? CompanyLocation::find($origLocationId) : null;
+        $productName = $product?->name ?? 'Product';
+        $locationName = $location?->name ?? 'All Locations';
 
         DB::beginTransaction();
         try {
-            ArrivalQcReliefParameter::where('product_id', $first->product_id)
-                ->when($first->location_id, fn($q) => $q->where('location_id', $first->location_id), fn($q) => $q->whereNull('location_id'))
-                ->whereDate('start_date', $first->start_date)
-                ->whereDate('end_date', $first->end_date)
+            ArrivalQcReliefParameter::where('product_id', $origProductId)
+                ->when($origLocationId, fn($q) => $q->where('location_id', $origLocationId), fn($q) => $q->whereNull('location_id'))
+                ->whereDate('start_date', $origStartDate)
+                ->whereDate('end_date', $origEndDate)
                 ->delete();
 
             DB::commit();
+
+            AuditLogService::logCustom(
+                'arrival_qc_relief_deleted',
+                "Arrival QC Relief configuration deleted for '{$productName}' ({$locationName}).",
+                ArrivalQcReliefParameter::class,
+                (int) $first->id,
+                $oldValues,
+                null
+            );
 
             return response()->json([
                 'success' => 'Arrival QC Relief configuration deleted successfully.'
@@ -440,5 +491,55 @@ class ArrivalQcReliefController extends Controller
                 'catchError' => 'Failed to delete Arrival QC Relief: ' . $e->getMessage()
             ], 422);
         }
+    }
+
+    /**
+     * Build audit values snapshot for an Arrival QC Relief rule group.
+     */
+    protected function buildReliefAuditValues($productId, $locationId, $startDate, $endDate): array
+    {
+        $product = Product::find($productId);
+        $location = $locationId ? CompanyLocation::find($locationId) : null;
+
+        $rules = ArrivalQcReliefParameter::where('product_id', $productId)
+            ->when($locationId, fn($q) => $q->where('location_id', $locationId), fn($q) => $q->whereNull('location_id'))
+            ->whereDate('start_date', $startDate)
+            ->whereDate('end_date', $endDate)
+            ->orderBy('slab_type_id')
+            ->orderBy('from_range')
+            ->get();
+
+        if ($rules->isEmpty()) {
+            return [];
+        }
+
+        $sDateStr = $startDate ? \Carbon\Carbon::parse($startDate)->format('d-M-Y') : 'N/A';
+        $eDateStr = $endDate ? \Carbon\Carbon::parse($endDate)->format('d-M-Y') : 'N/A';
+
+        $result = [
+            'product' => $product?->name ?? "Product #{$productId}",
+            'location' => $location?->name ?? 'All Locations',
+            'valid_period' => "{$sDateStr} to {$eDateStr}",
+        ];
+
+        $grouped = $rules->groupBy('parameter_name');
+        $configuredParams = [];
+
+        foreach ($grouped as $paramName => $paramRules) {
+            $configuredParams[] = $paramName;
+            $ranges = [];
+            foreach ($paramRules as $r) {
+                $typeLabel = ($r->relief_type === 'minus_amount') ? 'Minus' : 'Fixed';
+                $val = number_format((float)($r->relief_value ?: $r->fixed_value), 2);
+                $from = number_format((float)$r->from_range, 2);
+                $to = number_format((float)$r->to_range, 2);
+                $ranges[] = "• [{$from} - {$to}] => {$typeLabel}: {$val}";
+            }
+            $result[$paramName] = implode("\n", $ranges);
+        }
+
+        $result['configured_parameters'] = implode(', ', $configuredParams);
+
+        return $result;
     }
 }
