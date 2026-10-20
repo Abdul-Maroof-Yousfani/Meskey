@@ -43,10 +43,24 @@ class SecondWeighbridgeController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
-                        $ticketQuery->where('unique_no', 'like', $searchTerm);
-                    });
-                    // $sq->where('name', 'like', $searchTerm);
+                    // Weight & Created
+                    $sq->where('weight', 'like', $searchTerm)
+                        ->orWhere('created_at', 'like', $searchTerm)
+                        // Ticket No & Truck No
+                        ->orWhereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                            $ticketQuery->where('unique_no', 'like', $searchTerm)
+                                ->orWhere('truck_no', 'like', $searchTerm)
+                                // Product name
+                                ->orWhereHas('qcProduct', function ($productQuery) use ($searchTerm) {
+                                    $productQuery->where('name', 'like', $searchTerm);
+                                });
+                        })
+                        // Arrival Location name
+                        ->orWhereHas('arrivalTicket.unloadingLocation', function ($ulQuery) use ($searchTerm) {
+                            $ulQuery->whereHas('arrivalLocation', function ($locQuery) use ($searchTerm) {
+                                $locQuery->where('name', 'like', $searchTerm);
+                            });
+                        });
                 });
             })
             // ->when(!$isSuperAdmin, function ($q) use ($authUser) {

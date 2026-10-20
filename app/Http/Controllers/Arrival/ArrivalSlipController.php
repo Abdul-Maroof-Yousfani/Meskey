@@ -48,7 +48,24 @@ class ArrivalSlipController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('arrival_slips.unique_no', 'like', $searchTerm);
+                    // Ticket No, Truck No, Bilty No
+                    $sq->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                        $ticketQuery->where('unique_no', 'like', $searchTerm)
+                            ->orWhere('truck_no', 'like', $searchTerm)
+                            ->orWhere('bilty_no', 'like', $searchTerm);
+                    })
+                    // Commodity (product name)
+                    ->orWhereHas('arrivalTicket.product', function ($productQuery) use ($searchTerm) {
+                        $productQuery->where('name', 'like', $searchTerm);
+                    })
+                    // Acc Of (accountsOf name)
+                    ->orWhereHas('arrivalTicket.accountsOf', function ($accQuery) use ($searchTerm) {
+                        $accQuery->where('name', 'like', $searchTerm);
+                    })
+                    // Unloading Location name
+                    ->orWhereHas('arrivalTicket.unloadingLocation.ArrivalLocation', function ($locQuery) use ($searchTerm) {
+                        $locQuery->where('name', 'like', $searchTerm);
+                    });
                 });
             })
             // ->when(!$isSuperAdmin, function ($q) use ($authUser) {

@@ -34,11 +34,34 @@ class ArrivalApproveController extends Controller
         $ArrivalApproves = ArrivalApprove::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
-                    $ticketQuery->where('unique_no', 'like', $searchTerm);
-                        // ->orWhere('supplier_name', 'like', $searchTerm);
-                });
-                // $sq->where('name', 'like', $searchTerm);
+                // Own columns
+                $sq->where('gala_name', 'like', $searchTerm)
+                    ->orWhere('truck_no', 'like', $searchTerm)
+                    ->orWhere('filling_bags_no', 'like', $searchTerm)
+                    ->orWhere('bag_packing_approval', 'like', $searchTerm)
+                    ->orWhere('total_bags', 'like', $searchTerm)
+                    ->orWhere('total_rejection', 'like', $searchTerm)
+                    ->orWhere('amanat', 'like', $searchTerm)
+                    // Ticket No
+                    ->orWhereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                        $ticketQuery->where('unique_no', 'like', $searchTerm);
+                    })
+                    // Product name
+                    ->orWhereHas('arrivalTicket.product', function ($productQuery) use ($searchTerm) {
+                        $productQuery->where('name', 'like', $searchTerm);
+                    })
+                    // Bag Type name
+                    ->orWhereHas('bagType', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', $searchTerm);
+                    })
+                    // Bag Condition name
+                    ->orWhereHas('bagCondition', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', $searchTerm);
+                    })
+                    // Bag Packing name
+                    ->orWhereHas('bagPacking', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', $searchTerm);
+                    });
             });
         })
             // ->when(!$isSuperAdmin, function ($q) use ($authUser) {

@@ -186,7 +186,7 @@
                         @if (canAccess('arrival-stats-show-confidential'))
                             <td>{{ $item->truck_no ?? 'N/A' }}</td>
                         @endif
-                        <td>{{ $item->firstWeighbridge->first_weight ?? 'N/A' }}</td>
+                        <td>{{ $item->firstWeighbridge->weight ?? 'N/A' }}</td>
                         <td>{{ $item->station->name ?? 'N/A' }}</td>
                         <td>{{ $item->bags ?? 'N/A' }}</td>
                         <td>{{ $item->created_at->format('d/m/Y') }}</td>

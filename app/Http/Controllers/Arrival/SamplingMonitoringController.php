@@ -41,10 +41,13 @@ class SamplingMonitoringController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
-                        $aq->where('unique_no', 'like', $searchTerm)
-                            ->orWhere('accounts_of_name', 'like', $searchTerm);
-                    });
+                    // Own columns
+                    $sq->where('remark', 'like', $searchTerm)
+                        ->orWhere('sampling_type', 'like', $searchTerm)
+                        // Ticket No
+                        ->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
+                            $aq->where('unique_no', 'like', $searchTerm);
+                        });
                 });
             })
             ->when($request->filled('sampling_type'), function ($q) use ($request) {
