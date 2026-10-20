@@ -41,8 +41,8 @@ class InnersamplingController extends Controller
         $samplingRequests = $query->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
-                $ticketQuery->where('unique_no', 'like', $searchTerm)
-                    ->orWhere('supplier_name', 'like', $searchTerm);
+                $ticketQuery->where('unique_no', 'like', $searchTerm);
+                    // ->orWhere('supplier_name', 'like', $searchTerm);
             });
         })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
