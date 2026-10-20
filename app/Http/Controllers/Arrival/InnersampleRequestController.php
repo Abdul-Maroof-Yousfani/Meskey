@@ -32,7 +32,11 @@ class InnersampleRequestController extends Controller
         $ArrivalSamplingRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')->where('is_re_sampling', 'no')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
+                $sq->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                    $ticketQuery->where('unique_no', 'like', $searchTerm);
+                        // ->orWhere('supplier_name', 'like', $searchTerm);
+                });
+                // $sq->where('name', 'like', $searchTerm);
             });
         })
             // ->when(!$isSuperAdmin, function ($q) use ($authUser) {

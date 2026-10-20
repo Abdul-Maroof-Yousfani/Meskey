@@ -43,7 +43,10 @@ class SecondWeighbridgeController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('name', 'like', $searchTerm);
+                    $sq->whereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                        $ticketQuery->where('unique_no', 'like', $searchTerm);
+                    });
+                    // $sq->where('name', 'like', $searchTerm);
                 });
             })
             // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
