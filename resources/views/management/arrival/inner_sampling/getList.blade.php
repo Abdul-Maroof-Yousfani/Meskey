@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th class="col-sm-2">Ticket </th>
+            <th class="col-sm-2">Truck no </th>
             <th class="col-sm-2">Product</th>
             {{-- <th class="col-sm-2">Arroval Status</th> --}}
             <th class="col-sm-4">Remark</th>
@@ -15,8 +16,12 @@
                 <tr>
                     <td>
                         <p class="m-0">
-                            <small> Ticket No. {{ optional($row->arrivalTicket)->unique_no ?? '-' }} -- Truck No.
-                                {{ optional($row->arrivalTicket)->truck_no ?? '-' }} </small>
+                            <small> #{{ optional($row->arrivalTicket)->unique_no ?? '-' }}  </small>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            <small>  {{ optional($row->arrivalTicket)->truck_no ?? '-' }} </small>
                         </p>
                     </td>
                     <td>
