@@ -392,13 +392,16 @@ class TicketController extends Controller
 
         $arrivalTicket = ArrivalTicket::findOrFail($id);
 
-        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
-            ->where('is_done', 'yes')
-            ->groupBy('arrival_ticket_id')
-            ->pluck('id');
+        // $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
+        //     ->where('is_done', 'yes')
+        //     ->groupBy('arrival_ticket_id')
+        //     ->pluck('id');
 
+
+        // dd($latestRequestIds);
         $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
-            ->whereIn('id', $latestRequestIds)
+            ->where('is_done', 'yes')
+            // ->whereIn('id', $latestRequestIds)
             ->where(function ($q) {
                 $q->where('approved_status', '!=', 'pending')
                     ->orWhere(function ($q) {
@@ -456,7 +459,7 @@ class TicketController extends Controller
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
 
-            $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial') 
+            $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
                 ->where('arrival_ticket_id', $arrivalTicket->id)
                 ->where('approved_status', '!=', 'pending')
                 ->orderBy('created_at', 'asc')
@@ -895,7 +898,8 @@ class TicketController extends Controller
         }
 
         $getIdsForModel = function ($modelClass, $foreignKey, $ticketId) {
-            if (!class_exists($modelClass)) return [];
+            if (!class_exists($modelClass))
+                return [];
             try {
                 $query = in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))
                     ? $modelClass::withTrashed()
@@ -1309,42 +1313,42 @@ class TicketController extends Controller
             }
 
             $lookupMap = [
-                'company_id'                => [\App\Models\ACL\Company::class, 'name'],
-                'company_location_id'       => [\App\Models\Master\CompanyLocation::class, 'name'],
-                'location_id'               => [\App\Models\Master\CompanyLocation::class, 'name'],
-                'product_id'                => [\App\Models\Product::class, 'name'],
-                'qc_product'                => [\App\Models\Product::class, 'name'],
-                'arrival_product_id'        => [\App\Models\Product::class, 'name'],
-                'miller_id'                 => [\App\Models\Master\Miller::class, 'name'],
-                'accounts_of_id'            => [\App\Models\Master\Supplier::class, 'name'],
-                'accounts_of'               => [\App\Models\Master\Supplier::class, 'name'],
-                'supplier_id'               => [\App\Models\Master\Supplier::class, 'name'],
-                'broker_id'                 => [\App\Models\Master\Supplier::class, 'name'],
-                'broker_one_id'             => [\App\Models\Master\Supplier::class, 'name'],
-                'broker_two_id'             => [\App\Models\Master\Supplier::class, 'name'],
-                'broker_three_id'           => [\App\Models\Master\Supplier::class, 'name'],
-                'station_id'                => [\App\Models\Master\Station::class, 'name'],
-                'station'                   => [\App\Models\Master\Station::class, 'name'],
-                'sauda_type_id'             => [\App\Models\SaudaType::class, 'name'],
-                'truck_type_id'             => [\App\Models\Master\ArrivalTruckType::class, 'name'],
-                'arrival_truck_type_id'     => [\App\Models\Master\ArrivalTruckType::class, 'name'],
-                'arrival_location_id'       => [\App\Models\Master\ArrivalLocation::class, 'name'],
-                'gala_id'                   => [\App\Models\Master\ArrivalSubLocation::class, 'name'],
-                'location_type_id'          => [\App\Models\Master\LocationType::class, 'name'],
-                'bag_type_id'               => [\App\Models\BagType::class, 'name'],
-                'bag_condition_id'          => [\App\Models\BagCondition::class, 'name'],
-                'bag_packing_id'            => [\App\Models\BagPacking::class, 'name'],
+                'company_id' => [\App\Models\ACL\Company::class, 'name'],
+                'company_location_id' => [\App\Models\Master\CompanyLocation::class, 'name'],
+                'location_id' => [\App\Models\Master\CompanyLocation::class, 'name'],
+                'product_id' => [\App\Models\Product::class, 'name'],
+                'qc_product' => [\App\Models\Product::class, 'name'],
+                'arrival_product_id' => [\App\Models\Product::class, 'name'],
+                'miller_id' => [\App\Models\Master\Miller::class, 'name'],
+                'accounts_of_id' => [\App\Models\Master\Supplier::class, 'name'],
+                'accounts_of' => [\App\Models\Master\Supplier::class, 'name'],
+                'supplier_id' => [\App\Models\Master\Supplier::class, 'name'],
+                'broker_id' => [\App\Models\Master\Supplier::class, 'name'],
+                'broker_one_id' => [\App\Models\Master\Supplier::class, 'name'],
+                'broker_two_id' => [\App\Models\Master\Supplier::class, 'name'],
+                'broker_three_id' => [\App\Models\Master\Supplier::class, 'name'],
+                'station_id' => [\App\Models\Master\Station::class, 'name'],
+                'station' => [\App\Models\Master\Station::class, 'name'],
+                'sauda_type_id' => [\App\Models\SaudaType::class, 'name'],
+                'truck_type_id' => [\App\Models\Master\ArrivalTruckType::class, 'name'],
+                'arrival_truck_type_id' => [\App\Models\Master\ArrivalTruckType::class, 'name'],
+                'arrival_location_id' => [\App\Models\Master\ArrivalLocation::class, 'name'],
+                'gala_id' => [\App\Models\Master\ArrivalSubLocation::class, 'name'],
+                'location_type_id' => [\App\Models\Master\LocationType::class, 'name'],
+                'bag_type_id' => [\App\Models\BagType::class, 'name'],
+                'bag_condition_id' => [\App\Models\BagCondition::class, 'name'],
+                'bag_packing_id' => [\App\Models\BagPacking::class, 'name'],
                 'arrival_purchase_order_id' => [\App\Models\ArrivalPurchaseOrder::class, 'contract_no'],
-                'decision_id'               => [\App\Models\User::class, 'name'],
-                'ticket_verified_by'        => [\App\Models\User::class, 'name'],
-                'verified_by'               => [\App\Models\User::class, 'name'],
-                'creator_id'                => [\App\Models\User::class, 'name'],
-                'created_by'                => [\App\Models\User::class, 'name'],
-                'done_by'                   => [\App\Models\User::class, 'name'],
-                'sample_taken_by'           => [\App\Models\User::class, 'name'],
-                'approved_by'               => [\App\Models\User::class, 'name'],
-                'user_id'                   => [\App\Models\User::class, 'name'],
-                'division_id'               => [\App\Models\Master\Division::class, 'name'],
+                'decision_id' => [\App\Models\User::class, 'name'],
+                'ticket_verified_by' => [\App\Models\User::class, 'name'],
+                'verified_by' => [\App\Models\User::class, 'name'],
+                'creator_id' => [\App\Models\User::class, 'name'],
+                'created_by' => [\App\Models\User::class, 'name'],
+                'done_by' => [\App\Models\User::class, 'name'],
+                'sample_taken_by' => [\App\Models\User::class, 'name'],
+                'approved_by' => [\App\Models\User::class, 'name'],
+                'user_id' => [\App\Models\User::class, 'name'],
+                'division_id' => [\App\Models\Master\Division::class, 'name'],
             ];
 
             if (isset($lookupMap[$key]) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
@@ -1367,16 +1371,18 @@ class TicketController extends Controller
             if ($key === 'is_arrival_lock') {
                 return ($val == 1 || $val === true || $val === '1') ? 'Locked' : 'Unlocked';
             }
-            if (in_array($key, [
-                'is_lumpsum_deduction',
-                'is_ticket_verified',
-                'freight_paid_by_supplier',
-                'is_re_sampling',
-                'is_done',
-                'is_request_by_purchaser',
-                'is_auto_approved',
-                'is_resampling_made'
-            ])) {
+            if (
+                in_array($key, [
+                    'is_lumpsum_deduction',
+                    'is_ticket_verified',
+                    'freight_paid_by_supplier',
+                    'is_re_sampling',
+                    'is_done',
+                    'is_request_by_purchaser',
+                    'is_auto_approved',
+                    'is_resampling_made'
+                ])
+            ) {
                 return ($val == 1 || $val === true || $val === '1') ? 'Yes' : 'No';
             }
             if ($key === 'bilty_return_confirmation') {
@@ -1384,15 +1390,17 @@ class TicketController extends Controller
             }
 
             // Status fields formatting
-            if (in_array($key, [
-                'document_approval_status',
-                'first_qc_status',
-                'second_qc_status',
-                'arrival_slip_status',
-                'freight_status',
-                'location_transfer_status',
-                'status'
-            ]) && is_string($val)) {
+            if (
+                in_array($key, [
+                    'document_approval_status',
+                    'first_qc_status',
+                    'second_qc_status',
+                    'arrival_slip_status',
+                    'freight_status',
+                    'location_transfer_status',
+                    'status'
+                ]) && is_string($val)
+            ) {
                 return ucwords(str_replace('_', ' ', $val));
             }
 
@@ -1401,7 +1409,8 @@ class TicketController extends Controller
 
         $flattenArray = function ($data) use (&$flattenArray) {
             $result = [];
-            if (!is_array($data)) return $result;
+            if (!is_array($data))
+                return $result;
             foreach ($data as $key => $val) {
                 if (is_array($val) && !empty($val)) {
                     $isAssoc = array_keys($val) !== range(0, count($val) - 1);
@@ -1429,10 +1438,12 @@ class TicketController extends Controller
                 }
             }
             $rawOld = is_array($log->old_values) ? $log->old_values : json_decode($log->old_values, true);
-            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+            if (is_string($rawOld))
+                $rawOld = json_decode($rawOld, true);
 
             $rawNew = is_array($log->new_values) ? $log->new_values : json_decode($log->new_values, true);
-            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+            if (is_string($rawNew))
+                $rawNew = json_decode($rawNew, true);
 
             $old = $flattenArray($rawOld);
             $new = $flattenArray($rawNew);
@@ -1444,7 +1455,8 @@ class TicketController extends Controller
 
             foreach ($allKeys as $key) {
                 $baseKey = str_contains($key, '.') ? substr(strrchr($key, '.'), 1) : $key;
-                if (in_array($key, $skipKeys) || in_array($baseKey, $skipKeys)) continue;
+                if (in_array($key, $skipKeys) || in_array($baseKey, $skipKeys))
+                    continue;
 
                 $oldVal = $old[$key] ?? null;
                 $newVal = $new[$key] ?? null;
@@ -1456,13 +1468,13 @@ class TicketController extends Controller
                     $label = $fieldLabels[$key] ?? $fieldLabels[$baseKey] ?? ucwords(str_replace(['_', '.'], ' ', $baseKey));
 
                     $parsedChanges[] = [
-                        'key'      => $key,
+                        'key' => $key,
                         'base_key' => $baseKey,
-                        'label'    => $label,
-                        'old'      => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
-                        'new'      => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
-                        'raw_old'  => $oldVal,
-                        'raw_new'  => $newVal,
+                        'label' => $label,
+                        'old' => is_array($oldResolved) ? json_encode($oldResolved) : $oldResolved,
+                        'new' => is_array($newResolved) ? json_encode($newResolved) : $newResolved,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
                     ];
                 }
             }
@@ -1490,16 +1502,20 @@ class TicketController extends Controller
                 $nameItem = null;
                 foreach ($parsedChanges as $c) {
                     $cBase = $c['base_key'] ?? $c['key'];
-                    if ($cBase === $idKey) $idItem = $c;
-                    if ($cBase === $nameKey) $nameItem = $c;
+                    if ($cBase === $idKey)
+                        $idItem = $c;
+                    if ($cBase === $nameKey)
+                        $nameItem = $c;
                 }
                 if ($idItem && $nameItem) {
                     if (!empty($nameItem['old']) || !empty($nameItem['new'])) {
                         foreach ($parsedChanges as &$c) {
                             $cBase = $c['base_key'] ?? $c['key'];
                             if ($cBase === $idKey) {
-                                if (!empty($nameItem['old'])) $c['old'] = $nameItem['old'];
-                                if (!empty($nameItem['new'])) $c['new'] = $nameItem['new'];
+                                if (!empty($nameItem['old']))
+                                    $c['old'] = $nameItem['old'];
+                                if (!empty($nameItem['new']))
+                                    $c['new'] = $nameItem['new'];
                                 break;
                             }
                         }
@@ -1563,10 +1579,22 @@ class TicketController extends Controller
                 }
             } elseif ($section === 'half_full_approved') {
                 $approvalKeys = [
-                    'gala_id', 'gala_name', 'location_type_id', 'bag_type_id', 'bag_condition_id',
-                    'bag_packing_id', 'bag_packing_approval', 'filling_bags_no', 'total_bags',
-                    'total_rejection', 'total_receivings', 'amanat', 'truck_no', 'document_approval_status',
-                    'remarks', 'remark'
+                    'gala_id',
+                    'gala_name',
+                    'location_type_id',
+                    'bag_type_id',
+                    'bag_condition_id',
+                    'bag_packing_id',
+                    'bag_packing_approval',
+                    'filling_bags_no',
+                    'total_bags',
+                    'total_rejection',
+                    'total_receivings',
+                    'amanat',
+                    'truck_no',
+                    'document_approval_status',
+                    'remarks',
+                    'remark'
                 ];
                 $parsedChanges = array_values(array_filter($parsedChanges, fn($c) => in_array($c['base_key'] ?? $c['key'], $approvalKeys)));
                 if (empty($parsedChanges)) {
@@ -1574,12 +1602,29 @@ class TicketController extends Controller
                 }
             } elseif ($section === 'freight') {
                 $freightKeys = [
-                    'loaded_weight', 'arrived_weight', 'difference', 'exempted_weight', 'net_shortage',
-                    'shortage_weight_freight_deduction', 'freight_per_ton', 'kanta_golarchi_charges',
-                    'karachi_kanta_charges', 'other_labour_charges', 'other_deduction', 'unpaid_labor_charges',
-                    'freight_written_on_bilty', 'gross_freight_amount', 'net_freight', 'bilty_document',
-                    'loading_weight_document', 'status', 'unique_no', 'freight_status', 'arrival_slip_status',
-                    'remarks', 'remark'
+                    'loaded_weight',
+                    'arrived_weight',
+                    'difference',
+                    'exempted_weight',
+                    'net_shortage',
+                    'shortage_weight_freight_deduction',
+                    'freight_per_ton',
+                    'kanta_golarchi_charges',
+                    'karachi_kanta_charges',
+                    'other_labour_charges',
+                    'other_deduction',
+                    'unpaid_labor_charges',
+                    'freight_written_on_bilty',
+                    'gross_freight_amount',
+                    'net_freight',
+                    'bilty_document',
+                    'loading_weight_document',
+                    'status',
+                    'unique_no',
+                    'freight_status',
+                    'arrival_slip_status',
+                    'remarks',
+                    'remark'
                 ];
                 $parsedChanges = array_values(array_filter($parsedChanges, function ($c) use ($freightKeys) {
                     $k = $c['base_key'] ?? $c['key'];
