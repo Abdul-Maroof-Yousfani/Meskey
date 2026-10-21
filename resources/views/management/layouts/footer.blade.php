@@ -365,7 +365,7 @@
 
 
     function exportToExcel(tableId, docname) {
-        var table = document.getElementById(tableId);
+        var table = document.getElementById(tableId) || document.querySelector('#' + tableId) || document.querySelector(tableId);
 
         if (!table) {
             console.error('Table not found with ID:', tableId);
@@ -373,24 +373,78 @@
             return;
         }
 
-        // Pehle sheet banao
-        var ws = XLSX.utils.table_to_sheet(table, { raw: true });
+        // Clone table to clean any unwanted elements without modifying DOM
+        var cloneTable = table.cloneNode(true);
 
-        // Har cell ko check karo aur agar "%" hai to usko text bana do
-        Object.keys(ws).forEach(function (cell) {
-            if (cell[0] === '!') return; // metadata skip
+        // Remove hidden rows, scripts, icons, or badges that shouldn't pollute export
+        cloneTable.querySelectorAll('.d-none, script, style, .ant-table-placeholder').forEach(el => el.remove());
 
-            if (typeof ws[cell].v === 'number' && ws[cell].v < 1 && ws[cell].v > 0) {
-                // matlab yeh percentage type number hai
-                let percent = (ws[cell].v * 100).toFixed(2) + "%";
-                ws[cell].v = percent;  // value replace
-                ws[cell].t = 's';      // type string
+        // Create worksheet with raw: false so data-t and data-v attributes are respected
+        var ws = XLSX.utils.table_to_sheet(cloneTable, { raw: false });
+
+        if (ws && ws['!ref']) {
+            var range = XLSX.utils.decode_range(ws['!ref']);
+
+            // Process each cell to ensure numbers and amounts are numeric types (t: 'n') for Excel formulas
+            Object.keys(ws).forEach(function (cell) {
+                if (cell[0] === '!') return; // skip metadata (!ref, !cols, !merges, etc.)
+
+                var cellObj = ws[cell];
+                if (!cellObj) return;
+
+                // Handle string values that contain numbers or amounts
+                if (typeof cellObj.v === 'string') {
+                    var str = cellObj.v.trim();
+
+                    // Skip headers or dashes or empty cells
+                    if (str === '-' || str === '' || str === 'N/A') return;
+
+                    var isPercentage = str.endsWith('%');
+                    var clean = str.replace(/,/g, '').replace(/%/g, '').trim();
+
+                    // Check if it's a valid numeric value and not a leading-zero code like "0012"
+                    if (clean !== '' && !isNaN(clean) && !isNaN(parseFloat(clean))) {
+                        if (!(/^0\d+/.test(clean))) {
+                            var num = parseFloat(clean);
+                            if (isPercentage) {
+                                cellObj.v = num / 100;
+                                cellObj.t = 'n';
+                                cellObj.z = '0.00%';
+                            } else {
+                                cellObj.v = num;
+                                cellObj.t = 'n';
+                                cellObj.z = clean.indexOf('.') !== -1 ? '#,##0.00' : '#,##0';
+                            }
+                        }
+                    }
+                } else if (typeof cellObj.v === 'number') {
+                    cellObj.t = 'n';
+                    if (!cellObj.z) {
+                        cellObj.z = Number.isInteger(cellObj.v) ? '#,##0' : '#,##0.00';
+                    }
+                }
+            });
+
+            // Set dynamic column widths based on content
+            var colWidths = [];
+            for (var C = range.s.c; C <= range.e.c; ++C) {
+                var maxLen = 12;
+                for (var R = range.s.r; R <= range.e.r; ++R) {
+                    var cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    var cObj = ws[cellAddress];
+                    if (cObj && cObj.v) {
+                        var len = String(cObj.v).length;
+                        if (len > maxLen) maxLen = Math.min(len + 3, 40);
+                    }
+                }
+                colWidths.push({ wch: maxLen });
             }
-        });
+            ws['!cols'] = colWidths;
+        }
 
         var wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, docname + ".xlsx");
+        XLSX.writeFile(wb, (docname || "Export") + ".xlsx");
     }
 
 

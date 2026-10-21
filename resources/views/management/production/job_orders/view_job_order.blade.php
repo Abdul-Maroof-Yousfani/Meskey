@@ -19,7 +19,7 @@
                     <div class="logo">
                         <a class="logo-text" href="https://meskay.inplsoftwares.online">
                             <div class="logo-img">
-                                <img class="logo-img" alt="Apex logo" src="/storage/company_logos/meskay-logo-20250514082251.png" style="max-height: 70px;">
+                                <img class="logo-img" alt="Meskay Logo" src="{{ asset('management/app-assets/img/meskay-logo.png') }}" style="max-height: 70px;">
                             </div>
                         </a>
                     </div>
@@ -478,8 +478,10 @@ function printDiv(divId) {
     newWindow.document.write(`
         <html>
         <head>
-            <title>Job Order Print</title>
-            <link rel="stylesheet" href="${document.querySelector('link[rel=stylesheet]').href}">
+            <base href="{{ url('/') }}/">
+            <title>Job Order - {{ $jobOrder->job_order_no }}</title>
+            <link rel="stylesheet" href="{{ asset('management/app-assets/css/bootstrap.css') }}">
+            <link rel="stylesheet" href="${document.querySelector('link[rel=stylesheet]') ? document.querySelector('link[rel=stylesheet]').href : ''}">
             <style>
                 @page { margin: 10mm !important; size: auto; }
                 body { background: white !important; font-family: Arial, sans-serif; }
