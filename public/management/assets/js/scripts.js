@@ -591,33 +591,88 @@ function filterationCommon(
     );
 
   // Handle pagination
-  $(document).on("click", "#paginationLinks a", function (e) {
-    if ($("#" + appenddiv).length) {
-      renderLoadingTable(
-        $("#" + appenddiv).find("table") || $("#" + appenddiv),
-        12,
-      );
-    }
-    e.preventDefault();
-    var page = $(this).attr("href").split("page=")[1];
-    var formData = $("#" + formId).serialize() + "&page=" + page;
-    updateUrlParams(formData);
-    fetch_data(formData);
-  });
+  $(document)
+    .off("click", "#paginationLinks a")
+    .on("click", "#paginationLinks a", function (e) {
+      if ($("#" + appenddiv).length) {
+        renderLoadingTable(
+          $("#" + appenddiv).find("table") || $("#" + appenddiv),
+          12,
+        );
+      }
+      e.preventDefault();
+      var href = $(this).attr("href");
+      if (!href || href === "#" || href.indexOf("javascript") === 0) {
+        return;
+      }
 
-  $(document).on("change", "#per_page ", function (e) {
-    if ($("#" + appenddiv).length) {
-      renderLoadingTable(
-        $("#" + appenddiv).find("table") || $("#" + appenddiv),
-        12,
-      );
-    }
-    e.preventDefault();
-    var page = $(this).val();
-    var formData = $("#" + formId).serialize() + "&per_page=" + page;
-    updateUrlParams(formData);
-    fetch_data(formData);
-  });
+      var page = 1;
+      if (href.indexOf("page=") !== -1) {
+        page = href.split("page=")[1].split("&")[0];
+      } else {
+        try {
+          var urlObj = new URL(href, window.location.origin);
+          page = urlObj.searchParams.get("page") || 1;
+        } catch (err) {
+          page = 1;
+        }
+      }
+
+      var $targetForm = $("#" + formId).length ? $("#" + formId) : $form;
+      var $pageInput = $targetForm.find('input[name="page"]');
+      if ($pageInput.length) {
+        $pageInput.val(page);
+      } else {
+        $targetForm.append('<input type="hidden" name="page" value="' + page + '">');
+      }
+      $('input[name="page"]').val(page);
+
+      var formData = $targetForm.serialize();
+      if (formData.indexOf("page=") === -1) {
+        formData += "&page=" + page;
+      }
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    });
+
+  $(document)
+    .off("change", "#per_page")
+    .on("change", "#per_page", function (e) {
+      if ($("#" + appenddiv).length) {
+        renderLoadingTable(
+          $("#" + appenddiv).find("table") || $("#" + appenddiv),
+          12,
+        );
+      }
+      e.preventDefault();
+      var perPage = $(this).val();
+
+      // Store selected per page value in per_page input
+      var $targetForm = $("#" + formId).length ? $("#" + formId) : $form;
+      var $perPageInput = $targetForm.find('input[name="per_page"]');
+      if ($perPageInput.length) {
+        $perPageInput.val(perPage);
+      } else {
+        $targetForm.append('<input type="hidden" name="per_page" value="' + perPage + '">');
+      }
+      $('input[name="per_page"]').val(perPage);
+
+      // Reset page to 1 when per_page changes
+      var $pageInput = $targetForm.find('input[name="page"]');
+      if ($pageInput.length) {
+        $pageInput.val(1);
+      }
+      $('input[name="page"]').val(1);
+
+      var formData = $targetForm.serialize();
+      if (formData.indexOf("per_page=") === -1) {
+        formData += "&per_page=" + perPage;
+      }
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    });
 
   // Fetch data with AJAX
   function fetch_data(formData) {

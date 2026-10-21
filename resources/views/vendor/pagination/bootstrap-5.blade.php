@@ -190,9 +190,11 @@
                 <li>
                      <select name="per_page" id="per_page" class="form-control ml-1" >
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10 / Page</option>
-                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25 / Page</option>
+                    <option value="25" {{ request('per_page', 25) == 25 ? 'selected' : '' }}>25 / Page</option>
                     <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 / Page</option>
                     <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100 / Page</option>
+                    <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250 / Page</option>
+                    <option value="500" {{ request('per_page') == 500 ? 'selected' : '' }}>500 / Page</option>
                 </select>
                 </li>
             </ul>
