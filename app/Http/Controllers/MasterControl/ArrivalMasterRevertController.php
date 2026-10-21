@@ -70,14 +70,14 @@ class ArrivalMasterRevertController extends Controller
             ->get();
 
 
-        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
-            ->where('arrival_ticket_id', $arrivalTicket->id)
-            // ->where('is_done', 'yes')
-            ->groupBy('arrival_ticket_id')
-            ->pluck('id');
+        // $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
+        //     ->where('arrival_ticket_id', $arrivalTicket->id)
+        //     // ->where('is_done', 'yes')
+        //     ->groupBy('arrival_ticket_id')
+        //     ->pluck('id');
         // dd($latestRequestIds);
         $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
-            ->whereIn('id', $latestRequestIds)
+            // ->whereIn('id', $latestRequestIds)
             // ->where(function ($q) {
             //     $q->where('approved_status', '!=', 'pending')
             //         ->orWhere(function ($q) {
@@ -162,7 +162,7 @@ class ArrivalMasterRevertController extends Controller
             $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
                 ->where('arrival_ticket_id', $arrivalTicket->id)
                 ->where('approved_status', '!=', 'pending')
-                ->where('id', '!=', $latestRequestIds)
+                // ->where('id', '!=', $latestRequestIds)
                 ->orderBy('created_at', 'asc')
 
                 ->get();
@@ -857,10 +857,22 @@ class ArrivalMasterRevertController extends Controller
             }
 
             $oldReqData = $ArrivalSamplingRequest->only([
-                'remark', 'decision_making', 'lumpsum_deduction', 'lumpsum_deduction_kgs', 'is_lumpsum_deduction', 'approved_status'
+                'remark',
+                'decision_making',
+                'lumpsum_deduction',
+                'lumpsum_deduction_kgs',
+                'is_lumpsum_deduction',
+                'approved_status'
             ]);
             $oldTicketData = $ArrivalSamplingRequest->arrivalTicket ? $ArrivalSamplingRequest->arrivalTicket->only([
-                'lumpsum_deduction', 'lumpsum_deduction_kgs', 'is_lumpsum_deduction', 'decision_making', 'sauda_type_id', 'first_qc_status', 'second_qc_status', 'location_transfer_status'
+                'lumpsum_deduction',
+                'lumpsum_deduction_kgs',
+                'is_lumpsum_deduction',
+                'decision_making',
+                'sauda_type_id',
+                'first_qc_status',
+                'second_qc_status',
+                'location_transfer_status'
             ]) : null;
 
             $ArrivalSamplingRequest->update([
