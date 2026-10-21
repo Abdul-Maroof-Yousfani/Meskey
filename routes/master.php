@@ -49,6 +49,7 @@ use App\Http\Controllers\Master\{
     TransporterController,
     VariableController,
     MillingRateController,
+    ByProductRateController,
     PermissionController
 };
 
@@ -232,6 +233,13 @@ Route::resource('milling-rate', MillingRateController::class)->except(['destroy'
 Route::post('/get-milling-rates', [MillingRateController::class, 'getList'])->name('get.milling-rates');
 Route::get('/milling-rate/get-sub-locations/{locationId}', [MillingRateController::class, 'getSubLocations'])->name('milling-rate.get-sub-locations');
 Route::get('/milling-rate/get-plants/{subLocationId}', [MillingRateController::class, 'getPlants'])->name('milling-rate.get-plants');
+
+Route::resource('by-product-rate', ByProductRateController::class)->except(['destroy']);
+Route::post('/get-by-product-rates', [ByProductRateController::class, 'getList'])->name('get.by-product-rates');
+Route::get('/by-product-rate/get-by-products/{productId}', [ByProductRateController::class, 'getByProducts'])->name('by-product-rate.get-by-products');
+Route::get('/by-product-rate/get-sub-locations/{locationId}', [ByProductRateController::class, 'getSubLocations'])->name('by-product-rate.get-sub-locations');
+Route::get('/by-product-rate/get-plants/{subLocationId}', [ByProductRateController::class, 'getPlants'])->name('by-product-rate.get-plants');
+Route::get('/by-product-rate/check-duplicate', [ByProductRateController::class, 'checkDuplicate'])->name('by-product-rate.check-duplicate');
 
 // permissions
 Route::resource('permission', PermissionController::class);

@@ -154,8 +154,9 @@
                                                         <th class="col-2">Commodity</th>
                                                         <th class="col-2">Location</th>
                                                         <th class="col-1">Qty (kg)</th>
+                                                        <th class="col-1">Rate (PKR)</th>
                                                         <th class="col-1">Yield %</th>
-                                                        <th class="col-5">Remarks</th>
+                                                        <th class="col-4">Remarks</th>
                                                         <th class="col-1">Actions</th>
                                                     </tr>
                                                 </thead>
@@ -163,7 +164,7 @@
                                                     <tr>
                                                         <td>
                                                             <select name="input_product_id[]" class="form-control select2"
-                                                                required>
+                                                                required onchange="loadCostingPreview();">
                                                                 <option value="">Select Commodity</option>
                                                                 @if (isset($products))
                                                                     @foreach ($products as $product)
@@ -189,7 +190,11 @@
                                                         </td>
                                                         <td>
                                                             <input type="number" name="input_qty[]" class="form-control"
-                                                                step="0.01" min="0.01" required>
+                                                                step="0.01" min="0.01" required oninput="loadCostingPreview();">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="input_rate[]" class="form-control"
+                                                                step="0.01" min="0" placeholder="Auto" oninput="loadCostingPreview();" title="Leave blank for automatic stock-in cost price">
                                                         </td>
                                                         <td>
                                                             <input type="number" name="input_yield[]"
@@ -207,24 +212,24 @@
                                                                     class="fa fa-trash"></i></button>
                                                         </td>
                                                     </tr>
-                                                    <tr>
+                                                     <tr>
                                                         <td>
                                                             <strong>Total</strong>
                                                         </td>
-                                                        <td>
-
-                                                        </td>
+                                                        <td></td>
                                                         <td>
                                                             <input type="number" name="input_total_qty[]"
                                                                 class="form-control" step="0.01" min="0.01"
                                                                 readonly>
                                                         </td>
+                                                        <td></td>
                                                         <td>
                                                             <input type="number" name="input_total_yield[]"
                                                                 class="form-control" step="0.01" min="0.01"
                                                                 readonly>
                                                         </td>
-
+                                                        <td></td>
+                                                        <td></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -522,6 +527,12 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- Phase 3: Production Costing & Auto-JV Valuation Live Card --}}
+                            <div class="row">
+                                @include('management.production.production_voucher.partials.costing_card')
+                            </div>
+
                             <div class="row bottom-button-bar text-right">
                                 <div class="col-12">
                                     <a type="button"
@@ -592,9 +603,99 @@
                     $select.trigger('change.select2');
                 }
             });
+        var costingPreviewTimeout = null;
+        function loadCostingPreview() {
+            clearTimeout(costingPreviewTimeout);
+            costingPreviewTimeout = setTimeout(function() {
+                var locationId = $('#location_id').val();
+                var plantId = $('#plant_id').val();
+                var productId = $('#product_id').val();
+
+                if (!locationId) return;
+
+                var inputQtys = [];
+                var inputProductIds = [];
+                var inputRates = [];
+                $('#productionInputsTable tbody tr').each(function() {
+                    var pid = $(this).find('select[name="input_product_id[]"]').val();
+                    var qty = $(this).find('input[name="input_qty[]"]').val();
+                    var rate = $(this).find('input[name="input_rate[]"]').val();
+                    if (pid && qty && parseFloat(qty) > 0) {
+                        inputProductIds.push(pid);
+                        inputQtys.push(qty);
+                        inputRates.push(rate || '');
+                    }
+                });
+
+                var outputQtys = [];
+                var outputProductIds = [];
+                $('#productionHeadProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
+                    var pid = $(this).find('input[name="output_product_id[]"], select[name="output_product_id[]"]').val();
+                    var qty = $(this).find('input[name="output_qty[]"]').val();
+                    if (pid && qty && parseFloat(qty) > 0) {
+                        outputProductIds.push(pid);
+                        outputQtys.push(qty);
+                    }
+                });
+
+                $.ajax({
+                    url: "{{ route('production-voucher.get-costing-preview') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        location_id: locationId,
+                        plant_id: plantId,
+                        product_id: productId,
+                        input_qty: inputQtys,
+                        input_product_id: inputProductIds,
+                        input_rate: inputRates,
+                        output_qty: outputQtys,
+                        output_product_id: outputProductIds
+                    },
+                    success: function(res) {
+                        if (res && res.success) {
+                            $('#displayRawMaterialCost').text('PKR ' + parseFloat(res.total_input_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                            $('#displayInputQtySub').text('Total Input: ' + parseFloat(res.total_input_qty).toLocaleString() + ' KG');
+
+                            $('#displayMillingRateBadge').text('+PKR ' + parseFloat(res.total_milling_rate).toFixed(2) + '/KG');
+                            $('#displayMillingCost').text('+PKR ' + parseFloat(res.total_milling_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+                            $('#displayByProductCost').text('-PKR ' + parseFloat(res.total_by_product_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+                            $('#displayNetFgCost').text('PKR ' + parseFloat(res.net_finished_good_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                            $('#displayFgRateBadge').text('Unit Rate: PKR ' + parseFloat(res.finished_good_rate).toFixed(2) + ' / KG');
+
+                            if (res.variables && res.variables.length > 0) {
+                                var varHtml = '';
+                                res.variables.forEach(function(v) {
+                                    var vAmt = (parseFloat(res.total_input_qty) * parseFloat(v.rate)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    varHtml += '<tr>' +
+                                        '<td class="font-weight-bold text-left">' + v.title + '</td>' +
+                                        '<td>PKR ' + parseFloat(v.rate).toFixed(2) + '</td>' +
+                                        '<td>' + parseFloat(res.total_input_qty).toLocaleString() + ' KG</td>' +
+                                        '<td class="font-weight-bold text-danger">PKR ' + vAmt + '</td>' +
+                                        '<td><span class="badge badge-light border text-dark">' + (v.account_unique_no || 'ACC') + ' (' + (v.account_path || '2-10') + ')</span></td>' +
+                                    '</tr>';
+                                });
+                                $('#variablesBreakdownTable tbody').html(varHtml);
+                                $('#variablesBreakdownContainer').show();
+                            } else {
+                                $('#variablesBreakdownContainer').hide();
+                            }
+                        }
+                    }
+                });
+            }, 300);
         }
 
         $(document).ready(function() {
+            // Hook costing preview
+            $('#location_id, #plant_id, #product_id').on('change', function() {
+                loadCostingPreview();
+            });
+            $(document).on('input change keyup', '#productionInputsTable input, #productionHeadProductsTable input, #productionByProductsTable input', function() {
+                loadCostingPreview();
+            });
             // Initialize Select2 for all selects
             $('.select2').select2();
 

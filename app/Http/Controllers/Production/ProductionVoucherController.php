@@ -1289,6 +1289,16 @@ class ProductionVoucherController extends Controller
                     ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
+            // Phase 3: Synchronize Production Costing, Auto-JV, and Stock Ledger
+            try {
+                $costingService = new \App\Services\ProductionCostingService();
+                $costingService->syncProductionVoucher($productionVoucher, [
+                    'input_rates' => $request->input('input_rate', [])
+                ]);
+            } catch (\Throwable $costEx) {
+                \Illuminate\Support\Facades\Log::error('Production costing sync error on store: ' . $costEx->getMessage());
+            }
+
             DB::commit();
 
             // return response()->json([
@@ -1939,6 +1949,16 @@ class ProductionVoucherController extends Controller
                     ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
+            // Phase 3: Synchronize Production Costing, Auto-JV, and Stock Ledger
+            try {
+                $costingService = new \App\Services\ProductionCostingService();
+                $costingService->syncProductionVoucher($productionVoucher, [
+                    'input_rates' => $request->input('input_rate', [])
+                ]);
+            } catch (\Throwable $costEx) {
+                \Illuminate\Support\Facades\Log::error('Production costing sync error on update: ' . $costEx->getMessage());
+            }
+
             DB::commit();
 
             return response()->json([
@@ -1962,6 +1982,14 @@ class ProductionVoucherController extends Controller
             ->update(['production_voucher_id' => null]);
         \App\Models\Production\PlantBreakdown::where('production_voucher_id', $productionVoucher->id)
             ->update(['production_voucher_id' => null]);
+
+        // Phase 3: Clean up Financial JV transactions and Stock entries
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $costingService->deleteVoucherFinancials($productionVoucher);
+        } catch (\Throwable $costEx) {
+            \Illuminate\Support\Facades\Log::error('Production costing cleanup error on destroy: ' . $costEx->getMessage());
+        }
 
         $productionVoucher->delete();
 
@@ -2109,6 +2137,11 @@ class ProductionVoucherController extends Controller
             'remarks' => $request->remarks
         ]);
 
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $costingService->syncProductionVoucher($productionVoucher);
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => 'Production Input added successfully.',
             'data' => $input->load('product', 'location')
@@ -2130,6 +2163,12 @@ class ProductionVoucherController extends Controller
 
         $input->update($request->only(['product_id', 'location_id', 'slot_id', 'qty', 'remarks']));
 
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $pv = ProductionVoucher::find($id);
+            if ($pv) $costingService->syncProductionVoucher($pv);
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => 'Production Input updated successfully.',
             'data' => $input->load('product', 'location')
@@ -2141,6 +2180,12 @@ class ProductionVoucherController extends Controller
         $input = ProductionInput::where('production_voucher_id', $id)
             ->findOrFail($inputId);
         $input->delete();
+
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $pv = ProductionVoucher::find($id);
+            if ($pv) $costingService->syncProductionVoucher($pv);
+        } catch (\Throwable $e) {}
 
         return response()->json([
             'success' => 'Production Input deleted successfully.'
@@ -2179,6 +2224,11 @@ class ProductionVoucherController extends Controller
             'remarks' => $request->remarks
         ]);
 
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $costingService->syncProductionVoucher($productionVoucher);
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => 'Production Output added successfully.',
             'data' => $output->load('product', 'storageLocation', 'brand')
@@ -2205,6 +2255,12 @@ class ProductionVoucherController extends Controller
 
         $output->update($request->only(['product_id', 'qty', 'no_of_bags', 'bag_size', 'avg_weight_per_bag', 'arrival_sub_location_id', 'brand_id', 'slot_id', 'job_order_id', 'remarks']));
 
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $pv = ProductionVoucher::find($id);
+            if ($pv) $costingService->syncProductionVoucher($pv);
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => 'Production Output updated successfully.',
             'data' => $output->load('product', 'storageLocation', 'brand')
@@ -2216,6 +2272,12 @@ class ProductionVoucherController extends Controller
         $output = ProductionOutput::where('production_voucher_id', $id)
             ->findOrFail($outputId);
         $output->delete();
+
+        try {
+            $costingService = new \App\Services\ProductionCostingService();
+            $pv = ProductionVoucher::find($id);
+            if ($pv) $costingService->syncProductionVoucher($pv);
+        } catch (\Throwable $e) {}
 
         return response()->json([
             'success' => 'Production Output deleted successfully.'
@@ -2830,4 +2892,165 @@ class ProductionVoucherController extends Controller
 
         return $prodNo;
     }
+
+    /**
+     * Live Preview of Production Costing, Milling Overheads, By-Product Recoveries, and Net FG Rate
+     */
+    public function getCostingPreview(Request $request)
+    {
+        $locationId = $request->location_id;
+        $plantId = $request->plant_id;
+        $productId = $request->product_id;
+        $inputQtys = $request->input('input_qty', []);
+        $inputProductIds = $request->input('input_product_id', []);
+        $inputRates = $request->input('input_rate', []);
+        $outputQtys = $request->input('output_qty', []);
+        $outputProductIds = $request->input('output_product_id', []);
+
+        // 1. Milling Rate
+        $headProd = $productId ? \App\Models\Product::find($productId) : null;
+        $parentProductId = $headProd?->parent_id;
+
+        $millingRate = \App\Models\Master\MillingRate::with(['variables.account'])
+            ->where('location_id', $locationId)
+            ->where('plant_id', $plantId)
+            ->where('status', 1)
+            ->where(function ($q) use ($productId, $parentProductId) {
+                if ($productId) {
+                    $q->where('product_id', $productId);
+                }
+                if ($parentProductId) {
+                    $q->orWhere('product_id', $parentProductId);
+                }
+                $q->orWhereNull('product_id');
+            })
+            ->orderByRaw('product_id IS NULL ASC')
+            ->first();
+
+        $variablesData = [];
+        $totalMillingRate = 0;
+        if ($millingRate && $millingRate->variables) {
+            foreach ($millingRate->variables as $var) {
+                $vRate = (float)($var->pivot->value ?? 0);
+                $totalMillingRate += $vRate;
+                $variablesData[] = [
+                    'id' => $var->id,
+                    'title' => $var->title,
+                    'rate' => $vRate,
+                    'account_unique_no' => $var->account?->unique_no,
+                    'account_path' => $var->account?->hierarchy_path,
+                ];
+            }
+        }
+
+        // 2. By-Product Rates
+        $byProductRate = \App\Models\Master\ByProductRate::with(['items.byProduct'])
+            ->where('location_id', $locationId)
+            ->where('status', 1)
+            ->where(function ($q) use ($productId, $parentProductId, $request) {
+                if ($productId) {
+                    $q->where('product_id', $productId);
+                }
+                if ($parentProductId) {
+                    $q->orWhere('product_id', $parentProductId);
+                }
+                if ($request->filled('by_product_id')) {
+                    $q->orWhere('product_id', $request->by_product_id);
+                }
+            })
+            ->latest('id')
+            ->first();
+
+        $byProductRatesMap = [];
+        if ($byProductRate && $byProductRate->items) {
+            foreach ($byProductRate->items as $item) {
+                $byProductRatesMap[$item->by_product_id] = (float)$item->rate;
+            }
+        }
+
+        // 3. Calculate Live Preview Totals
+        $totalInputQty = 0;
+        $totalInputCost = 0;
+        $inputItemsPreview = [];
+        foreach ($inputProductIds as $idx => $inProdId) {
+            $qty = isset($inputQtys[$idx]) ? (float)$inputQtys[$idx] : 0;
+            if ($qty > 0 && !empty($inProdId)) {
+                $totalInputQty += $qty;
+                $rate = isset($inputRates[$idx]) && (float)$inputRates[$idx] > 0 ? (float)$inputRates[$idx] : null;
+                if ($rate === null) {
+                    $latestStockIn = \App\Models\Master\Account\Stock::where('product_id', $inProdId)
+                        ->where('type', 'stock-in')
+                        ->whereNotNull('avg_cost_price')
+                        ->where('avg_cost_price', '>', 0)
+                        ->latest('id')
+                        ->first();
+                    $rate = $latestStockIn ? (float)$latestStockIn->avg_cost_price : (float)(\App\Models\Product::find($inProdId)?->price ?? 0);
+                }
+                $amt = round($qty * $rate, 2);
+                $totalInputCost += $amt;
+                $inputItemsPreview[] = [
+                    'product_id' => $inProdId,
+                    'qty' => $qty,
+                    'rate' => $rate,
+                    'amount' => $amt,
+                ];
+            }
+        }
+
+        $totalMillingCost = round($totalInputQty * $totalMillingRate, 2);
+        $totalCostPool = round($totalInputCost + $totalMillingCost, 2);
+
+        $totalByProductCost = 0;
+        $totalFgQty = 0;
+        $outputItemsPreview = [];
+        foreach ($outputProductIds as $idx => $outProdId) {
+            $qty = isset($outputQtys[$idx]) ? (float)$outputQtys[$idx] : 0;
+            if ($qty > 0 && !empty($outProdId)) {
+                $prod = \App\Models\Product::find($outProdId);
+                $isHead = ($outProdId == $productId) || ($prod && $prod->product_category_flags === 'head');
+                if ($prod && in_array($prod->product_category_flags, ['by', 'b2']) && $outProdId != $productId) {
+                    $isHead = false;
+                }
+
+                if (!$isHead) {
+                    $bpRate = $byProductRatesMap[$outProdId] ?? (float)($prod?->price ?? 0);
+                    $bpAmt = round($qty * $bpRate, 2);
+                    $totalByProductCost += $bpAmt;
+                    $outputItemsPreview[] = [
+                        'product_id' => $outProdId,
+                        'name' => $prod?->name,
+                        'type' => 'by_product',
+                        'qty' => $qty,
+                        'rate' => $bpRate,
+                        'amount' => $bpAmt,
+                    ];
+                } else {
+                    $totalFgQty += $qty;
+                }
+            }
+        }
+
+        $netFinishedGoodCost = round(max(0, $totalCostPool - $totalByProductCost), 2);
+        $finishedGoodRate = ($totalFgQty > 0) ? round($netFinishedGoodCost / $totalFgQty, 4) : 0;
+
+        return response()->json([
+            'success' => true,
+            'milling_rate_id' => $millingRate?->id,
+            'by_product_rate_id' => $byProductRate?->id,
+            'total_milling_rate' => $totalMillingRate,
+            'variables' => $variablesData,
+            'by_product_rates' => $byProductRatesMap,
+            'total_input_qty' => $totalInputQty,
+            'total_input_cost' => $totalInputCost,
+            'total_milling_cost' => $totalMillingCost,
+            'total_cost_pool' => $totalCostPool,
+            'total_by_product_cost' => $totalByProductCost,
+            'net_finished_good_cost' => $netFinishedGoodCost,
+            'total_fg_qty' => $totalFgQty,
+            'finished_good_rate' => $finishedGoodRate,
+            'input_items' => $inputItemsPreview,
+            'output_items' => $outputItemsPreview,
+        ]);
+    }
 }
+

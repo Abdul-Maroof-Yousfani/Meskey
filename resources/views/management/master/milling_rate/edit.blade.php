@@ -121,7 +121,12 @@
                     <div class="col-md-5">
                         <div class="custom-control custom-switch">
                             <input type="checkbox" class="custom-control-input variable-toggle" data-target="var_input_{{ $variable->id }}" id="var_switch_edit_{{ $variable->id }}" {{ $isChecked ? 'checked' : '' }}>
-                            <label class="custom-control-label pt-1 cursor-pointer" for="var_switch_edit_{{ $variable->id }}">{{ $variable->title }}</label>
+                            <label class="custom-control-label pt-1 cursor-pointer" for="var_switch_edit_{{ $variable->id }}">
+                                <strong>{{ $variable->title }}</strong>
+                                @if($variable->account)
+                                    <small class="badge badge-light border ml-1 font-weight-normal text-muted">{{ $variable->account->hierarchy_path }}</small>
+                                @endif
+                            </label>
                         </div>
                     </div>
                     <div class="col-md-7">

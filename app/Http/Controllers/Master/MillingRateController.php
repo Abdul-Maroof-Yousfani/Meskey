@@ -26,7 +26,7 @@ class MillingRateController extends Controller
         $companyId = $request->company_id ?: (auth()->check() ? auth()->user()->current_company_id : null);
         $today = Carbon::today()->toDateString();
 
-        $milling_rates = MillingRate::with(['location', 'subLocation', 'plant', 'product'])
+        $milling_rates = MillingRate::with(['location', 'subLocation', 'plant', 'product', 'variables.account'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -72,7 +72,7 @@ class MillingRateController extends Controller
         $products = Product::where(function ($q) {
             $q->where('status', 'active')->orWhere('status', 1);
         })->orderBy('name')->get();
-        $variables = Variable::where('status', 1)->get();
+        $variables = Variable::with('account')->where('status', 1)->get();
         return view('management.master.milling_rate.create', compact('companyLocations', 'products', 'variables'));
     }
 
@@ -104,8 +104,8 @@ class MillingRateController extends Controller
             'company_id' => 'nullable|integer'
         ], $messages);
 
-        if (!isset($data['company_id'])) {
-            $data['company_id'] = auth()->check() ? auth()->user()->current_company_id : null;
+        if (empty($data['company_id'])) {
+            $data['company_id'] = auth()->check() ? (auth()->user()->current_company_id ?? 1) : 1;
         }
         $data['status'] = $data['status'] ?? 1;
 
@@ -157,7 +157,7 @@ class MillingRateController extends Controller
         $products = Product::where(function ($q) {
             $q->where('status', 'active')->orWhere('status', 1);
         })->orderBy('name')->get();
-        $variables = Variable::where('status', 1)->get();
+        $variables = Variable::with('account')->where('status', 1)->get();
 
         return view('management.master.milling_rate.edit', compact('millingRate', 'companyLocations', 'arrivalLocations', 'plants', 'products', 'variables'));
     }
@@ -237,7 +237,7 @@ class MillingRateController extends Controller
 
     public function show(int $id)
     {
-        $millingRate = MillingRate::with(['location', 'subLocation', 'plant', 'product', 'variables'])->findOrFail($id);
+        $millingRate = MillingRate::with(['location', 'subLocation', 'plant', 'product', 'variables.account'])->findOrFail($id);
         return view('management.master.milling_rate.show', compact('millingRate'));
     }
 
