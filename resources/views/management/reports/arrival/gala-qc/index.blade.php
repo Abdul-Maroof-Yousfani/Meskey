@@ -62,6 +62,19 @@
                                                 </div>
                                             </div>
 
+                                            {{-- Status filter (supports multiple items matching screenshot Status2) --}}
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Status:</label>
+                                                    <select name="status_id[]" id="status_id" multiple class="form-control selectWithoutAjax">
+                                                        <option value="all" selected>All</option>
+                                                        <option value="fully_approved">OK</option>
+                                                        <option value="half_approved">Reject Half</option>
+                                                        <option value="rejected">Reject Full</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Date Filter:</label>
@@ -97,19 +110,6 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Status filter (supports multiple items matching screenshot Status2) --}}
-                                            <div class="col-md-2">
-                                                <div class="form-group mb-0">
-                                                    <label>Status:</label>
-                                                    <select name="status_id[]" id="status_id" multiple class="form-control selectWithoutAjax">
-                                                        <option value="all" selected>All</option>
-                                                        <option value="fully_approved">OK</option>
-                                                        <option value="half_approved">Reject Half</option>
-                                                        <option value="rejected">Reject Full</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
                                             <div class="col-md-1 d-flex align-items-end">
                                                 <div class="form-group mb-0 w-100">
                                                     <input type="submit" class="btn btn-primary w-100" name="generatebtn" value="Generate">
@@ -126,6 +126,8 @@
                                     <thead>
                                         <tr>
                                             <th>Galaa #</th>
+                                            <th>Commodity</th>
+                                            <th>QC Advice</th>
                                             <th>Net Weight</th>
                                             <th>Average of Inner Broken</th>
                                             <th>Average of Inner Moisture (15% max)</th>

@@ -8,6 +8,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Services\ArrivalDashboardService;
 
 class GalaQcReportController extends Controller
@@ -93,9 +94,13 @@ class GalaQcReportController extends Controller
             ->with([
                 'approvals.gala',
                 'innerSampling.slabResults.slabType',
+                'innerSampling.compulsoryResults.qcParam',
                 'latestInnerSampling.slabResults.slabType',
+                'latestInnerSampling.compulsoryResults.qcParam',
                 'lastInitialSampling.slabResults.slabType',
+                'lastInitialSampling.compulsoryResults.qcParam',
                 'initialSampling.slabResults.slabType',
+                'initialSampling.compulsoryResults.qcParam',
                 'qcProduct',
                 'product',
             ])
@@ -107,10 +112,7 @@ class GalaQcReportController extends Controller
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 $commodityIds = array_filter((array) $request->commodity_id);
                 if (!empty($commodityIds) && !in_array('all', $commodityIds)) {
-                    $q->where(function ($sub) use ($commodityIds) {
-                        $sub->whereIn('arrival_tickets.product_id', $commodityIds)
-                            ->orWhereIn('arrival_tickets.qc_product', $commodityIds);
-                    });
+                    $q->whereIn(DB::raw('COALESCE(NULLIF(arrival_tickets.qc_product, 0), arrival_tickets.product_id)'), $commodityIds);
                 }
             })
             // Location filter (replacing Warehouse filter as instructed)
@@ -256,10 +258,49 @@ class GalaQcReportController extends Controller
             ];
         };
 
-        // Cache QC values and arrived net weight on each ticket
+        // Helper to extract QC Advice from sampling
+        $extractQcAdvice = function ($ticket) {
+            $samplings = [
+                $ticket->innerSampling,
+                $ticket->latestInnerSampling,
+                $ticket->lastInitialSampling,
+                $ticket->initialSampling,
+            ];
+            foreach ($samplings as $s) {
+                if (!$s || !$s->compulsoryResults) {
+                    continue;
+                }
+                foreach ($s->compulsoryResults as $cr) {
+                    if ($cr->qcParam && stripos($cr->qcParam->name, 'Advice') !== false) {
+                        $val = trim((string) $cr->compulsory_checklist_value);
+                        if ($val !== '') {
+                            return $val;
+                        }
+                    }
+                }
+            }
+            return 'N/A';
+        };
+
+        // Helper to map QC Advice string to one of the 3 categories
+        $mapAdviceCategory = function ($advice) {
+            $norm = strtolower(trim((string) $advice));
+            if ($norm === 'reject') {
+                return 'Reject';
+            }
+            if ($norm === 'reject n/a' || $norm === 'reject na' || $norm === 'reject_n/a') {
+                return 'Reject N/A';
+            }
+            // 'N/A', 'Accept', or any default falls into 'N/A, Accept'
+            return 'N/A, Accept';
+        };
+
+        // Cache QC values, advice and arrived net weight on each ticket
         foreach ($tickets as $t) {
             $t->extracted_qc = $extractQcValues($t);
             $t->calculated_weight = (float) ($t->arrived_net_weight ?: ($t->net_weight ?: 0));
+            $t->raw_qc_advice = $extractQcAdvice($t);
+            $t->advice_category = $mapAdviceCategory($t->raw_qc_advice);
         }
 
         // Group tickets by Gala
@@ -267,18 +308,144 @@ class GalaQcReportController extends Controller
             return $ticket->approvals?->gala?->name ?? ($ticket->approvals?->gala_name ?? 'Unknown Gala');
         });
 
+        // Natural sort by Gala name keys
+        $sortedGalaNames = $grouped->keys()->all();
+        usort($sortedGalaNames, function ($a, $b) {
+            return strnatcasecmp($a, $b);
+        });
+
         $qcKeys = ['inner_broken', 'inner_moisture', 'damage_creamish', 'damage_yellow', 'under_milled', 'chalky'];
-        $galaData = [];
+        $adviceCategories = ['N/A, Accept', 'Reject', 'Reject N/A'];
+        $reportRows = [];
+        $galaRowspans = [];
+        $commodityRowspans = [];
 
         $allWeighted = array_fill_keys($qcKeys, []);
         $allWeights = array_fill_keys($qcKeys, []);
         $allRaws = array_fill_keys($qcKeys, []);
         $totalNetWeight = 0;
 
-        foreach ($grouped as $galaName => $items) {
-            $galaWeight = (float) $items->sum('calculated_weight');
-            $totalNetWeight += $galaWeight;
+        foreach ($sortedGalaNames as $galaName) {
+            $items = $grouped[$galaName];
 
+            // Sub-group by Product / Commodity (QC commodity takes priority)
+            $groupedByProduct = $items->groupBy(function ($t) {
+                return $t->qcProduct?->name ?? ($t->product?->name ?? 'Unknown Commodity');
+            });
+
+            // Sort products alphabetically
+            $sortedProductNames = $groupedByProduct->keys()->all();
+            usort($sortedProductNames, function ($a, $b) {
+                return strnatcasecmp($a, $b);
+            });
+
+            $galaStartIndex = count($reportRows);
+
+            foreach ($sortedProductNames as $commodityName) {
+                $productTickets = $groupedByProduct[$commodityName];
+                $commodityStartIndex = count($reportRows);
+
+                $commodityWeight = (float) $productTickets->sum('calculated_weight');
+                $totalNetWeight += $commodityWeight;
+
+                // 1. Advice breakdown rows: 'N/A, Accept', 'Reject', 'Reject N/A'
+                foreach ($adviceCategories as $cat) {
+                    $catTickets = $productTickets->filter(function ($t) use ($cat) {
+                        return $t->advice_category === $cat;
+                    });
+
+                    $catWeight = (float) $catTickets->sum('calculated_weight');
+                    $catAverages = [];
+
+                    foreach ($qcKeys as $key) {
+                        $weightedVals = [];
+                        $weights = [];
+                        $rawVals = [];
+
+                        foreach ($catTickets as $t) {
+                            $w = $t->calculated_weight;
+                            $v = $t->extracted_qc[$key] ?? null;
+
+                            if ($v !== null && $v > 0) {
+                                $rawVals[] = $v;
+                                $weightedVals[] = $v * $w;
+                                $weights[] = $w;
+                            }
+                        }
+
+                        $sumW = array_sum($weights);
+                        if ($sumW > 0) {
+                            $catAverages[$key] = array_sum($weightedVals) / $sumW;
+                        } elseif (count($rawVals) > 0) {
+                            $catAverages[$key] = array_sum($rawVals) / count($rawVals);
+                        } else {
+                            $catAverages[$key] = 0;
+                        }
+                    }
+
+                    $reportRows[] = [
+                        'gala_name' => $galaName,
+                        'commodity' => $commodityName,
+                        'qc_advice' => $cat,
+                        'net_weight' => $catWeight,
+                        'averages' => $catAverages,
+                        'count_tickets' => $catTickets->count(),
+                        'is_total' => false,
+                    ];
+                }
+
+                // 2. 4th row: Total of that product values row-wise
+                $commodityAverages = [];
+                foreach ($qcKeys as $key) {
+                    $weightedVals = [];
+                    $weights = [];
+                    $rawVals = [];
+
+                    foreach ($productTickets as $t) {
+                        $w = $t->calculated_weight;
+                        $v = $t->extracted_qc[$key] ?? null;
+
+                        if ($v !== null && $v > 0) {
+                            $rawVals[] = $v;
+                            $weightedVals[] = $v * $w;
+                            $weights[] = $w;
+
+                            // Accumulate for overall report totals across all tickets
+                            $allRaws[$key][] = $v;
+                            $allWeighted[$key][] = $v * $w;
+                            $allWeights[$key][] = $w;
+                        }
+                    }
+
+                    $sumW = array_sum($weights);
+                    if ($sumW > 0) {
+                        $commodityAverages[$key] = array_sum($weightedVals) / $sumW;
+                    } elseif (count($rawVals) > 0) {
+                        $commodityAverages[$key] = array_sum($rawVals) / count($rawVals);
+                    } else {
+                        $commodityAverages[$key] = 0;
+                    }
+                }
+
+                $reportRows[] = [
+                    'gala_name' => $galaName,
+                    'commodity' => $commodityName,
+                    'qc_advice' => 'Total',
+                    'net_weight' => $commodityWeight,
+                    'averages' => $commodityAverages,
+                    'count_tickets' => $productTickets->count(),
+                    'is_total' => true,
+                ];
+
+                // Commodity rowspan covers the 3 categories + 1 total row = 4 rows
+                $commodityRowspans[$commodityStartIndex] = 4;
+            }
+
+            // Gala rowspan covers all product rows generated for this Gala
+            $galaRowspans[$galaStartIndex] = count($reportRows) - $galaStartIndex;
+
+            // Calculate Gala-level Total and weighted QC averages across all tickets of this Gala
+            $galaWeight = (float) $items->sum('calculated_weight');
             $galaAverages = [];
             foreach ($qcKeys as $key) {
                 $weightedVals = [];
@@ -293,10 +460,6 @@ class GalaQcReportController extends Controller
                         $rawVals[] = $v;
                         $weightedVals[] = $v * $w;
                         $weights[] = $w;
-
-                        $allRaws[$key][] = $v;
-                        $allWeighted[$key][] = $v * $w;
-                        $allWeights[$key][] = $w;
                     }
                 }
 
@@ -310,20 +473,20 @@ class GalaQcReportController extends Controller
                 }
             }
 
-            $galaData[] = [
+            // Append Gala Total row
+            $reportRows[] = [
                 'gala_name' => $galaName,
+                'commodity' => '',
+                'qc_advice' => '',
                 'net_weight' => $galaWeight,
                 'averages' => $galaAverages,
                 'count_tickets' => $items->count(),
+                'is_total' => false,
+                'is_gala_total' => true,
             ];
         }
 
-        // Natural sort by Gala name
-        usort($galaData, function ($a, $b) {
-            return strnatcasecmp($a['gala_name'], $b['gala_name']);
-        });
-
-        // Overall Totals / Averages row
+        // Overall Totals / Averages row across all tickets
         $overallAverages = [];
         foreach ($qcKeys as $key) {
             $sumW = array_sum($allWeights[$key]);
@@ -336,11 +499,15 @@ class GalaQcReportController extends Controller
             }
         }
 
+        $galaData = $reportRows;
         $product_slab_types = collect();
         $overallSlabAverages = [];
 
         return view('management.reports.arrival.gala-qc.get_gala_qc', compact(
+            'reportRows',
             'galaData',
+            'galaRowspans',
+            'commodityRowspans',
             'totalNetWeight',
             'overallAverages',
             'product_slab_types',
