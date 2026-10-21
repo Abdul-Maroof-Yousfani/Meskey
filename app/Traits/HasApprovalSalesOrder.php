@@ -273,7 +273,7 @@ trait HasApprovalSalesOrder
     public function createApprovalRows()
     {
         $module = $this->getApprovalModule();
-        $moduleId = $module ? $module->id : 16;
+        $moduleId = $module ? $module->id : null;
         $currentCycle = $this->getCurrentApprovalCycle();
         $creator = User::find($this->created_by ?? Auth::id());
 
@@ -323,6 +323,192 @@ trait HasApprovalSalesOrder
                 'status' => 'pending'
             ]);
         }
+    }
+
+    /**
+     * Get users eligible to approve Stage 1 for this Sale Order.
+     */
+    public function getStage1EligibleApprovers()
+    {
+        $creator = $this->creator ?: User::find($this->created_by);
+        $parentId = $creator?->parent_user_id ?: $this->parent_user_id;
+
+        $users = collect();
+        if (!empty($parentId) && (!empty($creator?->id) ? $parentId != $creator->id : true)) {
+            $parent = User::find($parentId);
+            if ($parent && $parent->status === 'active') {
+                $users->push($parent);
+            }
+            $siblings = User::where('parent_user_id', $parentId)
+                ->where('status', 'active')
+                ->get();
+            foreach ($siblings as $s) {
+                if ($s->id != $creator?->id && $this->userHasSalesOrderPermission($s)) {
+                    $users->push($s);
+                }
+            }
+        } elseif ($creator) {
+            if ($creator->status === 'active') {
+                $users->push($creator);
+            }
+            $children = User::where('parent_user_id', $creator->id)
+                ->where('status', 'active')
+                ->get();
+            foreach ($children as $c) {
+                if ($this->userHasSalesOrderPermission($c)) {
+                    $users->push($c);
+                }
+            }
+        }
+
+        $soFactoryIds = array_values(array_unique(array_filter(array_merge(
+            [$this->arrival_location_id],
+            $this->factories ? $this->factories->pluck('arrival_location_id')->toArray() : []
+        ))));
+
+        return $users->unique('id')->filter(function ($u) use ($soFactoryIds, $parentId) {
+            if (!empty($parentId) && $u->id == $parentId) {
+                return true;
+            }
+            if (!empty($soFactoryIds)) {
+                $uFactoryIds = static::getUserFactoryLocationIds($u);
+                return !empty(array_intersect($soFactoryIds, $uFactoryIds));
+            }
+            return true;
+        })->values();
+    }
+
+    /**
+     * Get comma-separated names of eligible Stage 1 approvers.
+     */
+    public function getStage1EligibleApproverNames(): string
+    {
+        return $this->getStage1EligibleApprovers()->pluck('name')->join(', ');
+    }
+
+    /**
+     * Get users eligible for Head Office Stage 2 approval.
+     */
+    public function getStage2EligibleApprovers()
+    {
+        $hoUsers = User::permission('headoffice-saleorder-approval')
+            ->where('status', 'active')
+            ->where('user_type', '!=', 'super-admin')
+            ->get();
+
+        if ($hoUsers->isEmpty()) {
+            $hoUsers = User::permission('headoffice-saleorder-approval')
+                ->where('status', 'active')
+                ->get();
+        }
+
+        $soFactoryIds = array_values(array_unique(array_filter(array_merge(
+            [$this->arrival_location_id],
+            $this->factories ? $this->factories->pluck('arrival_location_id')->toArray() : []
+        ))));
+
+        return $hoUsers->filter(function ($u) use ($soFactoryIds) {
+            if (!empty($soFactoryIds)) {
+                $uFactoryIds = static::getUserFactoryLocationIds($u);
+                return !empty(array_intersect($soFactoryIds, $uFactoryIds));
+            }
+            return true;
+        })->values();
+    }
+
+    /**
+     * Get comma-separated names of eligible Head Office approvers.
+     */
+    public function getStage2EligibleApproverNames(): string
+    {
+        return $this->getStage2EligibleApprovers()->pluck('name')->join(', ');
+    }
+
+    /**
+     * Resolve the Stage 1 approval log for the given cycle.
+     */
+    public function getStage1ApprovalLog($cycle = null)
+    {
+        $cycle = $cycle ?? $this->getCurrentApprovalCycle();
+
+        if ($this->so_approval_stage === 'stage_1_pending') {
+            return null;
+        }
+
+        $log = $this->approvalLogs()
+            ->where('approval_cycle', $cycle)
+            ->where('action', 'partial_approved')
+            ->latest('id')
+            ->first();
+
+        if ($log) {
+            return $log;
+        }
+
+        if (in_array($this->so_approval_stage, ['headoffice_pending', 'approved'])) {
+            return $this->approvalLogs()
+                ->where('approval_cycle', $cycle)
+                ->whereIn('action', ['approved', 'partial_approved'])
+                ->oldest('id')
+                ->first();
+        }
+
+        if (in_array($this->so_approval_stage, ['rejected', 'reverted'])) {
+            return $this->approvalLogs()
+                ->where('approval_cycle', $cycle)
+                ->whereIn('action', ['rejected', 'reverted'])
+                ->latest('id')
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve the Stage 2 (Head Office) approval log for the given cycle.
+     */
+    public function getStage2ApprovalLog($cycle = null)
+    {
+        $cycle = $cycle ?? $this->getCurrentApprovalCycle();
+
+        if ($this->so_approval_stage !== 'approved') {
+            return null;
+        }
+
+        return $this->approvalLogs()
+            ->where('approval_cycle', $cycle)
+            ->where('action', 'approved')
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * Get display role name for Stage 1.
+     */
+    public function getStage1RoleName($cycle = null): string
+    {
+        $creator = $this->creator ?: User::find($this->created_by);
+        $parentId = $creator?->parent_user_id ?: $this->parent_user_id;
+        if (!empty($parentId)) {
+            $parent = User::find($parentId);
+            $roleName = $parent?->roles()?->latest()?->first()?->name;
+            if ($roleName) {
+                return $roleName;
+            }
+        }
+
+        $cycle = $cycle ?? $this->getCurrentApprovalCycle();
+        $row = $this->approvalRows()
+            ->where('approval_cycle', $cycle)
+            ->where('role_id', '!=', 1)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($row && $row->role) {
+            return $row->role->name;
+        }
+
+        return 'Branch / Parent';
     }
 
     /**
@@ -436,6 +622,8 @@ trait HasApprovalSalesOrder
             $this->so_approval_stage = 'headoffice_pending';
             $this->am_approval_status = 'pending';
             $this->saveQuietly();
+
+            \App\Services\NotificationService::sendSaleOrderHeadOfficeNotification($this);
 
             return true;
         }

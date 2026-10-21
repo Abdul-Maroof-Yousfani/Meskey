@@ -112,7 +112,7 @@ class SaleOrderController extends Controller
 
     public function index()
     {
-        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list') && !auth()->user()->can('headoffice-saleorder-approval'), 403);
         $customerIds = SalesOrder::visibleToUser()->distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
 
@@ -210,7 +210,7 @@ class SaleOrderController extends Controller
 
     public function view(Request $request, int $id)
     {
-        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list') && !auth()->user()->can('headoffice-saleorder-approval'), 403);
         $sale_order = SalesOrder::visibleToUser()->with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker', 'preSaleInspection')->find($id);
         if (!$sale_order) {
             abort(403, 'Unauthorized access to this Sale Order.');
@@ -239,7 +239,7 @@ class SaleOrderController extends Controller
 
     public function getDoStats(Request $request, int $id)
     {
-        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list') && !auth()->user()->can('headoffice-saleorder-approval'), 403);
         $sale_order = SalesOrder::visibleToUser()->with([
             'delivery_orders' => function ($q) {
                 $q->with([
@@ -489,6 +489,8 @@ class SaleOrderController extends Controller
             );
 
             DB::commit();
+
+            \App\Services\NotificationService::sendSaleOrderCreatedNotification($sales_order);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -1026,7 +1028,7 @@ class SaleOrderController extends Controller
 
     public function getList(Request $request)
     {
-        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list') && !auth()->user()->can('headoffice-saleorder-approval'), 403);
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product

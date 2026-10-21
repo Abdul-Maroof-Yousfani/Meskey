@@ -170,6 +170,18 @@
             $(document).on('ajaxSuccess', function() {
                 $('#inquiry_id_for_filter, #customer_id_for_filter, #location_id_for_filter, #item_id_for_filter, #status_for_filter, #contract_status_f').select2();
             });
+
+            // Auto open view drawer if view_id is passed in query string (from notification)
+            var urlParams = new URLSearchParams(window.location.search);
+            var viewId = urlParams.get('view_id');
+            if (viewId) {
+                var viewUrl = "{{ url('sales/sales-order') }}/" + viewId + "/view";
+                setTimeout(function () {
+                    if (typeof openModal === 'function') {
+                        openModal(null, viewUrl, 'View Sales Order', false, '90%');
+                    }
+                }, 400);
+            }
         });
     </script>
 @endsection

@@ -87,54 +87,115 @@
                         </div>
                     </div>
                 @endif
-                @php
-                    // Group rows by role_id to avoid duplicate role displays
-                    $rowsByRole = $rows->sortBy('id')->groupBy('role_id');
-                @endphp
-
-                @foreach ($rowsByRole as $role_id => $roleRows)
+                @if ($model instanceof \App\Models\Sales\SalesOrder)
                     @php
-                        $role = $roleRows->first()->role; // Get the role from the first row
-                        $requiredCount = $roleRows->sum('required_count'); // Sum required counts for this role
-                        $logs = $model
-                            ->approvalLogs()
-                            ->where('role_id', $role_id)
-                            ->where('module_id', $module->id)
-                            ->where('approval_cycle', $cycle)
-                            ->with('user')
-                            ->get();
+                        // Stage 1 Approver vs Candidates
+                        $s1Log = $model->getStage1ApprovalLog($cycle);
+                        $s1Candidates = $model->getStage1EligibleApproverNames();
+                        $s1RoleName = $model->getStage1RoleName($cycle);
 
-                        $approvedLogs = $logs->whereIn('action', ['approved', 'partial_approved']);
-                        $rejectedLogs = $logs->where('action', 'rejected');
-                        $rejectedIDS = [];
+                        // Stage 2 (Head Office) Approver vs Candidates
+                        $s2Log = $model->getStage2ApprovalLog($cycle);
+                        $s2Candidates = $model->getStage2EligibleApproverNames();
                     @endphp
 
+                    {{-- Stage 1 Box (Branch / Parent) --}}
                     <div class="dash-item flex-fill">
-                        <div class="dash-value d-flex flex-column text-uppercase text-center">
-                            @if ($approvedLogs->isNotEmpty() && isset($approvedLogs->first()->user))
-                                <strong>{{ $approvedLogs->first()->user->name }}</strong>
-                            @elseif ($rejectedLogs->isNotEmpty() && !in_array($rejectedLogs->first()->user->id, $rejectedIDS))
-                                <strong>{{ $rejectedLogs->first()->user->name }}</strong>
-                                @php
-                                    $rejectedIDS[] = $rejectedLogs->first()->user->id;
-                                @endphp
+                        <div class="dash-value d-flex flex-column text-center">
+                            @if ($s1Log && isset($s1Log->user))
+                                <strong class="text-uppercase">{{ $s1Log->user->name }}</strong>
                             @else
-                                <span>&nbsp;</span>
+                                <span style="font-size: 11px; font-weight: 600; text-transform: capitalize; color: #4b5563; line-height: 1.3;" title="Eligible Approvers: {{ $s1Candidates }}">
+                                    {{ $s1Candidates ?: '-' }}
+                                </span>
                             @endif
-                            <small style="font-size: 10px;">({{ $role->name }})</small>
+                            <small style="font-size: 10px; color: #6c757d;">({{ $s1RoleName }})</small>
                         </div>
                         <div class="dash-line">______________________</div>
                         <div class="approver-name mt-1">
-                            @if ($approvedLogs->isNotEmpty())
-                                Approved By
-                            @elseif ($rejectedLogs->isNotEmpty())
+                            @if ($s1Log && $s1Log->action === 'rejected')
                                 <span class="text-danger">Rejected By</span>
+                            @elseif ($s1Log && $s1Log->action === 'reverted')
+                                <span class="text-warning">Reverted By</span>
                             @else
                                 Approved By
                             @endif
                         </div>
                     </div>
-                @endforeach
+
+                    {{-- Stage 2 Box (Head Office) --}}
+                    <div class="dash-item flex-fill">
+                        <div class="dash-value d-flex flex-column text-center">
+                            @if ($s2Log && isset($s2Log->user))
+                                <strong class="text-uppercase">{{ $s2Log->user->name }}</strong>
+                            @else
+                                <span style="font-size: 11px; font-weight: 600; text-transform: capitalize; color: #4b5563; line-height: 1.3;" title="Eligible Approvers: {{ $s2Candidates }}">
+                                    {{ $s2Candidates ?: '-' }}
+                                </span>
+                            @endif
+                            <small style="font-size: 10px; color: #6c757d;">(Head Office)</small>
+                        </div>
+                        <div class="dash-line">______________________</div>
+                        <div class="approver-name mt-1">
+                            @if ($s2Log && $s2Log->action === 'rejected')
+                                <span class="text-danger">Rejected By</span>
+                            @elseif ($s2Log && $s2Log->action === 'reverted')
+                                <span class="text-warning">Reverted By</span>
+                            @else
+                                Approved By
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    @php
+                        // Group rows by role_id to avoid duplicate role displays
+                        $rowsByRole = $rows->sortBy('id')->groupBy('role_id');
+                    @endphp
+
+                    @foreach ($rowsByRole as $role_id => $roleRows)
+                        @php
+                            $role = $roleRows->first()->role; // Get the role from the first row
+                            $requiredCount = $roleRows->sum('required_count'); // Sum required counts for this role
+                            $logs = $model
+                                ->approvalLogs()
+                                ->where('role_id', $role_id)
+                                ->where('module_id', $module->id)
+                                ->where('approval_cycle', $cycle)
+                                ->with('user')
+                                ->get();
+
+                            $approvedLogs = $logs->whereIn('action', ['approved', 'partial_approved']);
+                            $rejectedLogs = $logs->where('action', 'rejected');
+                            $rejectedIDS = [];
+                        @endphp
+
+                        <div class="dash-item flex-fill">
+                            <div class="dash-value d-flex flex-column text-uppercase text-center">
+                                @if ($approvedLogs->isNotEmpty() && isset($approvedLogs->first()->user))
+                                    <strong>{{ $approvedLogs->first()->user->name }}</strong>
+                                @elseif ($rejectedLogs->isNotEmpty() && !in_array($rejectedLogs->first()->user->id, $rejectedIDS))
+                                    <strong>{{ $rejectedLogs->first()->user->name }}</strong>
+                                    @php
+                                        $rejectedIDS[] = $rejectedLogs->first()->user->id;
+                                    @endphp
+                                @else
+                                    <span>&nbsp;</span>
+                                @endif
+                                <small style="font-size: 10px;">({{ $role->name }})</small>
+                            </div>
+                            <div class="dash-line">______________________</div>
+                            <div class="approver-name mt-1">
+                                @if ($approvedLogs->isNotEmpty())
+                                    Approved By
+                                @elseif ($rejectedLogs->isNotEmpty())
+                                    <span class="text-danger">Rejected By</span>
+                                @else
+                                    Approved By
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
             </div>
         </div>
     @endforeach

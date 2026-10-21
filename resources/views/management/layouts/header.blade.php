@@ -375,13 +375,23 @@
             // ============================================
             // PUSHER REAL-TIME NOTIFICATIONS
             // ============================================
-            @if(env('PUSHER_APP_KEY'))
-            var pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
-                cluster: "{{ env('PUSHER_APP_CLUSTER', 'ap2') }}"
+            @php
+                $pusherCfg = function_exists('getPusherConfig') ? getPusherConfig() : null;
+            @endphp
+            @if(!empty($pusherCfg['enabled']) && !empty($pusherCfg['key']))
+            var pusher = new Pusher("{{ $pusherCfg['key'] }}", {
+                cluster: "{{ $pusherCfg['cluster'] ?? 'ap2' }}"
             });
             var channel = pusher.subscribe('notify-channel');
             channel.bind('notify-event', function(data) {
                 var currentUserId = Number({{ auth()->user()->id ?? 0 }});
+                var currentCompanyId = Number({{ getCurrentCompany()?->id ?? 0 }});
+
+                // Ignore notification if event is explicitly targeted to another company
+                if (data.company_id && currentCompanyId && Number(data.company_id) !== currentCompanyId) {
+                    return;
+                }
+
                 var isRecipient = !data.user_ids || data.user_ids.length === 0 || data.user_ids.map(Number).includes(currentUserId);
 
                 if (isRecipient) {
