@@ -23,6 +23,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use App\Models\AuditLog;
+use App\Services\AuditLogService;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -33,6 +35,7 @@ class UserTestController extends Controller
         $this->middleware('check.company:user-list', ['only' => ['index']]);
         $this->middleware('check.company:user-list', ['only' => ['getTable']]);
         $this->middleware('check.company:user-list', ['only' => ['exportToExcel']]);
+        $this->middleware('check.company:user-list', ['only' => ['getAuditLogs', 'getCompanyAuditLogs']]);
         $this->middleware('check.company:user-create', ['only' => ['create', 'store']]);
         $this->middleware('check.company:user-edit', ['only' => ['edit', 'update']]);
         $this->middleware('check.company:user-delete', ['only' => ['destroy']]);
@@ -73,6 +76,15 @@ class UserTestController extends Controller
         }
 
         $user = User::create($data);
+
+        $newValues = $this->buildUserAuditValues($user);
+        AuditLogService::log(
+            $user,
+            'user_created',
+            "User '{$user->name}' ({$user->username}) created.",
+            null,
+            $newValues
+        );
 
         return response()->json([
             'success' => 'Basic details saved.',
@@ -154,6 +166,8 @@ class UserTestController extends Controller
             }
 
             $user = User::findOrFail($id);
+            $oldValues = $this->buildUserAuditValues($user);
+            $passwordChanged = !empty($input['password']);
 
             if ($request->has('has_account') && $request->has_account) {
                 if ($user->account_id && $user->account) {
@@ -185,6 +199,22 @@ class UserTestController extends Controller
                 }
             }
             $user->update($input);
+            $user->refresh();
+
+            $newValues = $this->buildUserAuditValues($user);
+
+            if ($passwordChanged) {
+                $oldValues['password'] = '******';
+                $newValues['password'] = 'Updated (Changed)';
+            }
+
+            AuditLogService::log(
+                $user,
+                'user_updated',
+                "User '{$user->name}' ({$user->username}) updated.",
+                $oldValues,
+                $newValues
+            );
 
             return response()->json([
                 'success' => 'Successfully Saved.',
@@ -224,6 +254,7 @@ class UserTestController extends Controller
     public function saveAssignDetails(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        $oldAssignments = $this->buildUserAssignmentAuditValues($user);
 
         $userType = $user->user_type == 'user';
 
@@ -392,6 +423,17 @@ class UserTestController extends Controller
             $roleNames
         )));
 
+        $user->refresh();
+        $newAssignments = $this->buildUserAssignmentAuditValues($user);
+
+        AuditLogService::log(
+            $user,
+            'user_assignment_saved',
+            "Company & Location assignments updated for user '{$user->name}'.",
+            $oldAssignments,
+            $newAssignments
+        );
+
         return response()->json(['success' => 'User assignments saved successfully.']);
     }
 
@@ -437,6 +479,7 @@ class UserTestController extends Controller
     public function updateAssignDetails(Request $request, $userId, $companyId, $roleId)
     {
         $user = User::findOrFail($userId);
+        $oldAssignments = $this->buildUserAssignmentAuditValues($user);
 
         $userType = $user->user_type == 'user';
 
@@ -552,14 +595,29 @@ class UserTestController extends Controller
             }
         }
 
-        $existingArrivalMap = $user->arrival_location_ids ?? [];
+        $existingArrivalMap = is_array($user->arrival_location_ids)
+            ? $user->arrival_location_ids
+            : (json_decode($user->arrival_location_ids, true) ?: []);
 
-        $finalArrivalMap = array_merge($existingArrivalMap, $finalArrivalMap);
+        foreach ($locations as $locId) {
+            $existingArrivalMap[(string)$locId] = $mapArrivalData[$locId] ?? [];
+        }
 
         $user->update([
             'company_location_ids' => array_values(array_unique($finalCompanyLocationIds)),
-            'arrival_location_ids' => $finalArrivalMap,
+            'arrival_location_ids' => $existingArrivalMap,
         ]);
+
+        $user->refresh();
+        $newAssignments = $this->buildUserAssignmentAuditValues($user);
+
+        AuditLogService::log(
+            $user,
+            'user_assignment_updated',
+            "Company assignment updated for user '{$user->name}'.",
+            $oldAssignments,
+            $newAssignments
+        );
 
         return response()->json(['success' => 'Company assignment updated successfully.']);
     }
@@ -567,6 +625,7 @@ class UserTestController extends Controller
     public function deleteAssignDetails($userId, $companyId, $roleId)
     {
         $user = User::findOrFail($userId);
+        $oldAssignments = $this->buildUserAssignmentAuditValues($user);
 
         $pivot = DB::table('company_user_role')
             ->where('user_id', $userId)
@@ -619,6 +678,17 @@ class UserTestController extends Controller
             'arrival_location_ids' => $userArrivalMap,
         ]);
 
+        $user->refresh();
+        $newAssignments = $this->buildUserAssignmentAuditValues($user);
+
+        AuditLogService::log(
+            $user,
+            'user_assignment_deleted',
+            "Company assignment deleted for user '{$user->name}'.",
+            $oldAssignments,
+            $newAssignments
+        );
+
         return response()->json([
             'success' => 'Company assignment deleted successfully.',
         ]);
@@ -628,7 +698,19 @@ class UserTestController extends Controller
     {
         DB::beginTransaction();
         try {
-            $contact = User::find($id)->delete();
+            $user = User::findOrFail($id);
+            $oldValues = $this->buildUserAuditValues($user);
+            $oldAssignments = $this->buildUserAssignmentAuditValues($user);
+
+            AuditLogService::log(
+                $user,
+                'user_deleted',
+                "User '{$user->name}' ({$user->username}) deleted.",
+                array_merge($oldValues, $oldAssignments),
+                null
+            );
+
+            $contact = $user->delete();
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
@@ -657,7 +739,18 @@ class UserTestController extends Controller
         }
 
         $user = User::findOrFail($id);
+        $oldValues = $this->buildUserAuditValues($user);
         $user->update($request->all());
+        $user->refresh();
+        $newValues = $this->buildUserAuditValues($user);
+
+        AuditLogService::log(
+            $user,
+            'profile_updated',
+            "Profile updated for user '{$user->name}'.",
+            $oldValues,
+            $newValues
+        );
 
         return response()->json(['success' => 'User profile updated successfully', 'data' => $user]);
     }
@@ -686,6 +779,15 @@ class UserTestController extends Controller
 
             $user->password = Hash::make($request->new_password);
             $user->save();
+
+            AuditLogService::log(
+                $user,
+                'password_updated',
+                "Password changed for user '{$user->name}'.",
+                ['password' => '******'],
+                ['password' => 'Updated (Changed)']
+            );
+
             DB::commit();
 
             return response()->json(['success' => 'Successfully Saved.']);
@@ -890,5 +992,179 @@ class UserTestController extends Controller
         $writer->save($fileName);
 
         return response()->download($fileName)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Build audit values array for user basic details.
+     */
+    protected function buildUserAuditValues(User $user): array
+    {
+        $user->loadMissing(['parent', 'account']);
+
+        return [
+            'name'                    => $user->name,
+            'username'                => $user->username,
+            'email'                   => $user->email,
+            'user_type'               => $user->user_type ? ucwords(str_replace('-', ' ', $user->user_type)) : null,
+            'parent_user'             => $user->parent ? "{$user->parent->name} ({$user->parent->username})" : 'None',
+            'purchase_order_approval' => $user->purchase_order_approval ? 'Yes' : 'No',
+            'chart_of_account'        => $user->account ? "{$user->account->name} [{$user->account->unique_no}] (" . ucfirst($user->account->status) . ')' : 'None',
+            'status'                  => $user->status ? ucfirst($user->status) : 'Active',
+        ];
+    }
+
+    /**
+     * Build audit values array for user company & location assignments.
+     */
+    protected function buildUserAssignmentAuditValues(User $user): array
+    {
+        $user->loadMissing('companies');
+        $result = [];
+        $companiesInfo = [];
+
+        foreach ($user->companies as $company) {
+            $pivot = $company->pivot;
+            $locIds = !empty($pivot->locations) ? (json_decode($pivot->locations, true) ?? []) : [];
+            $arrIds = !empty($pivot->arrival_locations) ? (json_decode($pivot->arrival_locations, true) ?? []) : [];
+
+            $locNames = !empty($locIds) ? CompanyLocation::whereIn('id', $locIds)->pluck('name')->toArray() : [];
+            $arrNames = !empty($arrIds) ? ArrivalLocation::whereIn('id', $arrIds)->pluck('name')->toArray() : [];
+
+            $role = !empty($pivot->role_id) ? Role::find($pivot->role_id) : null;
+            $permissions = $role ? $role->permissions->pluck('name')->toArray() : [];
+
+            $compKey = "company_{$company->id}";
+            $result[$compKey . '_locations'] = !empty($locNames) ? implode(', ', $locNames) : 'None';
+            $result[$compKey . '_arrivals'] = !empty($arrNames) ? implode(', ', $arrNames) : 'None';
+            if (!empty($permissions)) {
+                $result[$compKey . '_permissions'] = implode(', ', $permissions);
+            }
+
+            $parts = [];
+            if (!empty($locNames)) {
+                $parts[] = 'Locations: ' . implode(', ', $locNames);
+            }
+            if (!empty($arrNames)) {
+                $parts[] = 'Arrivals: ' . implode(', ', $arrNames);
+            }
+
+            $companiesInfo[] = $company->name . (!empty($parts) ? ' (' . implode(' | ', $parts) . ')' : '');
+        }
+
+        $result['assigned_companies'] = !empty($companiesInfo) ? implode('; ', $companiesInfo) : 'None';
+
+        return $result;
+    }
+
+    /**
+     * Get audit logs for a user's specific company assignment (edit logs only).
+     */
+    public function getCompanyAuditLogs(Request $request, $userId, $companyId)
+    {
+        $user = User::findOrFail($userId);
+        $company = Company::findOrFail($companyId);
+
+        // Fetch logs for this user - ONLY edit/update logs, NO create logs
+        $logs = AuditLog::with('user')
+            ->where(function ($q) use ($user, $companyId, $company) {
+                $q->where(function ($sq) use ($user) {
+                    $sq->whereIn('model_type', [User::class, 'User', 'App\Models\User'])
+                        ->where('model_id', $user->id);
+                })
+                ->orWhere('old_values', 'like', '%"company_' . $companyId . '_%')
+                ->orWhere('new_values', 'like', '%"company_' . $companyId . '_%')
+                ->orWhere('old_values', 'like', '%' . $company->name . '%')
+                ->orWhere('new_values', 'like', '%' . $company->name . '%');
+            })
+            ->where(function ($q) {
+                $q->where('action', 'like', '%assignment_saved%')
+                  ->orWhere('action', 'like', '%assignment_updated%')
+                  ->orWhere('action', 'like', '%assignment_deleted%')
+                  ->orWhere('action', 'like', '%update%');
+            })
+            ->where('action', 'not like', '%user_created%')
+            ->where('action', 'not like', '%store%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Note: Do NOT add virtual create log because requirement specifies edit logs only ("create k logs nh lgane hn is me bss edit k lga do")
+
+        $fieldLabels = [
+            "company_{$companyId}_locations"   => 'Assigned Locations',
+            "company_{$companyId}_arrivals"    => 'Assigned Arrival Locations',
+            "company_{$companyId}_permissions" => 'Assigned Permissions',
+            'assigned_companies'               => "Company Assignments ({$company->name})",
+        ];
+
+        $flattenArray = function ($arr, $prefix = '') use (&$flattenArray) {
+            $result = [];
+            if (!is_array($arr)) return $result;
+            foreach ($arr as $key => $value) {
+                $newKey = $prefix === '' ? $key : "{$prefix}.{$key}";
+                if (is_array($value) && !empty($value) && !isset($value[0])) {
+                    $result = array_merge($result, $flattenArray($value, $newKey));
+                } else {
+                    $result[$newKey] = $value;
+                }
+            }
+            return $result;
+        };
+
+        $filteredLogs = [];
+        $skipKeys = ['id', 'deleted_at', 'created_at', 'updated_at', 'company_id', 'remember_token', 'current_company_id'];
+
+        foreach ($logs as $log) {
+            $rawOld = is_array($log->old_values) ? $log->old_values : (!empty($log->old_values) ? json_decode($log->old_values, true) : []);
+            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+
+            $rawNew = is_array($log->new_values) ? $log->new_values : (!empty($log->new_values) ? json_decode($log->new_values, true) : []);
+            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+
+            $old = $flattenArray($rawOld);
+            $new = $flattenArray($rawNew);
+
+            $parsedChanges = [];
+            $allKeys = array_unique(array_merge(array_keys($old ?? []), array_keys($new ?? [])));
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, $skipKeys)) continue;
+
+                // Only show changes relevant to this company
+                if (str_starts_with($key, 'company_') && !str_starts_with($key, "company_{$companyId}_")) {
+                    continue;
+                }
+                // Skip user profile fields if this is a general user_updated log that didn't affect company
+                if (in_array($key, ['name', 'username', 'email', 'password', 'user_type', 'parent_user', 'chart_of_account', 'status', 'profile_image'])) {
+                    continue;
+                }
+
+                $oldVal = $old[$key] ?? null;
+                $newVal = $new[$key] ?? null;
+
+                if ($oldVal != $newVal) {
+                    $parsedChanges[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace('_', ' ', $key)),
+                        'old'     => is_array($oldVal) ? json_encode($oldVal) : $oldVal,
+                        'new'     => is_array($newVal) ? json_encode($newVal) : $newVal,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
+                    ];
+                }
+            }
+
+            // Only keep this log if it has actual changes for this company
+            if (!empty($parsedChanges)) {
+                $log->parsed_changes = $parsedChanges;
+                $filteredLogs[] = $log;
+            }
+        }
+
+        $logs = $filteredLogs;
+        $title = "Audit Logs: {$company->name} Assignment";
+        $subtitle = "User: {$user->name} ({$user->username}) | Company: {$company->name} | Edit History";
+        $emptyMessage = "No edits or updates have been recorded for {$company->name} assignment yet.";
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 }

@@ -5,12 +5,23 @@
 ]) !!}
 <input type="hidden" id="url" value="{{ route('users-test.index') }}" />
 
-<div class="row">
-    <div class="col-12 mb-2">
-        <h6 class="header-heading-sepration">
+<div class="row align-items-center mb-2">
+    <div class="col-8">
+        <h6 class="header-heading-sepration mb-0">
             Company Detail
         </h6>
     </div>
+    <div class="col-4 text-right">
+        @canAccess('user-list')
+        <button type="button" class="btn btn-sm btn-info"
+            onclick="openModalAndDonotCloseLastModal(this,'{{ route('users-test.company-audit-logs', ['userId' => $user->id, 'companyId' => $companyId]) }}','Audit Logs: {{ $companies->firstWhere('id', $companyId)?->name ?? 'Company' }}', false, '55%')"
+            title="Audit Logs">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+        @endcanAccess
+    </div>
+</div>
+<div class="row">
 
     <div id="card-container" class="w-100 overflow-hidden p-3" style="padding-top: 0px !important;">
         <div class="clonecard border-1">

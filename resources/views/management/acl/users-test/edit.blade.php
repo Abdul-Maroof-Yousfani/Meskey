@@ -13,6 +13,15 @@
                     <h2 class="page-title">Edit User - {{ ucfirst($user->name) }}<small
                             class="text-black-50">({{ $user->username }})</small> </h2>
                 </div>
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                    @canAccess('user-list')
+                    <button type="button" class="btn btn-info position-relative"
+                        onclick="openModal(this,'{{ route('users-test.audit-logs', $user->id) }}','Audit Logs: User {{ $user->name }} ({{ $user->username }})', false, '55%')"
+                        title="Audit Logs">
+                        <i class="fa fa-history mr-1"></i> Audit Logs
+                    </button>
+                    @endcanAccess
+                </div>
             </div>
 
             <div class="row justify-content-center mt-3">
@@ -295,6 +304,14 @@
 
                                                 <!-- Actions -->
                                                 <td class="text-center align-middle">
+                                                    @canAccess('user-list')
+                                                    <a onclick="openModal(this,'{{ route('users-test.company-audit-logs', ['userId' => $user->id, 'companyId' => $comp->id]) }}','Audit Logs: {{ $comp->name }}', false, '55%')"
+                                                        class="info p-1 text-center mr-2 position-relative cursor-pointer"
+                                                        title="Audit Logs: {{ $comp->name }}" style="cursor: pointer;">
+                                                        <i class="fa fa-history font-medium-3" style="color: #17a2b8;"></i>
+                                                    </a>
+                                                    @endcanAccess
+
                                                     @canAccess('edit-assign-company')
                                                     <a onclick="openModal(this,'{{ route('users-test.edit-assign', ['userId' => $user->id, 'companyId' => $comp->id, 'roleId' => $role->id]) }}','Edit Company')"
                                                         class="info p-1 text-center mr-2 position-relative ">

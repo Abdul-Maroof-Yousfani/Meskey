@@ -45,3 +45,5 @@ Route::post('users/{id}/assign-details', [UserTestController::class, 'saveAssign
 Route::get('users/{userId}/edit-assign-details/{companyId}/{roleId}', [UserTestController::class, 'editAssignDetails'])->name('users-test.edit-assign');
 Route::post('users/{userId}/edit-assign-details/{companyId}/{roleId}', [UserTestController::class, 'updateAssignDetails'])->name('users-test.assign.update');
 Route::delete('users/{userId}/delete-assign-details/{companyId}/{roleId}', [UserTestController::class, 'deleteAssignDetails'])->name('users-test.delete-assign');
+Route::get('users-test/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'users-test')->name('users-test.audit-logs');
+Route::get('users-test/{userId}/company/{companyId}/audit-logs', [UserTestController::class, 'getCompanyAuditLogs'])->name('users-test.company-audit-logs');

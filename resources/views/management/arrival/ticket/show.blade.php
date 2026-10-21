@@ -544,15 +544,17 @@
                                     aria-labelledby="initial-{{ $index }}-tab">
                                     <div class="row w-100 mx-auto">
                                         <div class="col-md-4"></div>
-                                        <div class="col-md-3 py-2 QcResult">
+                                        <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
                                             <h6>Result</h6>
                                         </div>
-                                        <div class="col-md-3 py-2 Suggested">
-                                            <h6>Suggested Deduction</h6>
-                                        </div>
-                                        <div class="col-md-2 py-2 QcResult">
-                                            <h6>Deduction</h6>
-                                        </div>
+                                        @if (canAccess('arrival-stats-show-confidential'))
+                                            <div class="col-md-3 py-2 Suggested">
+                                                <h6>Suggested Deduction</h6>
+                                            </div>
+                                            <div class="col-md-2 py-2 QcResult">
+                                                <h6>Deduction</h6>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div class="striped-rows">
@@ -612,7 +614,7 @@
                                                 <div class="form-group row checklist-box">
                                                     <label
                                                         class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                    <div class="col-md-3 QcResult">
+                                                    <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
                                                         <div class="input-group mb-0">
                                                             <input type="text" readonly
                                                                 class="form-control {{ $comparisonClass }}"
@@ -630,28 +632,30 @@
                                                             </span>
                                                         @endif
                                                     </div>
-                                                    <div class="col-md-3 Suggested">
-                                                        <div class="input-group mb-0">
-                                                            <input type="text" class="form-control"
-                                                                value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
-                                                                placeholder="Suggested Deduction" disabled>
-                                                            <div class="input-group-append">
-                                                                <span
-                                                                    class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
+                                                    @if (canAccess('arrival-stats-show-confidential'))
+                                                        <div class="col-md-3 Suggested">
+                                                            <div class="input-group mb-0">
+                                                                <input type="text" class="form-control"
+                                                                    value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                                                    placeholder="Suggested Deduction" disabled>
+                                                                <div class="input-group-append">
+                                                                    <span
+                                                                        class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-2 QcResult">
-                                                        <div class="input-group mb-0">
-                                                            <input type="text" class="form-control bg-white"
-                                                                value="{{ $deductionValue }}" placeholder="Deduction"
-                                                                disabled>
-                                                            <div class="input-group-append">
-                                                                <span
-                                                                    class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                        <div class="col-md-2 QcResult">
+                                                            <div class="input-group mb-0">
+                                                                <input type="text" class="form-control bg-white"
+                                                                    value="{{ $deductionValue }}" placeholder="Deduction"
+                                                                    disabled>
+                                                                <div class="input-group-append">
+                                                                    <span
+                                                                        class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    @endif
                                                 </div>
                                             @endforeach
                                         @else
@@ -797,15 +801,17 @@
                                 aria-labelledby="inner-{{ $index }}-tab">
                                 <div class="row w-100 mx-auto">
                                     <div class="col-md-4"></div>
-                                    <div class="col-md-3 py-2 QcResult">
+                                    <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
                                         <h6>Result</h6>
                                     </div>
-                                    <div class="col-md-3 py-2 Suggested">
-                                        <h6>Suggested Deduction</h6>
-                                    </div>
-                                    <div class="col-md-2 py-2 QcResult">
-                                        <h6>Deduction</h6>
-                                    </div>
+                                    @if (canAccess('arrival-stats-show-confidential'))
+                                        <div class="col-md-3 py-2 Suggested">
+                                            <h6>Suggested Deduction</h6>
+                                        </div>
+                                        <div class="col-md-2 py-2 QcResult">
+                                            <h6>Deduction</h6>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="striped-rows">
@@ -855,7 +861,7 @@
                                             <div class="form-group row checklist-box">
                                                 <label
                                                     class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                <div class="col-md-3 QcResult">
+                                                <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
                                                     <div class="input-group mb-0">
                                                         <input type="text" readonly
                                                             class="form-control {{ $comparisonClass }}"
@@ -872,24 +878,26 @@
                                                         </span>
                                                     @endif
                                                 </div>
-                                                <div class="col-md-3 Suggested">
-                                                    <div class="input-group mb-0">
-                                                        <input type="text" disabled class="form-control"
-                                                            value="{{ $slab->suggested_deduction ?? 0 }}">
-                                                        <div class="input-group-append">
-                                                            <span class="input-group-text text-sm">Rs.</span>
+                                                @if (canAccess('arrival-stats-show-confidential'))
+                                                    <div class="col-md-3 Suggested">
+                                                        <div class="input-group mb-0">
+                                                            <input type="text" disabled class="form-control"
+                                                                value="{{ $slab->suggested_deduction ?? 0 }}">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text text-sm">Rs.</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-2 QcResult">
-                                                    <div class="input-group mb-0">
-                                                        <input type="text" readonly class="form-control"
-                                                            value="{{ $slab->applied_deduction ?? 0 }}">
-                                                        <div class="input-group-append">
-                                                            <span class="input-group-text text-sm">Rs.</span>
+                                                    <div class="col-md-2 QcResult">
+                                                        <div class="input-group mb-0">
+                                                            <input type="text" readonly class="form-control"
+                                                                value="{{ $slab->applied_deduction ?? 0 }}">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text text-sm">Rs.</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                @endif
                                             </div>
                                         @endforeach
                                     @else
@@ -1001,15 +1009,17 @@
                                 aria-labelledby="current-inner-tab">
                                 <div class="row w-100 mx-auto">
                                     <div class="col-md-4"></div>
-                                    <div class="col-md-3 py-2 QcResult">
+                                    <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
                                         <h6>Result</h6>
                                     </div>
-                                    <div class="col-md-3 py-2 Suggested">
-                                        <h6>Suggested Deduction</h6>
-                                    </div>
-                                    <div class="col-md-2 py-2 QcResult">
-                                        <h6>Deduction</h6>
-                                    </div>
+                                    @if (canAccess('arrival-stats-show-confidential'))
+                                        <div class="col-md-3 py-2 Suggested">
+                                            <h6>Suggested Deduction</h6>
+                                        </div>
+                                        <div class="col-md-2 py-2 QcResult">
+                                            <h6>Deduction</h6>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="striped-rows">
@@ -1123,7 +1133,7 @@
                                                     value="{{ $slab->slabType->id }}">
                                                 <label
                                                     class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                <div class="col-md-3 QcResult">
+                                                <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
                                                     <div class="input-group mb-0">
                                                         <input type="text"
                                                             class="form-control {{ $comparisonClass }}"
@@ -1141,36 +1151,39 @@
                                                         </span>
                                                     @endif
                                                 </div>
-                                                <div class="col-md-3 Suggested">
-                                                    <div class="input-group mb-0">
-                                                        <input type="text" class="form-control"
-                                                            name="suggested_deduction[]"
-                                                            value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
-                                                            placeholder="Suggested Deduction" readonly>
-                                                        <div class="input-group-append">
-                                                            <span
-                                                                class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
+
+                                                @if (canAccess('arrival-stats-show-confidential'))
+                                                    <div class="col-md-3 Suggested">
+                                                        <div class="input-group mb-0">
+                                                            <input type="text" class="form-control"
+                                                                name="suggested_deduction[]"
+                                                                value="{{ $getDeductionSuggestion->deduction_value ?? 0 }}"
+                                                                placeholder="Suggested Deduction" readonly>
+                                                            <div class="input-group-append">
+                                                                <span
+                                                                    class="input-group-text text-sm">{{ $suggestedDeductionType == 'amount' ? 'Rs.' : 'KG\'s' }}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-2 QcResult">
-                                                    <div class="input-group mb-0">
-                                                        <input type="text" id="deduction-{{ $slab->slabType->id }}"
-                                                            class="form-control bg-white deduction-field"
-                                                            name="applied_deduction[]"
-                                                            value="{{ $innerDeductionValue }}" placeholder="Deduction"
-                                                            data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
-                                                            data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
-                                                            data-slab-id="{{ $slab->slabType->id }}"
-                                                            data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
-                                                            data-checklist="{{ $displayValue }}" readonly
-                                                            {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
-                                                        <div class="input-group-append">
-                                                            <span
-                                                                class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                    <div class="col-md-2 QcResult">
+                                                        <div class="input-group mb-0">
+                                                            <input type="text" id="deduction-{{ $slab->slabType->id }}"
+                                                                class="form-control bg-white deduction-field"
+                                                                name="applied_deduction[]"
+                                                                value="{{ $innerDeductionValue }}" placeholder="Deduction"
+                                                                data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
+                                                                data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
+                                                                data-slab-id="{{ $slab->slabType->id }}"
+                                                                data-product-id="{{ optional($arrivalSamplingRequest->arrivalTicket)->product->id }}"
+                                                                data-checklist="{{ $displayValue }}" readonly
+                                                                {{ $isLumpSumEnabledInTicket ? 'readonly' : '' }}>
+                                                            <div class="input-group-append">
+                                                                <span
+                                                                    class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                @endif
                                             </div>
                                         @endforeach
                                     @else
