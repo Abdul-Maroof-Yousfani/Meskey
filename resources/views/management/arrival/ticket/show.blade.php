@@ -188,260 +188,261 @@
                         </div>
                     @endif
                 </div>
-
-                <div class="row">
-                    <div class="col-12">
-                        <h6 class="header-heading-sepration">
-                            Loading Weight Detail
-                        </h6>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>First Weighbridge Weight:</label>
-                            <input type="text" name="first_weight" disabled placeholder="First Weight"
-                                class="form-control" autocomplete="off" value="{{ $arrivalTicket->first_weight }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>2nd Weighbridge Weight: </label>
-                            <input type="text" name="second_weight" disabled placeholder="Second Weight"
-                                class="form-control" autocomplete="off" value="{{ $arrivalTicket->second_weight }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Net Weight: </label>
-                            <input type="text" name="net_weight" disabled placeholder="Net Weight"
-                                class="form-control" autocomplete="off" value="{{ $arrivalTicket->net_weight }}" />
-                        </div>
-                    </div>
-                </div>
-                @if (isset($arrivalTicket->secondWeighbridge))
+                @if (canAccess('arrival-stats-show-confidential'))
                     <div class="row">
                         <div class="col-12">
                             <h6 class="header-heading-sepration">
-                                Arrived Weight Detail
+                                Loading Weight Detail
                             </h6>
                         </div>
                         <div class="col-xs-4 col-sm-4 col-md-4">
                             <div class="form-group">
                                 <label>First Weighbridge Weight:</label>
                                 <input type="text" name="first_weight" disabled placeholder="First Weight"
-                                    class="form-control" autocomplete="off"
-                                    value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
+                                    class="form-control" autocomplete="off" value="{{ $arrivalTicket->first_weight }}" />
                             </div>
                         </div>
                         <div class="col-xs-4 col-sm-4 col-md-4">
                             <div class="form-group">
                                 <label>2nd Weighbridge Weight: </label>
                                 <input type="text" name="second_weight" disabled placeholder="Second Weight"
-                                    class="form-control" autocomplete="off"
-                                    value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
+                                    class="form-control" autocomplete="off" value="{{ $arrivalTicket->second_weight }}" />
                             </div>
                         </div>
                         <div class="col-xs-4 col-sm-4 col-md-4">
                             <div class="form-group">
-                                <label>2nd Weighbridge Weight: </label>
-                                <input type="text" name="second_weight" disabled placeholder="Second Weight"
-                                    class="form-control" autocomplete="off"
-                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight }}" />
+                                <label>Net Weight: </label>
+                                <input type="text" name="net_weight" disabled placeholder="Net Weight"
+                                    class="form-control" autocomplete="off" value="{{ $arrivalTicket->net_weight }}" />
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-12 col-md-12">
-                            <fieldset>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <button class="btn btn-primary" type="button">Weight
-                                            Difference</button>
+                    </div>
+                    @if (isset($arrivalTicket->secondWeighbridge))
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Arrived Weight Detail
+                                </h6>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <label>First Weighbridge Weight:</label>
+                                    <input type="text" name="first_weight" disabled placeholder="First Weight"
+                                        class="form-control" autocomplete="off"
+                                        value="{{ $arrivalTicket->firstWeighbridge->weight }}" />
+                                </div>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <label>2nd Weighbridge Weight: </label>
+                                    <input type="text" name="second_weight" disabled placeholder="Second Weight"
+                                        class="form-control" autocomplete="off"
+                                        value="{{ $arrivalTicket->secondWeighbridge->weight }}" />
+                                </div>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <label>2nd Weighbridge Weight: </label>
+                                    <input type="text" name="second_weight" disabled placeholder="Second Weight"
+                                        class="form-control" autocomplete="off"
+                                        value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight }}" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <fieldset>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <button class="btn btn-primary" type="button">Weight
+                                                Difference</button>
+                                        </div>
+                                        <input type="text" id="weight_difference" name="weight_difference"
+                                            placeholder="Weight Difference" readonly class="form-control" autocomplete="off"
+                                            value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
                                     </div>
-                                    <input type="text" id="weight_difference" name="weight_difference"
-                                        placeholder="Weight Difference" readonly class="form-control" autocomplete="off"
+                                </fieldset>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4 d-none">
+                                <div class="form-group">
+                                    <label>Weight Difference: </label>
+                                    <input type="text" name="net_weight" disabled placeholder="Net Weight"
+                                        class="form-control" autocomplete="off"
                                         value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
                                 </div>
-                            </fieldset>
-                        </div>
-                        <div class="col-xs-4 col-sm-4 col-md-4 d-none">
-                            <div class="form-group">
-                                <label>Weight Difference: </label>
-                                <input type="text" name="net_weight" disabled placeholder="Net Weight"
-                                    class="form-control" autocomplete="off"
-                                    value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
                             </div>
                         </div>
-                    </div>
-                @endif
-                @if (isset($arrivalTicket->freight))
-                    <div class="row">
-                        <div class="col-12">
-                            <h6 class="header-heading-sepration">
-                                Estimated Freight
-                            </h6>
-                        </div>
+                    @endif
+                    @if (isset($arrivalTicket->freight))
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="header-heading-sepration">
+                                    Estimated Freight
+                                </h6>
+                            </div>
 
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Loaded Weight</label>
-                                <input type="number" name="loaded_weight" class="form-control"
-                                    value="{{ $arrivalTicket->freight->arrivalTicket->net_weight ?? 'N/A' }}" disabled />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Loaded Weight</label>
+                                    <input type="number" name="loaded_weight" class="form-control"
+                                        value="{{ $arrivalTicket->freight->arrivalTicket->net_weight ?? 'N/A' }}" disabled />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Arrived Weight</label>
-                                <input type="number" name="arrived_weight" class="form-control"
-                                    value="{{ $arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 'N/A' }}"
-                                    disabled />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Arrived Weight</label>
+                                    <input type="number" name="arrived_weight" class="form-control"
+                                        value="{{ $arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 'N/A' }}"
+                                        disabled />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Difference</label>
-                                <input type="number" name="difference" class="form-control"
-                                    value="{{ ($arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 0) - ($arrivalTicket->freight->arrivalTicket->net_weight ?? 0) }}"
-                                    disabled />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Difference</label>
+                                    <input type="number" name="difference" class="form-control"
+                                        value="{{ ($arrivalTicket->freight->arrivalTicket->arrived_net_weight ?? 0) - ($arrivalTicket->freight->arrivalTicket->net_weight ?? 0) }}"
+                                        disabled />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Exempted Weight</label>
-                                <input type="number" name="exempted_weight" class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->exempted_weight }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Exempted Weight</label>
+                                    <input type="number" name="exempted_weight" class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->exempted_weight }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Net Shortage</label>
-                                <input type="number" name="net_shortage" class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->net_shortage }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Net Shortage</label>
+                                    <input type="number" name="net_shortage" class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->net_shortage }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Freight per Ton</label>
-                                <input type="number" step="0.01" name="freight_per_ton"disabled class="form-control"
-                                    value="{{ $arrivalTicket->freight->freight_per_ton }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Freight per Ton</label>
+                                    <input type="number" step="0.01" name="freight_per_ton"disabled class="form-control"
+                                        value="{{ $arrivalTicket->freight->freight_per_ton }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Kanta Loading Charges</label>
-                                <input type="number" step="0.01"disabled name="kanta_golarchi_charges"
-                                    class="form-control" value="{{ $arrivalTicket->freight->kanta_golarchi_charges }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Kanta Loading Charges</label>
+                                    <input type="number" step="0.01"disabled name="kanta_golarchi_charges"
+                                        class="form-control" value="{{ $arrivalTicket->freight->kanta_golarchi_charges }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Arrived Kanta Charges</label>
-                                <input type="number" step="0.01" name="karachi_kanta_charges"
-                                    class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->karachi_kanta_charges }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Arrived Kanta Charges</label>
+                                    <input type="number" step="0.01" name="karachi_kanta_charges"
+                                        class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->karachi_kanta_charges }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Other (+)/Labour Charges</label>
-                                <input type="number" step="0.01" name="other_labour_charges"
-                                    class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->other_labour_charges }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Other (+)/Labour Charges</label>
+                                    <input type="number" step="0.01" name="other_labour_charges"
+                                        class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->other_labour_charges }}" />
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Other Deduction</label>
-                                <input type="number" step="0.01" name="other_deduction" class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->other_deduction }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Other Deduction</label>
+                                    <input type="number" step="0.01" name="other_deduction" class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->other_deduction }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Unpaid Labor Charges</label>
-                                <input type="number" step="0.01" name="unpaid_labor_charges"
-                                    class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->unpaid_labor_charges }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Unpaid Labor Charges</label>
+                                    <input type="number" step="0.01" name="unpaid_labor_charges"
+                                        class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->unpaid_labor_charges }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Freight Written on Bilty</label>
-                                <input type="number" step="0.01"disabled name="freight_written_on_bilty"
-                                    class="form-control"
-                                    value="{{ $arrivalTicket->freight->freight_written_on_bilty }}" />
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Freight Written on Bilty</label>
+                                    <input type="number" step="0.01"disabled name="freight_written_on_bilty"
+                                        class="form-control"
+                                        value="{{ $arrivalTicket->freight->freight_written_on_bilty }}" />
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Gross Freight Amount</label>
-                                <input type="number" step="0.01" name="gross_freight_amount"
-                                    class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->gross_freight_amount }}" />
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Gross Freight Amount</label>
+                                    <input type="number" step="0.01" name="gross_freight_amount"
+                                        class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->gross_freight_amount }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Net Freight</label>
-                                <input type="number" step="0.01" name="net_freight" class="form-control"disabled
-                                    value="{{ $arrivalTicket->freight->net_freight }}" />
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Net Freight</label>
+                                    <input type="number" step="0.01" name="net_freight" class="form-control"disabled
+                                        value="{{ $arrivalTicket->freight->net_freight }}" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 d-none">
-                            <div class="form-group">
-                                <label>Status</label>
-                                <input type="hidden" name="status" value="approved">
+                            <div class="col-md-6 d-none">
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <input type="hidden" name="status" value="approved">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Attach Bilty</label>
-                                <br />
-                                @if ($arrivalTicket->freight->bilty_document)
-                                    <a href="{{ asset($arrivalTicket->freight->bilty_document) }}" target="_blank">View
-                                        Current File</a>
-                                @else
-                                    <small class="text-danger">No file found</small>
-                                @endif
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Attach Bilty</label>
+                                    <br />
+                                    @if ($arrivalTicket->freight->bilty_document)
+                                        <a href="{{ asset($arrivalTicket->freight->bilty_document) }}" target="_blank">View
+                                            Current File</a>
+                                    @else
+                                        <small class="text-danger">No file found</small>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Attach Loading Weight</label>
-                                <br />
-                                @if ($arrivalTicket->freight->loading_weight_document)
-                                    <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}"
-                                        target="_blank">View Current File</a>
-                                @else
-                                    <small class="text-danger">No file found</small>
-                                @endif
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Attach Loading Weight</label>
+                                    <br />
+                                    @if ($arrivalTicket->freight->loading_weight_document)
+                                        <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}"
+                                            target="_blank">View Current File</a>
+                                    @else
+                                        <small class="text-danger">No file found</small>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Other Document (Optional)</label>
-                                <br />
-                                @if ($arrivalTicket->freight->other_document)
-                                    <a href="{{ asset($arrivalTicket->freight->other_document) }}" target="_blank">View
-                                        Current File</a>
-                                @else
-                                    <small class="text-danger">No file found</small>
-                                @endif
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Other Document (Optional)</label>
+                                    <br />
+                                    @if ($arrivalTicket->freight->other_document)
+                                        <a href="{{ asset($arrivalTicket->freight->other_document) }}" target="_blank">View
+                                            Current File</a>
+                                    @else
+                                        <small class="text-danger">No file found</small>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Other Document 2 (Optional)</label>
+                                    <br />
+                                    @if ($arrivalTicket->freight->other_document_2)
+                                        <a href="{{ asset($arrivalTicket->freight->other_document_2) }}" target="_blank">View
+                                            Current File</a>
+                                    @else
+                                        <small class="text-danger">No file found</small>
+                                    @endif
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Other Document 2 (Optional)</label>
-                                <br />
-                                @if ($arrivalTicket->freight->other_document_2)
-                                    <a href="{{ asset($arrivalTicket->freight->other_document_2) }}" target="_blank">View
-                                        Current File</a>
-                                @else
-                                    <small class="text-danger">No file found</small>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
+                    @endif
                 @endif
             </div>
             <div class="col-md-6">
