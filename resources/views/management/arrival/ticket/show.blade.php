@@ -87,6 +87,7 @@
                                 autocomplete="off" value="{{ $arrivalTicket->product->name ?? 'N/A' }}" />
                         </div>
                     </div>
+                    @if (canAccess('arrival-stats-show-confidential'))
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
                             <label>Miller:</label>
@@ -116,6 +117,7 @@
                                 value="{{ $arrivalTicket->decisionBy->name ?? 'N/A' }}" />
                         </div>
                     </div>
+                    
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
                             <label>Station:</label>
@@ -153,6 +155,7 @@
                                 placeholder="Bilty No" class="form-control" autocomplete="off" />
                         </div>
                     </div>
+                    @endif
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
                             <label>No of bags: </label>
