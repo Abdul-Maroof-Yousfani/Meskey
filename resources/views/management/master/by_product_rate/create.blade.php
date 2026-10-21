@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Create By-Product Rate
+    Create Product Rate
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,7 +8,7 @@
             <div class="row w-100 mx-auto mb-2">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title font-weight-bold text-dark">
-                        <i class="ft-plus-circle text-primary mr-1"></i> Create By-Product Rate
+                        Create Product Rate
                     </h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
@@ -100,13 +100,12 @@
                                 <div class="card border mb-2 shadow-none">
                                     <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
                                         <h5 class="mb-0 font-weight-bold text-dark">
-                                            <i class="ft-list mr-1 text-primary"></i> B2 & By-Products Standard Recovery Rates
+                                            B2 & By-Products Standard Recovery Rates
                                         </h5>
                                         <small class="text-muted">Enter rate per KG for each product</small>
                                     </div>
                                     <div class="card-body p-2" id="by_products_container">
                                         <div class="text-center text-muted py-4">
-                                            <i class="ft-arrow-up font-large-1 d-block mb-1 text-primary"></i>
                                             Please select a <strong>Commodity / Product</strong> above to load its linked B2 & By-Products.
                                         </div>
                                     </div>
@@ -118,7 +117,7 @@
                                     <i class="ft-x mr-1"></i> Cancel
                                 </a>
                                 <button type="submit" class="btn btn-primary" id="saveBtn">
-                                    <i class="ft-check mr-1"></i> Save By-Product Rates
+                                    <i class="ft-check mr-1"></i> Save Product Rates
                                 </button>
                             </div>
 
@@ -153,7 +152,7 @@
             $('#by_products_container').html(`
                 <div class="text-center text-muted py-4">
                     <i class="ft-arrow-up font-large-1 d-block mb-1 text-primary"></i>
-                    Please select a <strong>Commodity / Product</strong> above to load its linked By-Products.
+                    Please select a <strong>Commodity / Product</strong> above to load its linked Products.
                 </div>
             `);
             $('#saveBtn').prop('disabled', false).removeClass('disabled').removeAttr('title');

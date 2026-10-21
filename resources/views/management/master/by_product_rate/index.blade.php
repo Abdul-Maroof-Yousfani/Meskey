@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    By-Product Rates
+    Product Rates
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,11 +8,11 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">By-Product Rates</h2>
+                    <h2 class="page-title">Product Rates</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <a href="{{ route('by-product-rate.create') }}" class="btn btn-primary position-relative">
-                        <i class="ft-plus mr-1"></i> Create By-Product Rate
+                        Create Product Rate
                     </a>
                 </div>
             </div>

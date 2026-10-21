@@ -205,7 +205,7 @@ class ByProductRateController extends Controller
             'location_id.exists' => 'The selected Location is invalid.',
             'product_id.required' => 'Please select a Main Commodity / Product.',
             'product_id.exists' => 'The selected Commodity / Product is invalid.',
-            'rates.required' => 'Please provide rates for at least one by-product.',
+            'rates.required' => 'Please provide rates for at least one product.',
         ];
 
         $data = $request->validate([
@@ -274,10 +274,10 @@ class ByProductRateController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => 'By-Product Rate created successfully.', 'data' => $rateRecord], 201);
+            return response()->json(['success' => 'Product Rate created successfully.', 'data' => $rateRecord], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to save By-Product Rate: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to save Product Rate: ' . $e->getMessage()], 500);
         }
     }
 
@@ -313,7 +313,7 @@ class ByProductRateController extends Controller
             'location_id.exists' => 'The selected Location is invalid.',
             'product_id.required' => 'Please select a Main Commodity / Product.',
             'product_id.exists' => 'The selected Commodity / Product is invalid.',
-            'rates.required' => 'Please provide rates for at least one by-product.',
+            'rates.required' => 'Please provide rates for at least one Product.',
         ];
 
         $data = $request->validate([
@@ -381,10 +381,10 @@ class ByProductRateController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => 'By-Product Rate updated successfully.', 'data' => $byProductRate], 200);
+            return response()->json(['success' => 'Product Rate updated successfully.', 'data' => $byProductRate], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to update By-Product Rate: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to update Product Rate: ' . $e->getMessage()], 500);
         }
     }
 
@@ -398,6 +398,6 @@ class ByProductRateController extends Controller
     {
         $rate = ByProductRate::findOrFail($id);
         $rate->delete();
-        return response()->json(['success' => 'By-Product Rate deleted successfully.']);
+        return response()->json(['success' => 'Product Rate deleted successfully.']);
     }
 }

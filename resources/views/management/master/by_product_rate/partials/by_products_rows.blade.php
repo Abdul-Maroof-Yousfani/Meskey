@@ -8,7 +8,7 @@
                     Rates Already Created for this Product & Location!
                 </h6>
                 <p class="mb-0 text-dark" style="font-size: 13px;">
-                    Iss product (<strong>{{ $existingRateSchedule->product?->name }}</strong>) k rates iss location (<strong>{{ $existingRateSchedule->location?->name }}</strong>) pr already created hain. Aap unko edit kar lo.
+                    This Product (<strong>{{ $existingRateSchedule->product?->name }}</strong>) rates on location (<strong>{{ $existingRateSchedule->location?->name }}</strong>) already created. Please edit them.
                 </p>
             </div>
             <div class="mt-1 mt-md-0">
@@ -30,7 +30,7 @@
 
 @if($b2Products->isEmpty() && $byProducts->isEmpty())
     <div class="alert alert-warning mb-0 p-3">
-        <i class="ft-alert-circle mr-1"></i> No B2 Products or By-Products found under this Commodity family.
+        <i class="ft-alert-circle mr-1"></i> No B2 Products or Products found under this Commodity family.
     </div>
 @else
 
@@ -106,7 +106,7 @@
                         <thead class="thead-light">
                             <tr>
                                 <th width="5%" class="text-center">#</th>
-                                <th width="40%">By-Product Name</th>
+                                <th width="40%">Product Name</th>
                                 <th width="15%" class="text-center">Category Flag</th>
                                 <th width="15%" class="text-center">UOM</th>
                                 <th width="25%">Recovery Rate (PKR / KG) <span class="text-danger">*</span></th>
@@ -123,7 +123,7 @@
                                         @endif
                                     </td>
                                     <td class="text-center align-middle">
-                                        <span class="badge badge-secondary text-uppercase font-small-1">By-Product</span>
+                                        <span class="badge badge-secondary text-uppercase font-small-1">Product</span>
                                     </td>
                                     <td class="text-center align-middle font-weight-bold text-muted">
                                         {{ $bp->unitOfMeasure?->name ?? 'KG' }}

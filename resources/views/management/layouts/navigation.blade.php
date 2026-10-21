@@ -1471,7 +1471,7 @@
                                     href="{{ route('by-product-rate.index') }}"
                                     onclick="loadPageContent('{{ route('by-product-rate.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                        data-i18n="By-Product Rate">By-Product Rate</span></a>
+                                        data-i18n="By-Product Rate">Product Rate</span></a>
                             </li>
                             @endcanAccess
                         </ul>

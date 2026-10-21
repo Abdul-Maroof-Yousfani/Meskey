@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Edit By-Product Rate - {{ $byProductRate->title }}
+    Edit Product Rate - {{ $byProductRate->title }}
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,7 +8,7 @@
             <div class="row w-100 mx-auto mb-2">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title font-weight-bold text-dark">
-                        <i class="ft-edit text-warning mr-1"></i> Edit By-Product Rate
+                        Edit Product Rate
                     </h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
@@ -125,7 +125,7 @@
                                     <i class="ft-x mr-1"></i> Cancel
                                 </a>
                                 <button type="submit" class="btn btn-primary" id="saveBtn">
-                                    <i class="ft-check mr-1"></i> Update By-Product Rates
+                                    <i class="ft-check mr-1"></i> Update Product Rates
                                 </button>
                             </div>
 

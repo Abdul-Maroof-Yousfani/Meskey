@@ -45,14 +45,14 @@
 
     <div class="col-md-12 mt-2">
         <h5 class="font-weight-bold text-dark mb-2">
-            <i class="ft-layers mr-1 text-primary"></i> By-Product Standard Rates
+            <i class="ft-layers mr-1 text-primary"></i> Product Standard Rates
         </h5>
         <div class="table-responsive">
             <table class="table table-bordered table-striped">
                 <thead class="thead-light">
                     <tr>
                         <th width="5%">#</th>
-                        <th>By-Product</th>
+                        <th>Product</th>
                         <th width="15%" class="text-center">Sort Type</th>
                         <th width="15%" class="text-center">UOM</th>
                         <th width="25%" class="text-right">Rate (PKR / KG)</th>
