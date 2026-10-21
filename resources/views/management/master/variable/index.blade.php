@@ -46,10 +46,11 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-4">Title</th>
-                                            <th class="col-sm-4">Description</th>
-                                            <th class="col-sm-2">Status</th>
-                                            <th class="col-sm-2">Action</th>
+                                            <th class="col-sm-3">Variable Title</th>
+                                            <th class="col-sm-3">Linked COA Account</th>
+                                            <th class="col-sm-3">Description</th>
+                                            <th class="col-sm-1">Status</th>
+                                            <th class="col-sm-2 text-right">Action</th>
                                         </tr>
                                     </thead>
 

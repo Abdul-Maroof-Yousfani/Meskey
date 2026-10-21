@@ -20,6 +20,9 @@ class ProductionOutput extends Model
         'job_order_id',
         'product_id',
         'qty',
+        'rate',
+        'amount',
+        'cost_type',
         'no_of_bags',
         'bag_size',
         'avg_weight_per_bag',
@@ -32,6 +35,8 @@ class ProductionOutput extends Model
 
     protected $casts = [
         'qty' => 'decimal:2',
+        'rate' => 'decimal:4',
+        'amount' => 'decimal:2',
         'avg_weight_per_bag' => 'decimal:3',
     ];
 

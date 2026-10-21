@@ -18,11 +18,15 @@ class ProductionInput extends Model
         'product_id',
         'location_id',
         'qty',
+        'rate',
+        'amount',
         'remarks'
     ];
 
     protected $casts = [
         'qty' => 'decimal:2',
+        'rate' => 'decimal:4',
+        'amount' => 'decimal:2',
     ];
 
     public function productionVoucher()

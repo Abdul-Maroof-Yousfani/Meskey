@@ -36,6 +36,13 @@ class ProductionVoucher extends Model
         'user_id',
         'labor_cost_per_kg',
         'overhead_cost_per_kg',
+        'raw_material_cost',
+        'milling_cost',
+        'by_product_cost',
+        'net_finished_good_cost',
+        'finished_good_rate',
+        'milling_rate_id',
+        'by_product_rate_id',
         'status',
         'remarks',
         'qc_remarks',
@@ -48,6 +55,11 @@ class ProductionVoucher extends Model
         'produced_qty_kg' => 'decimal:2',
         'labor_cost_per_kg' => 'decimal:4',
         'overhead_cost_per_kg' => 'decimal:4',
+        'raw_material_cost' => 'decimal:2',
+        'milling_cost' => 'decimal:2',
+        'by_product_cost' => 'decimal:2',
+        'net_finished_good_cost' => 'decimal:2',
+        'finished_good_rate' => 'decimal:4',
     ];
 
     public function getProducedQtyKgAttribute($value)
@@ -149,5 +161,30 @@ class ProductionVoucher extends Model
     public function analysisRequests()
     {
         return $this->hasMany(ProductionAnalysisRequest::class, 'production_voucher_id');
+    }
+
+    public function millingRate()
+    {
+        return $this->belongsTo(\App\Models\Master\MillingRate::class, 'milling_rate_id');
+    }
+
+    public function byProductRate()
+    {
+        return $this->belongsTo(\App\Models\Master\ByProductRate::class, 'by_product_rate_id');
+    }
+
+    public function voucherVariables()
+    {
+        return $this->hasMany(\App\Models\Production\ProductionVoucherVariable::class, 'production_voucher_id');
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(\App\Models\Master\Account\Transaction::class, 'against_reference_no', 'prod_no');
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(\App\Models\Master\Account\Stock::class, 'production_voucher_id', 'id');
     }
 }

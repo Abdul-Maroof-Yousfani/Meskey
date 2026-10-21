@@ -79,6 +79,7 @@ Route::delete('production-voucher/{id}/slot/{slotId}', [ProductionVoucherControl
 Route::post('get-production-voucher-slots/{id}', [ProductionVoucherController::class, 'getSlotsList'])->name('get.production-voucher-slots');
 Route::post('production-voucher-get-by-product-table', [ProductionVoucherController::class, 'getByProductTable'])->name('production-voucher.get-by-product-table');
 Route::post('production-voucher-get-head-products-data', [ProductionVoucherController::class, 'getHeadProductsData'])->name('production-voucher.get-head-products-data');
+Route::post('production-voucher-get-costing-preview', [ProductionVoucherController::class, 'getCostingPreview'])->name('production-voucher.get-costing-preview');
 // Production Slots Routes
 use App\Http\Controllers\Production\ProductionSlotController;
 Route::resource('production-slot', ProductionSlotController::class);

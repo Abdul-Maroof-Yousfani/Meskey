@@ -1464,6 +1464,14 @@
                                         data-i18n="Milling Rate">Milling Rate</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('mill-milling-rate')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('by-product-rate.index') }}"
+                                    onclick="loadPageContent('{{ route('by-product-rate.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="By-Product Rate">By-Product Rate</span></a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

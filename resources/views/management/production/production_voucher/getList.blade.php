@@ -38,6 +38,13 @@
                         <strong>{{ number_format($voucher->produced_qty_kg, 2) }}</strong> kgs
                         <br>
                         <small class="text-muted">{{ number_format($voucher->produced_qty_kg / 1000, 2) }} MT</small>
+                        @if($voucher->finished_good_rate > 0)
+                            <div class="mt-1">
+                                <span class="badge badge-light-primary text-primary" style="font-size: 11px; font-weight: 600;" title="Finished Good Unit Rate: PKR {{ number_format($voucher->finished_good_rate, 4) }}/kg | Net Cost: PKR {{ number_format($voucher->net_finished_good_cost, 2) }}">
+                                    <i class="ft-tag mr-1"></i>PKR {{ number_format($voucher->finished_good_rate, 2) }}/kg
+                                </span>
+                            </div>
+                        @endif
                     </td>
                     <td>
                         @if(isset($voucher->producedByJobOrder) && count($voucher->producedByJobOrder) > 0)
@@ -168,6 +175,18 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                @if($voucher->finished_good_rate > 0)
+                                    <div class="mt-2 p-2 rounded" style="background: #ffffff; border: 1px solid #10b981; border-left: 5px solid #10b981;">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center" style="font-size: 13px;">
+                                            <div><span class="text-muted">Raw Material Cost:</span> <strong class="text-dark">PKR {{ number_format($voucher->raw_material_cost, 2) }}</strong></div>
+                                            <div><span class="text-muted">Milling Overheads:</span> <strong class="text-dark">+ PKR {{ number_format($voucher->milling_cost, 2) }}</strong></div>
+                                            <div><span class="text-muted">By-Product Recovery:</span> <strong class="text-danger">- PKR {{ number_format($voucher->by_product_cost, 2) }}</strong></div>
+                                            <div><span class="text-muted">Net FG Cost:</span> <strong class="text-success">PKR {{ number_format($voucher->net_finished_good_cost, 2) }}</strong></div>
+                                            <div><span class="badge badge-success p-1 px-2" style="font-size: 12px;"><i class="ft-tag mr-1"></i>FG Rate: PKR {{ number_format($voucher->finished_good_rate, 2) }} / KG</span></div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </td>
                     </tr>
