@@ -9,9 +9,10 @@ use App\Models\Master\{InspectionCompany, FumigationCompany, ArrivalLocation,Com
 use App\Models\Product;
 use App\Models\Acl\Company;
 use App\Models\User;
+use App\Traits\HasApproval;
 class JobOrder extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasApproval;
 
     protected $fillable = [
         'job_order_no',
@@ -33,6 +34,8 @@ class JobOrder extends Model
         'company_id',
         'export_order_id',
         'job_order_request_id',
+        'am_approval_status',
+        'am_change_made',
     ];
 
     protected $casts = [

@@ -16,9 +16,6 @@ use App\Http\Controllers\Production\ProductionDryingController;
 use App\Http\Controllers\Production\ProductionSteamParboilingController;
 use App\Http\Controllers\Production\ProductionAnalysisRequestController;
 use App\Http\Controllers\Production\ProductionMachineAnalysisController;
-
-
-
 use App\Http\Controllers\Production\JobOrderRequestController;
 
 Route::get('job-order-requests/get-number', [JobOrderRequestController::class, 'getNumber'])->name('job-order-requests.get-number');
@@ -49,7 +46,7 @@ Route::post('get-job-order-rm-qc', [JobOrderRawMaterialQcController::class, 'get
 Route::post('get-job-order-detail-for-rm-qc', [JobOrderRawMaterialQcController::class, 'getJobOrderDetails'])->name('get.job_order_details');
 Route::get('load-qc-commodities-tables', [JobOrderRawMaterialQcController::class, 'loadQcCommoditiesTables'])->name('load_qc_commodities_tables');
 
-
+Route::get('production-voucher/get-number', [ProductionVoucherController::class, 'getNumber'])->name('production-voucher.get-number');
 Route::resource('production-voucher', ProductionVoucherController::class);
 Route::post('get-production-voucher', [ProductionVoucherController::class, 'getList'])->name('get.production-voucher');
 Route::get('production-voucher/{id}/analysis-qc-view', [ProductionVoucherController::class, 'getAnalysisQcView'])->name('production-voucher.analysis-qc-view');

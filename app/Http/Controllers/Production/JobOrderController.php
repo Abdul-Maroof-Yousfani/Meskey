@@ -110,6 +110,9 @@ class JobOrderController extends Controller
         $jobOrder = JobOrder::with([
             'companyLocation',
             'product', 
+            'cropYear',
+            'exportOrder',
+            'jobOrderRequest',
             'packingItems.companyLocation',
             'packingItems.bagProduct',
             'packingItems.bagCondition',
@@ -296,6 +299,10 @@ class JobOrderController extends Controller
             $jobOrderData['inspection_company_id'] = $request->inspection_company_id ?? [];
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = $request->arrival_locations ?? [];
+
+            //  Reset am approval status and set am change made to 1
+            $jobOrderData['am_approval_status'] = 'approved';
+            $jobOrderData['am_change_made'] = 1;
 
             $jobOrder = JobOrder::create($jobOrderData);
 
@@ -546,6 +553,10 @@ class JobOrderController extends Controller
             $jobOrderData['inspection_company_id'] = $request->inspection_company_id ?? [];
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = $request->arrival_locations ?? [];
+            //  Reset am approval status and set am change made to 1
+            $jobOrderData['am_approval_status'] = 'approved';
+            // $jobOrderData['am_approval_status'] = 'pending';
+            $jobOrderData['am_change_made'] = 1;
 
             if ($request->export_order_id) {
                 $eo = \App\Models\Export\ExportOrder::with(['jobOrders.packingItems', 'packingItems'])->findOrFail($request->export_order_id);

@@ -71,19 +71,43 @@
                         @elseif($voucher->status == 'approved')
                             <span class="badge badge-info">Approved</span>
                         @endif
+
+                        @if(!empty($voucher->am_approval_status))
+                            @php
+                                $apprBadge = match(strtolower($voucher->am_approval_status)) {
+                                    'approved' => 'badge-success',
+                                    'rejected' => 'badge-danger',
+                                    'pending'  => 'badge-warning',
+                                    'reverted' => 'badge-info',
+                                    default    => 'badge-secondary',
+                                };
+                            @endphp
+                            <div class="mt-1">
+                                <span class="badge {{ $apprBadge }}">
+                                    Appr: {{ ucfirst($voucher->am_approval_status) }}
+                                </span>
+                            </div>
+                        @endif
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" 
-                                onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $voucher->id) }}', 'QC Checklist - {{ $voucher->prod_no }}', false, '50%')"
-                                class="btn btn-outline-info" title="View Performed Analysis / QC Checklist">
+                                onclick="openModal(this, '{{ route('production-voucher.show', $voucher->id) }}', 'View Production Voucher', false, '95%')"
+                                class="btn btn-outline-info" title="View Production Voucher">
                                 <i class="ft-eye"></i>
                             </button>
                             <button type="button" 
-                                onclick="window.location.href='{{ route('production-voucher.edit', $voucher->id) }}'"
-                                class="btn btn-outline-primary" title="Edit">
-                                <i class="ft-edit"></i>
+                                onclick="openModal(this, '{{ route('production-voucher.analysis-qc-view', $voucher->id) }}', 'QC Checklist - {{ $voucher->prod_no }}', false, '50%')"
+                                class="btn btn-outline-warning" title="QC Checklist / Performed Analysis">
+                                <i class="ft-check-square"></i>
                             </button>
+                            {{-- @if(!in_array(strtolower($voucher->am_approval_status ?? ''), ['approved', 'rejected'])) --}}
+                                <button type="button" 
+                                    onclick="window.location.href='{{ route('production-voucher.edit', $voucher->id) }}'"
+                                    class="btn btn-outline-primary" title="Edit">
+                                    <i class="ft-edit"></i>
+                                </button>
+                            {{-- @endif --}}
                             <button type="button" 
                                 onclick="deletemodal('{{ route('production-voucher.destroy', $voucher->id) }}','{{ route('get.production-voucher') }}')"
                                 class="btn btn-outline-danger" title="Delete">

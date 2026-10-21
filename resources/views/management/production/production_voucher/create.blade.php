@@ -603,8 +603,35 @@
                 filterAllInputLocations();
             }
 
+            function fetchProductionVoucherNumber() {
+                let locationId = $('#location_id').val();
+                let selectedDate = $('input[name="prod_date"]').val();
+
+                if (!locationId) {
+                    $('input[name="prod_no"]').val('');
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('production-voucher.get-number') }}",
+                    type: "GET",
+                    data: {
+                        location_id: locationId,
+                        prod_date: selectedDate
+                    },
+                    success: function(response) {
+                        if (response && response.success && response.prod_no) {
+                            $('input[name="prod_no"]').val(response.prod_no);
+                        } else if (typeof response === 'string') {
+                            $('input[name="prod_no"]').val(response);
+                        }
+                    }
+                });
+            }
+
             $('#location_id').on('change', function() {
                 filterAllInputLocations();
+                fetchProductionVoucherNumber();
             });
 
             $('#sub_location_id').on('change', function() {
@@ -624,26 +651,13 @@
 
             // Generate production number on date change
             $('input[name="prod_date"]').on('change', function() {
-                let selectedDate = $(this).val();
-
-                getUniversalNumber({
-                    table: 'production_vouchers',
-                    prefix: 'PRO',
-                    with_date: 1,
-                    column: 'prod_no',
-                    custom_date: selectedDate,
-                    date_format: 'm-Y',
-                    serial_at_end: 1,
-                }, function(no) {
-                    $('input[name="prod_no"]').val(no);
-                });
-
+                fetchProductionVoucherNumber();
                 loadMachinesByPlant();
             });
 
             // Generate production number on page load
-            if ($('input[name="prod_date"]').val()) {
-                $('input[name="prod_date"]').trigger('change');
+            if ($('#location_id').val() && $('input[name="prod_date"]').val()) {
+                fetchProductionVoucherNumber();
             }
         });
 

@@ -68,7 +68,7 @@
                                 </button>
                             @endif
                             <button type="button" 
-                                onclick="openModal(this,'{{ route('job-order-requests.show', $request->id) }}','Job Order Request View',true,'85%')"
+                                onclick="openModal(this,'{{ route('job-order-requests.show', $request->id) }}','Job Order Request View',false,'85%')"
                                 class="btn btn-outline-info btn-sm position-relative" title="View">    
                                 <i class="ft-eye"></i>
                             </button>

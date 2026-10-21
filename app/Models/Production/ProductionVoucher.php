@@ -8,10 +8,11 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasApproval;
 
 class ProductionVoucher extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasApproval;
 
     protected $fillable = [
         'company_id',
@@ -37,7 +38,9 @@ class ProductionVoucher extends Model
         'overhead_cost_per_kg',
         'status',
         'remarks',
-        'qc_remarks'
+        'qc_remarks',
+        'am_approval_status',
+        'am_change_made',
     ];
 
     protected $casts = [

@@ -26,6 +26,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class ProductionVoucherController extends Controller
 {
@@ -979,14 +980,7 @@ class ProductionVoucherController extends Controller
         DB::beginTransaction();
 
         try {
-            $uniqueProdNo = generateUniversalUniqueNo('production_vouchers', [
-                'prefix' => 'PRO',
-                'column' => 'prod_no',
-                'with_date' => 1,
-                'custom_date' => $request->prod_date,
-                'date_format' => 'm-Y',
-                'serial_at_end' => 1,
-            ]);
+            $uniqueProdNo = self::generateUniqueNumber($request->prod_date, $request->location_id);
 
             // Extract single values for main production voucher fields
             $productionVoucherData = [
@@ -1007,6 +1001,9 @@ class ProductionVoucherController extends Controller
                 'labour_net_amount' => $request->input('labour_net_amount'),
                 // 'status' => 'active',
             ];
+            //  Reset am approval status and set am change made to 1
+            $productionVoucherData['am_approval_status'] = 'approved';
+            $productionVoucherData['am_change_made'] = 1;
 
             // Handle multiple job orders - store first one in job_order_id for backward compatibility
             $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
@@ -1294,9 +1291,14 @@ class ProductionVoucherController extends Controller
 
             DB::commit();
 
+            // return response()->json([
+            //     'success' => 'Production Voucher created successfully.',
+            //     'redirect' => route('production-voucher.edit', $productionVoucher->id),
+            //     'data' => $productionVoucher
+            // ], 201);
             return response()->json([
                 'success' => 'Production Voucher created successfully.',
-                'redirect' => route('production-voucher.edit', $productionVoucher->id),
+                'redirect' => route('production-voucher.index'),
                 'data' => $productionVoucher
             ], 201);
 
@@ -1626,6 +1628,11 @@ class ProductionVoucherController extends Controller
             // Handle multiple job orders
             $jobOrderIds = is_array($request->job_order_id) ? $request->job_order_id : ($request->job_order_id ? [$request->job_order_id] : []);
             $productionVoucherData['job_order_id'] = !empty($jobOrderIds) ? $jobOrderIds[0] : null;
+            
+            //  Reset am approval status and set am change made to 1
+            $productionVoucherData['am_approval_status'] = 'approved';
+            // $productionVoucherData['am_approval_status'] = 'pending';
+            $productionVoucherData['am_change_made'] = 1;
 
             $productionVoucher->update($productionVoucherData);
 
@@ -2726,5 +2733,101 @@ class ProductionVoucherController extends Controller
             'productionVoucher',
             'qcGroups'
         ));
+    }
+
+    public function show($id)
+    {
+        $productionVoucher = ProductionVoucher::with([
+            'product',
+            'byProducts',
+            'location',
+            'plant',
+            'jobOrder',
+            'jobOrders.product',
+            'supervisor',
+            'inputs.product',
+            'inputs.location',
+            'outputs.product',
+            'outputs.storageLocation',
+            'outputs.brand',
+            'slots.breaks',
+            'productionMachines'
+        ])->findOrFail($id);
+
+        return view('management.production.production_voucher.view_production_voucher', compact('productionVoucher'));
+    }
+
+    public static function generateUniqueNumber($dateParam = null, $locationParam = null)
+    {
+        try {
+            $datePart = $dateParam ? Carbon::parse($dateParam)->format('m-d-Y') : date('m-d-Y');
+        } catch (\Exception $e) {
+            $datePart = date('m-d-Y');
+        }
+
+        if (empty($locationParam)) {
+            $locationParam = request('location_id') ?? request('company_location_id') ?? auth()->user()?->company_location_id;
+        }
+
+        $locationCode = 'LOC';
+        if ($locationParam) {
+            if ($locationParam instanceof CompanyLocation) {
+                $locationCode = $locationParam->code ?: 'LOC';
+            } elseif (is_numeric($locationParam)) {
+                $loc = CompanyLocation::find($locationParam);
+                $locationCode = $loc?->code ?: 'LOC';
+            } elseif (is_string($locationParam)) {
+                $loc = CompanyLocation::where('code', $locationParam)->first();
+                $locationCode = $loc ? $loc->code : $locationParam;
+            }
+        }
+
+        $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
+        $prefix = $locationCode . '-PRO-MIL';
+
+        $searchPattern = $prefix . '-%-' . $datePart;
+
+        $existing = ProductionVoucher::withTrashed()
+            ->where('prod_no', 'like', $searchPattern)
+            ->lockForUpdate()
+            ->pluck('prod_no')
+            ->toArray();
+
+        $maxNumber = 0;
+        $regex = '/^' . preg_quote($prefix, '/') . '-(\d+)-' . preg_quote($datePart, '/') . '$/';
+        foreach ($existing as $no) {
+            if (preg_match($regex, $no, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNumber) {
+                    $maxNumber = $num;
+                }
+            }
+        }
+
+        $newNumber = $maxNumber + 1;
+        $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
+
+        while (in_array($candidate, $existing) || ProductionVoucher::withTrashed()->where('prod_no', $candidate)->exists()) {
+            $newNumber++;
+            $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
+        }
+
+        return $candidate;
+    }
+
+    public function getNumber(Request $request)
+    {
+        $dateParam = $request->prod_date ?? $request->date ?? date('Y-m-d');
+        $locationParam = $request->location_id ?? $request->company_location_id ?? null;
+        $prodNo = self::generateUniqueNumber($dateParam, $locationParam);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'prod_no' => $prodNo
+            ]);
+        }
+
+        return $prodNo;
     }
 }

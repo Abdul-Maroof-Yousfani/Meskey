@@ -148,6 +148,34 @@ class JobOrderRequest extends Model
             });
     }
 
+    /**
+     * Override createApprovalRows from HasApproval trait to handle duplicates safely
+     */
+    public function createApprovalRows()
+    {
+        $module = $this->getApprovalModule();
+        if (!$module) {
+            return;
+        }
+
+        $currentCycle = $this->getCurrentApprovalCycle();
+
+        foreach ($module->roles as $moduleRole) {
+            \App\Models\ApprovalsModule\ApprovalRow::updateOrCreate(
+                [
+                    'module_id' => $module->id,
+                    'record_id' => $this->id,
+                    'role_id' => $moduleRole->role_id,
+                    'approval_cycle' => $currentCycle,
+                ],
+                [
+                    'required_count' => $moduleRole->approval_count,
+                    'current_count' => 0,
+                    'status' => 'pending'
+                ]
+            );
+        }
+    }
     public function getRemainingKgsAttribute()
     {
         return max(0, (float) $this->total_kgs - $this->consumed_kgs);

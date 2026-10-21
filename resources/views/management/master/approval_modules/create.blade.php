@@ -124,6 +124,30 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Auto fill slug from module name on keypress/input
+            let isSlugManual = false;
+
+            $('#slug').on('input', function() {
+                isSlugManual = $(this).val().trim().length > 0;
+            });
+
+            $('#name').on('input keyup', function() {
+                if (!isSlugManual) {
+                    let slug = $(this).val()
+                        .toLowerCase()
+                        .replace(/[^\w\s-]/g, '')
+                        .replace(/[\s_]+/g, '-')
+                        .replace(/^-+/, '');
+                    $('#slug').val(slug);
+                }
+            });
+
+            $('#name').on('blur', function() {
+                if (!isSlugManual) {
+                    $('#slug').val($('#slug').val().replace(/-+$/, ''));
+                }
+            });
+
             $('.role-checkbox').change(function() {
                 const row = $(this).closest('.role-row');
                 const approvalCountInput = row.find('.approval-count');
