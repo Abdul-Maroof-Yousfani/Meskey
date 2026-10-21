@@ -257,14 +257,12 @@ class ArrivalTicket extends Model
     public function lastInitialSampling()
     {
         return $this->hasOne(ArrivalSamplingRequest::class)
-            ->where('is_done', 'yes')
             ->latestOfMany();
     }
     public function firstInitialSampling()
     {
         return $this->hasOne(ArrivalSamplingRequest::class)
             ->where('sampling_type', 'initial')
-            ->where('is_done', 'yes')
             ->oldestOfMany();
     }
 

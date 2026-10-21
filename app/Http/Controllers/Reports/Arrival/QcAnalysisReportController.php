@@ -55,7 +55,7 @@ class QcAnalysisReportController extends Controller
                 'unloadingLocation',
                 'arrivalSamplingRequests',
                 'lastInitialSampling' => function ($q) {
-                    $q->with([
+                    $q->where('is_done', 'yes')->with([
                         'takenByUser',
                         'approvedByUser',
                         'doneByUser',
