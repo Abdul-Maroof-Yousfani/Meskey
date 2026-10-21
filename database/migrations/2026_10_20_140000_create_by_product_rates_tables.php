@@ -15,13 +15,13 @@ return new class extends Migration
             Schema::create('by_product_rates', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('company_id')->nullable()->index();
-                $table->unsignedBigInteger('location_id')->nullable()->index();
+                $table->unsignedBigInteger('location_id')->nullable(false)->index();
                 $table->unsignedBigInteger('sublocation_id')->nullable()->index();
                 $table->unsignedBigInteger('plant_id')->nullable()->index();
                 $table->unsignedBigInteger('product_id')->index();
                 $table->string('title')->nullable();
-                $table->date('from_date')->index();
-                $table->date('to_date')->index();
+                $table->date('from_date')->nullable()->index();
+                $table->date('to_date')->nullable()->index();
                 $table->text('description')->nullable();
                 $table->tinyInteger('status')->default(1)->comment('1: Active, 0: Inactive');
                 $table->unsignedBigInteger('created_by')->nullable();
