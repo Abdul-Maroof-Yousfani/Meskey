@@ -102,6 +102,14 @@
                 </div>
             </div>
 
+            <datalist id="pusherSettingKeysList">
+                <option value="PUSHER_APP_ID">Pusher Application ID</option>
+                <option value="PUSHER_APP_KEY">Pusher Public Key</option>
+                <option value="PUSHER_APP_SECRET">Pusher Secret Key</option>
+                <option value="PUSHER_APP_CLUSTER">Pusher Cluster (e.g. ap2, mt1, ap4)</option>
+                <option value="PUSHER_STATUS">Notification Status (1 = Active, 0 = Inactive)</option>
+            </datalist>
+
             <div class="card-body p-3">
                 <!-- Group Filter Navigation Pills -->
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap">
@@ -363,6 +371,10 @@ $(document).ready(function() {
 
     // Create a new setting row HTML
     function createNewSettingRowHtml(rowIdx, groupName) {
+        var isPusher = (groupName || '').toLowerCase() === 'pusher';
+        var listAttr = isPusher ? 'list="pusherSettingKeysList"' : '';
+        var placeholder = isPusher ? 'e.g. PUSHER_APP_KEY' : 'e.g. setting_key';
+
         return `
             <tr class="setting-row new-setting-row" data-id="" data-group="${groupName}">
                 <td>
@@ -372,7 +384,7 @@ $(document).ready(function() {
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-light text-muted px-2" style="font-size: 0.75rem;"><i class="ft-hash"></i></span>
                         </div>
-                        <input type="text" name="settings[${rowIdx}][key]" value="" class="form-control form-control-sm setting-key-input font-weight-bold" style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem;" placeholder="e.g. setting_key" autocomplete="off" />
+                        <input type="text" name="settings[${rowIdx}][key]" value="" class="form-control form-control-sm setting-key-input font-weight-bold" style="font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem;" placeholder="${placeholder}" ${listAttr} autocomplete="off" />
                     </div>
                 </td>
                 <td class="align-middle">
@@ -676,9 +688,28 @@ $(document).ready(function() {
         });
     });
 
-    // Clear validation highlighting on key input
-    $(document).on('input.companySettings', '.setting-key-input', function() {
-        $(this).removeClass('is-invalid');
+    // Clear validation highlighting & auto-detect type on key input
+    $(document).on('input.companySettings change.companySettings', '.setting-key-input', function() {
+        var $input = $(this);
+        $input.removeClass('is-invalid');
+
+        var keyVal = ($input.val() || '').trim().toUpperCase();
+        var $row = $input.closest('tr');
+        var group = ($row.data('group') || '').toLowerCase();
+
+        if (group === 'pusher') {
+            if (keyVal === 'PUSHER_STATUS' || keyVal === 'STATUS') {
+                var $typeSelect = $row.find('.setting-type-select');
+                if ($typeSelect.length && $typeSelect.val() !== 'boolean') {
+                    $typeSelect.val('boolean').trigger('change');
+                }
+            } else if (keyVal === 'PUSHER_APP_CLUSTER' || keyVal === 'CLUSTER') {
+                var $valInput = $row.find('.setting-value-input');
+                if ($valInput.length && !$valInput.val()) {
+                    $valInput.attr('placeholder', 'ap2');
+                }
+            }
+        }
     });
 
     // Form submission validation & cleanup of empty new rows

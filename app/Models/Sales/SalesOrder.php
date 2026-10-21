@@ -360,6 +360,13 @@ class SalesOrder extends Model
                     $matchFactory($familyQ, $userFactoryIds);
                 });
             }
+
+            // 4. Head Office Approvers can see SOs matching their assigned factories
+            if ($user->can('headoffice-saleorder-approval')) {
+                $q->orWhere(function ($hoQ) use ($userFactoryIds, $matchFactory) {
+                    $matchFactory($hoQ, $userFactoryIds);
+                });
+            }
         });
     }
 

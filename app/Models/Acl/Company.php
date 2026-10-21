@@ -61,4 +61,12 @@ class Company extends Model
             ]
         );
     }
+
+    /**
+     * Get dynamic Pusher credentials and settings for this company.
+     */
+    public function getPusherConfig(): array
+    {
+        return getPusherConfig($this);
+    }
 }

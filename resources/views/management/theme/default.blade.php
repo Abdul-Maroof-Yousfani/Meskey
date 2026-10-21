@@ -41,16 +41,25 @@
 <script>
 
     $( document ).ready(function() {
-
-        // Pusher.logToConsole = true;
-        var pusher = new Pusher('d78b806e6903203a5d31', {
-            cluster: 'ap4'
+        @php
+            $pusherCfg = function_exists('getPusherConfig') ? getPusherConfig() : null;
+        @endphp
+        @if(!empty($pusherCfg['enabled']) && !empty($pusherCfg['key']))
+        var pusher = new Pusher("{{ $pusherCfg['key'] }}", {
+            cluster: "{{ $pusherCfg['cluster'] ?? 'ap2' }}"
         });
 
         var channel = pusher.subscribe('notify-channel');
         channel.bind('notify-event', function(data) {
-            if(data.user_id == '<?php echo auth()->user()->id ?>'){
-                //alert(JSON.stringify(data));
+            var currentUserId = Number({{ auth()->user()->id ?? 0 }});
+            var currentCompanyId = Number({{ getCurrentCompany()?->id ?? 0 }});
+
+            if (data.company_id && currentCompanyId && Number(data.company_id) !== currentCompanyId) {
+                return;
+            }
+
+            var isRecipient = !data.user_ids || data.user_ids.length === 0 || data.user_ids.map(Number).includes(currentUserId);
+            if (isRecipient || data.user_id == currentUserId) {
                 toastr.options = {
                     closeButton: true,
                     progressBar: true,
@@ -61,6 +70,7 @@
                 toastr.info(data.message);
             }
         });
+        @endif
     });
 
     var quill = new Quill('#email-message-editor', {

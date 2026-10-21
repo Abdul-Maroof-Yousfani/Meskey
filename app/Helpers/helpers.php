@@ -148,10 +148,93 @@ if (!function_exists('getCurrentCompany')) {
     function getCurrentCompany()
     {
         $user = Auth::user();
-        if (!$user || !$user->current_company_id) {
+        $companyId = $user?->current_company_id ?: session('company_id');
+        if (!$companyId) {
             return null;
         }
-        return Company::find($user->current_company_id);
+        return Company::find($companyId);
+    }
+}
+
+if (!function_exists('getPusherConfig')) {
+    /**
+     * Get dynamic Pusher credentials and settings for a company.
+     * Strictly reads from Company Settings (group: 'pusher').
+     * If the company has no pusher settings or keys are missing, Pusher will NOT run (no .env fallback).
+     *
+     * @param Company|int|null $company
+     * @return array
+     */
+    function getPusherConfig($company = null): array
+    {
+        $companyModel = null;
+        if ($company instanceof Company) {
+            $companyModel = $company;
+        } elseif (!empty($company) && is_numeric($company)) {
+            $companyModel = Company::find($company);
+        } else {
+            $companyModel = getCurrentCompany();
+        }
+
+        if (!$companyModel) {
+            return [
+                'enabled'    => false,
+                'status'     => false,
+                'app_id'     => '',
+                'key'        => '',
+                'secret'     => '',
+                'cluster'    => 'ap2',
+                'source'     => 'none',
+                'company_id' => null,
+            ];
+        }
+
+        // Retrieve all settings in group 'pusher' for this company
+        $settings = $companyModel->settings()->where('group', 'pusher')->get();
+        if ($settings->isEmpty()) {
+            return [
+                'enabled'    => false,
+                'status'     => false,
+                'app_id'     => '',
+                'key'        => '',
+                'secret'     => '',
+                'cluster'    => 'ap2',
+                'source'     => 'none',
+                'company_id' => $companyModel->id,
+            ];
+        }
+
+        $map = [];
+        foreach ($settings as $s) {
+            $cleanKey = strtolower(trim($s->key));
+            $map[$cleanKey] = $s->casted_value;
+        }
+
+        // Support key name variations (e.g. PUSHER_APP_ID, pusher_app_id, app_id, etc.)
+        $appId = $map['pusher_app_id'] ?? $map['app_id'] ?? null;
+        $appKey = $map['pusher_app_key'] ?? $map['app_key'] ?? $map['key'] ?? null;
+        $appSecret = $map['pusher_app_secret'] ?? $map['app_secret'] ?? $map['secret'] ?? null;
+        $appCluster = $map['pusher_app_cluster'] ?? $map['cluster'] ?? 'ap2';
+
+        $status = true;
+        if (array_key_exists('pusher_status', $map)) {
+            $status = filter_var($map['pusher_status'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (array_key_exists('status', $map)) {
+            $status = filter_var($map['status'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $hasRequiredCredentials = !empty($appId) && !empty($appKey) && !empty($appSecret);
+
+        return [
+            'enabled'    => $status && $hasRequiredCredentials,
+            'status'     => $status,
+            'app_id'     => !empty($appId) ? (string)$appId : '',
+            'key'        => !empty($appKey) ? (string)$appKey : '',
+            'secret'     => !empty($appSecret) ? (string)$appSecret : '',
+            'cluster'    => !empty($appCluster) ? (string)$appCluster : 'ap2',
+            'source'     => 'company_settings',
+            'company_id' => $companyModel->id,
+        ];
     }
 }
 
