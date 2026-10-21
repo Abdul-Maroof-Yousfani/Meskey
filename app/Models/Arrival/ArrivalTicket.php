@@ -264,6 +264,7 @@ class ArrivalTicket extends Model
     {
         return $this->hasOne(ArrivalSamplingRequest::class)
             ->where('sampling_type', 'initial')
+            ->where('is_done', 'yes')
             ->oldestOfMany();
     }
 
