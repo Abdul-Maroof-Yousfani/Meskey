@@ -186,6 +186,14 @@
                     </td>
 
                     <td>
+                        @canAccess('user-list')
+                        <a onclick="openModal(this,'{{ route('users-test.audit-logs', $user->id) }}','Audit Logs: User {{ $user->name }} ({{ $user->username }})', false, '55%')"
+                            class="info p-1 text-center mr-2 position-relative cursor-pointer"
+                            title="Audit Logs" style="cursor: pointer;">
+                            <i class="fa fa-history font-medium-3" style="color: #17a2b8;"></i>
+                        </a>
+                        @endcanAccess
+
                         @canAccess('user-edit')
                         <a href="{{ route('users-test.edit', $user->id) }}"
                             class="info p-1 text-center mr-2 position-relative ">
