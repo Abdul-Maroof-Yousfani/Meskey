@@ -456,7 +456,7 @@ class TicketController extends Controller
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
 
-            $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
+            $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial') 
                 ->where('arrival_ticket_id', $arrivalTicket->id)
                 ->where('approved_status', '!=', 'pending')
                 ->orderBy('created_at', 'asc')
@@ -464,7 +464,7 @@ class TicketController extends Controller
 
             $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
                 ->where('arrival_ticket_id', $arrivalTicket->id)
-                ->where('approved_status', '!=', 'pending')
+                // ->where('approved_status', '!=', 'pending')
                 ->where('id', '!=', $arrivalSamplingRequest->id)
                 ->orderBy('created_at', 'asc')
                 ->get();
