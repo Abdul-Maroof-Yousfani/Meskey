@@ -392,16 +392,14 @@ class TicketController extends Controller
 
         $arrivalTicket = ArrivalTicket::findOrFail($id);
 
-        // $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
-        //     ->where('is_done', 'yes')
-        //     ->groupBy('arrival_ticket_id')
-        //     ->pluck('id');
-
-
-        // dd($latestRequestIds);
-        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
+        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
             ->where('is_done', 'yes')
-            // ->whereIn('id', $latestRequestIds)
+            ->groupBy('arrival_ticket_id')
+            ->pluck('id');
+
+
+        $arrivalSamplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
+            ->whereIn('id', $latestRequestIds)
             ->where(function ($q) {
                 $q->where('approved_status', '!=', 'pending')
                     ->orWhere(function ($q) {
