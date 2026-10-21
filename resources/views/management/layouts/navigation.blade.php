@@ -1856,15 +1856,54 @@
                         </ul>
                     </li>
                     @endcanAccess
-                    @canAccess('manage-divisions')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('division.index') }}"
-                            onclick="loadPageContent('{{ route('division.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Divisions</span>
+                    @canAccess('master-others')
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
+                        <a class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown">
+                            <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Others
+                                Master</span>
                         </a>
+                        <ul class="dropdown-menu">
+                            @canAccess('manage-divisions')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('division.index') }}"
+                                    onclick="loadPageContent('{{ route('division.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Manage Divisions</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('country')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('country.index') }}"
+                                    onclick="loadPageContent('{{ route('country.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Manage Countries</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('city')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('cities.index') }}"
+                                    onclick="loadPageContent('{{ route('cities.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Manage Cities</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('ports')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('ports.index') }}"
+                                    onclick="loadPageContent('{{ route('ports.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i>
+                                    <span data-i18n="Task Board">Manage Ports</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                        </ul>
                     </li>
                     @endcanAccess
+
 
                     @canAccess('arrival-doubt-trucks')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -1884,31 +1923,8 @@
                         </a>
                     </li>
                     @endcanAccess
-                    @canAccess('country')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('country.index') }}"
-                            onclick="loadPageContent('{{ route('country.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Countries</span>
-                        </a>
-                    </li>
-                    @endcanAccess
-                    @canAccess('city')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('cities.index') }}" onclick="loadPageContent('{{ route('cities.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Cities</span>
-                        </a>
-                    </li>
-                    @endcanAccess
-                    @canAccess('ports')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('ports.index') }}" onclick="loadPageContent('{{ route('ports.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Manage Ports</span>
-                        </a>
-                    </li>
-                    @endcanAccess
+
+
                     @canAccess('clearing-agent')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('clearing-agent.index') }}"
