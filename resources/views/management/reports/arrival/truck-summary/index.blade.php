@@ -192,13 +192,7 @@
             );
 
 
-            $('#filterForm').on('submit', function (e) {
-
-                e.preventDefault();
-
-                $('.selectWithoutAjax').select2();
-
-            
+            $('#date_filter').on('change', function () {
                 var selected = $(this).val();
                 if (selected === 'custom') {
                     $('#daterange').prop('disabled', false);
@@ -207,7 +201,11 @@
                     $('#daterange').prop('disabled', true);
                     $('#daterange_wrapper').slideUp(200);
                 }
-                
+            });
+
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                $('.selectWithoutAjax').select2();
 
                 // Filter/data request
                 runFilter();

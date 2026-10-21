@@ -27,36 +27,9 @@ class GalaQcReportController extends Controller
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
 
-        // Get distinct years from arrival tickets, with fallback to current & previous years
-        $dbYears = ArrivalTicket::selectRaw('DISTINCT YEAR(created_at) as yr')
-            ->whereNotNull('created_at')
-            ->orderBy('yr', 'desc')
-            ->pluck('yr')
-            ->filter()
-            ->toArray();
-
-        $currentYear = (int) Carbon::now()->year;
-        $years = array_unique(array_merge($dbYears, [$currentYear, $currentYear - 1, $currentYear - 2]));
-        rsort($years);
-
-        $months = [
-            1 => 'January',
-            2 => 'February',
-            3 => 'March',
-            4 => 'April',
-            5 => 'May',
-            6 => 'June',
-            7 => 'July',
-            8 => 'August',
-            9 => 'September',
-            10 => 'October',
-            11 => 'November',
-            12 => 'December',
-        ];
-
         $product_slab_types = collect();
 
-        return view('management.reports.arrival.gala-qc.index', compact('commodities', 'locations', 'years', 'months', 'product_slab_types'));
+        return view('management.reports.arrival.gala-qc.index', compact('commodities', 'locations', 'product_slab_types'));
     }
 
     public function getList(Request $request)
@@ -71,6 +44,49 @@ class GalaQcReportController extends Controller
         if (!$isSuperAdmin && $authUser) {
             [$isOutSourcePurchaser, $decisionUserIds] = app(ArrivalDashboardService::class)
                 ->resolveOutSourcePurchaserContext($authUser, $authUser->current_company_id);
+        }
+
+        $dateFilter = $request->input('date_filter', 'last_7_days');
+        $startDate = null;
+        $endDate = null;
+
+        if ($dateFilter === 'today') {
+            $startDate = Carbon::today()->format('Y-m-d');
+            $endDate = Carbon::today()->format('Y-m-d');
+        } elseif ($dateFilter === 'last_7_days') {
+            $startDate = Carbon::today()->subDays(6)->format('Y-m-d');
+            $endDate = Carbon::today()->format('Y-m-d');
+        } elseif ($dateFilter === 'last_30_days') {
+            $startDate = Carbon::today()->subDays(29)->format('Y-m-d');
+            $endDate = Carbon::today()->format('Y-m-d');
+        } elseif ($dateFilter === 'custom' || $request->filled('daterange')) {
+            if ($request->filled('daterange')) {
+                $dates = explode(' - ', $request->daterange);
+                if (count($dates) == 2) {
+                    try {
+                        $startDate = Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                        $endDate = Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        try {
+                            $startDate = Carbon::parse(trim($dates[0]))->format('Y-m-d');
+                            $endDate = Carbon::parse(trim($dates[1]))->format('Y-m-d');
+                        } catch (\Exception $e2) {
+                            $startDate = Carbon::today()->subDays(29)->format('Y-m-d');
+                            $endDate = Carbon::today()->format('Y-m-d');
+                        }
+                    }
+                }
+            }
+            if (!$startDate) {
+                $startDate = Carbon::today()->subDays(29)->format('Y-m-d');
+                $endDate = Carbon::today()->format('Y-m-d');
+            }
+        } elseif ($dateFilter === 'all') {
+            $startDate = null;
+            $endDate = null;
+        } else {
+            $startDate = Carbon::today()->subDays(6)->format('Y-m-d');
+            $endDate = Carbon::today()->format('Y-m-d');
         }
 
         $query = ArrivalTicket::select('arrival_tickets.*')
@@ -104,23 +120,18 @@ class GalaQcReportController extends Controller
                     $q->whereIn('arrival_tickets.location_id', $locationIds);
                 }
             })
-            // Year filter
+            // Date filter
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
+                    ->whereDate('arrival_tickets.created_at', '<=', $endDate);
+            })
+            // Year filter fallback
             ->when($request->filled('year') && $request->year !== 'all', function ($q) use ($request) {
                 $q->whereYear('arrival_tickets.created_at', $request->year);
             })
-            // Month filter
+            // Month filter fallback
             ->when($request->filled('month') && $request->month !== 'all', function ($q) use ($request) {
                 $q->whereMonth('arrival_tickets.created_at', $request->month);
-            })
-            // Date Range filter (fallback if year or month not set)
-            ->when($request->filled('daterange') && (!$request->filled('year') || $request->year === 'all') && (!$request->filled('month') || $request->month === 'all'), function ($q) use ($request) {
-                $dates = explode(' - ', $request->daterange);
-                if (count($dates) == 2) {
-                    $startDate = Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-                    $endDate = Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
-                    $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
-                        ->whereDate('arrival_tickets.created_at', '<=', $endDate);
-                }
             })
             // Status filter (Multiple items / single item support)
             ->when($request->filled('status_id'), function ($q) use ($request) {

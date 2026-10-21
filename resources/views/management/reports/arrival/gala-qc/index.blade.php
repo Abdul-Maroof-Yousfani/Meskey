@@ -62,33 +62,38 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Year filter --}}
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Year:</label>
-                                                    <select name="year" id="year" class="form-control selectWithoutAjax">
-                                                        <option value="all">All Years</option>
-                                                        @foreach ($years as $yr)
-                                                            <option value="{{ $yr }}" {{ request('year') == $yr ? 'selected' : '' }}>
-                                                                {{ $yr }}
-                                                            </option>
-                                                        @endforeach
+                                                    <label>Date Filter:</label>
+                                                    <select name="date_filter" id="date_filter"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="last_7_days"
+                                                            {{ request('date_filter', 'last_7_days') == 'last_7_days' ? 'selected' : '' }}>
+                                                            Last 7 days
+                                                        </option>
+                                                        <option value="last_30_days"
+                                                            {{ request('date_filter') == 'last_30_days' ? 'selected' : '' }}>
+                                                            Last 30 day
+                                                        </option>
+                                                        <option value="today"
+                                                            {{ request('date_filter') == 'today' ? 'selected' : '' }}>
+                                                            Today
+                                                        </option>
+                                                        <option value="custom"
+                                                            {{ request('date_filter') == 'custom' ? 'selected' : '' }}>
+                                                            Custom
+                                                        </option>
                                                     </select>
                                                 </div>
                                             </div>
 
-                                            {{-- Month filter --}}
-                                            <div class="col-md-2">
+                                            <div class="col-md-2" id="daterange_wrapper"
+                                                style="{{ request('date_filter') == 'custom' ? '' : 'display: none;' }}">
                                                 <div class="form-group mb-0">
-                                                    <label>Month:</label>
-                                                    <select name="month" id="month" class="form-control selectWithoutAjax">
-                                                        <option value="all">All Months</option>
-                                                        @foreach ($months as $num => $monthName)
-                                                            <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>
-                                                                {{ $monthName }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
+                                                    <label>Date Range:</label>
+                                                    <input type="text" name="daterange" id="daterange" class="form-control"
+                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}"
+                                                        {{ request('date_filter') == 'custom' ? '' : 'disabled' }} />
                                                 </div>
                                             </div>
 
@@ -143,6 +148,17 @@
     <script>
         $(document).ready(function () {
             $('.selectWithoutAjax').select2();
+
+            $('#date_filter').on('change', function () {
+                var selected = $(this).val();
+                if (selected === 'custom') {
+                    $('#daterange').prop('disabled', false);
+                    $('#daterange_wrapper').slideDown(200);
+                } else {
+                    $('#daterange').prop('disabled', true);
+                    $('#daterange_wrapper').slideUp(200);
+                }
+            });
 
             // Commodity "All" logic
             $('#commodity_id').on('select2:select', function (e) {
