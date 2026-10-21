@@ -22,7 +22,7 @@
                 <div class="card-body">
                     <form action="{{ route('by-product-rate.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
                         @csrf
-                        <input type="hidden" id="listRefresh" value="{{ route('by-product-rate.index') }}" />
+                        <input type="hidden" id="url" value="{{ route('by-product-rate.index') }}" />
 
                         <div class="row form-mar">
                             <div class="col-xs-12 col-sm-12 col-md-4">

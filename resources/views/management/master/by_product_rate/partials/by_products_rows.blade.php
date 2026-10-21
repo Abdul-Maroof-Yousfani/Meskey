@@ -37,8 +37,8 @@
     {{-- SECTION 1: B2 PRODUCTS --}}
     @if($b2Products->isNotEmpty())
         <div class="card border mb-3 shadow-none">
-            <div class="card-header bg-light-primary py-2 d-flex justify-content-between align-items-center" style="background-color: #e8f4fd;">
-                <span class="font-weight-bold text-white font-small-3">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background-color: #e8f4fd;">
+                <span class="font-weight-bold text-primary font-small-3">
                     B2 Products
                 </span>
                 <span class="badge badge-primary font-small-2">{{ $b2Products->count() }} Items</span>
@@ -94,11 +94,11 @@
     {{-- SECTION 2: BY-PRODUCTS --}}
     @if($byProducts->isNotEmpty())
         <div class="card border mb-2 shadow-none">
-            <div class="card-header bg-light-primary py-2 d-flex justify-content-between align-items-center" style="background-color: #eafbf1;">
-                <span class="font-weight-bold text-white font-small-3">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background-color: #eafbf1;">
+                <span class="font-weight-bold text-success font-small-3">
                     By-Products
                 </span>
-                <span class="badge badge-primary font-small-2">{{ $byProducts->count() }} Items</span>
+                <span class="badge badge-success font-small-2">{{ $byProducts->count() }} Items</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">

@@ -23,7 +23,7 @@
                     <form action="{{ route('by-product-rate.update', $byProductRate->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
                         @csrf
                         @method('PUT')
-                        <input type="hidden" id="listRefresh" value="{{ route('by-product-rate.index') }}" />
+                        <input type="hidden" id="url" value="{{ route('by-product-rate.index') }}" />
 
                         <div class="row form-mar">
                             <div class="col-xs-12 col-sm-12 col-md-4">
@@ -107,7 +107,7 @@
                                 <div class="card border mb-2 shadow-none">
                                     <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
                                         <h5 class="mb-0 font-weight-bold text-dark">
-                                            <i class="ft-list mr-1 text-primary"></i> B2 & By-Products Standard Recovery Rates
+                                            B2 & By-Products Standard Recovery Rates
                                         </h5>
                                         <small class="text-muted">Enter rate per KG for each product</small>
                                     </div>

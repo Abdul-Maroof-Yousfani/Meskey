@@ -603,6 +603,8 @@
                     $select.trigger('change.select2');
                 }
             });
+        }
+
         var costingPreviewTimeout = null;
         function loadCostingPreview() {
             clearTimeout(costingPreviewTimeout);

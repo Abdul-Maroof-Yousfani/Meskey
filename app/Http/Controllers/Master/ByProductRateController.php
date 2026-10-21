@@ -171,7 +171,7 @@ class ByProductRateController extends Controller
                 'exists' => true,
                 'id' => $duplicate->id,
                 'edit_url' => route('by-product-rate.edit', $duplicate->id),
-                'message' => "Iss product ({$productName}) k rates iss location ({$locationName}) pr already created hain, edit krlo unko.",
+                'message' => "This product ({$productName})'s rates are already created at this location ({$locationName}), please edit them.",
                 'product_name' => $productName,
                 'location_name' => $locationName,
             ]);
@@ -245,16 +245,16 @@ class ByProductRateController extends Controller
             $pName = $product?->name ?? 'Commodity';
             $lName = $location?->name ?? 'Location';
             $editUrl = route('by-product-rate.edit', $duplicate->id);
-            $msg = "Iss product ({$pName}) k rates iss location ({$lName}) pr already created hain, edit krlo unko.";
+            $plainMsg = "This Product ({$pName}) rates on location ({$lName}) are already created. Please edit them.";
+            $htmlMsg = "This Product (<b>{$pName}</b>) rates on location (<b>{$lName}</b>) are already created.<div class='mt-2'><a href='{$editUrl}' onclick='window.location.href=\"{$editUrl}\";' class='btn btn-warning font-weight-bold text-dark shadow-sm px-3 py-1' style='text-decoration:none;'><i class='ft-edit mr-1'></i> Edit Existing Rates</a></div>";
 
             return response()->json([
-                'error' => $msg,
+                'error' => $plainMsg,
                 'is_duplicate' => true,
                 'duplicate_id' => $duplicate->id,
                 'edit_url' => $editUrl,
                 'errors' => [
-                    'product_id' => [$msg],
-                    'location_id' => [$msg]
+                    'product_id' => [$htmlMsg]
                 ]
             ], 422);
         }
@@ -274,7 +274,11 @@ class ByProductRateController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => 'Product Rate created successfully.', 'data' => $rateRecord], 201);
+            return response()->json([
+                'success' => 'Product Rate created successfully.',
+                'redirect' => route('by-product-rate.index'),
+                'data' => $rateRecord
+            ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'Failed to save Product Rate: ' . $e->getMessage()], 500);
@@ -350,16 +354,16 @@ class ByProductRateController extends Controller
             $pName = $product?->name ?? 'Commodity';
             $lName = $location?->name ?? 'Location';
             $editUrl = route('by-product-rate.edit', $duplicate->id);
-            $msg = "Iss product ({$pName}) k rates iss location ({$lName}) pr already created hain, edit krlo unko.";
+            $plainMsg = "This Product ({$pName}) rates on location ({$lName}) are already created. Please edit them.";
+            $htmlMsg = "This Product (<b>{$pName}</b>) rates on location (<b>{$lName}</b>) are already created.<div class='mt-2'><a href='{$editUrl}' onclick='window.location.href=\"{$editUrl}\";' class='btn btn-warning font-weight-bold text-dark shadow-sm px-3 py-1' style='text-decoration:none;'><i class='ft-edit mr-1'></i> Edit Existing Rates</a></div>";
 
             return response()->json([
-                'error' => $msg,
+                'error' => $plainMsg,
                 'is_duplicate' => true,
                 'duplicate_id' => $duplicate->id,
                 'edit_url' => $editUrl,
                 'errors' => [
-                    'product_id' => [$msg],
-                    'location_id' => [$msg]
+                    'product_id' => [$htmlMsg]
                 ]
             ], 422);
         }
@@ -381,7 +385,11 @@ class ByProductRateController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => 'Product Rate updated successfully.', 'data' => $byProductRate], 200);
+            return response()->json([
+                'success' => 'Product Rate updated successfully.',
+                'redirect' => route('by-product-rate.index'),
+                'data' => $byProductRate
+            ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'Failed to update Product Rate: ' . $e->getMessage()], 500);
@@ -390,8 +398,17 @@ class ByProductRateController extends Controller
 
     public function show(int $id)
     {
-        $byProductRate = ByProductRate::with(['location', 'subLocation', 'plant', 'product', 'items.product'])->findOrFail($id);
-        return view('management.master.by_product_rate.show', compact('byProductRate'));
+        $byProductRate = ByProductRate::with(['location', 'subLocation', 'plant', 'product', 'items.product.unitOfMeasure'])->findOrFail($id);
+        
+        $b2Items = $byProductRate->items->filter(function ($item) {
+            return ($item->product?->product_category_flags ?? '') === 'b2';
+        });
+
+        $byProductItems = $byProductRate->items->filter(function ($item) {
+            return ($item->product?->product_category_flags ?? '') !== 'b2';
+        });
+
+        return view('management.master.by_product_rate.show', compact('byProductRate', 'b2Items', 'byProductItems'));
     }
 
     public function destroy(int $id)

@@ -32,13 +32,10 @@
                     </td>
                     <td>
                         <strong class="text-dark">{{ $row->title }}</strong>
-                        @if($row->description)
-                            <small class="text-muted d-block text-truncate" style="max-width: 200px;">{{ $row->description }}</small>
-                        @endif
                     </td>
                     <td>
                         <span class="badge badge-info px-2 py-1 font-small-2">
-                            <i class="ft-layers mr-1"></i> {{ $row->items->count() }} By-Products
+                            {{ $row->items->count() }} By-Products
                         </span>
                         <div class="small text-muted mt-1" style="max-width: 280px;">
                             @foreach($row->items->take(3) as $it)
@@ -60,11 +57,11 @@
                     </td>
                     <td>
                         <button onclick="openModal(this,'{{ route('by-product-rate.show', $row->id) }}','View Product Rate')"
-                            type="button" class="btn btn-sm btn-outline-info" title="View Rate Details">
+                            type="button" class="btn btn-sm btn-info" title="View Rate Details">
                             <i class="ft-eye"></i>
                         </button>
                         <a href="{{ route('by-product-rate.edit', $row->id) }}"
-                            class="btn btn-sm btn-outline-warning" title="Edit Rate">
+                            class="btn btn-sm btn-warning" title="Edit Rate">
                             <i class="ft-edit"></i>
                         </a>
                     </td>
