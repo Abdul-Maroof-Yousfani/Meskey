@@ -41,6 +41,8 @@ Route::get("bag-request/getJobOrders", [BagRequestController::class, "getJobOrde
 Route::get("bag-request/getJobOrderItems", [BagRequestController::class, "getJobOrderItems"])->name("get.job-order-items");
 
 
+Route::get('job-order-rm-qc/get-number', [JobOrderRawMaterialQcController::class, 'getNumber'])->name('job-order-rm-qc.get-number');
+Route::get('job-order-rm-qc/get-job-orders-by-date', [JobOrderRawMaterialQcController::class, 'getJobOrdersByDate'])->name('job-order-rm-qc.get-job-orders-by-date');
 Route::resource('job-order-rm-qc', JobOrderRawMaterialQcController::class);
 Route::post('get-job-order-rm-qc', [JobOrderRawMaterialQcController::class, 'getList'])->name('get.job_order_rm_qc');
 Route::post('get-job-order-detail-for-rm-qc', [JobOrderRawMaterialQcController::class, 'getJobOrderDetails'])->name('get.job_order_details');

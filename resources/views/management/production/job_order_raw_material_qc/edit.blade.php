@@ -88,6 +88,30 @@ $(document).ready(function() {
         calculateWeightedAverage(commodityId);
     });
     updateCombinedAverage();
+
+    $('input[name="qc_date"]').on('change', function () {
+        var selectedDate = $(this).val();
+        var $select = $('#jobOrderSelect');
+        var currentJobOrderId = $select.val();
+
+        if (!selectedDate) return;
+
+        $.ajax({
+            url: "{{ route('job-order-rm-qc.get-job-orders-by-date') }}",
+            type: "GET",
+            data: { date: selectedDate },
+            success: function(response) {
+                $select.empty().append('<option value="">Select Job Order</option>');
+                if (response.job_orders && response.job_orders.length > 0) {
+                    $.each(response.job_orders, function(index, jo) {
+                        var isSelected = (currentJobOrderId && currentJobOrderId == jo.id) ? 'selected' : '';
+                        $select.append(`<option value="${jo.id}" ${isSelected}>${jo.job_order_no}</option>`);
+                    });
+                }
+                $select.trigger('change');
+            }
+        });
+    });
 });
 
 function loadJobOrderDetails() {

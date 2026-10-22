@@ -21,6 +21,7 @@ use App\Models\Master\{
 use Illuminate\Http\Request;
 use App\Http\Requests\Production\JobOrderRawMaterialQcRequest;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 class JobOrderRawMaterialQcController extends Controller
 {
     public function index()
@@ -109,28 +110,49 @@ class JobOrderRawMaterialQcController extends Controller
         ));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $user = auth()->user();
+        $selectedDate = $request->input('qc_date', $request->input('date', date('Y-m-d')));
 
-        $jobOrders = JobOrder::with('product')
-            ->where('status', 1)
-            ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
-                return $query->whereHas('packingItems', function ($q) use ($user) {
-                    $q->where('company_location_id', $user->company_location_id);
+        $jobOrders = JobOrder::with(['product', 'companyLocation'])
+            ->where(function ($q) {
+                $q->where('status', 'active')->orWhere('status', 1);
+            })
+            ->whereDate('job_order_date', $selectedDate)
+            ->when($user && $user->user_type !== 'super-admin' && $user->company_location_id, function ($query) use ($user) {
+                return $query->where(function ($q) use ($user) {
+                    $q->where('company_location_id', $user->company_location_id)
+                        ->orWhereHas('packingItems', function ($pi) use ($user) {
+                            $pi->where('company_location_id', $user->company_location_id);
+                        });
                 });
             })
+            ->latest()
             ->get();
 
         $products = Product::where('status', 1)->get();
 
+        $locationIds = getUserCurrentCompanyLocations();
+        if ($user && ($user->user_type === 'super-admin' || empty($locationIds))) {
+            $companyLocations = CompanyLocation::where('status', 'active')->get();
+        } else {
+            $companyLocations = CompanyLocation::whereIn('id', $locationIds)->where('status', 'active')->get();
+        }
+        $selectedLocation = count($companyLocations) == 1 ? $companyLocations->first() : ($user?->companyLocation ?? null);
+        if (!$selectedLocation && count($companyLocations) > 0) {
+            $selectedLocation = $companyLocations->first();
+        }
+
+        $qcNo = self::generateUniqueNumber($selectedDate, $selectedLocation?->id);
         $qcParameters = [];
 
         return view('management.production.job_order_raw_material_qc.create', compact(
             'jobOrders',
-            // 'companyLocations',
             'products',
-            'qcParameters'
+            'qcParameters',
+            'qcNo',
+            'selectedDate'
         ));
     }
 
@@ -232,10 +254,15 @@ class JobOrderRawMaterialQcController extends Controller
         try {
 
 
+            $qcNo = $request->qc_no;
+            if (empty($qcNo) || JobOrderRawMaterialQc::withTrashed()->where('qc_no', $qcNo)->exists()) {
+                $qcNo = self::generateUniqueNumber($request->qc_date, $request->company_location_id);
+            }
+
             // Create QC record
             $qc = JobOrderRawMaterialQc::create([
-                'company_id' => $request->company_id,
-                'qc_no' => $request->qc_no,
+                'company_id' => $request->company_id ?? auth()->user()?->company_id ?? 1,
+                'qc_no' => $qcNo,
                 'qc_date' => $request->qc_date,
                 'job_order_id' => $request->job_order_id,
                 'location_id' => $request->company_location_id,
@@ -299,7 +326,15 @@ class JobOrderRawMaterialQcController extends Controller
 
 
         
-        $jobOrders = JobOrder::where('status', 1)->get();
+        $selectedDate = $qc->qc_date ? $qc->qc_date->format('Y-m-d') : date('Y-m-d');
+        $jobOrders = JobOrder::where(function ($q) {
+                $q->where('status', 'active')->orWhere('status', 1);
+            })
+            ->where(function ($q) use ($selectedDate, $qc) {
+                $q->whereDate('job_order_date', $selectedDate)
+                  ->orWhere('id', $qc->job_order_id);
+            })
+            ->get();
         $companyLocations = CompanyLocation::where('status', 1)->get();
         $products = Product::where('status', 1)->get();
         $sublocations = ArrivalSubLocation::where('company_location_id',$qc->location_id)->where('status', 1)->get();
@@ -467,5 +502,128 @@ class JobOrderRawMaterialQcController extends Controller
         return response()->json([
             'success' => 'Raw Material QC deleted successfully.'
         ], 200);
+    }
+
+    public static function generateUniqueNumber($dateParam = null, $locationParam = null)
+    {
+        try {
+            $datePart = $dateParam ? Carbon::parse($dateParam)->format('m-d-Y') : date('m-d-Y');
+        } catch (\Exception $e) {
+            $datePart = date('m-d-Y');
+        }
+
+        if (empty($locationParam)) {
+            $locationParam = request('company_location_id') ?? request('location_id') ?? auth()->user()?->company_location_id;
+        }
+
+        $locationCode = 'LOC';
+        if ($locationParam) {
+            if ($locationParam instanceof CompanyLocation) {
+                $locationCode = $locationParam->code ?: 'LOC';
+            } elseif (is_numeric($locationParam)) {
+                $loc = CompanyLocation::find($locationParam);
+                $locationCode = $loc?->code ?: 'LOC';
+            } elseif (is_string($locationParam)) {
+                $loc = CompanyLocation::where('code', $locationParam)->first();
+                $locationCode = $loc ? $loc->code : $locationParam;
+            }
+        } else {
+            $userLocations = function_exists('getUserCurrentCompanyLocations') ? getUserCurrentCompanyLocations() : [];
+            if (!empty($userLocations)) {
+                $firstLoc = CompanyLocation::find($userLocations[0]);
+                if ($firstLoc && $firstLoc->code) {
+                    $locationCode = $firstLoc->code;
+                }
+            }
+            if ($locationCode === 'LOC') {
+                $firstLoc = CompanyLocation::where('status', 'active')->first();
+                if ($firstLoc && $firstLoc->code) {
+                    $locationCode = $firstLoc->code;
+                }
+            }
+        }
+
+        $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
+        $prefix = $locationCode . '-JORMQC-MIL';
+
+        $searchPattern = $prefix . '-%-' . $datePart;
+
+        $existing = JobOrderRawMaterialQc::withTrashed()
+            ->where('qc_no', 'like', $searchPattern)
+            ->lockForUpdate()
+            ->pluck('qc_no')
+            ->toArray();
+
+        $maxNumber = 0;
+        $regex = '/^' . preg_quote($prefix, '/') . '-(\d+)-' . preg_quote($datePart, '/') . '$/';
+        foreach ($existing as $no) {
+            if (preg_match($regex, $no, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNumber) {
+                    $maxNumber = $num;
+                }
+            }
+        }
+
+        $newNumber = $maxNumber + 1;
+        $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
+
+        while (in_array($candidate, $existing) || JobOrderRawMaterialQc::withTrashed()->where('qc_no', $candidate)->exists()) {
+            $newNumber++;
+            $candidate = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT) . '-' . $datePart;
+        }
+
+        return $candidate;
+    }
+
+    public function getNumber(Request $request)
+    {
+        $dateParam = $request->qc_date ?? $request->date ?? date('Y-m-d');
+        $locationParam = $request->company_location_id ?? $request->location_id ?? null;
+        $qcNo = self::generateUniqueNumber($dateParam, $locationParam);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'qc_no' => $qcNo
+            ]);
+        }
+
+        return $qcNo;
+    }
+
+    public function getJobOrdersByDate(Request $request)
+    {
+        $user = auth()->user();
+        $date = $request->input('date', $request->input('qc_date', date('Y-m-d')));
+
+        $jobOrders = JobOrder::with(['product', 'companyLocation'])
+            ->where(function ($q) {
+                $q->where('status', 'active')->orWhere('status', 1);
+            })
+            ->whereDate('job_order_date', $date)
+            ->when($user && $user->user_type !== 'super-admin' && $user->company_location_id, function ($query) use ($user) {
+                return $query->where(function ($q) use ($user) {
+                    $q->where('company_location_id', $user->company_location_id)
+                        ->orWhereHas('packingItems', function ($pi) use ($user) {
+                            $pi->where('company_location_id', $user->company_location_id);
+                        });
+                });
+            })
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'job_orders' => $jobOrders->map(function ($jobOrder) {
+                return [
+                    'id' => $jobOrder->id,
+                    'job_order_no' => $jobOrder->job_order_no,
+                    'company_location_id' => $jobOrder->company_location_id,
+                    'location_ids' => $jobOrder->company_locations->pluck('id')->toArray(),
+                    'product_name' => $jobOrder->product?->name ?? 'N/A'
+                ];
+            })
+        ]);
     }
 }
