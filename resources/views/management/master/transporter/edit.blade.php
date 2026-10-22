@@ -3,6 +3,12 @@
      @csrf
      @method('PUT')
      <input type="hidden" id="listRefresh" value="{{ route('get.transporter') }}" />
+
+     <div class="d-flex justify-content-end mb-2">
+         <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('transporter.audit-logs', $transporter->id) }}','Audit Logs: {{ $transporter->company_name ?? $transporter->name }} ({{ $transporter->unique_no }})', false, '55%')">
+             <i class="fa fa-history mr-1"></i> Audit Logs
+         </button>
+     </div>
  <div class="row form-mar mb-2">
         <div class="col-12">
             <h6 class="header-heading-sepration">
