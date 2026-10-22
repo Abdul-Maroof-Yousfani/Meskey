@@ -1427,6 +1427,58 @@ function receipt_voucher_balance($reference_id, $type = "sale_order", $exclude_r
         $total_overall_amount = SalesOrderData::where('sale_order_id', $reference_id)
             ->selectRaw('SUM(qty * rate) as total')
             ->value('total');
+
+        $soDoIds = \Illuminate\Support\Facades\DB::table('delivery_order')
+            ->where('so_id', $reference_id)
+            ->where('am_approval_status', '!=', 'rejected')
+            ->pluck('id')
+            ->toArray();
+
+        $creditJvs = (float) \Illuminate\Support\Facades\DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+            ->where(function ($q) use ($reference_id, $soDoIds) {
+                $q->where('journal_voucher_details.sales_order_id', $reference_id);
+                if (!empty($soDoIds)) {
+                    $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
+                }
+            })
+            ->sum('journal_voucher_details.credit_amount');
+
+        $debitJvs = (float) \Illuminate\Support\Facades\DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+            ->where(function ($q) use ($reference_id, $soDoIds) {
+                $q->where('journal_voucher_details.sales_order_id', $reference_id);
+                if (!empty($soDoIds)) {
+                    $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
+                }
+            })
+            ->sum('journal_voucher_details.debit_amount');
+
+        if ($creditJvs > $debitJvs) {
+            $total_spent += ($creditJvs - $debitJvs);
+        } else {
+            $total_spent += ($debitJvs - $creditJvs);
+        }
+
+        $dpvAmount = (float) \App\Models\PaymentVoucherData::where(function ($q) use ($reference_id, $soDoIds) {
+                $q->where('sales_order_id', $reference_id);
+                if (!empty($soDoIds)) {
+                    $q->orWhereIn('delivery_order_id', $soDoIds);
+                }
+            })
+            ->whereHas('paymentVoucher', function ($q) {
+                $q->whereNull('deleted_at');
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('amount');
+
+        $total_spent += $dpvAmount;
     } else {
         $total_overall_amount = SalesInvoiceData::where('sales_invoice_id', $reference_id)
             ->selectRaw('SUM(net_amount) as total')

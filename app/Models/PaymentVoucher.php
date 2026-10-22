@@ -127,6 +127,9 @@ class PaymentVoucher extends Model
 
         $pvController = app(\App\Http\Controllers\Finance\PaymentVoucherController::class);
 
+        $soAccumulated = [];
+        $doAccumulated = [];
+
         foreach ($this->paymentVoucherData as $index => $item) {
             $amount = (float) $item->amount;
             if ($amount <= 0) {
@@ -140,9 +143,10 @@ class PaymentVoucher extends Model
 
                 // Calculate remaining advance on SO excluding THIS voucher's amount
                 $remAdvance = $pvController->getSalesOrderRemainingAdvance($item->sales_order_id, $this->unique_no, $this->id);
+                $soAccumulated[$item->sales_order_id] = ($soAccumulated[$item->sales_order_id] ?? 0) + $amount;
 
-                if ($amount > $remAdvance + 0.01) {
-                    return "Cannot approve Payment Voucher {$this->unique_no}: Sales Order {$soRef} only has Rs. " . number_format($remAdvance, 2) . " available advance balance, but this voucher refunds Rs. " . number_format($amount, 2) . ". Balance may have been adjusted by a Journal Voucher or consumed.";
+                if ($soAccumulated[$item->sales_order_id] > $remAdvance + 0.01) {
+                    return "Cannot approve Payment Voucher {$this->unique_no}: Sales Order {$soRef} only has Rs. " . number_format($remAdvance, 2) . " available advance balance, but this voucher refunds Rs. " . number_format($soAccumulated[$item->sales_order_id], 2) . ". Balance may have been adjusted by a Journal Voucher or consumed.";
                 }
             }
 
@@ -151,57 +155,20 @@ class PaymentVoucher extends Model
                 $do = $item->deliveryOrder ?? \App\Models\Sales\DeliveryOrder::find($item->delivery_order_id);
                 $doRef = $do ? ($do->reference_no ?: "DO #{$item->delivery_order_id}") : "DO #{$item->delivery_order_id}";
 
-                $totalRemainingAmount = 0;
-                $totalDispatchedValue = 0;
+                $doAvailable = $pvController->getDeliveryOrderRemainingRefundAmount($do, $this->unique_no, $this->id);
+                $doAccumulated[$item->delivery_order_id] = ($doAccumulated[$item->delivery_order_id] ?? 0) + $amount;
 
-                if ($do) {
-                    foreach ($do->delivery_order_data as $dod) {
-                        $iDoQty = (float) $dod->qty;
-                        $iDcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $dod->id)
-                            ->whereHas('deliveryChallan', function ($q) {
-                                $q->where('am_approval_status', '!=', 'rejected');
-                            })
-                            ->sum('qty');
-                        $iRemQty = max(0, $iDoQty - $iDcQty);
-                        $iRate = (float) $dod->rate;
-                        $totalRemainingAmount += $iRemQty * $iRate;
-                        $totalDispatchedValue += $iDcQty * $iRate;
-                    }
-
-                    $attachedRvAmount = (float) \Illuminate\Support\Facades\DB::table('delivery_order_receipt_voucher as dorv')
-                        ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
-                        ->whereNull('rv.deleted_at')
-                        ->where('rv.am_approval_status', 'approved')
-                        ->where('dorv.delivery_order_id', $do->id)
-                        ->sum('dorv.amount');
-
-                    if ($attachedRvAmount > 0) {
-                        $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
-                        $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
-                    }
+                if ($doAccumulated[$item->delivery_order_id] > $doAvailable + 0.01) {
+                    return "Cannot approve Payment Voucher {$this->unique_no}: Delivery Order {$doRef} only has Rs. " . number_format($doAvailable, 2) . " returnable balance, but this voucher refunds Rs. " . number_format($doAccumulated[$item->delivery_order_id], 2) . ". Balance may have been adjusted by a Journal Voucher or consumed.";
                 }
 
-                // Deduct OTHER DPV refunds on this DO (exclude this voucher)
-                $otherRefunded = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $item->delivery_order_id)
-                    ->where('payment_voucher_id', '!=', $this->id)
-                    ->whereHas('paymentVoucher', function ($q) {
-                        $q->whereNull('deleted_at');
-                        $q->where('am_approval_status', '!=', 'rejected');
-                    })
-                    ->sum('amount');
-
-                // Deduct JV adjustments on this DO
-                $otherJvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $item->delivery_order_id)
-                    ->whereHas('journalVoucher', function ($q) {
-                        $q->whereNull('deleted_at');
-                        $q->where('am_approval_status', '!=', 'rejected');
-                    })
-                    ->sum('debit_amount');
-
-                $doAvailable = max(0, $totalRemainingAmount - $otherRefunded - $otherJvAdjusted);
-
-                if ($amount > $doAvailable + 0.01) {
-                    return "Cannot approve Payment Voucher {$this->unique_no}: Delivery Order {$doRef} only has Rs. " . number_format($doAvailable, 2) . " returnable balance, but this voucher refunds Rs. " . number_format($amount, 2) . ".";
+                if ($do && $do->so_id) {
+                    $soAccumulated[$do->so_id] = ($soAccumulated[$do->so_id] ?? 0) + $amount;
+                    $soNetTotal = $pvController->getSalesOrderTotalNetAdvance($do->so_id, $this->unique_no, $this->id);
+                    if ($soAccumulated[$do->so_id] > $soNetTotal + 0.01) {
+                        $soRef = \App\Models\Sales\SalesOrder::find($do->so_id)->reference_no ?? ("SO #" . $do->so_id);
+                        return "Cannot approve Payment Voucher {$this->unique_no}: The total refund for Delivery Order(s) and Sales Order {$soRef} exceeds the net remaining advance balance of Rs. " . number_format($soNetTotal, 2) . ".";
+                    }
                 }
             }
 

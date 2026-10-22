@@ -36,7 +36,7 @@
         </td>
         <td>
             <input type="number" step="0.01" readonly class="form-control net-amount"
-                name="items[{{ $idx }}][net_amount]" value="{{  round($item->amount, 2) }}">
+                name="items[{{ $idx }}][net_amount]" value="{{ round($balance, 2) }}">
         </td>
         <td>
             <input type="text" class="form-control line-desc" name="items[{{ $idx }}][line_desc]"

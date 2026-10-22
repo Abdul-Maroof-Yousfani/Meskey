@@ -632,23 +632,53 @@
 
             function setRowDebitAmount($row, amount) {
                 const num = parseFloat(amount);
-                if (!isNaN(num) && num > 0) {
-                    $row.find('.debit-input').attr('max', num.toFixed(2)).val(num.toFixed(2));
-                    $row.find('.credit-input').val('').removeAttr('max');
+                const currentCredit = parseFloat($row.find('.credit-input').val()) || 0;
+                const currentDebit = parseFloat($row.find('.debit-input').val()) || 0;
 
-                    const $allRows = $('#journalEntriesBody tr');
-                    if ($allRows.length === 2) {
-                        const $otherRow = $allRows.not($row);
-                        const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
-                        const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
-                        if (otherCredit > 0 || otherDebit === 0) {
-                            $otherRow.find('.credit-input').val(num.toFixed(2));
-                            $otherRow.find('.debit-input').val('');
-                        }
+                // 1. If this row already has a credit amount and no debit, it's explicitly a CREDIT row: preserve credit!
+                if (currentCredit > 0 && currentDebit === 0) {
+                    $row.find('.debit-input').removeAttr('max').val('');
+                    calculateTotals();
+                    return;
+                }
+
+                // 2. Check if other rows in the voucher have excess debit (meaning this row is needed as CREDIT)
+                const $allRows = $('#journalEntriesBody tr');
+                let totalOtherDebit = 0;
+                let totalOtherCredit = 0;
+                $allRows.not($row).each(function () {
+                    totalOtherDebit += parseFloat($(this).find('.debit-input').val()) || 0;
+                    totalOtherCredit += parseFloat($(this).find('.credit-input').val()) || 0;
+                });
+
+                if (totalOtherDebit > totalOtherCredit) {
+                    // Counter/receiving row (CREDIT side)
+                    const balanceNeeded = totalOtherDebit - totalOtherCredit;
+                    $row.find('.debit-input').removeAttr('max').val('');
+                    if (!$row.find('.credit-input').val() || parseFloat($row.find('.credit-input').val()) === 0) {
+                        $row.find('.credit-input').val(balanceNeeded.toFixed(2));
                     }
                 } else {
-                    $row.find('.debit-input').removeAttr('max').val('');
-                    $row.find('.credit-input').val('');
+                    // This row is a DEBIT row (withdrawing advance)
+                    if (!isNaN(num) && num > 0) {
+                        $row.find('.debit-input').attr('max', num.toFixed(2)).val(num.toFixed(2));
+                        $row.find('.credit-input').val('').removeAttr('max');
+
+                        if ($allRows.length === 2) {
+                            const $otherRow = $allRows.not($row);
+                            const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
+                            const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
+                            if (otherCredit > 0 || otherDebit === 0) {
+                                $otherRow.find('.credit-input').val(num.toFixed(2));
+                                $otherRow.find('.debit-input').val('');
+                            }
+                        }
+                    } else {
+                        $row.find('.debit-input').removeAttr('max').val('');
+                        if (currentCredit <= 0) {
+                            $row.find('.credit-input').val('');
+                        }
+                    }
                 }
                 calculateTotals();
             }
@@ -734,17 +764,20 @@
                                         $doSelect.append(opt);
                                     });
 
-                                    if (res.so_remaining_amount > 0.01) {
-                                        const optDirect = new Option(`Direct SO Advance (Rem: Rs. ${res.so_formatted_remaining})`, 'direct_so');
-                                        $(optDirect).attr('data-remaining-amount', res.so_remaining_amount);
-                                        $(optDirect).attr('data-reference-no', res.so_reference_no);
-                                        $doSelect.append(optDirect);
-                                    }
+                                    const directLabel = res.so_remaining_amount > 0.01
+                                        ? `Direct SO Advance (Rem: Rs. ${res.so_formatted_remaining})`
+                                        : `Direct SO (Order: ${res.so_reference_no})`;
+                                    const optDirect = new Option(directLabel, 'direct_so');
+                                    $(optDirect).attr('data-remaining-amount', res.so_remaining_amount);
+                                    $(optDirect).attr('data-reference-no', res.so_reference_no);
+                                    $doSelect.append(optDirect);
 
                                     $doSelect.prop('disabled', false).trigger('change.select2');
                                 } else {
                                     // No DOs created for this SO -> Auto adjust direct SO advance
-                                    const directText = `No DOs (Direct SO Rem: Rs. ${res.so_formatted_remaining})`;
+                                    const directText = res.so_remaining_amount > 0.01
+                                        ? `No DOs (Direct SO Rem: Rs. ${res.so_formatted_remaining})`
+                                        : `No DOs (Direct SO: ${res.so_reference_no})`;
                                     const opt = new Option(directText, 'direct_so', true, true);
                                     $(opt).attr('data-remaining-amount', res.so_remaining_amount);
                                     $(opt).attr('data-reference-no', res.so_reference_no);
