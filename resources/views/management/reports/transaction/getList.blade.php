@@ -19,7 +19,7 @@
         : date('d-m-Y', strtotime(request('start_date') ?? date('Y-m-01')));
 @endphp
 
-<div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
+<div class="table-responsive" style="max-height: 80vh; overflow-y: auto; ">
     <table class="table table-striped table-bordered table-hover mb-0" id="transactionTable">
         <thead
             style="position: sticky; top: 0; z-index: 10; background: #f8f9fa; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);">
