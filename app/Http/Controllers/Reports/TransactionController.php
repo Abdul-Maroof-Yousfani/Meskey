@@ -23,26 +23,31 @@ class TransactionController extends Controller
      */
     public function getTransactionsReport(Request $request)
     {
+        // Increase memory and execution time for detailed reports
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300);
+
         $openingBalance = 0;
         if ($request->filled('account_id') && $request->filled('daterange')) {
             $dates = explode(' - ', $request->daterange);
             $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-            
+
             $openingBalance = Transaction::where('account_id', $request->account_id)
                 ->where('voucher_date', '<', $startDate)
                 ->sum(DB::raw("CASE WHEN type = 'debit' THEN amount ELSE -amount END"));
         }
 
-        $query = Transaction::with(['account'])
+        $query = Transaction::query()->with([
+            'account:id,name',
+            'counterAccount:id,name',
+        ])
             ->orderBy('voucher_date', 'asc')
             ->orderBy('created_at', 'asc');
 
         $accountName = null;
         if ($request->filled('account_id')) {
             $query->where('account_id', $request->account_id);
-
-            $account = Account::find($request->account_id);
-            $accountName = $account ? $account->name : null;
+            $accountName = Account::where('id', $request->account_id)->value('name');
         }
 
         $query->when($request->filled('daterange'), function ($q) use ($request) {
