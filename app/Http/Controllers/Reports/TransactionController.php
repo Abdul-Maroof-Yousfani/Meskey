@@ -37,16 +37,17 @@ class TransactionController extends Controller
                 ->sum(DB::raw("CASE WHEN type = 'debit' THEN amount ELSE -amount END"));
         }
 
-        $query = Transaction::with(['account', 'counterAccount'])
+        $query = Transaction::query()->with([
+            'account:id,name',
+            'counterAccount:id,name',
+        ])
             ->orderBy('voucher_date', 'asc')
             ->orderBy('created_at', 'asc');
 
         $accountName = null;
         if ($request->filled('account_id')) {
             $query->where('account_id', $request->account_id);
-
-            $account = Account::find($request->account_id);
-            $accountName = $account ? $account->name : null;
+            $accountName = Account::where('id', $request->account_id)->value('name');
         }
 
         $query->when($request->filled('daterange'), function ($q) use ($request) {
