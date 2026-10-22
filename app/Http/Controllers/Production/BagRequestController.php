@@ -55,8 +55,7 @@ class BagRequestController extends Controller
     public function create()
     {
         $data['galas'] = ArrivalSubLocation::where('status', 'active')->get();
-        // $data['products'] = Product::all(); comment bcz of currently the bag type is use in joborder
-        $data['products'] = BagType::where('status', 1)->get();
+        $data['products'] = Product::all();
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
@@ -86,8 +85,7 @@ class BagRequestController extends Controller
             $stockCheckSetting = $company ? $company->settings()->where('key', 'stock_check')->first() : null;
             $isStockCheckRequired = $stockCheckSetting && filter_var($stockCheckSetting->value, FILTER_VALIDATE_BOOLEAN);
 
-            // $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
-            $products = BagType::whereIn("id", collect($request->items)->pluck("bag_type_id"))->get();
+            $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
 
             // Only check stock if stock_check setting exists and is enabled for this company
             if ($request->has('items') && $isStockCheckRequired) {
@@ -169,15 +167,31 @@ class BagRequestController extends Controller
                             $matchingSubItems = JobOrderPackingSubItem::whereHas('packingItem', function($q) use ($request) {
                                     $q->whereIn('job_order_id', $request->job_order_ids);
                                 })
-                                ->where('bag_product_id', $item['item_id'])
-                                ->where('brand_id', $item['brand_id'])
+                                ->where(function($q) use ($item) {
+                                    $q->where('bag_product_id', $item['item_id']);
+                                    $prod = Product::find($item['item_id']);
+                                    if ($prod) {
+                                        $bt = BagType::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($prod->name))])->first();
+                                        if ($bt) {
+                                            $q->orWhere('bag_type_id', $bt->id);
+                                        }
+                                    }
+                                })
+                                ->where(function($q) use ($item) {
+                                    $q->where('brand_id', $item['brand_id'])
+                                      ->orWhereNull('brand_id')
+                                      ->orWhereHas('packingItem', function($pq) use ($item) {
+                                          $pq->where('brand_id', $item['brand_id']);
+                                      });
+                                })
                                 ->get();
 
                             foreach ($matchingSubItems as $si) {
                                 if ($remainingToDistribute <= 0) break;
 
                                 $consumed = \App\Models\Production\BagRequestItem::where('job_order_id', $si->packingItem->job_order_id)
-                                    ->where('item_id', $si->bag_product_id)
+                                    ->where('item_id', $item['item_id'])
+                                    ->where('brand_id', $item['brand_id'])
                                     ->sum('quantity');
 
                                 $availableInJO = $si->total_bags - $consumed;
@@ -276,17 +290,31 @@ class BagRequestController extends Controller
             if (!$item->display_size) {
                 $sub = \App\Models\Production\JobOrder\JobOrderPackingSubItem::whereHas('packingItem', function($q) use ($item) {
                     $q->where('job_order_id', $item->job_order_id);
-                })->where('bag_product_id', $item->item_id)
-                  ->where('brand_id', $item->brand_id)
-                  ->with('bagSize')->first();
-                $item->display_size = $sub ? (string)($sub->bagSize->size ?? '') : '';
+                })->where(function($q) use ($item) {
+                    $q->where('bag_product_id', $item->item_id);
+                    $prod = Product::find($item->item_id);
+                    if ($prod) {
+                        $bt = BagType::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($prod->name))])->first();
+                        if ($bt) {
+                            $q->orWhere('bag_type_id', $bt->id);
+                        }
+                    }
+                })
+                ->where(function($q) use ($item) {
+                    $q->where('brand_id', $item->brand_id)
+                      ->orWhereNull('brand_id')
+                      ->orWhereHas('packingItem', function($pq) use ($item) {
+                          $pq->where('brand_id', $item->brand_id);
+                      });
+                })
+                ->with('bagSize')->first();
+                $item->display_size = $sub ? (string)($sub->bagSize->size ?? ($sub->packing_size ?? '')) : '';
             }
         }
 
         $data['bagRequest'] = $bagRequest;
         $data['galas'] = ArrivalSubLocation::where('status', 'active')->get();
-        // $data['products'] = Product::all();
-        $data['products'] = BagType::where('status', 1)->get();
+        $data['products'] = Product::all();
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
@@ -318,10 +346,25 @@ class BagRequestController extends Controller
             if (!$item->display_size) {
                 $sub = \App\Models\Production\JobOrder\JobOrderPackingSubItem::whereHas('packingItem', function($q) use ($item) {
                     $q->where('job_order_id', $item->job_order_id);
-                })->where('bag_product_id', $item->item_id)
-                  ->where('brand_id', $item->brand_id)
-                  ->with('bagSize')->first();
-                $item->display_size = $sub ? (string)($sub->bagSize->size ?? '') : '';
+                })->where(function($q) use ($item) {
+                    $q->where('bag_product_id', $item->item_id);
+                    $prod = Product::find($item->item_id);
+                    if ($prod) {
+                        $bt = BagType::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($prod->name))])->first();
+                        if ($bt) {
+                            $q->orWhere('bag_type_id', $bt->id);
+                        }
+                    }
+                })
+                ->where(function($q) use ($item) {
+                    $q->where('brand_id', $item->brand_id)
+                      ->orWhereNull('brand_id')
+                      ->orWhereHas('packingItem', function($pq) use ($item) {
+                          $pq->where('brand_id', $item->brand_id);
+                      });
+                })
+                ->with('bagSize')->first();
+                $item->display_size = $sub ? (string)($sub->bagSize->size ?? ($sub->packing_size ?? '')) : '';
             }
         }
 
@@ -335,8 +378,7 @@ class BagRequestController extends Controller
     {
         DB::beginTransaction();
         try {
-            // $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
-            $products = BagType::whereIn("id", collect($request->items)->pluck("bag_type_id"))->get();
+            $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
 
         $bagRequest = BagRequest::findOrFail($id);
 
@@ -439,15 +481,31 @@ class BagRequestController extends Controller
                             $matchingSubItems = JobOrderPackingSubItem::whereHas('packingItem', function($q) use ($request) {
                                     $q->whereIn('job_order_id', $request->job_order_ids);
                                 })
-                                ->where('bag_product_id', $item['item_id'])
-                                ->where('brand_id', $item['brand_id'])
+                                ->where(function($q) use ($item) {
+                                    $q->where('bag_product_id', $item['item_id']);
+                                    $prod = Product::find($item['item_id']);
+                                    if ($prod) {
+                                        $bt = BagType::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($prod->name))])->first();
+                                        if ($bt) {
+                                            $q->orWhere('bag_type_id', $bt->id);
+                                        }
+                                    }
+                                })
+                                ->where(function($q) use ($item) {
+                                    $q->where('brand_id', $item['brand_id'])
+                                      ->orWhereNull('brand_id')
+                                      ->orWhereHas('packingItem', function($pq) use ($item) {
+                                          $pq->where('brand_id', $item['brand_id']);
+                                      });
+                                })
                                 ->get();
 
                             foreach ($matchingSubItems as $si) {
                                 if ($remainingToDistribute <= 0) break;
 
                                 $consumed = \App\Models\Production\BagRequestItem::where('job_order_id', $si->packingItem->job_order_id)
-                                    ->where('item_id', $si->bag_product_id)
+                                    ->where('item_id', $item['item_id'])
+                                    ->where('brand_id', $item['brand_id'])
                                     ->where('bag_request_id', '!=', $id)
                                     ->sum('quantity');
 
@@ -540,7 +598,7 @@ class BagRequestController extends Controller
         // 1. Get all Packing Items for these Job Orders at this Location
         $packingItems = JobOrderPackingItem::whereIn('job_order_id', $jobOrderIds)
             ->where('company_location_id', $companyLocationId)
-            ->with(['bagProduct', 'brand', 'bagProduct.unitOfMeasure'])
+            ->with(['bagProduct.unitOfMeasure', 'brand'])
             ->get();
 
         foreach ($packingItems as $pi) {
@@ -549,6 +607,7 @@ class BagRequestController extends Controller
             $key = ($pi->bag_product_id ?? 0) . '-' . ($pi->brand_id ?? 0) . '-' . $packingSize;
             if (!isset($items[$key])) {
                 $items[$key] = [
+                    'job_order_id' => $pi->job_order_id,
                     'item_id' => $pi->bag_product_id,
                     'item_name' => $pi->bagProduct->name ?? 'N/A',
                     'brand_id' => $pi->brand_id,
@@ -559,35 +618,59 @@ class BagRequestController extends Controller
                     'unit_name' => $pi->bagProduct->unitOfMeasure->name ?? '',
                 ];
             }
-            $items[$key]['total_needed'] += $pi->total_bags;
+            $items[$key]['total_needed'] += (float)$pi->total_bags;
         }
 
         // 2. Get all Sub-items (Master Packing) for these Packing Items
         $subItems = JobOrderPackingSubItem::whereIn('job_order_packing_item_id', $packingItems->pluck('id'))
-            ->with(['bagProduct', 'brand', 'bagProduct.unitOfMeasure', 'bagSize'])
+            ->with(['bagProduct.unitOfMeasure', 'bagType', 'brand', 'bagSize', 'packingItem.brand'])
             ->get();
 
+        $bagProducts = Product::where('product_type', 'general_items')->with('unitOfMeasure')->get();
+
         foreach ($subItems as $si) {
-            // For Sub-items, we use the bagSize record's name/size
-            $packingSize = (string)($si->bagSize->size ?? '');
-            $key = ($si->bag_product_id ?? 0) . '-' . ($si->brand_id ?? 0) . '-' . $packingSize;
+            $product = $si->bagProduct;
+            if (!$product && $si->bag_type_id) {
+                $btName = $si->bagType?->name;
+                if ($btName) {
+                    $product = $bagProducts->first(function($p) use ($btName) {
+                        return strcasecmp(trim($p->name), trim($btName)) === 0;
+                    });
+                }
+            }
+
+            $brandId = $si->brand_id ?: ($si->packingItem?->brand_id ?? null);
+            $brandName = $si->brand?->name ?? ($si->packingItem?->brand?->name ?? 'N/A');
+            $packingSize = (string)($si->bagSize->size ?? ($si->packing_size ?? ''));
+            $itemId = $product?->id ?? $si->bag_product_id;
+            $itemName = $product?->name ?? ($si->bagType?->name ?? 'N/A');
+            $unitId = $product?->unit_of_measure_id ?? null;
+            $unitName = $product?->unitOfMeasure?->name ?? '';
+
+            $key = ($itemId ?? 0) . '-' . ($brandId ?? 0) . '-' . $packingSize;
             if (!isset($items[$key])) {
                 $items[$key] = [
-                    'item_id' => $si->bag_product_id,
-                    'item_name' => $si->bagProduct->name ?? 'N/A',
-                    'brand_id' => $si->brand_id,
-                    'brand_name' => $si->brand->name ?? 'N/A',
+                    'job_order_id' => $si->packingItem?->job_order_id ?? null,
+                    'item_id' => $itemId,
+                    'item_name' => $itemName,
+                    'brand_id' => $brandId,
+                    'brand_name' => $brandName,
                     'packing_size_kg' => $packingSize,
                     'total_needed' => 0,
-                    'unit_id' => $si->bagProduct->unit_of_measure_id ?? null,
-                    'unit_name' => $si->bagProduct->unitOfMeasure->name ?? '',
+                    'unit_id' => $unitId,
+                    'unit_name' => $unitName,
                 ];
             }
-            $items[$key]['total_needed'] += $si->total_bags;
+            $items[$key]['total_needed'] += (float)$si->total_bags;
         }
 
         // 3. Calculate consumed for each item-brand across these JOs and this location
         foreach ($items as $key => &$item) {
+            if (empty($item['item_id'])) {
+                $item['quantity'] = 0;
+                continue;
+            }
+
             $consumed = \App\Models\Production\BagRequestItem::whereIn('job_order_id', $jobOrderIds)
                 ->where('item_id', $item['item_id'])
                 ->where('brand_id', $item['brand_id'])

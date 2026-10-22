@@ -374,6 +374,34 @@ class JobOrderController extends Controller
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
 
+                        if (!empty($subItem['bag_type_id']) && empty($subItem['bag_product_id'])) {
+                            $bagType = BagType::find($subItem['bag_type_id']);
+                            if ($bagType) {
+                                $matchingProduct = Product::where('product_type', 'general_items')
+                                    ->where(function ($q) use ($bagType) {
+                                        $q->where('name', $bagType->name)
+                                          ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($bagType->name))]);
+                                    })->first();
+                                if ($matchingProduct) {
+                                    $subItem['bag_product_id'] = $matchingProduct->id;
+                                }
+                            }
+                        } elseif (!empty($subItem['bag_product_id']) && empty($subItem['bag_type_id'])) {
+                            $product = Product::find($subItem['bag_product_id']);
+                            if ($product) {
+                                $matchingBagType = BagType::where('name', $product->name)
+                                    ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($product->name))])
+                                    ->first();
+                                if ($matchingBagType) {
+                                    $subItem['bag_type_id'] = $matchingBagType->id;
+                                }
+                            }
+                        }
+
+                        if (empty($subItem['brand_id']) && !empty($packingItem->brand_id)) {
+                            $subItem['brand_id'] = $packingItem->brand_id;
+                        }
+
                         $subAttachmentFile = $request->file("packing_items.{$pIndex}.sub_items.{$sIdx}.attachment") ?? (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile ? $subItem['attachment'] : null);
                         if ($subAttachmentFile) {
                             $subItem['attachment'] = $subAttachmentFile->store('job_order_attachments', 'public');
@@ -684,6 +712,34 @@ class JobOrderController extends Controller
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
+
+                        if (!empty($subItem['bag_type_id']) && empty($subItem['bag_product_id'])) {
+                            $bagType = BagType::find($subItem['bag_type_id']);
+                            if ($bagType) {
+                                $matchingProduct = Product::where('product_type', 'general_items')
+                                    ->where(function ($q) use ($bagType) {
+                                        $q->where('name', $bagType->name)
+                                          ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($bagType->name))]);
+                                    })->first();
+                                if ($matchingProduct) {
+                                    $subItem['bag_product_id'] = $matchingProduct->id;
+                                }
+                            }
+                        } elseif (!empty($subItem['bag_product_id']) && empty($subItem['bag_type_id'])) {
+                            $product = Product::find($subItem['bag_product_id']);
+                            if ($product) {
+                                $matchingBagType = BagType::where('name', $product->name)
+                                    ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($product->name))])
+                                    ->first();
+                                if ($matchingBagType) {
+                                    $subItem['bag_type_id'] = $matchingBagType->id;
+                                }
+                            }
+                        }
+
+                        if (empty($subItem['brand_id']) && !empty($packingItem->brand_id)) {
+                            $subItem['brand_id'] = $packingItem->brand_id;
+                        }
 
                         $subAttachmentFile = $request->file("packing_items.{$pIndex}.sub_items.{$sIdx}.attachment") ?? (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile ? $subItem['attachment'] : null);
                         if ($subAttachmentFile) {
