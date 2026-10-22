@@ -89,22 +89,24 @@ class WeightDifferenceController extends Controller
                             });
                     });
                 } elseif ($hasOk) {
-                    $statusQ->where(function ($sub) use ($thaddaId) {
+                    // OK = Pohanch (Pounch)
+                    $statusQ->where(function ($sub) use ($pohanchId) {
                         $sub->where('arrival_tickets.document_approval_status', 'fully_approved')
-                            ->where(function ($typeSub) use ($thaddaId) {
-                                $typeSub->where('arrival_tickets.sauda_type_id', $thaddaId)
-                                    ->orWhere(function ($poSub) use ($thaddaId) {
+                            ->where(function ($typeSub) use ($pohanchId) {
+                                $typeSub->where('arrival_tickets.sauda_type_id', $pohanchId)
+                                    ->orWhere(function ($poSub) use ($pohanchId) {
                                         $poSub->whereNull('arrival_tickets.sauda_type_id')
                                             ->whereHas('purchaseOrder', fn($poQ) => $poQ->where('sauda_type_id', $pohanchId));
                                     });
                             });
                     });
                 } elseif ($hasTs) {
-                    $statusQ->where(function ($sub) use ($pohanchId) {
+                    // TS = Thadda
+                    $statusQ->where(function ($sub) use ($thaddaId) {
                         $sub->where('arrival_tickets.document_approval_status', 'fully_approved')
-                            ->where(function ($typeSub) use ($pohanchId) {
-                                $typeSub->where('arrival_tickets.sauda_type_id', $pohanchId)
-                                    ->orWhere(function ($poSub) use ($pohanchId) {
+                            ->where(function ($typeSub) use ($thaddaId) {
+                                $typeSub->where('arrival_tickets.sauda_type_id', $thaddaId)
+                                    ->orWhere(function ($poSub) use ($thaddaId) {
                                         $poSub->whereNull('arrival_tickets.sauda_type_id')
                                             ->whereHas('purchaseOrder', fn($poQ) => $poQ->where('sauda_type_id', $thaddaId));
                                     });

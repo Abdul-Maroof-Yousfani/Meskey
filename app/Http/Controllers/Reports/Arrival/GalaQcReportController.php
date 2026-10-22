@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\ArrivalDashboardService;
+use App\Models\SaudaType;
 
 class GalaQcReportController extends Controller
 {
@@ -138,35 +139,78 @@ class GalaQcReportController extends Controller
             // Status filter (Multiple items / single item support)
             ->when($request->filled('status_id'), function ($q) use ($request) {
                 $statuses = array_filter((array) $request->status_id);
-                if (!empty($statuses) && !in_array('all', $statuses)) {
-                    $q->where(function ($sub) use ($statuses) {
-                        $hasClause = false;
-                        if (in_array('fully_approved', $statuses)) {
-                            $sub->where('arrival_tickets.document_approval_status', 'fully_approved');
-                            $hasClause = true;
-                        }
-                        if (in_array('half_approved', $statuses)) {
-                            if ($hasClause) {
-                                $sub->orWhere('arrival_tickets.document_approval_status', 'half_approved');
-                            } else {
-                                $sub->where('arrival_tickets.document_approval_status', 'half_approved');
-                                $hasClause = true;
-                            }
-                        }
-                        if (in_array('rejected', $statuses)) {
-                            $rejCallback = function ($sq) {
-                                $sq->where('arrival_tickets.first_qc_status', 'rejected')
-                                    ->orWhere('arrival_tickets.status', 'Reject Full')
-                                    ->orWhere('arrival_tickets.status', 'rejected');
-                            };
-                            if ($hasClause) {
-                                $sub->orWhere($rejCallback);
-                            } else {
-                                $sub->where($rejCallback);
-                            }
-                        }
-                    });
+                if (empty($statuses) || in_array('all', $statuses)) {
+                    return;
                 }
+
+                $pohanchId = SaudaType::where('name', 'like', '%pohanch%')->orWhere('name', 'like', '%pounch%')->value('id') ?? 1;
+                $thaddaId = SaudaType::where('name', 'like', '%thadda%')->value('id') ?? 2;
+
+                $hasOk = in_array('ok', $statuses) || in_array('fully_approved', $statuses);
+                $hasTs = in_array('ts', $statuses);
+                $hasHalfApproved = in_array('half_approved', $statuses);
+                $hasRejected = in_array('rejected', $statuses);
+
+                return $q->where(function ($statusQ) use ($hasOk, $hasTs, $hasHalfApproved, $hasRejected, $pohanchId, $thaddaId) {
+                    if ($hasOk && $hasTs) {
+                        $statusQ->where(function ($sub) use ($pohanchId, $thaddaId) {
+                            $sub->where('arrival_tickets.document_approval_status', 'fully_approved')
+                                ->where(function ($typeSub) use ($pohanchId, $thaddaId) {
+                                    $typeSub->whereIn('arrival_tickets.sauda_type_id', [$pohanchId, $thaddaId])
+                                        ->orWhere(function ($poSub) use ($pohanchId, $thaddaId) {
+                                            $poSub->whereNull('arrival_tickets.sauda_type_id')
+                                                ->whereHas('purchaseOrder', fn($poQ) => $poQ->whereIn('sauda_type_id', [$pohanchId, $thaddaId]));
+                                        });
+                                });
+                        });
+                    } elseif ($hasOk) {
+                        // OK = Pohanch (Pounch)
+                        $statusQ->where(function ($sub) use ($pohanchId) {
+                            $sub->where('arrival_tickets.document_approval_status', 'fully_approved')
+                                ->where(function ($typeSub) use ($pohanchId) {
+                                    $typeSub->where('arrival_tickets.sauda_type_id', $pohanchId)
+                                        ->orWhere(function ($poSub) use ($pohanchId) {
+                                            $poSub->whereNull('arrival_tickets.sauda_type_id')
+                                                ->whereHas('purchaseOrder', fn($poQ) => $poQ->where('sauda_type_id', $pohanchId));
+                                        });
+                                });
+                        });
+                    } elseif ($hasTs) {
+                        // TS = Thadda
+                        $statusQ->where(function ($sub) use ($thaddaId) {
+                            $sub->where('arrival_tickets.document_approval_status', 'fully_approved')
+                                ->where(function ($typeSub) use ($thaddaId) {
+                                    $typeSub->where('arrival_tickets.sauda_type_id', $thaddaId)
+                                        ->orWhere(function ($poSub) use ($thaddaId) {
+                                            $poSub->whereNull('arrival_tickets.sauda_type_id')
+                                                ->whereHas('purchaseOrder', fn($poQ) => $poQ->where('sauda_type_id', $thaddaId));
+                                        });
+                                });
+                        });
+                    }
+
+                    if ($hasHalfApproved) {
+                        if ($hasOk || $hasTs) {
+                            $statusQ->orWhere('arrival_tickets.document_approval_status', 'half_approved');
+                        } else {
+                            $statusQ->where('arrival_tickets.document_approval_status', 'half_approved');
+                        }
+                    }
+
+                    if ($hasRejected) {
+                        $rejCallback = function ($sq) {
+                            $sq->where('arrival_tickets.first_qc_status', 'rejected')
+                                ->orWhere('arrival_tickets.status', 'Reject Full')
+                                ->orWhere('arrival_tickets.status', 'rejected')
+                                ->orWhereNull('arrival_tickets.document_approval_status');
+                        };
+                        if ($hasOk || $hasTs || $hasHalfApproved) {
+                            $statusQ->orWhere($rejCallback);
+                        } else {
+                            $statusQ->where($rejCallback);
+                        }
+                    }
+                });
             })
             ->when($isOutSourcePurchaser, function ($q) use ($decisionUserIds) {
                 return $q->whereIn('arrival_tickets.decision_id', $decisionUserIds);

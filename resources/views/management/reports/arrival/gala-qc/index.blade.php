@@ -62,15 +62,21 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Status filter (supports multiple items matching screenshot Status2) --}}
+                                            {{-- Status filter --}}
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Status:</label>
-                                                    <select name="status_id[]" id="status_id" multiple class="form-control selectWithoutAjax">
-                                                        <option value="all" selected>All</option>
-                                                        <option value="fully_approved">OK</option>
-                                                        <option value="half_approved">Reject Half</option>
-                                                        <option value="rejected">Reject Full</option>
+                                                    @php
+                                                        $defaultStatuses = ['ok', 'ts'];
+                                                        $selectedStatuses = request()->has('status_id')
+                                                            ? (array) request('status_id')
+                                                            : $defaultStatuses;
+                                                    @endphp
+                                                    <select name="status_id[]" id="status_id" multiple class="form-control selectWithoutAjax" data-placeholder="Select Status">
+                                                        <option value="ok" {{ in_array('ok', $selectedStatuses) ? 'selected' : '' }}>OK</option>
+                                                        <option value="ts" {{ in_array('ts', $selectedStatuses) ? 'selected' : '' }}>TS</option>
+                                                        <option value="half_approved" {{ in_array('half_approved', $selectedStatuses) ? 'selected' : '' }}>Reject Half</option>
+                                                        <option value="rejected" {{ in_array('rejected', $selectedStatuses) ? 'selected' : '' }}>Reject Full</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -182,25 +188,11 @@
                 }, 1);
             });
 
-            // Status "All" logic
-            $('#status_id').on('select2:select', function (e) {
-                if (e.params.data.id === 'all') {
-                    $(this).val(['all']).trigger('change');
-                } else {
-                    let vals = $(this).val() || [];
-                    vals = vals.filter(v => v !== 'all');
-                    $(this).val(vals).trigger('change');
-                }
-            });
-
-            $('#status_id').on('select2:unselect', function (e) {
-                setTimeout(() => {
-                    let vals = $(this).val() || [];
-                    if (vals.length === 0) {
-                        $(this).val(['all']).trigger('change');
-                    }
-                }, 1);
-            });
+            // Ensure status defaults to OK and TS if not already set
+            let $statusSelect = $('#status_id');
+            if (!$statusSelect.val() || $statusSelect.val().length === 0) {
+                $statusSelect.val(['ok', 'ts']).trigger('change.select2');
+            }
 
             const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.gala-qc') }}`
