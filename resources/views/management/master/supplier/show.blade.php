@@ -7,7 +7,12 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">Supplier Details: {{ $supplier->company_name }}</h4>
-                    <a href="{{ route('supplier.index') }}" class="btn btn-secondary">Back to List</a>
+                    <div>
+                        <button type="button" class="btn btn-outline-info mr-1" onclick="openModal(this,'{{ route('supplier.audit-logs', $supplier->id) }}','Audit Logs: {{ $supplier->company_name ?? $supplier->name }} ({{ $supplier->unique_no }})', false, '55%')">
+                            <i class="fa fa-history mr-1"></i> Audit Logs
+                        </button>
+                        <a href="{{ route('supplier.index') }}" class="btn btn-secondary">Back to List</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">

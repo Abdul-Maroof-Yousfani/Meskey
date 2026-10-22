@@ -11,6 +11,8 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
+use App\Models\AuditLog;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -239,6 +241,17 @@ class SupplierController extends Controller
 
             DB::commit();
 
+            $supplier->refresh();
+            $newValues = $this->buildSupplierAuditValues($supplier);
+
+            AuditLogService::log(
+                $supplier,
+                'supplier_created',
+                "Supplier '{$supplier->company_name}'" . ($supplier->unique_no ? " (Code: {$supplier->unique_no})" : "") . " created.",
+                null,
+                $newValues
+            );
+
             return response()->json([
                 'success' => 'Supplier created successfully.',
                 'data' => [],
@@ -289,6 +302,8 @@ class SupplierController extends Controller
      */
     public function update(SupplierRequest $request, Supplier $supplier)
     {
+        $oldValues = $this->buildSupplierAuditValues($supplier);
+
         DB::beginTransaction();
 
         try {
@@ -321,10 +336,12 @@ class SupplierController extends Controller
             $requestData['defaulter'] = $request->defaulter ?? 0;
 
             if ($supplier->account) {
-                // Existing account update
-                $supplier->account->update([
-                    'name' => $companyName,
-                ]);
+                // Existing account update only if company name changed and account belongs to suppliers
+                if ($supplier->company_name !== $companyName && $supplier->account->table_name === 'suppliers') {
+                    $supplier->account->update([
+                        'name' => $companyName,
+                    ]);
+                }
             } elseif (!empty($request->account_id)) {
                 $requestData['account_id'] = $request->account_id;
             } else {
@@ -449,6 +466,17 @@ class SupplierController extends Controller
             }
 
             DB::commit();
+
+            $supplier->refresh();
+            $newValues = $this->buildSupplierAuditValues($supplier);
+
+            AuditLogService::log(
+                $supplier,
+                'supplier_updated',
+                "Supplier '{$supplier->company_name}'" . ($supplier->unique_no ? " (Code: {$supplier->unique_no})" : "") . " updated.",
+                $oldValues,
+                $newValues
+            );
 
             return response()->json([
                 'success' => 'Supplier updated successfully.',
@@ -727,6 +755,21 @@ class SupplierController extends Controller
             }
 
             DB::commit();
+
+            try {
+                $supplier->refresh();
+                $newValues = $this->buildSupplierAuditValues($supplier);
+                AuditLogService::log(
+                    $supplier,
+                    'supplier_created',
+                    "Supplier '{$supplier->company_name}'" . ($supplier->unique_no ? " (Code: {$supplier->unique_no})" : "") . " imported via Excel/CSV.",
+                    null,
+                    $newValues
+                );
+            } catch (\Exception $e) {
+                // Ignore audit logging errors during import
+            }
+
             return response()->json(['status' => 'success', 'message' => 'Imported successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -752,5 +795,188 @@ class SupplierController extends Controller
         ])->findOrFail($id);
 
         return view('management.master.supplier.show', compact('supplier'));
+    }
+
+    /**
+     * Build audit values array for supplier.
+     */
+    protected function buildSupplierAuditValues(Supplier $supplier): array
+    {
+        $supplier->loadMissing([
+            'account',
+            'companyBankDetails',
+            'ownerBankDetails',
+        ]);
+
+        $locNames = [];
+        if (!empty($supplier->company_location_ids) && is_array($supplier->company_location_ids)) {
+            $locNames = CompanyLocation::whereIn('id', $supplier->company_location_ids)->pluck('name')->toArray();
+        }
+
+        $compBanks = [];
+        foreach ($supplier->companyBankDetails as $b) {
+            $parts = array_filter([
+                $b->bank_name,
+                $b->account_title ? "Title: {$b->account_title}" : null,
+                $b->account_number ? "A/C: {$b->account_number}" : null,
+                $b->branch_name ? "Branch: {$b->branch_name}" : null,
+                $b->branch_code ? "Code: {$b->branch_code}" : null,
+            ]);
+            $compBanks[] = implode(' | ', $parts);
+        }
+
+        $ownerBanks = [];
+        foreach ($supplier->ownerBankDetails as $b) {
+            $parts = array_filter([
+                $b->bank_name,
+                $b->account_title ? "Title: {$b->account_title}" : null,
+                $b->account_number ? "A/C: {$b->account_number}" : null,
+                $b->branch_name ? "Branch: {$b->branch_name}" : null,
+                $b->branch_code ? "Code: {$b->branch_code}" : null,
+            ]);
+            $ownerBanks[] = implode(' | ', $parts);
+        }
+
+        return [
+            'unique_no'                => $supplier->unique_no,
+            'is_gate_buying_supplier'  => $supplier->is_gate_buying_supplier ? ucfirst($supplier->is_gate_buying_supplier) : 'No',
+            'type'                     => $supplier->type ? ucwords(str_replace('_', ' ', $supplier->type)) : 'Raw Material',
+            'company_name'             => $supplier->company_name,
+            'owner_name'               => $supplier->owner_name,
+            'owner_cnic_no'            => $supplier->owner_cnic_no,
+            'owner_mobile_no'          => $supplier->owner_mobile_no,
+            'next_to_kin'              => $supplier->next_to_kin,
+            'next_to_kin_mobile_no'    => $supplier->next_to_kin_mobile_no,
+            'email'                    => $supplier->email,
+            'phone'                    => $supplier->phone,
+            'address'                  => $supplier->address,
+            'ntn'                      => $supplier->ntn,
+            'stn'                      => $supplier->stn,
+            'status'                   => $supplier->status ? ucfirst($supplier->status) : 'Active',
+            'defaulter'                => $supplier->defaulter ? 'Yes' : 'No',
+            'account_id'               => $supplier->account ? "{$supplier->account->name} [{$supplier->account->unique_no}]" : ($supplier->account_id ? "Account #{$supplier->account_id}" : null),
+            'company_locations'        => !empty($locNames) ? implode(', ', $locNames) : 'None',
+            'company_bank_details'     => !empty($compBanks) ? implode("\n", $compBanks) : 'None',
+            'owner_bank_details'       => !empty($ownerBanks) ? implode("\n", $ownerBanks) : 'None',
+        ];
+    }
+
+    /**
+     * Get audit logs for a supplier.
+     */
+    public function getAuditLogs(Request $request, $id)
+    {
+        $supplier = Supplier::findOrFail($id);
+
+        $logs = AuditLog::with('user')
+            ->where(function ($q) use ($supplier) {
+                $q->where(function ($sq) use ($supplier) {
+                    $sq->whereIn('model_type', [Supplier::class, 'Supplier', 'App\Models\Master\Supplier'])
+                        ->where('model_id', $supplier->id);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $fieldLabels = [
+            'unique_no'                => 'Supplier Code #',
+            'is_gate_buying_supplier'  => 'Gate Buying Supplier',
+            'type'                     => 'Supplier Type',
+            'company_name'             => 'Company Name',
+            'owner_name'               => 'Owner Name',
+            'owner_cnic_no'            => 'Owner CNIC',
+            'owner_mobile_no'          => 'Owner Mobile No',
+            'next_to_kin'              => 'Next of Kin',
+            'next_to_kin_mobile_no'    => 'Next of Kin Mobile',
+            'email'                    => 'Email',
+            'phone'                    => 'Phone',
+            'address'                  => 'Address',
+            'ntn'                      => 'NTN #',
+            'stn'                      => 'STN #',
+            'status'                   => 'Status',
+            'defaulter'                => 'Defaulter',
+            'account_id'               => 'COA Account',
+            'company_locations'        => 'Assigned Locations',
+            'company_bank_details'     => 'Company Bank Details',
+            'owner_bank_details'       => 'Owner Bank Details',
+        ];
+
+        $filteredLogs = [];
+        $skipKeys = ['id', 'company_id', 'deleted_at', 'created_at', 'updated_at', 'name', 'prefix', 'company_location_ids', 'attachment'];
+
+        foreach ($logs as $log) {
+            $rawOld = is_array($log->old_values) ? $log->old_values : (!empty($log->old_values) ? json_decode($log->old_values, true) : []);
+            if (is_string($rawOld)) $rawOld = json_decode($rawOld, true);
+
+            $rawNew = is_array($log->new_values) ? $log->new_values : (!empty($log->new_values) ? json_decode($log->new_values, true) : []);
+            if (is_string($rawNew)) $rawNew = json_decode($rawNew, true);
+
+            $old = is_array($rawOld) ? $rawOld : [];
+            $new = is_array($rawNew) ? $rawNew : [];
+
+            $parsedChanges = [];
+            $allKeys = array_unique(array_merge(array_keys($old), array_keys($new)));
+
+            foreach ($allKeys as $key) {
+                if (in_array($key, $skipKeys)) continue;
+
+                $oldVal = $old[$key] ?? null;
+                $newVal = $new[$key] ?? null;
+
+                if ($oldVal != $newVal) {
+                    $parsedChanges[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace(['_', '-'], ' ', $key)),
+                        'old'     => is_array($oldVal) ? json_encode($oldVal) : $oldVal,
+                        'new'     => is_array($newVal) ? json_encode($newVal) : $newVal,
+                        'raw_old' => $oldVal,
+                        'raw_new' => $newVal,
+                    ];
+                }
+            }
+
+            $log->parsed_changes = $parsedChanges;
+            $filteredLogs[] = $log;
+        }
+
+        // Add virtual initial create log if none exists and supplier has created_at
+        $hasCreateLog = collect($filteredLogs)->contains(fn($l) => in_array($l->action, ['supplier_created', 'created']));
+        if (!$hasCreateLog && $supplier->created_at) {
+            $virtualLog = new AuditLog([
+                'action'      => 'supplier_created',
+                'description' => "Initial supplier record for '{$supplier->company_name}'" . ($supplier->owner_name ? " (Owner: {$supplier->owner_name})" : "") . ".",
+                'created_at'  => $supplier->created_at,
+                'user_id'     => null,
+            ]);
+            $virtualLog->created_at = $supplier->created_at;
+            $virtualLog->setRelation('user', null);
+
+            $virtualParsed = [];
+            $initialValues = $this->buildSupplierAuditValues($supplier);
+            foreach ($initialValues as $key => $val) {
+                if ($val !== null && $val !== '' && !in_array($key, $skipKeys)) {
+                    $virtualParsed[] = [
+                        'key'     => $key,
+                        'label'   => $fieldLabels[$key] ?? ucwords(str_replace(['_', '-'], ' ', $key)),
+                        'old'     => '-',
+                        'new'     => (string) $val,
+                        'raw_old' => null,
+                        'raw_new' => $val,
+                    ];
+                }
+            }
+
+            if (!empty($virtualParsed)) {
+                $virtualLog->parsed_changes = $virtualParsed;
+                $filteredLogs[] = $virtualLog;
+            }
+        }
+
+        $logs = $filteredLogs;
+        $title = "Supplier Audit Logs";
+        $subtitle = "Supplier: <strong>" . e($supplier->company_name) . "</strong>" . ($supplier->owner_name ? " (Owner: " . e($supplier->owner_name) . ")" : "") . ($supplier->unique_no ? " | Code: " . e($supplier->unique_no) : "");
+        $emptyMessage = 'No changes or updates have been recorded for this supplier yet.';
+
+        return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
     }
 }

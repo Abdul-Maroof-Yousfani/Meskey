@@ -87,23 +87,27 @@ Route::resource('approval-modules', ApprovalModuleController::class);
 Route::post('/get-approval-modules', [ApprovalModuleController::class, 'getList'])->name('get.approval-modules');
 
 Route::resource('product', ProductController::class);
+Route::get('product/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'product')->name('product.audit-logs');
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
 Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.items');
 
 Route::get('/supplier/import-modal', [SupplierController::class, 'importModal'])->name('supplier.import-modal');
 Route::post('/supplier/import-row', [SupplierController::class, 'importRow'])->name('supplier.import-row');
 Route::resource('supplier', SupplierController::class);
+Route::get('/supplier/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'supplier')->name('supplier.audit-logs');
 Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
 
 Route::get('/customer/import-modal', [CustomerController::class, 'importModal'])->name('customer.import-modal');
 Route::post('/customer/import-row', [CustomerController::class, 'importRow'])->name('customer.import-row');
 Route::resource('customer', CustomerController::class);
+Route::get('/customer/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'customer')->name('customer.audit-logs');
 Route::post('/get-customer', [CustomerController::class, 'getList'])->name('get.customer');
 
 Route::resource('clearing-agent', ClearingAgentController::class)->except(['show']);
 Route::post('/get-clearing-agent', [ClearingAgentController::class, 'getList'])->name('get.clearing-agent');
 
 Route::resource('vendor', VendorsController::class);
+Route::get('/vendor/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'vendor')->name('vendor.audit-logs');
 Route::post('/get-vendor', [VendorsController::class, 'getList'])->name('get.vendor');
 Route::get('/get-arrival-location/{companyLocationId}', [VendorsController::class, 'getArrivalLocations'])->name('vendor.get-arrival-locations');
 Route::get('/get-vendors-by-locations', [VendorsController::class, 'getVendorsByLocations'])->name('vendor.get-vendors-by-locations');
@@ -112,9 +116,11 @@ Route::resource('division', DivisionController::class);
 Route::post('/get-division', [DivisionController::class, 'getList'])->name('get.division');
 
 Route::resource('broker', BrokerController::class);
+Route::get('/broker/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'broker')->name('broker.audit-logs');
 Route::post('/get-broker', [BrokerController::class, 'getList'])->name('get.broker');
 
 Route::resource('transporter', TransporterController::class);
+Route::get('/transporter/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'transporter')->name('transporter.audit-logs');
 Route::post('/get-transporter', [TransporterController::class, 'getList'])->name('get.transporter');
 
 Route::get('/product-slab-type-order', [ProductSlabTypeController::class, 'orderIndex'])->name('product-slab-type.order.index');
@@ -123,6 +129,7 @@ Route::resource('product-slab-type', ProductSlabTypeController::class);
 Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getList'])->name('get.product-slab-type');
 
 Route::get('/product-slab/get-reference-slabs/{productId?}', [ProductSlabController::class, 'getReferenceSlabs'])->name('product-slab.get-reference-slabs');
+Route::get('/product-slab/{productId}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'product-slab')->name('product-slab.audit-logs');
 Route::resource('product-slab', ProductSlabController::class);
 Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->name('get.product-slab');
 Route::post('/product-slab/store-multiple', [ProductSlabController::class, 'storeMultiple'])->name('product-slab.store-multiple');
