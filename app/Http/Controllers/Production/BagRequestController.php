@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Production;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Master\ArrivalSubLocation;
-use App\Models\Product;
 use App\Models\Master\Brands;
 use App\Models\UnitOfMeasure;
 use App\Models\Production\BagRequest;
 use App\Models\Production\BagRequestItem;
 use Illuminate\Support\Facades\DB;
 use App\Models\Master\CompanyLocation;
+use App\Models\{Product, BagCondition, BagType};
 use App\Http\Requests\Production\BagRequestRequest;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Production\JobOrder\JobOrderPackingItem;
@@ -55,7 +55,8 @@ class BagRequestController extends Controller
     public function create()
     {
         $data['galas'] = ArrivalSubLocation::where('status', 'active')->get();
-        $data['products'] = Product::all();
+        // $data['products'] = Product::all(); comment bcz of currently the bag type is use in joborder
+        $data['products'] = BagType::where('status', 1)->get();
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
@@ -85,7 +86,8 @@ class BagRequestController extends Controller
             $stockCheckSetting = $company ? $company->settings()->where('key', 'stock_check')->first() : null;
             $isStockCheckRequired = $stockCheckSetting && filter_var($stockCheckSetting->value, FILTER_VALIDATE_BOOLEAN);
 
-            $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
+            // $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
+            $products = BagType::whereIn("id", collect($request->items)->pluck("bag_type_id"))->get();
 
             // Only check stock if stock_check setting exists and is enabled for this company
             if ($request->has('items') && $isStockCheckRequired) {
@@ -283,7 +285,8 @@ class BagRequestController extends Controller
 
         $data['bagRequest'] = $bagRequest;
         $data['galas'] = ArrivalSubLocation::where('status', 'active')->get();
-        $data['products'] = Product::all();
+        // $data['products'] = Product::all();
+        $data['products'] = BagType::where('status', 1)->get();
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
@@ -332,7 +335,8 @@ class BagRequestController extends Controller
     {
         DB::beginTransaction();
         try {
-            $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
+            // $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
+            $products = BagType::whereIn("id", collect($request->items)->pluck("bag_type_id"))->get();
 
         $bagRequest = BagRequest::findOrFail($id);
 
