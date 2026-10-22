@@ -40,8 +40,8 @@
                         <small class="text-muted">{{ number_format($voucher->produced_qty_kg / 1000, 2) }} MT</small>
                         @if($voucher->finished_good_rate > 0)
                             <div class="mt-1">
-                                <span class="badge badge-light-primary text-primary" style="font-size: 11px; font-weight: 600;" title="Finished Good Unit Rate: PKR {{ number_format($voucher->finished_good_rate, 4) }}/kg | Net Cost: PKR {{ number_format($voucher->net_finished_good_cost, 2) }}">
-                                    <i class="ft-tag mr-1"></i>PKR {{ number_format($voucher->finished_good_rate, 2) }}/kg
+                                <span class="badge badge-light-primary text-white" style="font-size: 11px; font-weight: 600;" title="Finished Good Unit Rate: PKR {{ number_format($voucher->finished_good_rate, 4) }}/kg | Net Cost: PKR {{ number_format($voucher->net_finished_good_cost, 2) }}">
+                                    </i>PKR {{ number_format($voucher->finished_good_rate, 2) }}/kg
                                 </span>
                             </div>
                         @endif

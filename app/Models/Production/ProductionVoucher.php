@@ -12,7 +12,10 @@ use App\Traits\HasApproval;
 
 class ProductionVoucher extends Model
 {
-    use HasFactory, SoftDeletes, HasApproval;
+    use HasFactory, SoftDeletes, HasApproval {
+        onApprovalComplete as traitOnApprovalComplete;
+        onApprovalRejected as traitOnApprovalRejected;
+    }
 
     protected $fillable = [
         'company_id',
@@ -186,5 +189,41 @@ class ProductionVoucher extends Model
     public function stocks()
     {
         return $this->hasMany(\App\Models\Master\Account\Stock::class, 'production_voucher_id', 'id');
+    }
+
+    /**
+     * Hook triggered automatically when the Production Voucher reaches 'approved' status.
+     * Hits Financial Ledger (Auto-JV) and Stock Ledger via ProductionCostingService.
+     */
+    public function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+
+        try {
+            $costingService = app(\App\Services\ProductionCostingService::class);
+            $costingService->syncProductionVoucher($this);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Production costing sync on approval complete failed for PV #' . $this->id . ': ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+        }
+    }
+
+    /**
+     * Hook triggered automatically if the Production Voucher is rejected/reverted.
+     * Cleans up Financial Ledger and Stock Ledger entries.
+     */
+    public function onApprovalRejected()
+    {
+        $this->traitOnApprovalRejected();
+
+        try {
+            $costingService = app(\App\Services\ProductionCostingService::class);
+            $costingService->deleteVoucherFinancials($this);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Production costing cleanup on rejection failed for PV #' . $this->id . ': ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+        }
     }
 }

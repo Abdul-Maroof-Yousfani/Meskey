@@ -177,7 +177,7 @@
                                                         </td>
                                                         <td>
                                                             <select name="input_location_id[]"
-                                                                class="form-control select2" required>
+                                                                class="form-control select2" required onchange="loadCostingPreview();">
                                                                 <option value="">Select Location</option>
                                                                 @if (isset($sublocations))
                                                                     @foreach ($sublocations as $sublocation)
@@ -618,14 +618,17 @@
                 var inputQtys = [];
                 var inputProductIds = [];
                 var inputRates = [];
+                var inputLocationIds = [];
                 $('#productionInputsTable tbody tr').each(function() {
                     var pid = $(this).find('select[name="input_product_id[]"]').val();
                     var qty = $(this).find('input[name="input_qty[]"]').val();
                     var rate = $(this).find('input[name="input_rate[]"]').val();
+                    var loc = $(this).find('select[name="input_location_id[]"]').val() || locationId;
                     if (pid && qty && parseFloat(qty) > 0) {
                         inputProductIds.push(pid);
                         inputQtys.push(qty);
                         inputRates.push(rate || '');
+                        inputLocationIds.push(loc);
                     }
                 });
 
@@ -651,6 +654,7 @@
                         input_qty: inputQtys,
                         input_product_id: inputProductIds,
                         input_rate: inputRates,
+                        input_location_id: inputLocationIds,
                         output_qty: outputQtys,
                         output_product_id: outputProductIds
                     },

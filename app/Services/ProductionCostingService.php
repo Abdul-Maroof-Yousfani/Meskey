@@ -61,29 +61,19 @@ class ProductionCostingService
             $qty = (float)$input->qty;
             $totalInputQty += $qty;
 
-            // Determine rate: user override > latest stock-in avg cost > product price > 0
+            // Determine rate: user override > input saved rate > stock ledger rate (location-wise WAC)
             $rate = null;
-            if (isset($inputRatesOverride[$input->id])) {
+            if (isset($inputRatesOverride[$input->id]) && (float)$inputRatesOverride[$input->id] > 0) {
                 $rate = (float)$inputRatesOverride[$input->id];
-            } elseif (isset($inputRatesOverride[$idx])) {
+            } elseif (isset($inputRatesOverride[$idx]) && (float)$inputRatesOverride[$idx] > 0) {
                 $rate = (float)$inputRatesOverride[$idx];
+            } elseif ((float)($input->rate ?? 0) > 0) {
+                $rate = (float)$input->rate;
             }
 
             if ($rate === null || $rate <= 0) {
-                // Fetch latest stock-in weighted average cost for this product
-                $latestStockIn = Stock::where('product_id', $input->product_id)
-                    ->where('type', 'stock-in')
-                    ->whereNotNull('avg_cost_price')
-                    ->where('avg_cost_price', '>', 0)
-                    ->latest('id')
-                    ->first();
-
-                if ($latestStockIn) {
-                    $rate = (float)$latestStockIn->avg_cost_price;
-                } else {
-                    $product = $input->product ?? Product::find($input->product_id);
-                    $rate = (float)($product?->price ?? 0);
-                }
+                $companyLocId = $voucher->location_id;
+                $rate = $this->getRawMaterialRateFromStock((int)$input->product_id, $companyLocId ? (int)$companyLocId : null);
             }
 
             $amount = round($qty * $rate, 2);
@@ -301,6 +291,7 @@ class ProductionCostingService
         $prodNo = $voucher->prod_no;
         $companyId = $voucher->company_id ?? 1;
         $voucherDate = $voucher->prod_date ? \Carbon\Carbon::parse($voucher->prod_date)->format('Y-m-d') : now()->format('Y-m-d');
+        $userId = (int)(auth()->user()->id ?? $voucher->user_id ?? 1);
 
         // Look up Transaction Voucher Type for Production Voucher (Code: 'PRO' or fallback 15/11)
         $pvVoucherType = TransactionVoucherType::where('code', 'PRO')->orWhere('code', 'PV')->first();
@@ -368,7 +359,7 @@ class ProductionCostingService
                         'payment_against' => 'production-inventory',
                         'against_reference_no' => $prodNo,
                         'status' => 'active',
-                        'created_by' => auth()->id() ?? 1,
+                        'created_by' => $userId,
                     ]);
                     $totalDr += $fgAmount;
                 }
@@ -396,7 +387,7 @@ class ProductionCostingService
                     'payment_against' => 'production-inventory',
                     'against_reference_no' => $prodNo,
                     'status' => 'active',
-                    'created_by' => auth()->id() ?? 1,
+                    'created_by' => $userId,
                 ]);
                 $totalDr += $netFgCost;
             }
@@ -429,7 +420,7 @@ class ProductionCostingService
                     'payment_against' => 'production-inventory',
                     'against_reference_no' => $prodNo,
                     'status' => 'active',
-                    'created_by' => auth()->id() ?? 1,
+                    'created_by' => $userId,
                 ]);
                 $totalDr += $bpAmount;
             }
@@ -462,7 +453,7 @@ class ProductionCostingService
                     'payment_against' => 'production-consumption',
                     'against_reference_no' => $prodNo,
                     'status' => 'active',
-                    'created_by' => auth()->id() ?? 1,
+                    'created_by' => $userId,
                 ]);
                 $totalCr += $inAmount;
             }
@@ -495,7 +486,7 @@ class ProductionCostingService
                     'payment_against' => 'production-accrual',
                     'against_reference_no' => $prodNo,
                     'status' => 'active',
-                    'created_by' => auth()->id() ?? 1,
+                    'created_by' => $userId,
                 ]);
                 $totalCr += $vAmount;
             }
@@ -527,12 +518,21 @@ class ProductionCostingService
               });
         })->delete();
 
+        $firstInput = $voucher->inputs->first();
+        $defaultSubArrivalId = $firstInput?->location_id;
+        $defaultSubLoc = $defaultSubArrivalId ? \App\Models\Master\ArrivalSubLocation::find($defaultSubArrivalId) : null;
+        $defaultArrivalId = $defaultSubLoc?->arrival_location_id ?? $voucher->sub_location_id;
+
         // 2. Stock-OUT: Raw Material Inputs Consumed
         foreach ($voucher->inputs as $input) {
             $qty = (float)$input->qty;
             if ($qty > 0) {
                 $rate = (float)($input->rate ?? 0);
                 $amount = (float)($input->amount ?? ($qty * $rate));
+
+                $subLoc = $input->location_id ? \App\Models\Master\ArrivalSubLocation::find($input->location_id) : null;
+                $arrivalId = $subLoc?->arrival_location_id ?? $defaultArrivalId;
+                $companyLocId = $locationId ?? $subLoc?->company_location_id;
 
                 Stock::create([
                     'company_id' => $companyId,
@@ -545,7 +545,8 @@ class ProductionCostingService
                     'price' => $amount,
                     'avg_price_per_kg' => $rate,
                     'avg_cost_price' => $rate,
-                    'company_location_id' => $locationId,
+                    'company_location_id' => $companyLocId,
+                    'arrival_id' => $arrivalId,
                     'subarrival_id' => $input->location_id,
                     'parent_id' => $voucherId,
                     'parentable_id' => $voucherId,
@@ -569,7 +570,12 @@ class ProductionCostingService
             if ($qty > 0) {
                 $brandId = $fgOut->brand_id ?? $fgOut->jobOrderPackingItem?->brand_id ?? null;
                 $amount = (float)($fgOut->amount ?? ($qty * $fgRate));
-                $avgCostPrice = $this->calculateStockInWac($fgOut->product_id, $qty, $amount, $fgRate, $prodNo, $brandId);
+                $avgCostPrice = $this->calculateStockInWac($fgOut->product_id, $qty, $amount, $fgRate, $prodNo, $brandId, $locationId);
+
+                $subArrivalId = $fgOut->arrival_sub_location_id ?: $defaultSubArrivalId;
+                $subLoc = $subArrivalId ? \App\Models\Master\ArrivalSubLocation::find($subArrivalId) : null;
+                $arrivalId = $subLoc?->arrival_location_id ?? $defaultArrivalId;
+                $companyLocId = $locationId ?? $subLoc?->company_location_id;
 
                 Stock::create([
                     'company_id' => $companyId,
@@ -582,8 +588,9 @@ class ProductionCostingService
                     'price' => $amount,
                     'avg_price_per_kg' => $fgRate,
                     'avg_cost_price' => $avgCostPrice,
-                    'company_location_id' => $locationId,
-                    'subarrival_id' => $fgOut->arrival_sub_location_id,
+                    'company_location_id' => $companyLocId,
+                    'arrival_id' => $arrivalId,
+                    'subarrival_id' => $subArrivalId,
                     'brand_id' => $brandId,
                     'parent_id' => $voucherId,
                     'parentable_id' => $voucherId,
@@ -607,7 +614,12 @@ class ProductionCostingService
                 $bpBrandId = $bpOut->brand_id ?? $bpOut->jobOrderPackingItem?->brand_id ?? null;
                 $rate = (float)($bpOut->rate ?? 0);
                 $amount = (float)($bpOut->amount ?? ($qty * $rate));
-                $avgCostPrice = $this->calculateStockInWac($bpOut->product_id, $qty, $amount, $rate, $prodNo, $bpBrandId);
+                $avgCostPrice = $this->calculateStockInWac($bpOut->product_id, $qty, $amount, $rate, $prodNo, $bpBrandId, $locationId);
+
+                $bpSubArrivalId = $bpOut->arrival_sub_location_id ?: $defaultSubArrivalId;
+                $bpSubLoc = $bpSubArrivalId ? \App\Models\Master\ArrivalSubLocation::find($bpSubArrivalId) : null;
+                $bpArrivalId = $bpSubLoc?->arrival_location_id ?? $defaultArrivalId;
+                $bpCompanyLocId = $locationId ?? $bpSubLoc?->company_location_id;
 
                 Stock::create([
                     'company_id' => $companyId,
@@ -620,8 +632,9 @@ class ProductionCostingService
                     'price' => $amount,
                     'avg_price_per_kg' => $rate,
                     'avg_cost_price' => $avgCostPrice,
-                    'company_location_id' => $locationId,
-                    'subarrival_id' => $bpOut->arrival_sub_location_id,
+                    'company_location_id' => $bpCompanyLocId,
+                    'arrival_id' => $bpArrivalId,
+                    'subarrival_id' => $bpSubArrivalId,
                     'brand_id' => $bpBrandId,
                     'parent_id' => $voucherId,
                     'parentable_id' => $voucherId,
@@ -635,6 +648,71 @@ class ProductionCostingService
     }
 
     /**
+     * Resolve raw material cost rate strictly from stock ledger for a specific product and location.
+     * Rule:
+     * 1. Check latest stock-in record for product at location with avg_cost_price > 0.
+     * 2. If not found or avg_cost_price is null/0, calculate Weighted Average Cost (WAC) across stock-in records for that product at that location.
+     * 3. No fallback to products table price.
+     */
+    public function getRawMaterialRateFromStock(int $productId, ?int $locationId = null): float
+    {
+        // Resolve company_location_id if an ArrivalSubLocation ID was passed
+        if ($locationId) {
+            $subLoc = \App\Models\Master\ArrivalSubLocation::find($locationId);
+            if ($subLoc && $subLoc->company_location_id) {
+                $locationId = (int)$subLoc->company_location_id;
+            }
+        }
+
+        // 1. Try to get latest stock-in avg_cost_price at location
+        $latestStockIn = Stock::where('product_id', $productId)
+            ->where('type', 'stock-in')
+            ->when($locationId, function ($q) use ($locationId) {
+                $q->where('company_location_id', $locationId);
+            })
+            ->whereNotNull('avg_cost_price')
+            ->where('avg_cost_price', '>', 0)
+            ->latest('id')
+            ->first();
+
+        if ($latestStockIn && (float)$latestStockIn->avg_cost_price > 0) {
+            return (float)$latestStockIn->avg_cost_price;
+        }
+
+        // 2. If no valid avg_cost_price found, calculate Weighted Average Cost (WAC) across stock-in records for this product at this location
+        $stockIns = Stock::where('product_id', $productId)
+            ->where('type', 'stock-in')
+            ->when($locationId, function ($q) use ($locationId) {
+                $q->where('company_location_id', $locationId);
+            })
+            ->where(function ($q) {
+                $q->where('price', '>', 0)
+                  ->orWhere('avg_price_per_kg', '>', 0);
+            })
+            ->get();
+
+        $totalVal = 0;
+        $totalQty = 0;
+        foreach ($stockIns as $stk) {
+            $stkQty = (float)$stk->qty;
+            $stkPrice = (float)$stk->price;
+            if ($stkPrice <= 0 && (float)$stk->avg_price_per_kg > 0) {
+                $stkPrice = $stkQty * (float)$stk->avg_price_per_kg;
+            }
+            if ($stkPrice > 0 && $stkQty > 0) {
+                $totalVal += $stkPrice;
+                $totalQty += $stkQty;
+            }
+        }
+
+        if ($totalQty > 0 && $totalVal > 0) {
+            return round($totalVal / $totalQty, 4);
+        }
+
+        return 0.0;
+    }
+
+    /**
      * Calculate Weighted Average Cost (WAC) for incoming stock
      */
     protected function calculateStockInWac(
@@ -643,7 +721,8 @@ class ProductionCostingService
         float $incomingAmount,
         float $unitRate,
         string $excludeVoucherNo,
-        ?int $brandId = null
+        ?int $brandId = null,
+        ?int $locationId = null
     ): float {
         $latestStockInQuery = Stock::where('product_id', $productId)
             ->where('type', 'stock-in')
@@ -651,21 +730,29 @@ class ProductionCostingService
             ->whereNotNull('avg_cost_price')
             ->where('avg_cost_price', '>', 0);
 
+        if ($locationId) {
+            $latestStockInQuery->where('company_location_id', $locationId);
+        }
+
         if ($brandId) {
             $latestStockInQuery->where('brand_id', $brandId);
         }
 
         $latestStockIn = $latestStockInQuery->latest('id')->first();
 
-        // Fallback to product level if no previous stock for this brand
+        // Fallback to product level without brand if no previous stock for this brand
         if (!$latestStockIn && $brandId) {
-            $latestStockIn = Stock::where('product_id', $productId)
+            $fallbackQuery = Stock::where('product_id', $productId)
                 ->where('type', 'stock-in')
                 ->where('voucher_no', '!=', $excludeVoucherNo)
                 ->whereNotNull('avg_cost_price')
-                ->where('avg_cost_price', '>', 0)
-                ->latest('id')
-                ->first();
+                ->where('avg_cost_price', '>', 0);
+
+            if ($locationId) {
+                $fallbackQuery->where('company_location_id', $locationId);
+            }
+
+            $latestStockIn = $fallbackQuery->latest('id')->first();
         }
 
         $currentWac = $latestStockIn ? (float)$latestStockIn->avg_cost_price : $unitRate;
@@ -676,6 +763,11 @@ class ProductionCostingService
         $outQuery = Stock::where('product_id', $productId)
             ->where('type', 'stock-out')
             ->where('voucher_no', '!=', $excludeVoucherNo);
+
+        if ($locationId) {
+            $inQuery->where('company_location_id', $locationId);
+            $outQuery->where('company_location_id', $locationId);
+        }
 
         if ($brandId) {
             $inQuery->where('brand_id', $brandId);

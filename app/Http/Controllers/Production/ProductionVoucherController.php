@@ -1101,15 +1101,25 @@ class ProductionVoucherController extends Controller
             if (is_array($inputProductIds) && !empty($inputProductIds)) {
                 $inputLocationIds = $request->input('input_location_id', []);
                 $inputQtys = $request->input('input_qty', []);
+                $inputRates = $request->input('input_rate', []);
                 $inputRemarks = $request->input('input_remarks', []);
 
                 foreach ($inputProductIds as $index => $productId) {
                     if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
+                        $costingService = app(\App\Services\ProductionCostingService::class);
+                        $inRate = isset($inputRates[$index]) && (float)$inputRates[$index] > 0
+                            ? (float)$inputRates[$index]
+                            : (float)$costingService->getRawMaterialRateFromStock((int)$productId, (int)$productionVoucher->location_id);
+                        $inQty = (float)$inputQtys[$index];
+                        $inAmount = round($inQty * $inRate, 2);
+
                         ProductionInput::create([
                             'production_voucher_id' => $productionVoucher->id,
                             'product_id' => $productId,
                             'location_id' => $inputLocationIds[$index],
-                            'qty' => $inputQtys[$index],
+                            'qty' => $inQty,
+                            'rate' => $inRate,
+                            'amount' => $inAmount,
                             'remarks' => $inputRemarks[$index] ?? null,
                         ]);
                     }
@@ -1289,17 +1299,17 @@ class ProductionVoucherController extends Controller
                     ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
-            // Phase 3: Synchronize Production Costing, Auto-JV, and Stock Ledger
-            try {
-                $costingService = new \App\Services\ProductionCostingService();
-                $costingService->syncProductionVoucher($productionVoucher, [
-                    'input_rates' => $request->input('input_rate', [])
-                ]);
-            } catch (\Throwable $costEx) {
-                \Illuminate\Support\Facades\Log::error('Production costing sync error on store: ' . $costEx->getMessage());
-            }
-
             DB::commit();
+
+            // If voucher is approved (current auto-approve mode), trigger onApprovalComplete
+            if ($productionVoucher->am_approval_status === 'approved') {
+                try {
+                    $productionVoucher->refresh();
+                    $productionVoucher->onApprovalComplete();
+                } catch (\Throwable $costEx) {
+                    \Illuminate\Support\Facades\Log::error('Production costing sync on approval error: ' . $costEx->getMessage());
+                }
+            }
 
             // return response()->json([
             //     'success' => 'Production Voucher created successfully.',
@@ -1748,15 +1758,25 @@ class ProductionVoucherController extends Controller
             if (is_array($inputProductIds) && !empty($inputProductIds)) {
                 $inputLocationIds = $request->input('input_location_id', []);
                 $inputQtys = $request->input('input_qty', []);
+                $inputRates = $request->input('input_rate', []);
                 $inputRemarks = $request->input('input_remarks', []);
 
                 foreach ($inputProductIds as $index => $productId) {
                     if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
+                        $costingService = app(\App\Services\ProductionCostingService::class);
+                        $inRate = isset($inputRates[$index]) && (float)$inputRates[$index] > 0
+                            ? (float)$inputRates[$index]
+                            : (float)$costingService->getRawMaterialRateFromStock((int)$productId, (int)$productionVoucher->location_id);
+                        $inQty = (float)$inputQtys[$index];
+                        $inAmount = round($inQty * $inRate, 2);
+
                         ProductionInput::create([
                             'production_voucher_id' => $productionVoucher->id,
                             'product_id' => $productId,
                             'location_id' => $inputLocationIds[$index],
-                            'qty' => $inputQtys[$index],
+                            'qty' => $inQty,
+                            'rate' => $inRate,
+                            'amount' => $inAmount,
                             'remarks' => $inputRemarks[$index] ?? null,
                         ]);
                     }
@@ -1949,17 +1969,17 @@ class ProductionVoucherController extends Controller
                     ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
-            // Phase 3: Synchronize Production Costing, Auto-JV, and Stock Ledger
-            try {
-                $costingService = new \App\Services\ProductionCostingService();
-                $costingService->syncProductionVoucher($productionVoucher, [
-                    'input_rates' => $request->input('input_rate', [])
-                ]);
-            } catch (\Throwable $costEx) {
-                \Illuminate\Support\Facades\Log::error('Production costing sync error on update: ' . $costEx->getMessage());
-            }
-
             DB::commit();
+
+            // If voucher is approved (current auto-approve mode), trigger onApprovalComplete
+            if ($productionVoucher->am_approval_status === 'approved') {
+                try {
+                    $productionVoucher->refresh();
+                    $productionVoucher->onApprovalComplete();
+                } catch (\Throwable $costEx) {
+                    \Illuminate\Support\Facades\Log::error('Production costing sync on approval error: ' . $costEx->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => 'Production Voucher updated successfully.',
@@ -2972,19 +2992,16 @@ class ProductionVoucherController extends Controller
         $totalInputQty = 0;
         $totalInputCost = 0;
         $inputItemsPreview = [];
+        $inputLocationIds = $request->input('input_location_id', []);
+        $costingService = new \App\Services\ProductionCostingService();
+
         foreach ($inputProductIds as $idx => $inProdId) {
             $qty = isset($inputQtys[$idx]) ? (float)$inputQtys[$idx] : 0;
             if ($qty > 0 && !empty($inProdId)) {
                 $totalInputQty += $qty;
                 $rate = isset($inputRates[$idx]) && (float)$inputRates[$idx] > 0 ? (float)$inputRates[$idx] : null;
                 if ($rate === null) {
-                    $latestStockIn = \App\Models\Master\Account\Stock::where('product_id', $inProdId)
-                        ->where('type', 'stock-in')
-                        ->whereNotNull('avg_cost_price')
-                        ->where('avg_cost_price', '>', 0)
-                        ->latest('id')
-                        ->first();
-                    $rate = $latestStockIn ? (float)$latestStockIn->avg_cost_price : (float)(\App\Models\Product::find($inProdId)?->price ?? 0);
+                    $rate = $costingService->getRawMaterialRateFromStock((int)$inProdId, $locationId ? (int)$locationId : null);
                 }
                 $amt = round($qty * $rate, 2);
                 $totalInputCost += $amt;
