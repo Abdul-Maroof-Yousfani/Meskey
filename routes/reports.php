@@ -53,5 +53,10 @@ Route::prefix('arrival')->group(function () {
   Route::post('/get-gala-qc', [GalaQcReportController::class, 'getList'])->name('reports.arrival.get.gala-qc');
 });
 
+// Stock / Inventory Report (Direct route for client)
+Route::get('stock-report', [\App\Http\Controllers\Reports\StockReportController::class, 'index'])->name('reports.stock-report');
+Route::post('get-stock-report', [\App\Http\Controllers\Reports\StockReportController::class, 'getList'])->name('reports.get.stock-report');
+
+
 
 
