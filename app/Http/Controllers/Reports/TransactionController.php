@@ -23,11 +23,15 @@ class TransactionController extends Controller
      */
     public function getTransactionsReport(Request $request)
     {
+        // Increase memory and execution time for detailed reports
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300);
+
         $openingBalance = 0;
         if ($request->filled('account_id') && $request->filled('daterange')) {
             $dates = explode(' - ', $request->daterange);
             $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-            
+
             $openingBalance = Transaction::where('account_id', $request->account_id)
                 ->where('voucher_date', '<', $startDate)
                 ->sum(DB::raw("CASE WHEN type = 'debit' THEN amount ELSE -amount END"));
