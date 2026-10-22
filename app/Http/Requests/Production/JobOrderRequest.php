@@ -280,8 +280,8 @@ class JobOrderRequest extends FormRequest
             ],
             'loading_date' => [
                 'nullable',
-                'date',
-                'after_or_equal:job_order_date'
+                'date'
+                // ,'after_or_equal:job_order_date'
             ],
             'packing_description' => [
                 'nullable',
