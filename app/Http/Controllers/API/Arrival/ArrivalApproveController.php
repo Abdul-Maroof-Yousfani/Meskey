@@ -85,48 +85,19 @@ class ArrivalApproveController extends Controller
                 ->when(!$isSuperAdmin, function ($q) use ($authUser) {
                     return $q->whereIn('arrival_location_transfers.arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
-                // ✅ Filter by ticket_no
-                ->when($request->filled('ticket_no'), function ($q) use ($request) {
-                    return $q->where('arrival_tickets.ticket_no', 'LIKE', '%' . $request->ticket_no . '%');
-                })
                 ->select(
                     'arrival_tickets.*',
                     'arrival_locations.id as arrival_location_id',
                     'arrival_locations.name as arrival_location_name'
                 );
 
-            // ✅ Pagination with metadata
             if ($request->has('paginate')) {
-                $paginated = $tickets->paginate(10);
-
-                $paginated->getCollection()->transform(function ($ticket) {
-                    if ($ticket->second_qc_status === 'rejected') {
-                        $ticket->unloading_approval_status = 'Half Approved';
-                    } elseif ($ticket->second_qc_status === 'approved') {
-                        $ticket->unloading_approval_status = 'Full Approved';
-                    } elseif (is_null($ticket->second_qc_status) && $ticket->first_qc_status === 'approved') {
-                        $ticket->unloading_approval_status = 'Full Approved';
-                    } else {
-                        $ticket->unloading_approval_status = null;
-                    }
-                    return $ticket;
-                });
-
-                return ApiResponse::success([
-                    'data' => $paginated->items(),
-                    'pagination' => [
-                        'current_page' => $paginated->currentPage(),
-                        'per_page' => $paginated->perPage(),
-                        'total' => $paginated->total(),
-                        'last_page' => $paginated->lastPage(),
-                        'from' => $paginated->firstItem(),
-                        'to' => $paginated->lastItem(),
-                        'has_more' => $paginated->hasMorePages(),
-                    ],
-                ], 'Available tickets retrieved successfully');
+                $tickets = $tickets->paginate(10);
+            } else {
+                $tickets = $tickets->get();
             }
 
-            $tickets = $tickets->get()->map(function ($ticket) {
+            $tickets = $tickets->map(function ($ticket) {
                 if ($ticket->second_qc_status === 'rejected') {
                     $ticket->unloading_approval_status = 'Half Approved';
                 } elseif ($ticket->second_qc_status === 'approved') {
@@ -139,11 +110,7 @@ class ArrivalApproveController extends Controller
                 return $ticket;
             });
 
-            return ApiResponse::success([
-                'data' => $tickets,
-                'pagination' => null,
-            ], 'Available tickets retrieved successfully');
-
+            return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve available tickets: ' . $e->getMessage(), 500);
         }
