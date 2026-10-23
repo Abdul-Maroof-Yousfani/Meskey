@@ -586,37 +586,68 @@ class ArrivalApproveController extends Controller
         try {
             $authUser = auth()->user();
 
-            $tickets = ArrivalTicket::with([
-                'unloadingLocation:arrival_location_id',
-                'unloadingLocation.arrivalLocation:id,name',
-            ])
-                ->where('arrival_tickets.first_weighbridge_status', 'completed')
-                ->whereNull('arrival_tickets.document_approval_status')
-                ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product')
-                ->leftJoin('sauda_types', 'sauda_types.id', '=', 'arrival_tickets.sauda_type_id')
-                ->leftJoin('arrival_location_transfers', 'arrival_location_transfers.arrival_ticket_id', '=', 'arrival_tickets.id')
-                ->leftJoin('arrival_locations', 'arrival_locations.id', '=', 'arrival_location_transfers.arrival_location_id')
-                ->leftJoin(DB::raw("
-                (
-                    SELECT r1.*
-                    FROM arrival_sampling_requests r1
-                    WHERE r1.id = (
-                        SELECT MAX(r2.id)
-                        FROM arrival_sampling_requests r2
-                        WHERE r2.arrival_ticket_id = r1.arrival_ticket_id
-                    )
-                ) AS arrival_sampling_requests
-            "), 'arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
-                ->whereHas('unloadingLocation', function ($query) {
-                    $query->whereIn(
-                        'arrival_location_id',
-                        getUserCurrentCompanyArrivalLocations()
-                    );
-                })
-                // ✅ Filter by ticket_no / unique_no
-                ->when($request->filled('ticket_no'), function ($q) use ($request) {
+            // ✅ Base query closure (reuse ke liye)
+            $baseQuery = function () {
+                return ArrivalTicket::with([
+                    'unloadingLocation:arrival_location_id',
+                    'unloadingLocation.arrivalLocation:id,name',
+                ])
+                    ->where('arrival_tickets.first_weighbridge_status', 'completed')
+                    ->whereNull('arrival_tickets.document_approval_status')
+                    ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product')
+                    ->leftJoin('sauda_types', 'sauda_types.id', '=', 'arrival_tickets.sauda_type_id')
+                    ->leftJoin('arrival_location_transfers', 'arrival_location_transfers.arrival_ticket_id', '=', 'arrival_tickets.id')
+                    ->leftJoin('arrival_locations', 'arrival_locations.id', '=', 'arrival_location_transfers.arrival_location_id')
+                    ->leftJoin(DB::raw("
+                    (
+                        SELECT r1.*
+                        FROM arrival_sampling_requests r1
+                        WHERE r1.id = (
+                            SELECT MAX(r2.id)
+                            FROM arrival_sampling_requests r2
+                            WHERE r2.arrival_ticket_id = r1.arrival_ticket_id
+                        )
+                    ) AS arrival_sampling_requests
+                "), 'arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
+                    ->whereHas('unloadingLocation', function ($query) {
+                        $query->whereIn(
+                            'arrival_location_id',
+                            getUserCurrentCompanyArrivalLocations()
+                        );
+                    });
+            };
+
+            // ✅ Search filter
+            $applySearch = function ($q) use ($request) {
+                return $q->when($request->filled('ticket_no'), function ($q) use ($request) {
                     return $q->where('arrival_tickets.unique_no', 'LIKE', '%' . $request->ticket_no . '%');
-                })
+                });
+            };
+
+            // ✅ Counts nikaalo (har filter ka)
+            $counts = [
+                'all' => $applySearch($baseQuery())->count('arrival_tickets.id'),
+                'ok' => $applySearch($baseQuery())
+                    ->where('arrival_sampling_requests.approved_status', 'approved')
+                    ->count('arrival_tickets.id'),
+                'pending' => $applySearch($baseQuery())
+                    ->where('arrival_sampling_requests.approved_status', 'pending')
+                    ->where(function ($q) {
+                        $q->whereNull('arrival_sampling_requests.is_re_sampling')
+                            ->orWhere('arrival_sampling_requests.is_re_sampling', '!=', 'yes');
+                    })
+                    ->count('arrival_tickets.id'),
+                'resampling' => $applySearch($baseQuery())
+                    ->where('arrival_sampling_requests.is_re_sampling', 'yes')
+                    ->where('arrival_sampling_requests.approved_status', 'pending')
+                    ->count('arrival_tickets.id'),
+                'reject' => $applySearch($baseQuery())
+                    ->where('arrival_sampling_requests.approved_status', 'rejected')
+                    ->count('arrival_tickets.id'),
+            ];
+
+            // ✅ Main query with filter
+            $tickets = $applySearch($baseQuery())
                 ->select(
                     'arrival_tickets.id',
                     'arrival_tickets.unique_no',
@@ -641,7 +672,25 @@ class ArrivalApproveController extends Controller
                 )
                 ->orderBy('arrival_tickets.id', 'desc');
 
-            // ✅ Helper closure to format each ticket
+            // ✅ Apply status filter
+            $status = $request->get('status', 'all');
+
+            if ($status === 'ok') {
+                $tickets->where('arrival_sampling_requests.approved_status', 'approved');
+            } elseif ($status === 'pending') {
+                $tickets->where('arrival_sampling_requests.approved_status', 'pending')
+                    ->where(function ($q) {
+                        $q->whereNull('arrival_sampling_requests.is_re_sampling')
+                            ->orWhere('arrival_sampling_requests.is_re_sampling', '!=', 'yes');
+                    });
+            } elseif ($status === 'resampling') {
+                $tickets->where('arrival_sampling_requests.is_re_sampling', 'yes')
+                    ->where('arrival_sampling_requests.approved_status', 'pending');
+            } elseif ($status === 'reject') {
+                $tickets->where('arrival_sampling_requests.approved_status', 'rejected');
+            }
+
+            // ✅ Format closure (same as before)
             $formatTicket = function ($ticket) {
                 $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
                 unset($ticket->unloadingLocation);
@@ -663,22 +712,12 @@ class ArrivalApproveController extends Controller
                         $docStatus = 'pending';
                     }
 
-                    if ($ticket->sauda_type_id == 1) { // Pohanch
-                        if ($docStatus === 'fully_approved') {
-                            $approvalFormattedStatus = 'OK';
-                        } elseif ($docStatus === 'half_approved') {
-                            $approvalFormattedStatus = 'P-RH';
-                        } else {
-                            $approvalFormattedStatus = 'Unknown Status';
-                        }
-                    } elseif ($ticket->sauda_type_id == 2) { // Thadda
-                        if ($docStatus === 'fully_approved') {
-                            $approvalFormattedStatus = 'TS';
-                        } elseif ($docStatus === 'half_approved') {
-                            $approvalFormattedStatus = 'TS-RH';
-                        } else {
-                            $approvalFormattedStatus = 'RF';
-                        }
+                    if ($ticket->sauda_type_id == 1) {
+                        $approvalFormattedStatus = $docStatus === 'fully_approved' ? 'OK'
+                            : ($docStatus === 'half_approved' ? 'P-RH' : 'Unknown Status');
+                    } elseif ($ticket->sauda_type_id == 2) {
+                        $approvalFormattedStatus = $docStatus === 'fully_approved' ? 'TS'
+                            : ($docStatus === 'half_approved' ? 'TS-RH' : 'RF');
                     } else {
                         $approvalFormattedStatus = 'RFtt';
                     }
@@ -706,14 +745,14 @@ class ArrivalApproveController extends Controller
                 return $ticket;
             };
 
-            // ✅ Pagination with metadata
+            // ✅ Pagination
             if ($request->has('paginate')) {
                 $paginated = $tickets->paginate(10);
-
                 $paginated->getCollection()->transform($formatTicket);
 
                 return ApiResponse::success([
                     'data' => $paginated->items(),
+                    'counts' => $counts,   // 👈 yahan counts mil jayenge
                     'pagination' => [
                         'current_page' => $paginated->currentPage(),
                         'per_page' => $paginated->perPage(),
@@ -730,6 +769,7 @@ class ArrivalApproveController extends Controller
 
             return ApiResponse::success([
                 'data' => $collection,
+                'counts' => $counts,
                 'pagination' => null,
             ], 'Available tickets retrieved successfully');
 
@@ -740,7 +780,6 @@ class ArrivalApproveController extends Controller
             );
         }
     }
-
 
     public function store(Request $request)
     {
