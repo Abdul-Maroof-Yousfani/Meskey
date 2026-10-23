@@ -41,4 +41,24 @@ class Stock extends Model
     {
         return $this->belongsTo(\App\Models\Production\ProductionVoucher::class, 'production_voucher_id');
     }
+
+    public function bagPacking()
+    {
+        return $this->belongsTo(\App\Models\BagPacking::class, 'bag_packing_id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(\App\Models\Master\Brands::class, 'brand_id');
+    }
+
+    public function factory()
+    {
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, 'arrival_id');
+    }
+
+    public function arrivalLocation()
+    {
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, 'arrival_id');
+    }
 }

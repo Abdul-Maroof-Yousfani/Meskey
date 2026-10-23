@@ -387,6 +387,7 @@ class DeliveryOrderController extends Controller
                                 ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
                                 ->where('payment_voucher_data.sales_order_id', $request->sale_order_id)
                                 ->whereNull('payment_voucher_data.delivery_order_id')
+                                ->where('payment_vouchers.created_at', '>=', $rv->created_at)
                                 ->sum('payment_voucher_data.net_amount');
 
                             $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded));
@@ -894,16 +895,24 @@ class DeliveryOrderController extends Controller
 
 
 
-            $dpvRefunded = (float) DB::table('payment_voucher_data')
+            $dpvRefunds = DB::table('payment_voucher_data')
                 ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
                 ->whereNull('payment_vouchers.deleted_at')
                 ->whereNull('payment_voucher_data.deleted_at')
                 ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
                 ->where('payment_voucher_data.sales_order_id', $sale_order_id)
                 ->whereNull('payment_voucher_data.delivery_order_id')
-                ->sum('payment_voucher_data.net_amount');
+                ->select('payment_vouchers.id', 'payment_vouchers.created_at', 'payment_voucher_data.net_amount')
+                ->orderBy('payment_vouchers.created_at', 'asc')
+                ->get();
 
-            $remainingDpvToDeduct = $dpvRefunded;
+            $dpvPool = [];
+            foreach ($dpvRefunds as $dpv) {
+                $dpvPool[] = [
+                    'created_at' => $dpv->created_at,
+                    'amount' => (float) $dpv->net_amount
+                ];
+            }
 
             foreach ($receipt_vouchers as $rv) {
                 $linked_amount = $rv->items->where("reference_type", "sale_order")
@@ -947,9 +956,21 @@ class DeliveryOrderController extends Controller
                 $spent += $jv_spent;
 
                 $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent));
-                $deductDpv = min($rvAvailableBeforeDpv, $remainingDpvToDeduct);
-                $remaining = $rvAvailableBeforeDpv - $deductDpv;
-                $remainingDpvToDeduct -= $deductDpv;
+
+                $rvDpvDeduction = 0;
+                foreach ($dpvPool as &$dpvItem) {
+                    if ($dpvItem['amount'] > 0 && $dpvItem['created_at'] >= $rv->created_at) {
+                        $deduct = min($rvAvailableBeforeDpv - $rvDpvDeduction, $dpvItem['amount']);
+                        $rvDpvDeduction += $deduct;
+                        $dpvItem['amount'] -= $deduct;
+                        if ($rvDpvDeduction >= $rvAvailableBeforeDpv) {
+                            break;
+                        }
+                    }
+                }
+                unset($dpvItem);
+
+                $remaining = max(0, $rvAvailableBeforeDpv - $rvDpvDeduction);
 
                 if ($remaining > 0) {
                     $data[] = [
@@ -1126,14 +1147,24 @@ class DeliveryOrderController extends Controller
         // 2. Fetch Regular RVs linked to the Sale Order of this DO
         $rvsList = collect();
         if ($delivery_order->so_id) {
-            $dpvRefunded = (float) DB::table('payment_voucher_data')
+            $dpvRefunds = DB::table('payment_voucher_data')
                 ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
                 ->whereNull('payment_vouchers.deleted_at')
                 ->whereNull('payment_voucher_data.deleted_at')
                 ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
                 ->where('payment_voucher_data.sales_order_id', $delivery_order->so_id)
                 ->whereNull('payment_voucher_data.delivery_order_id')
-                ->sum('payment_voucher_data.net_amount');
+                ->select('payment_vouchers.id', 'payment_vouchers.created_at', 'payment_voucher_data.net_amount')
+                ->orderBy('payment_vouchers.created_at', 'asc')
+                ->get();
+
+            $dpvPool = [];
+            foreach ($dpvRefunds as $dpv) {
+                $dpvPool[] = [
+                    'created_at' => $dpv->created_at,
+                    'amount' => (float) $dpv->net_amount
+                ];
+            }
 
             $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
                 ->whereHas("items", function ($query) use ($delivery_order) {
@@ -1141,8 +1172,9 @@ class DeliveryOrderController extends Controller
                         ->where("reference_id", $delivery_order->so_id);
                 })
                 ->where("customer_id", $delivery_order->customer_id)
+                ->orderBy('created_at', 'asc')
                 ->get()
-                ->map(function ($rv) use ($delivery_order, $dpvRefunded) {
+                ->map(function ($rv) use ($delivery_order, &$dpvPool) {
                     $linked_amount = $rv->items->where("reference_type", "sale_order")
                         ->where("reference_id", $delivery_order->so_id)
                         ->sum("net_amount");
@@ -1172,7 +1204,22 @@ class DeliveryOrderController extends Controller
                         ->where('payment_voucher_data.delivery_order_id', $delivery_order->id)
                         ->sum('payment_voucher_data.net_amount');
 
-                    $rv->remaining_amount = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpvRefunded) - $thisDoRefund);
+                    $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent) - $thisDoRefund);
+
+                    $rvDpvDeduction = 0;
+                    foreach ($dpvPool as &$dpvItem) {
+                        if ($dpvItem['amount'] > 0 && $dpvItem['created_at'] >= $rv->created_at) {
+                            $deduct = min($rvAvailableBeforeDpv - $rvDpvDeduction, $dpvItem['amount']);
+                            $rvDpvDeduction += $deduct;
+                            $dpvItem['amount'] -= $deduct;
+                            if ($rvDpvDeduction >= $rvAvailableBeforeDpv) {
+                                break;
+                            }
+                        }
+                    }
+                    unset($dpvItem);
+
+                    $rv->remaining_amount = max(0, $rvAvailableBeforeDpv - $rvDpvDeduction - doubleval($jv_spent));
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
                     $rv->date = $rv->rv_date->format('Y-m-d');
@@ -1415,6 +1462,7 @@ class DeliveryOrderController extends Controller
                                 ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
                                 ->where('payment_voucher_data.sales_order_id', $request->sale_order_id)
                                 ->whereNull('payment_voucher_data.delivery_order_id')
+                                ->where('payment_vouchers.created_at', '>=', $rv->created_at)
                                 ->sum('payment_voucher_data.net_amount');
 
                             $thisDoRefund = (float) DB::table('payment_voucher_data')
