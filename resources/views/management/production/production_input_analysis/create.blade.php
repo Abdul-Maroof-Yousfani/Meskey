@@ -60,9 +60,6 @@
                             @endforeach
                         </select>
                         <input type="hidden" name="hidden_product_id" id="hidden_product_id" value="{{ $fixedProduct?->id ?? '' }}" {{ isset($fixedProduct) && $fixedProduct ? '' : 'disabled' }}>
-                        <small id="product_fixed_help" class="form-text text-danger font-weight-bold {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}">
-                            <i class="ft-info mr-1"></i> Product is locked to match first analysis record for this Arrival, Plant & Date.
-                        </small>
                     </div>
                 </div>
 

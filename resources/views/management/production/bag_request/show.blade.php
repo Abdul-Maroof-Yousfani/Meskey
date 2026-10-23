@@ -13,11 +13,16 @@
                     <p><strong>Request Date:</strong> {{ \Carbon\Carbon::parse($bagRequest->request_date)->format('d/m/Y') }}</p>
                 </div>
                 <div class="col-md-3">
-                    <p><strong>Gala:</strong> {{ $bagRequest->gala->name ?? 'N/A' }}</p>
+                    <p><strong>Company Location:</strong> {{ $bagRequest->companyLocation->name ?? 'N/A' }}</p>
                 </div>
                 <div class="col-md-3">
                     <p><strong>Arrival Location:</strong> {{ $bagRequest->arrivalLocation->name ?? 'N/A' }}</p>
                 </div>
+                @if($bagRequest->gala)
+                <div class="col-md-3">
+                    <p><strong>Gala:</strong> {{ $bagRequest->gala->name }}</p>
+                </div>
+                @endif
                 <div class="col-md-3">
                     <p><strong>Status:</strong> 
                         @if($bagRequest->issuances->count() > 0)

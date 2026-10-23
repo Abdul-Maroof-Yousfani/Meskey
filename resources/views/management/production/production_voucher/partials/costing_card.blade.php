@@ -73,8 +73,14 @@
                 </div>
             </div>
 
+            @php
+                $hasVoucherVariablesTable = \Illuminate\Support\Facades\Schema::hasTable('production_voucher_variables');
+                $voucherVars = ($hasVoucherVariablesTable && isset($productionVoucher) && $productionVoucher->voucherVariables) 
+                    ? $productionVoucher->voucherVariables 
+                    : collect();
+            @endphp
             {{-- Variable Overheads Breakdown Drawer / Table --}}
-            <div class="row mt-2" id="variablesBreakdownContainer" style="{{ isset($productionVoucher) && $productionVoucher->voucherVariables && $productionVoucher->voucherVariables->count() > 0 ? '' : 'display: none;' }}">
+            <div class="row mt-2" id="variablesBreakdownContainer" style="{{ $voucherVars->count() > 0 ? '' : 'display: none;' }}">
                 <div class="col-12">
                     <div class="card border mb-0">
                         <div class="card-header bg-white py-1 px-3 d-flex justify-content-between align-items-center cursor-pointer" onclick="$('#variablesDetailCollapse').slideToggle(200);">
@@ -95,8 +101,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($productionVoucher) && $productionVoucher->voucherVariables)
-                                        @foreach($productionVoucher->voucherVariables as $vVar)
+                                    @if($voucherVars->count() > 0)
+                                        @foreach($voucherVars as $vVar)
                                             <tr>
                                                 <td class="font-weight-bold text-left">{{ $vVar->variable->title ?? 'Variable #' . $vVar->variable_id }}</td>
                                                 <td>PKR {{ number_format($vVar->rate, 2) }}</td>

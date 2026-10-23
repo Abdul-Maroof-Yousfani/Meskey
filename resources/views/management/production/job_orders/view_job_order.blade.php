@@ -277,7 +277,11 @@
                                 <th class="text-uppercase bg-light">Fumigation By</th>
                                 @php
                                     $fumiIds = is_array($item->fumigation_company_id) ? $item->fumigation_company_id : (json_decode($item->fumigation_company_id, true) ?? []);
-                                    $fumis = !empty($fumiIds) ? \App\Models\Master\FumigationCompany::whereIn('id', $fumiIds)->pluck('name')->implode(', ') : '-';
+                                    if (!empty($fumiIds) && in_array('null', (array)$fumiIds)) {
+                                        $fumis = 'N/A';
+                                    } else {
+                                        $fumis = !empty($fumiIds) ? \App\Models\Master\FumigationCompany::whereIn('id', $fumiIds)->pluck('name')->implode(', ') : '-';
+                                    }
                                 @endphp
                                 <td colspan="3">{{ $fumis }}</td>
                                 <th class="text-uppercase bg-light">Attachment</th>
@@ -389,7 +393,11 @@
                                 <td width="30%">
                                     @php 
                                         $inspIds = is_string($jobOrder->inspection_company_id) ? json_decode($jobOrder->inspection_company_id, true) : $jobOrder->inspection_company_id;
-                                        $insps = !empty($inspIds) ? \App\Models\Master\InspectionCompany::whereIn('id', $inspIds)->pluck('name')->implode(', ') : '-';
+                                        if (!empty($inspIds) && in_array('null', (array)$inspIds)) {
+                                            $insps = 'N/A';
+                                        } else {
+                                            $insps = !empty($inspIds) ? \App\Models\Master\InspectionCompany::whereIn('id', $inspIds)->pluck('name')->implode(', ') : '-';
+                                        }
                                     @endphp
                                     {{ $insps }}
                                 </td>

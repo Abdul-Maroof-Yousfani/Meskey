@@ -84,7 +84,6 @@ class ProductionVoucherRequest extends FormRequest
                 'required',
                 'numeric',
                 'min:0',
-                'lte:net_total_input'
             ],
             // Production Inputs (using input_ prefix to avoid conflict with main form fields)
             'input_product_id.*' => [
@@ -243,6 +242,69 @@ class ProductionVoucherRequest extends FormRequest
                     }
                 }
             }
+
+            // Validate that Total Input >= Total Output
+            $netTotalInput = (float)$this->input('net_total_input', 0);
+            $netTotalOutput = (float)$this->input('net_total_output', 0);
+
+            if ($netTotalOutput > $netTotalInput) {
+                $formattedOutput = number_format($netTotalOutput, 2);
+                $validator->errors()->add(
+                    'net_total_output',
+                    "Total input must be greater than or equal to total output (Total Output: {$formattedOutput} KG)."
+                );
+            }
+
+            // Validate that Plant has active machines AND Machine Plan Setting record for this date
+            if ($this->filled('plant_id')) {
+                $plantId = $this->plant_id;
+                $plant = \App\Models\Master\Plant::find($plantId);
+                $plantName = $plant ? $plant->name : 'selected plant';
+
+                $hasActiveMachines = \App\Models\Master\ProductionMachine::where('plant_id', $plantId)
+                    ->where('status', 'active')
+                    ->exists();
+
+                if (!$hasActiveMachines) {
+                    $validator->errors()->add(
+                        'plant_id',
+                        "No active Production Machines found for '{$plantName}'. At least one active Production Machine record must exist for this plant."
+                    );
+                } else if ($this->filled('prod_date')) {
+                    $prodDate = $this->prod_date;
+                    $voucherId = $this->route('production_voucher');
+
+                    $voucherHasTimes = false;
+                    if ($voucherId) {
+                        $pv = \App\Models\Production\ProductionVoucher::with('productionVoucherMachineTimes')->find($voucherId);
+                        $voucherHasTimes = $pv && $pv->plant_id == $plantId && $pv->productionVoucherMachineTimes->isNotEmpty();
+                    }
+
+                    if (!$voucherHasTimes) {
+                        $plan = \App\Models\Production\MachinePlanSetting::with('items')
+                            ->where('plant_id', $plantId)
+                            ->whereDate('date', $prodDate)
+                            ->when($voucherId, function ($q) use ($voucherId) {
+                                $q->orWhere('production_voucher_id', $voucherId);
+                            })
+                            ->first();
+
+                        $formattedDate = \Carbon\Carbon::parse($prodDate)->format('d-m-Y');
+
+                        if (!$plan) {
+                            $validator->errors()->add(
+                                'plant_id',
+                                "No Machine Plan Setting record found for plant '{$plantName}' on {$formattedDate}. Please create a Machine Plan Setting for this plant and date first."
+                            );
+                        } else if (!$plan->items || $plan->items->isEmpty()) {
+                            $validator->errors()->add(
+                                'plant_id',
+                                "Machine Plan Setting for plant '{$plantName}' on {$formattedDate} has no machine records. Please configure at least one machine in Machine Plan Setting."
+                            );
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -264,6 +326,7 @@ class ProductionVoucherRequest extends FormRequest
             'product_id.exists' => 'Selected head product does not exist',
             'plant_id.exists' => 'Selected plant does not exist',
             'by_product_id.exists' => 'Selected by product does not exist',
+            'net_total_output.lte' => 'Total input must be greater than or equal to total output.',
         ];
     }
 }

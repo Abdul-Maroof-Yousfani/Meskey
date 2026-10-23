@@ -389,7 +389,7 @@ class ProductionAnalysisRequestController extends Controller
         }
 
         $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
-        $prefix = $locationCode . '-AR';
+        $prefix = $locationCode . '-AR-MIL';
 
         $searchPattern = $prefix . '-%-' . $datePart;
 

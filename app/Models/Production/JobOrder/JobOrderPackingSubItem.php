@@ -29,6 +29,7 @@ class JobOrderPackingSubItem extends Model
         'thread_color_id',
         'attachment',
         'extra_bags_percentage',
+        'empty_bags_percentage',
     ];
 
     public function packingItem()

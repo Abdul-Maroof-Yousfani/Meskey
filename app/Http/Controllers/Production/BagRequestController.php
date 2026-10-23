@@ -36,9 +36,12 @@ class BagRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $requests = BagRequest::with(['gala', 'items.item', 'issuances'])
+        $requests = BagRequest::with(['companyLocation', 'arrivalLocation', 'gala', 'items.item', 'issuances'])
             ->when($request->search, function ($query) use ($request) {
                 $query->where('request_number', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('companyLocation', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    })
                     ->orWhereHas('gala', function ($q) use ($request) {
                         $q->where('name', 'like', '%' . $request->search . '%');
                     });
@@ -54,14 +57,12 @@ class BagRequestController extends Controller
      */
     public function create()
     {
-        $data['galas'] = ArrivalSubLocation::where('status', 'active')->get();
         $data['products'] = Product::all();
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
         // Initialize with empty collections, they will be populated via AJAX
         $data['arrival_locations'] = collect();
-        $data['galas'] = collect();
         $data['jobOrders'] = collect();
         $data['request_number'] = $this->getNumber(date('Y-m-d'));
         
@@ -87,8 +88,8 @@ class BagRequestController extends Controller
 
             $products = \App\Models\Product::whereIn("id", collect($request->items)->pluck("item_id"))->get();
 
-            // Only check stock if stock_check setting exists and is enabled for this company
-            if ($request->has('items') && $isStockCheckRequired) {
+            // Only check stock if stock_check setting exists and is enabled for this company and gala is provided
+            if ($request->has('items') && $isStockCheckRequired && !empty($request->gala_id)) {
                 // Aggregate quantities by item and brand to check total stock for this request
                 $aggregatedItems = collect($request->items)->groupBy(function($item) {
                     return $item['item_id'] . '-' . $item['brand_id'];
@@ -119,7 +120,7 @@ class BagRequestController extends Controller
                 'request_number' => $this->getNumber($request->request_date),
                 'request_date' => $request->request_date,
                 'arrival_location_id' => $request->arrival_location_id,
-                'gala_id' => $request->gala_id,
+                'gala_id' => $request->gala_id ?? null,
                 'job_order_ids' => $request->job_order_ids,
                 'remarks' => $request->remarks,
                 'company_id' => $companyId,
@@ -313,27 +314,39 @@ class BagRequestController extends Controller
         }
 
         $data['bagRequest'] = $bagRequest;
-        $data['galas'] = ArrivalSubLocation::where('status', 'active')->get();
         $data['products'] = Product::all();
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
         
         $data['arrival_locations'] = ArrivalLocation::where('company_location_id', $bagRequest->company_location_id)->where('status', 'active')->get();
-        $data['galas'] = ArrivalSubLocation::where('arrival_location_id', $bagRequest->arrival_location_id)->where('status', 'active')->get();
         
+        $selectedJoIds = $bagRequest->job_order_ids ?? [];
         $jobOrders = JobOrder::with(['packingItems', 'packingItems.subItems'])
-            ->whereHas('packingItems', function($q) use ($bagRequest) {
-                $q->where('company_location_id', $bagRequest->company_location_id);
+            ->where(function($q) use ($bagRequest) {
+                $q->where('company_location_id', $bagRequest->company_location_id)
+                  ->orWhereHas('packingItems', function($pi) use ($bagRequest) {
+                      $pi->where('company_location_id', $bagRequest->company_location_id);
+                  });
+            })
+            ->where(function($q) use ($bagRequest, $selectedJoIds) {
+                $q->whereDate('job_order_date', $bagRequest->request_date);
+                if (!empty($selectedJoIds)) {
+                    $q->orWhereIn('id', $selectedJoIds);
+                }
             })
             ->latest()->get();
 
-        $data['jobOrders'] = $jobOrders->filter(function($jo) use ($id) {
-            $totalNeeded = $jo->packingItems->sum('total_bags') + $jo->packingItems->flatMap->subItems->sum('total_bags');
+        $data['jobOrders'] = $jobOrders->filter(function($jo) use ($id, $selectedJoIds, $bagRequest) {
+            $packingItems = $jo->packingItems->where('company_location_id', $bagRequest->company_location_id);
+            if ($packingItems->isEmpty()) {
+                $packingItems = $jo->packingItems;
+            }
+            $totalNeeded = $packingItems->sum('total_bags') + JobOrderPackingSubItem::whereIn('job_order_packing_item_id', $packingItems->pluck('id'))->sum('total_bags');
             $requested = \App\Models\Production\BagRequestItem::where('job_order_id', $jo->id)
                 ->where('bag_request_id', '!=', $id)
                 ->sum('quantity');
-            return $totalNeeded > $requested;
+            return $totalNeeded > $requested || in_array($jo->id, $selectedJoIds);
         });
 
         // Add display size for each item
@@ -400,8 +413,8 @@ class BagRequestController extends Controller
             }
         }
 
-        // Only check stock if stock_check setting exists and is enabled for this company
-        if ($request->has('items') && $isStockCheckRequired) {
+        // Only check stock if stock_check setting exists and is enabled for this company and gala is provided
+        if ($request->has('items') && $isStockCheckRequired && !empty($request->gala_id)) {
             // Aggregate quantities by item and brand to check total stock for this request
             $aggregatedItems = collect($request->items)->groupBy(function($item) {
                 return $item['item_id'] . '-' . $item['brand_id'];
@@ -431,7 +444,7 @@ class BagRequestController extends Controller
         $bagRequest->update([
                 'request_date' => $request->request_date,
                 'arrival_location_id' => $request->arrival_location_id,
-                'gala_id' => $request->gala_id,
+                'gala_id' => $request->gala_id ?? null,
                 'job_order_ids' => $request->job_order_ids,
                 'remarks' => $request->remarks,
                 'company_location_id' => $request->company_location_id,
@@ -713,16 +726,40 @@ class BagRequestController extends Controller
     {
         $companyLocationId = $request->company_location_id;
         $bagRequestId = $request->bag_request_id;
+        $date = $request->date ?? $request->request_date;
+
+        if (!$companyLocationId || !$date) {
+            return response()->json([]);
+        }
+
+        if ($bagRequestId) {
+            $existingBR = BagRequest::find($bagRequestId);
+            $selectedIds = $existingBR ? ($existingBR->job_order_ids ?? []) : [];
+        } else {
+            $selectedIds = [];
+        }
 
         $jobOrders = JobOrder::with(['packingItems', 'packingItems.subItems'])
-            ->whereHas('packingItems', function($q) use ($companyLocationId) {
-                $q->where('company_location_id', $companyLocationId);
+            ->where(function($q) use ($companyLocationId) {
+                $q->where('company_location_id', $companyLocationId)
+                  ->orWhereHas('packingItems', function($pi) use ($companyLocationId) {
+                      $pi->where('company_location_id', $companyLocationId);
+                  });
+            })
+            ->where(function($q) use ($date, $selectedIds) {
+                $q->whereDate('job_order_date', $date);
+                if (!empty($selectedIds)) {
+                    $q->orWhereIn('id', $selectedIds);
+                }
             })
             ->latest()->get();
 
-        $filtered = $jobOrders->filter(function($jo) use ($companyLocationId, $bagRequestId) {
+        $filtered = $jobOrders->filter(function($jo) use ($companyLocationId, $bagRequestId, $selectedIds) {
             // Find total bags needed FOR THIS LOCATION only
             $packingItems = $jo->packingItems->where('company_location_id', $companyLocationId);
+            if ($packingItems->isEmpty()) {
+                $packingItems = $jo->packingItems;
+            }
             $totalNeeded = $packingItems->sum('total_bags');
             
             $subItems = JobOrderPackingSubItem::whereIn('job_order_packing_item_id', $packingItems->pluck('id'))->get();
@@ -738,7 +775,7 @@ class BagRequestController extends Controller
                 })
                 ->sum('quantity');
 
-            return $totalNeeded > $requested;
+            return ($totalNeeded > $requested) || in_array($jo->id, $selectedIds);
         });
 
         return response()->json($filtered->values());

@@ -41,18 +41,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Gala:</label>
-                    <select name="gala_id" id="gala_id" class="form-control select2">
-                        <option value="">Select Gala</option>
-                        @foreach($galas as $gala)
-                            <option value="{{ $gala->id }}" {{ $bagRequest->gala_id == $gala->id ? 'selected' : '' }}>{{ $gala->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-12">
                 <div class="form-group">
                     <label>Job Order:</label>
                     <select name="job_order_ids[]" id="job_order_ids" class="form-control select2" multiple data-placeholder="Select Job Orders">
@@ -162,19 +151,54 @@
             dropdownParent: $('#ajaxSubmit')
         });
 
-        $('#request_date').on('change', function() {
-            let date = $(this).val().replace(/-/g, '');
-            $('#request_number').val('BR-' + date + '-001');
-        });
-
-        // 1. Company Location -> Arrival Location
-        $('#company_location_id').on('change', function() {
-            let companyLocationId = $(this).val();
-            $('#arrival_location_id').empty().append('<option value="">Select Arrival Location</option>');
-            $('#gala_id').empty().append('<option value="">Select Gala</option>');
+        function fetchJobOrders() {
+            let companyLocationId = $('#company_location_id').val();
+            let requestDate = $('#request_date').val();
+            
             $('#job_order_ids').empty();
             $('#itemsBody').empty();
             addDefaultRow();
+
+            if (companyLocationId && requestDate) {
+                $.ajax({
+                    url: '{{ route("bag-requests.get-job-orders") }}',
+                    method: 'GET',
+                    data: { 
+                        company_location_id: companyLocationId,
+                        request_date: requestDate,
+                        bag_request_id: '{{ $bagRequest->id }}'
+                    },
+                    success: function(response) {
+                        $('#job_order_ids').empty();
+                        let selectedJO = @json($bagRequest->job_order_ids ?? []);
+                        if (response && response.length > 0) {
+                            response.forEach(function(jo) {
+                                let isSelected = selectedJO.includes(jo.id) || selectedJO.includes(String(jo.id)) ? 'selected' : '';
+                                $('#job_order_ids').append(`<option value="${jo.id}" ${isSelected}>${jo.job_order_no}</option>`);
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        $('#request_date').on('change', function() {
+            let date = $(this).val();
+            $.ajax({
+                url: '{{ route("bag-requests.get-number") }}',
+                method: 'GET',
+                data: { contract_date: date },
+                success: function(response) {
+                    $('#request_number').val(response.request_number);
+                }
+            });
+            fetchJobOrders();
+        });
+
+        // 1. Company Location -> Arrival Location & Job Orders
+        $('#company_location_id').on('change', function() {
+            let companyLocationId = $(this).val();
+            $('#arrival_location_id').empty().append('<option value="">Select Arrival Location</option>');
 
             if (companyLocationId) {
                 $.ajax({
@@ -188,54 +212,7 @@
                     }
                 });
             }
-        });
-
-        // 2. Arrival Location -> Gala
-        $('#arrival_location_id').on('change', function() {
-            let arrivalLocationId = $(this).val();
-            $('#gala_id').empty().append('<option value="">Select Gala</option>');
-            $('#job_order_ids').empty();
-            $('#itemsBody').empty();
-            addDefaultRow();
-
-            if (arrivalLocationId) {
-                $.ajax({
-                    url: '{{ route("bag-requests.get-galas") }}',
-                    method: 'GET',
-                    data: { arrival_location_id: arrivalLocationId },
-                    success: function(response) {
-                        response.forEach(function(gala) {
-                            $('#gala_id').append(`<option value="${gala.id}">${gala.name}</option>`);
-                        });
-                    }
-                });
-            }
-        });
-
-        // 3. Gala -> Job Orders
-        $('#gala_id').on('change', function() {
-            let galaId = $(this).val();
-            let companyLocationId = $('#company_location_id').val();
-            $('#job_order_ids').empty();
-            $('#itemsBody').empty();
-            addDefaultRow();
-
-            if (galaId && companyLocationId) {
-                $.ajax({
-                    url: '{{ route("bag-requests.get-job-orders") }}',
-                    method: 'GET',
-                    data: { 
-                        gala_id: galaId, 
-                        company_location_id: companyLocationId,
-                        bag_request_id: '{{ $bagRequest->id }}'
-                    },
-                    success: function(response) {
-                        response.forEach(function(jo) {
-                            $('#job_order_ids').append(`<option value="${jo.id}">${jo.job_order_no}</option>`);
-                        });
-                    }
-                });
-            }
+            fetchJobOrders();
         });
 
         let rowIndex = {{ count($bagRequest->items) }};

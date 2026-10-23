@@ -41,11 +41,45 @@
                 }
                 return $html;
             };
+
+            $arrivalSubLocations = $arrivalSubLocations ?? collect();
+            $brands = $brands ?? collect();
+            $jobOrderPackings = $jobOrderPackings ?? collect();
+            $headProduct = $headProduct ?? null;
+
+            $isRawOrB2 = function($product) use ($headProduct) {
+                if (!$product) return false;
+                $name = $product->name ?? '';
+                $flag = $product->product_category_flags ?? '';
+                $catId = $product->category_id ?? null;
+                $prodId = $product->id ?? null;
+                $parentId = $product->parent_id ?? null;
+
+                $inputProdId = (isset($headProduct) && $headProduct) ? $headProduct->id : null;
+                $inputParentId = (isset($headProduct) && $headProduct) ? $headProduct->parent_id : null;
+                $isInputCommodity = ($inputProdId && $prodId == $inputProdId) 
+                    || ($inputParentId && $prodId == $inputParentId);
+
+                $isRootParent = ($parentId === null && \App\Models\Product::where('parent_id', $prodId)->exists());
+
+                return stripos($name, 'Paddy') !== false 
+                    || $catId == 11
+                    || stripos($name, 'Hybrid') !== false
+                    || stripos($name, 'Husk') !== false
+                    || $flag === 'b2' 
+                    || stripos($name, 'B2') !== false
+                    || $flag === 'by'
+                    || $isInputCommodity
+                    || $isRootParent;
+            };
         @endphp
 
-        {{-- 1. First show products with packing items (existing structure) --}}
+        {{-- 1. First show products with packing items --}}
         @if(isset($packingItemsProducts) && $packingItemsProducts->count() > 0)
             @foreach ($packingItemsProducts as $product)
+                @if($isRawOrB2($product))
+                    @continue
+                @endif
                 @php
                     // Get relevant packing items for this product
                     $relevantPackings = $jobOrderPackings->filter(function($packing) use ($product) {
@@ -70,16 +104,14 @@
                                 if (!empty($output->id)) {
                                     $renderedOutputIds[] = $output->id;
                                 }
+                                $prod = $output->product ?? $product;
                             @endphp
+                            @if($isRawOrB2($prod))
+                                @continue
+                            @endif
                             <tr>
                                 <td>
-                                    @php
-                                        $prod = $output->product ?? $product;
-                                        $isB2 = ($prod->product_category_flags ?? '') === 'b2';
-                                        $pName = $prod->name ?? '';
-                                        $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
-                                    @endphp
-                                    <strong>{{ $displayName }}</strong>
+                                    <strong>{{ $prod->name ?? '' }}</strong>
                                     <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
                                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                                     @if($output->id)
@@ -142,15 +174,11 @@
                         @endforeach
                     @else
                         {{-- Show new row for packing item without outputs --}}
+                        @php $prod = $jobOrderPacking->jobOrder->product ?? $product; @endphp
+                        @if(!$isRawOrB2($prod))
                         <tr>
                             <td>
-                                @php
-                                    $prod = $jobOrderPacking->jobOrder->product ?? $product;
-                                    $isB2 = ($prod->product_category_flags ?? '') === 'b2';
-                                    $pName = $prod->name ?? '';
-                                    $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
-                                @endphp
-                                <strong>{{ $displayName }}</strong>
+                                <strong>{{ $prod->name ?? '' }}</strong>
                                 <input type="hidden" name="output_product_id[]" value="{{ $jobOrderPacking->jobOrder->product->id ?? $product->id }}">
                                 <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                             </td>
@@ -182,18 +210,18 @@
                                 </select>
                             </td>
                             <td>
-                            <select name="output_brand_id[]" class="form-control select2">
-                                <option value="">Select Brand</option>
-                                @foreach($brands as $brand)
-                                    <option value="{{ $brand->id }}" {{ $jobOrderPacking && $jobOrderPacking->brand_id == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <select name="output_job_order_id[]" class="form-control select2">
-                                {!! $renderJobOrderOptions($jobOrderPacking->job_order_id ?? '', $jobOrderPacking->jobOrder->product->id ?? $product->id) !!}
-                            </select>
-                        </td>
+                                <select name="output_brand_id[]" class="form-control select2">
+                                    <option value="">Select Brand</option>
+                                    @foreach($brands as $brand)
+                                        <option value="{{ $brand->id }}" {{ $jobOrderPacking && $jobOrderPacking->brand_id == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="output_job_order_id[]" class="form-control select2">
+                                    {!! $renderJobOrderOptions($jobOrderPacking->job_order_id ?? '', $jobOrderPacking->jobOrder->product->id ?? $product->id) !!}
+                                </select>
+                            </td>
                             <td>
                                 <textarea name="output_remarks[]" class="form-control" rows="1"></textarea>
                             </td>
@@ -202,6 +230,7 @@
                                 <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
                             </td>
                         </tr>
+                        @endif
                     @endif
                 @endforeach
 
@@ -218,16 +247,14 @@
                         if (!empty($output->id)) {
                             $renderedOutputIds[] = $output->id;
                         }
+                        $prod = $output->product ?? $product;
                     @endphp
+                    @if($isRawOrB2($prod))
+                        @continue
+                    @endif
                     <tr>
                         <td>
-                            @php
-                                $prod = $output->product ?? $product;
-                                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
-                                $pName = $prod->name ?? '';
-                                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
-                            @endphp
-                            <strong>{{ $displayName }}</strong>
+                            <strong>{{ $prod->name ?? '' }}</strong>
                             <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                             @if($output->id)
@@ -294,6 +321,9 @@
         {{-- 2. Then show products without packing items --}}
         @if(isset($nonPackingItemsProducts) && $nonPackingItemsProducts->count() > 0)
             @foreach ($nonPackingItemsProducts as $product)
+                @if($isRawOrB2($product))
+                    @continue
+                @endif
                 @php
                     // Check if this product has existing outputs
                     $productOutputs = $existingOutputs->filter(function($output) use ($product, $renderedOutputIds) {
@@ -309,16 +339,14 @@
                             if (!empty($output->id)) {
                                 $renderedOutputIds[] = $output->id;
                             }
+                            $prod = $output->product ?? $product;
                         @endphp
+                        @if($isRawOrB2($prod))
+                            @continue
+                        @endif
                         <tr>
                             <td>
-                                @php
-                                    $prod = $output->product ?? $product;
-                                    $isB2 = ($prod->product_category_flags ?? '') === 'b2';
-                                    $pName = $prod->name ?? '';
-                                    $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
-                                @endphp
-                                <strong>{{ $displayName }}</strong>
+                                <strong>{{ $prod->name ?? '' }}</strong>
                                 <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
                                 <input type="hidden" name="job_order_packing_item_id[]" value="">
                                 @if($output->id)
@@ -381,15 +409,11 @@
                     @endforeach
                 @else
                     {{-- Show new row for product without outputs --}}
+                    @php $prod = $product; @endphp
+                    @if(!$isRawOrB2($prod))
                     <tr>
                         <td>
-                            @php
-                                $prod = $product;
-                                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
-                                $pName = $prod->name ?? '';
-                                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
-                            @endphp
-                            <strong>{{ $displayName }}</strong>
+                            <strong>{{ $prod->name ?? '' }}</strong>
                             <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                         </td>
@@ -437,6 +461,7 @@
                             <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
                         </td>
                     </tr>
+                    @endif
                 @endif
             @endforeach
         @endif
@@ -453,13 +478,13 @@
                     $renderedOutputIds[] = $output->id;
                 }
                 $prod = $output->product;
-                $isB2 = ($prod->product_category_flags ?? '') === 'b2';
-                $pName = $prod->name ?? 'Product';
-                $displayName = $pName . ($isB2 && !str_contains($pName, '(B2)') ? ' (B2)' : '');
             @endphp
+            @if($isRawOrB2($prod))
+                @continue
+            @endif
             <tr>
                 <td>
-                    <strong>{{ $displayName }}</strong>
+                    <strong>{{ $prod->name ?? '' }}</strong>
                     <input type="hidden" name="output_product_id[]" value="{{ $output->product_id }}">
                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $output->job_order_packing_item_id ?? '' }}">
                     @if($output->id)
@@ -508,7 +533,7 @@
                 </td>
                 <td>
                     <select name="output_job_order_id[]" class="form-control select2">
-                        {!! $renderJobOrderOptions($output->job_order_id ?? '', $output->product_id ?? null) !!}
+                        {!! $renderJobOrderOptions($output->job_order_id ?? '', $output->product_id ?? '') !!}
                     </select>
                 </td>
                 <td>
@@ -522,7 +547,12 @@
         @endforeach
 
         {{-- 4. Total Row --}}
-        @if(isset($headProduct) && $headProduct)
+        @php
+            $hasHeadItems = (isset($packingItemsProducts) && $packingItemsProducts->count() > 0)
+                || (isset($nonPackingItemsProducts) && $nonPackingItemsProducts->count() > 0)
+                || ($existingOutputs->count() > 0);
+        @endphp
+        @if($hasHeadItems && isset($headProduct) && $headProduct)
             <tr class="commodity-total-row">
                 <td>
                     <strong>Total</strong>
