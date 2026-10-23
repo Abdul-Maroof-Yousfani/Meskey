@@ -297,6 +297,10 @@
 <div class="row bottom-button-bar">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+        <button type="button" class="btn btn-outline-info mr-2"
+            onclick="openModal(this,'{{ route('payment-voucher.audit-logs', $paymentVoucher->id) }}','Audit Logs: Payment Voucher #{{ $paymentVoucher->unique_no }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
         {{-- @if (strtolower($paymentVoucher->am_approval_status ?? '') === 'approved') --}}
             <button type="button" class="btn btn-info mr-2" id="printButton">
                 <i class="ft-printer mr-1"></i> Print

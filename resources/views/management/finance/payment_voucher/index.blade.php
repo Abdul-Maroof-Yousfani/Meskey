@@ -81,7 +81,61 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('get.payment-vouchers') }}`)
+            filterationCommon(`{{ route('get.payment-vouchers') }}`);
+
+            // Automatically open approval modal if open_approval query param is passed (from notification)
+            var urlParams = new URLSearchParams(window.location.search);
+            var openApprovalId = urlParams.get('open_approval');
+            if (openApprovalId) {
+                var isApprovalTriggered = false;
+
+                function cleanUrlApprovalParam() {
+                    try {
+                        var currentUrl = new URL(window.location.href);
+                        if (currentUrl.searchParams.has('open_approval')) {
+                            currentUrl.searchParams.delete('open_approval');
+                            var newSearch = currentUrl.searchParams.toString();
+                            var cleanUrl = currentUrl.pathname + (newSearch ? '?' + newSearch : '');
+                            window.history.replaceState(null, '', cleanUrl);
+                        }
+                    } catch (e) {
+                        console.error('Error removing open_approval param', e);
+                    }
+                }
+
+                function triggerApprovalModal() {
+                    if (isApprovalTriggered) return;
+                    var $btn = $('#approval-btn-' + openApprovalId);
+                    if ($btn.length) {
+                        isApprovalTriggered = true;
+                        cleanUrlApprovalParam();
+                        $btn[0].click();
+                    } else if ($('#filteredData table tbody tr').length > 0 && !$('#filteredData table tbody tr').hasClass('loading')) {
+                        isApprovalTriggered = true;
+                        cleanUrlApprovalParam();
+                        var dummyBtn = $('<button></button>');
+                        var approvalUrl = "{{ url('finance/payment-voucher/approvals') }}/" + openApprovalId;
+                        if (typeof openModal === 'function') {
+                            openModal(dummyBtn, approvalUrl, 'Approval Voucher', false, '80%');
+                        }
+                    }
+                }
+
+                $(document).on('hidden.bs.modal', function () {
+                    cleanUrlApprovalParam();
+                });
+
+                // Listen for AJAX data loading completion from filterationCommon
+                $(document).ajaxSuccess(function (event, xhr, settings) {
+                    if (settings.url && settings.url.indexOf('get-payment-voucher') !== -1) {
+                        setTimeout(triggerApprovalModal, 250);
+                    }
+                });
+
+                // Fallback timeouts in case of fast or delayed rendering
+                setTimeout(triggerApprovalModal, 600);
+                setTimeout(triggerApprovalModal, 1200);
+            }
         });
     </script>
 @endsection
