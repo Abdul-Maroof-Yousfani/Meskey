@@ -600,6 +600,14 @@
         </div>
     @endif
 
+    <div class="approval-view-wrapper mx-2 my-3">
+        <div class="row">
+            <div class="col-12">
+                <x-approval-status :model="$delivery_challan" :read-only="true" />
+            </div>
+        </div>
+    </div>
+
     <div class="row bottom-button-bar text-right">
         <div class="col-12">
             <button type="button" class="btn btn-info mr-2 me-2"

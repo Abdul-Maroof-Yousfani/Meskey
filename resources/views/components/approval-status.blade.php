@@ -4,11 +4,11 @@
         $userAlreadyApproved = false;
         $userAlreadyRejected = false;
         $currentCycle = $model->getCurrentApprovalCycle();
-        $userActions = $model->approvalLogs()
+        $userActions = $user ? $model->approvalLogs()
             ->where('user_id', $user->id)
             ->where('module_id', $module->id)
             ->where('approval_cycle', $currentCycle)
-            ->get();
+            ->get() : collect();
         // dd(class_basename($module->id));
         $userAlreadyApproved = $userActions->where('action', 'approved')->where('status', 'active')->isNotEmpty();
         $userAlreadyRejected = $userActions->where('action', 'rejected')->where('status', 'active')->isNotEmpty();
@@ -166,22 +166,31 @@
 
                             $approvedLogs = $logs->whereIn('action', ['approved', 'partial_approved']);
                             $rejectedLogs = $logs->where('action', 'rejected');
+                            $revertedLogs = $logs->where('action', 'reverted');
                             $rejectedIDS = [];
+                            $eligibleNames = method_exists($model, 'getEligibleApproverNamesForRole')
+                                ? $model->getEligibleApproverNamesForRole($role)
+                                : '';
                         @endphp
 
                         <div class="dash-item flex-fill">
-                            <div class="dash-value d-flex flex-column text-uppercase text-center">
-                                @if ($approvedLogs->isNotEmpty() && isset($approvedLogs->first()->user))
-                                    <strong>{{ $approvedLogs->first()->user->name }}</strong>
+                            <div class="dash-value d-flex flex-column text-center">
+                                @if ($approvedLogs->isNotEmpty())
+                                    @php
+                                        $approverNames = $approvedLogs->pluck('user.name')->filter()->unique()->join(', ');
+                                    @endphp
+                                    <strong class="text-uppercase">{{ $approverNames ?: ($approvedLogs->first()->user->name ?? 'N/A') }}</strong>
                                 @elseif ($rejectedLogs->isNotEmpty() && !in_array($rejectedLogs->first()->user->id, $rejectedIDS))
-                                    <strong>{{ $rejectedLogs->first()->user->name }}</strong>
+                                    <strong class="text-uppercase text-danger">{{ $rejectedLogs->first()->user->name }}</strong>
                                     @php
                                         $rejectedIDS[] = $rejectedLogs->first()->user->id;
                                     @endphp
                                 @else
-                                    <span>&nbsp;</span>
+                                    <span style="font-size: 11px; font-weight: 600; text-transform: capitalize; color: #4b5563; line-height: 1.3;" title="Eligible Approvers: {{ $eligibleNames }}">
+                                        {{ $eligibleNames ?: '-' }}
+                                    </span>
                                 @endif
-                                <small style="font-size: 10px;">({{ $role->name }})</small>
+                                <small style="font-size: 10px; color: #6c757d;">({{ $role->name }})</small>
                             </div>
                             <div class="dash-line">______________________</div>
                             <div class="approver-name mt-1">
@@ -189,6 +198,8 @@
                                     Approved By
                                 @elseif ($rejectedLogs->isNotEmpty())
                                     <span class="text-danger">Rejected By</span>
+                                @elseif ($revertedLogs->isNotEmpty())
+                                    <span class="text-warning">Reverted By</span>
                                 @else
                                     Approved By
                                 @endif
@@ -256,7 +267,7 @@
         </div>
         @endforeach --}}
 
-        @if ($model->canApprove() && !$userAlreadyActed && !$changesRequired)
+        @if (!$readOnly && $model->canApprove() && !$userAlreadyActed && !$changesRequired)
             <div class="row g-3 mx-auto">
                 <div class="col-md-8 mx-auto">
                     <div class="action-form">
@@ -315,7 +326,7 @@
                     </div>
                 </div>
             </div>
-        @elseif($model->getApprovalStatus() === 'pending')
+        @elseif(!$readOnly && $model->getApprovalStatus() === 'pending')
             <div class="alert alert-info border-start border-info border-3">
                 <div class="d-flex align-items-center">
                     <i class="fa  fa-info-circle me-3 text-info"></i>

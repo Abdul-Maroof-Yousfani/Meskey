@@ -74,6 +74,10 @@
                         {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
+                        <a class="primary p-1 text-center position-relative mr-1" style="cursor: pointer;" title="View Audit Logs"
+                            onclick="openModal(this,'{{ route('customer.audit-logs', $row->id) }}','Audit Logs: {{ $row->company_name ?? $row->name }} ({{ $row->unique_no }})', false, '55%')">
+                            <i class="fa fa-history font-medium-3"></i></a>
+
                         @canAccess('customer-edit')
                             <a onclick="openModal(this,'{{ route('customer.edit', $row->id) }}','Edit Customer')"
                                 class="info p-1 text-center mr-2 position-relative ">

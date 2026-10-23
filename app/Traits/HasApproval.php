@@ -583,4 +583,79 @@ trait HasApproval
             $this->update(['am_change_made' => 0]);
         }
     }
+
+    /**
+     * Get the 1-based index of the currently pending approval stage.
+     */
+    public function getCurrentPendingStage(): ?int
+    {
+        $status = strtolower($this->am_approval_status ?? '');
+        if (in_array($status, ['approved', 'rejected', 'reverted'])) {
+            return null;
+        }
+
+        $module = $this->getApprovalModule();
+        if (!$module) {
+            return null;
+        }
+
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $rows = $this->relationLoaded('approvalRows')
+            ? $this->approvalRows->where('module_id', $module->id)->where('approval_cycle', $currentCycle)->sortBy('id')->values()
+            : $this->approvalRows()->where('module_id', $module->id)->where('approval_cycle', $currentCycle)->orderBy('id')->get();
+
+        if ($rows->isEmpty()) {
+            return null;
+        }
+
+        foreach ($rows as $index => $row) {
+            if ($row->status !== 'approved' && $row->current_count < $row->required_count) {
+                return $index + 1;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get comma-separated names of eligible active approvers for a given role.
+     */
+    public function getEligibleApproverNamesForRole($role): string
+    {
+        if (!$role) {
+            return '';
+        }
+
+        $directUserIds = \Illuminate\Support\Facades\DB::table('model_has_roles')
+            ->where('role_id', $role->id)
+            ->where('model_type', \App\Models\User::class)
+            ->pluck('model_id')
+            ->toArray();
+
+        $companyUserIds = \Illuminate\Support\Facades\DB::table('company_user_role')
+            ->where('role_id', $role->id)
+            ->pluck('user_id')
+            ->toArray();
+
+        $roleUserIds = array_values(array_unique(array_filter(array_merge($directUserIds, $companyUserIds))));
+
+        if (empty($roleUserIds)) {
+            return '';
+        }
+
+        $eligibleUsers = \App\Models\User::whereIn('id', $roleUserIds)
+            ->where('status', 'active')
+            ->where('user_type', '!=', 'super-admin')
+            ->pluck('name')
+            ->toArray();
+
+        if (empty($eligibleUsers)) {
+            $eligibleUsers = \App\Models\User::whereIn('id', $roleUserIds)
+                ->where('status', 'active')
+                ->pluck('name')
+                ->toArray();
+        }
+
+        return implode(', ', $eligibleUsers);
+    }
 }
