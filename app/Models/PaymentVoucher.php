@@ -710,7 +710,7 @@ class PaymentVoucher extends Model
     public function autoApprove($comments = 'Auto-approved upon creation')
     {
         // Temporarily disabled for testing approval workflow
-        return;
+        // return;
 
         $this->refresh();
 
