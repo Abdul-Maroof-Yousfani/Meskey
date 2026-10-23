@@ -764,6 +764,7 @@ class ArrivalApproveController extends Controller
                         'has_more' => $paginated->hasMorePages(),
                     ],
                 ], 'Available tickets retrieved successfully');
+
             }
 
             $collection = $tickets->get()->map($formatTicket);
