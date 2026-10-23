@@ -43,6 +43,8 @@ class UniversalAuditObserver
             if (in_array($k, self::$skipKeys)) continue;
             if ($v instanceof \Carbon\Carbon) {
                 $v = $v->format('Y-m-d');
+            } elseif (is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}[ T]00:00:00/', $v)) {
+                $v = substr($v, 0, 10);
             }
             $newValues[$k] = $v;
         }
@@ -121,6 +123,13 @@ class UniversalAuditObserver
 
             if ($oldValue instanceof \Carbon\Carbon) $oldValue = $oldValue->format('Y-m-d');
             if ($newValue instanceof \Carbon\Carbon) $newValue = $newValue->format('Y-m-d');
+
+            if (is_string($oldValue) && preg_match('/^\d{4}-\d{2}-\d{2}[ T]00:00:00/', $oldValue)) {
+                $oldValue = substr($oldValue, 0, 10);
+            }
+            if (is_string($newValue) && preg_match('/^\d{4}-\d{2}-\d{2}[ T]00:00:00/', $newValue)) {
+                $newValue = substr($newValue, 0, 10);
+            }
 
             if ($oldValue != $newValue) {
                 $oldValues[$key] = $oldValue;

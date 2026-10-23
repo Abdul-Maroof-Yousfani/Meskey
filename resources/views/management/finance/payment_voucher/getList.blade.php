@@ -63,14 +63,20 @@
                     <td>{{ $voucher->cheque_no ?? 'N/A' }}</td>
                     <td class="text-right">{{ number_format($voucher->total_amount, 2) }}</td>
                     <td>
-                        <a onclick="openModal(this, '{{ route('payment-voucher.approvals', $voucher->id) }}', 'Approval Voucher', false, '80%')"
-                            class="info p-1 text-center mr-2 position-relative" title="Approval">
+                        <a id="approval-btn-{{ $voucher->id }}"
+                            onclick="openModal(this, '{{ route('payment-voucher.approvals', $voucher->id) }}', 'Approval Voucher', false, '80%')"
+                            class="info p-1 text-center mr-2 position-relative btn-approval-action" title="Approval">
                             <i class="ft-check-square font-medium-3"></i>
                         </a>
 
                         <a onclick="openModal(this, '{{ route('payment-voucher.show', $voucher->id) }}', 'View Voucher', true, '80%')"
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
+                        </a>
+
+                        <a onclick="openModal(this, '{{ route('payment-voucher.audit-logs', $voucher->id) }}', 'Audit Logs: Payment Voucher #{{ $voucher->unique_no }}', false, '55%')"
+                            class="info p-1 text-center mr-2 position-relative" title="Audit Logs" role="button">
+                            <i class="fa fa-history font-medium-3"></i>
                         </a>
 
                         <!-- Conditional Edit Link (Cannot edit once approved) -->

@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-   Create Payment Voucher
+   Edit Bill Payment Voucher
 @endsection
 @section('content')
     <div class="container-fluid">
@@ -8,8 +8,14 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Create Payment Voucher</h4>
-                        <a href="{{ route('payment-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                        <h4 class="mb-0">Edit Bill Payment Voucher #{{ $payment_voucher->unique_no }}</h4>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-info mr-1"
+                                onclick="openModal(this,'{{ route('payment-voucher.audit-logs', $payment_voucher->id) }}','Audit Logs: Payment Voucher #{{ $payment_voucher->unique_no }}', false, '55%')">
+                                <i class="fa fa-history mr-1"></i>Audit Logs
+                            </button>
+                            <a href="{{ route('payment-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                        </div>
                     </div>
                     <div class="card-body">
                         <form id="ajaxSubmit" action="{{ route('payment-voucher.bill-update', [ 'id' => $payment_voucher->id ]) }}">
@@ -47,7 +53,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="unique_no">PV Number</label>
-                                        <input type="text" name="unique_no" id="unique_no" class="form-control" readonly>
+                                        <input type="text" name="unique_no" id="unique_no" value="{{ $payment_voucher->unique_no }}" class="form-control" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -210,7 +216,7 @@
                             </div>
 
                             <div class="form-group text-right">
-                                <button type="submit" class="btn btn-primary">Create Payment Voucher</button>
+                                <button type="submit" class="btn btn-primary">Update Payment Voucher</button>
                             </div>
                         </form>
                     </div>
@@ -223,8 +229,6 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            $("#pv_date").trigger("change");
-            $(".item-checkbox").trigger("change");
             $("#select-all").change(function() {
                 const is_checked = $(this).is(':checked');
                 if(is_checked) {
@@ -232,9 +236,11 @@
                 } else {
                     $('.item-checkbox').prop('checked', false);
                 }
-            })
+                updateSelectedRequestsList();
+            });
+
             $('#voucher_type, #pv_date').change(function () {
-                if ($('#voucher_type').val()) {
+                if ($('#voucher_type').val() && !$('#unique_no').val()) {
                     $.ajax({
                         url: '{{ route('payment-voucher.generate-pv-number') }}',
                         type: 'POST',
@@ -661,6 +667,8 @@
                     emptyMessage.show();
                 }
             }
+
+            updateSelectedRequestsList();
         });
     </script>
     <style>

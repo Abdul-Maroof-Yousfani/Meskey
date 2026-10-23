@@ -4,6 +4,10 @@ namespace App\Models;
 
 use App\Models\Master\Account\Account;
 use App\Models\Master\Supplier;
+use App\Models\Master\Tax;
+use App\Models\Procurement\Store\PurchaseBill;
+use App\Models\Procurement\PaymentRequest;
+use App\Observers\UniversalAuditObserver;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +17,11 @@ class PaymentVoucher extends Model
 {
     use HasFactory, SoftDeletes, HasApproval {
         approve as traitApprove;
+        reject as traitReject;
+        revert as traitRevert;
     }
+
+    protected ?array $auditOldSnapshot = null;
 
     protected $fillable = [
         'unique_no',
@@ -44,6 +52,20 @@ class PaymentVoucher extends Model
 
     protected static function booted()
     {
+        static::observe(UniversalAuditObserver::class);
+
+        static::retrieved(function ($model) {
+            if (!request() || !request()->isMethodSafe() || app()->runningInConsole()) {
+                $model->captureInitialAuditSnapshot();
+            }
+        });
+
+        static::saving(function ($model) {
+            if ($model->exists && method_exists($model, 'hasReferencesChanged') && $model->hasReferencesChanged()) {
+                $model->updated_at = now();
+            }
+        });
+
         static::updating(
             function ($model) {
                 $changes = $model->getDirty();
@@ -70,6 +92,379 @@ class PaymentVoucher extends Model
         static::deleting(function ($model) {
             \Illuminate\Support\Facades\DB::table('settlement_adjustments')->where('voucher_no', $model->unique_no)->delete();
         });
+    }
+
+    /**
+     * Audit log configuration for Payment Voucher.
+     */
+    public static function auditLogConfig(): array
+    {
+        return [
+            'field_labels' => [
+                'unique_no'             => 'PV Number',
+                'pv_date'               => 'Voucher Date',
+                'voucher_type'          => 'Voucher Type',
+                'account_id'            => 'Paid From Account',
+                'request_account_id'    => 'Beneficiary Account',
+                'supplier_id'           => 'Supplier',
+                'bank_account_id'       => 'Bank Account',
+                'bank_account_type'     => 'Bank Account Type',
+                'ref_bill_no'           => 'Reference Bill No',
+                'bill_date'             => 'Bill Date',
+                'cheque_no'             => 'Cheque / Ref No',
+                'cheque_date'           => 'Cheque Date',
+                'total_amount'          => 'Total Amount',
+                'remarks'               => 'Remarks',
+                'is_direct'             => 'Is Direct PV',
+                'module_type'           => 'Module Type',
+                'items_count'           => 'Items Count',
+                'bills_count'           => 'Bills Count',
+
+                // Direct Payment Voucher Entry columns:
+                'entry_account'         => 'Account (To)',
+                'entry_amount'          => 'Amount',
+                'entry_tax'             => 'Tax',
+                'entry_tax_amount'      => 'Tax Amount',
+                'entry_net_amount'      => 'Net Amount',
+                'entry_description'     => 'Description',
+
+                // Bill Payment Voucher columns:
+                'bill_no'               => 'Bill No',
+                'grn_no'                => 'GRN / Receiving No',
+                'bill_supplier'         => 'Bill Supplier',
+                'bill_amount'           => 'Bill Amount',
+
+                // Standard Payment Voucher:
+                'payment_requests'      => 'Payment Requests',
+            ],
+            'relation_resolvers' => [
+                'voucher_type' => function ($val) {
+                    $map = [
+                        'bank_payment_voucher' => 'Bank Payment Voucher (BPV)',
+                        'cash_payment_voucher' => 'Cash Payment Voucher (CPV)',
+                        'bpv'                  => 'Bank Payment Voucher (BPV)',
+                        'cpv'                  => 'Cash Payment Voucher (CPV)',
+                    ];
+                    return $map[$val] ?? ucwords(str_replace('_', ' ', (string) $val));
+                },
+                'bank_account_type' => function ($val) {
+                    return $val ? ucfirst($val) : '-';
+                },
+                'is_direct' => function ($val) {
+                    return $val ? 'Yes' : 'No';
+                },
+            ],
+            'subtitle' => function ($model) {
+                $parts = ['PV #' . ($model->unique_no ?? $model->id)];
+                if (isset($model->total_amount)) {
+                    $parts[] = 'Rs. ' . number_format((float) $model->total_amount, 2);
+                }
+                if (isset($model->pv_date)) {
+                    $parts[] = 'Date: ' . (\Carbon\Carbon::parse($model->pv_date)->format('d M Y'));
+                }
+                if (isset($model->voucher_type)) {
+                    $map = [
+                        'bank_payment_voucher' => 'BPV',
+                        'cash_payment_voucher' => 'CPV',
+                    ];
+                    $parts[] = $map[$model->voucher_type] ?? ucfirst($model->voucher_type);
+                }
+                return implode(' | ', $parts);
+            },
+            'empty_message' => 'No edits or updates have been recorded for this payment voucher yet.',
+        ];
+    }
+
+    /**
+     * Human-readable model display name for audit logs.
+     */
+    public function auditModelName(): string
+    {
+        if ($this->module_type === 'bill_payment_voucher') {
+            return 'Bill Payment Voucher';
+        }
+        return $this->is_direct ? 'Direct Payment Voucher' : 'Payment Voucher';
+    }
+
+    /**
+     * Action prefix for audit logs (e.g. direct_payment_voucher, bill_payment_voucher, payment_voucher).
+     */
+    public function auditActionPrefix(): string
+    {
+        if ($this->module_type === 'bill_payment_voucher') {
+            return 'bill_payment_voucher';
+        }
+        return $this->is_direct ? 'direct_payment_voucher' : 'payment_voucher';
+    }
+
+    /**
+     * Capture initial snapshot of references for audit logging before any deletes/updates.
+     */
+    public function captureInitialAuditSnapshot(): void
+    {
+        if ($this->auditOldSnapshot !== null || !$this->exists) {
+            return;
+        }
+        $this->auditOldSnapshot = $this->buildCurrentReferencesSnapshot();
+    }
+
+    /**
+     * Get the cached old snapshot of references.
+     */
+    public function getOldReferencesSnapshot(): ?array
+    {
+        if ($this->auditOldSnapshot === null && $this->exists) {
+            $this->auditOldSnapshot = $this->buildCurrentReferencesSnapshot();
+        }
+        return $this->auditOldSnapshot;
+    }
+
+    /**
+     * Build reference snapshot from current database state.
+     */
+    public function buildCurrentReferencesSnapshot(): array
+    {
+        if ($this->module_type === 'bill_payment_voucher') {
+            $oldBillNos = [];
+            $oldGrnNos = [];
+            $oldSuppliers = [];
+            $oldAmounts = [];
+
+            $billItems = $this->relationLoaded('billPaymentVoucherData')
+                ? $this->billPaymentVoucherData
+                : $this->billPaymentVoucherData()->get();
+
+            foreach ($billItems as $item) {
+                $pb = PurchaseBill::with(['grn', 'supplier'])->find($item->purchase_bill_id);
+                $bNo = $pb?->bill_no ?? "Bill #{$item->purchase_bill_id}";
+                $gNo = $pb?->grn?->reference_no ?? $pb?->grn?->purchase_order_receiving_no ?? 'N/A';
+                $sName = $pb?->supplier?->name ?? 'N/A';
+
+                $oldBillNos[] = $bNo;
+                $oldGrnNos[] = $gNo;
+                $oldSuppliers[] = $sName;
+                $oldAmounts[] = number_format((float) $item->amount, 2);
+            }
+
+            return [
+                'bill_no'       => !empty($oldBillNos) ? implode(', ', $oldBillNos) : null,
+                'grn_no'        => !empty($oldGrnNos) ? implode(', ', $oldGrnNos) : null,
+                'bill_supplier' => !empty($oldSuppliers) ? implode(', ', $oldSuppliers) : null,
+                'bill_amount'   => !empty($oldAmounts) ? implode(', ', $oldAmounts) : null,
+                'bills_count'   => count($oldBillNos),
+            ];
+        }
+
+        if ($this->is_direct) {
+            $oldAccounts = [];
+            $oldAmounts = [];
+            $oldTaxes = [];
+            $oldTaxAmounts = [];
+            $oldNetAmounts = [];
+            $oldDescriptions = [];
+
+            $items = $this->relationLoaded('paymentVoucherData')
+                ? $this->paymentVoucherData
+                : $this->paymentVoucherData()->get();
+
+            foreach ($items as $oldItem) {
+                $acc = Account::find($oldItem->account_id);
+                $accName = $acc ? ($acc->name . ($acc->unique_no ? " ({$acc->unique_no})" : "")) : ($oldItem->account_id ? "Account #{$oldItem->account_id}" : '-');
+                $tax = $oldItem->tax_id ? Tax::find($oldItem->tax_id) : null;
+                $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+
+                $oldAccounts[] = $accName;
+                $oldAmounts[] = number_format((float) $oldItem->amount, 2);
+                $oldTaxes[] = $taxStr;
+                $oldTaxAmounts[] = number_format((float) ($oldItem->tax_amount ?? 0), 2);
+                $oldNetAmounts[] = number_format((float) ($oldItem->net_amount ?? $oldItem->amount), 2);
+                $oldDescriptions[] = !empty($oldItem->description) ? trim($oldItem->description) : '-';
+            }
+
+            return [
+                'entry_account'     => !empty($oldAccounts) ? implode(', ', $oldAccounts) : null,
+                'entry_amount'      => !empty($oldAmounts) ? implode(', ', $oldAmounts) : null,
+                'entry_tax'         => !empty($oldTaxes) ? implode(', ', $oldTaxes) : null,
+                'entry_tax_amount'  => !empty($oldTaxAmounts) ? implode(', ', $oldTaxAmounts) : null,
+                'entry_net_amount'  => !empty($oldNetAmounts) ? implode(', ', $oldNetAmounts) : null,
+                'entry_description' => !empty($oldDescriptions) ? implode(', ', $oldDescriptions) : null,
+                'items_count'       => count($oldAccounts),
+            ];
+        }
+
+        // Standard Payment Voucher (Payment Request based)
+        $items = $this->relationLoaded('paymentVoucherData')
+            ? $this->paymentVoucherData
+            : $this->paymentVoucherData()->get();
+
+        $prIds = $items->pluck('payment_request_id')->filter()->sort()->values()->toArray();
+
+        return [
+            'payment_requests' => !empty($prIds) ? implode(', ', $prIds) : null,
+            'items_count'      => count($items),
+        ];
+    }
+
+    /**
+     * Build reference snapshot from incoming request payload.
+     */
+    public function buildNewReferencesSnapshot(): array
+    {
+        $req = request();
+        if (!$req) {
+            return [];
+        }
+
+        if ($this->module_type === 'bill_payment_voucher' || $req->has('bill') || $req->has('purchase_bill_id')) {
+            $newBillNos = [];
+            $newGrnNos = [];
+            $newSuppliers = [];
+            $newAmounts = [];
+
+            $bills = $req->bill ?? ($req->purchase_bill_id ?? []);
+            if (is_array($bills)) {
+                foreach ($bills as $index => $bill) {
+                    $pbId = $req->purchase_bill_id[$index] ?? $bill;
+                    $amt = (float) ($req->amounts[$index] ?? 0);
+                    $pb = PurchaseBill::with(['grn', 'supplier'])->find($pbId);
+                    $bNo = $pb?->bill_no ?? ($req->bill_no[$index] ?? "Bill #{$pbId}");
+                    $gNo = $pb?->grn?->reference_no ?? $pb?->grn?->purchase_order_receiving_no ?? ($req->grn_no[$index] ?? 'N/A');
+                    $sName = $pb?->supplier?->name ?? ($req->supplier[$index] ?? 'N/A');
+
+                    $newBillNos[] = $bNo;
+                    $newGrnNos[] = $gNo;
+                    $newSuppliers[] = $sName;
+                    $newAmounts[] = number_format($amt, 2);
+                }
+            }
+
+            return [
+                'bill_no'       => !empty($newBillNos) ? implode(', ', $newBillNos) : null,
+                'grn_no'        => !empty($newGrnNos) ? implode(', ', $newGrnNos) : null,
+                'bill_supplier' => !empty($newSuppliers) ? implode(', ', $newSuppliers) : null,
+                'bill_amount'   => !empty($newAmounts) ? implode(', ', $newAmounts) : null,
+                'bills_count'   => count($newBillNos),
+            ];
+        }
+
+        if ($this->is_direct || $req->has('account') || $req->has('row_type')) {
+            if ($req->has('account') && is_array($req->account)) {
+                $accounts_array = $req->account ?? [];
+                $amounts = $req->amount ?? [];
+                $tax_ids = $req->tax_id ?? [];
+                $tax_amounts = $req->tax_amount ?? [];
+                $net_amounts = $req->net_amount ?? [];
+                $descriptions = $req->description ?? [];
+
+                $newAccounts = [];
+                $newAmounts = [];
+                $newTaxes = [];
+                $newTaxAmounts = [];
+                $newNetAmounts = [];
+                $newDescriptions = [];
+
+                for ($i = 0; $i < count($accounts_array); $i++) {
+                    if (empty($accounts_array[$i]) && empty($amounts[$i])) continue;
+                    $acc = Account::find($accounts_array[$i]);
+                    $accName = $acc ? ($acc->name . ($acc->unique_no ? " ({$acc->unique_no})" : "")) : ($accounts_array[$i] ? "Account #{$accounts_array[$i]}" : '-');
+                    $tax = !empty($tax_ids[$i]) ? Tax::find($tax_ids[$i]) : null;
+                    $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+                    $amt = (float) ($amounts[$i] ?? 0);
+                    $tAmt = (float) ($tax_amounts[$i] ?? 0);
+                    $nAmt = (float) ($net_amounts[$i] ?? ($amt + $tAmt));
+
+                    $newAccounts[] = $accName;
+                    $newAmounts[] = number_format($amt, 2);
+                    $newTaxes[] = $taxStr;
+                    $newTaxAmounts[] = number_format($tAmt, 2);
+                    $newNetAmounts[] = number_format($nAmt, 2);
+                    $newDescriptions[] = !empty($descriptions[$i]) ? trim($descriptions[$i]) : '-';
+                }
+
+                return [
+                    'entry_account'     => !empty($newAccounts) ? implode(', ', $newAccounts) : null,
+                    'entry_amount'      => !empty($newAmounts) ? implode(', ', $newAmounts) : null,
+                    'entry_tax'         => !empty($newTaxes) ? implode(', ', $newTaxes) : null,
+                    'entry_tax_amount'  => !empty($newTaxAmounts) ? implode(', ', $newTaxAmounts) : null,
+                    'entry_net_amount'  => !empty($newNetAmounts) ? implode(', ', $newNetAmounts) : null,
+                    'entry_description' => !empty($newDescriptions) ? implode(', ', $newDescriptions) : null,
+                    'items_count'       => count($newAccounts),
+                ];
+            }
+
+            if ($req->has('row_type') && is_array($req->row_type)) {
+                $custAccId = $req->customer_account_id ?? $this->request_account_id;
+                $acc = $custAccId ? Account::find($custAccId) : null;
+                $accName = $acc ? ($acc->name . ($acc->unique_no ? " ({$acc->unique_no})" : "")) : ($custAccId ? "Account #{$custAccId}" : '-');
+
+                $newAccounts = [];
+                $newAmounts = [];
+                $newTaxes = [];
+                $newTaxAmounts = [];
+                $newNetAmounts = [];
+                $newDescriptions = [];
+
+                foreach ($req->row_type as $index => $rowType) {
+                    $amt = (float) ($req->amount[$index] ?? 0);
+                    $taxId = $req->tax_id[$index] ?? null;
+                    $tax = $taxId ? Tax::find($taxId) : null;
+                    $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+                    $tAmt = (float) ($req->tax_amount[$index] ?? 0);
+                    $nAmt = (float) ($req->net_amount[$index] ?? ($amt + $tAmt));
+                    $desc = $req->description[$index] ?? $rowType;
+
+                    $newAccounts[] = $accName;
+                    $newAmounts[] = number_format($amt, 2);
+                    $newTaxes[] = $taxStr;
+                    $newTaxAmounts[] = number_format($tAmt, 2);
+                    $newNetAmounts[] = number_format($nAmt, 2);
+                    $newDescriptions[] = !empty($desc) ? trim($desc) : '-';
+                }
+
+                return [
+                    'entry_account'     => !empty($newAccounts) ? implode(', ', $newAccounts) : null,
+                    'entry_amount'      => !empty($newAmounts) ? implode(', ', $newAmounts) : null,
+                    'entry_tax'         => !empty($newTaxes) ? implode(', ', $newTaxes) : null,
+                    'entry_tax_amount'  => !empty($newTaxAmounts) ? implode(', ', $newTaxAmounts) : null,
+                    'entry_net_amount'  => !empty($newNetAmounts) ? implode(', ', $newNetAmounts) : null,
+                    'entry_description' => !empty($newDescriptions) ? implode(', ', $newDescriptions) : null,
+                    'items_count'       => count($newAccounts),
+                ];
+            }
+        }
+
+        if ($req->has('payment_requests') && is_array($req->payment_requests)) {
+            $prIds = collect($req->payment_requests)->sort()->values()->toArray();
+            return [
+                'payment_requests' => !empty($prIds) ? implode(', ', $prIds) : null,
+                'items_count'      => count($prIds),
+            ];
+        }
+
+        return [];
+    }
+
+    /**
+     * Check if child reference snapshot changed between old and new state.
+     */
+    public function hasReferencesChanged(): bool
+    {
+        $old = $this->getOldReferencesSnapshot() ?? [];
+        $new = $this->buildNewReferencesSnapshot();
+
+        if (empty($old) && empty($new)) {
+            return false;
+        }
+
+        $allKeys = array_unique(array_merge(array_keys($old), array_keys($new)));
+        foreach ($allKeys as $k) {
+            $o = $old[$k] ?? null;
+            $n = $new[$k] ?? null;
+            if ($o != $n) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function account()
@@ -106,7 +501,48 @@ class PaymentVoucher extends Model
         if ($valError) {
             return false;
         }
-        return $this->traitApprove($comments);
+
+        $result = $this->traitApprove($comments);
+
+        if ($result) {
+            try {
+                \App\Services\NotificationService::sendPaymentVoucherApprovalStepNotification($this);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('PV Approval Step Notification Error: ' . $e->getMessage());
+            }
+        }
+
+        return $result;
+    }
+
+    public function reject($comments = null)
+    {
+        $result = $this->traitReject($comments);
+
+        if ($result) {
+            try {
+                \App\Services\NotificationService::sendPaymentVoucherApprovalStatusNotification($this, 'rejected', $comments);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('PV Approval Reject Notification Error: ' . $e->getMessage());
+            }
+        }
+
+        return $result;
+    }
+
+    public function revert($comments = null)
+    {
+        $result = $this->traitRevert($comments);
+
+        if ($result) {
+            try {
+                \App\Services\NotificationService::sendPaymentVoucherApprovalStatusNotification($this, 'reverted', $comments);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('PV Approval Revert Notification Error: ' . $e->getMessage());
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -273,6 +709,9 @@ class PaymentVoucher extends Model
      */
     public function autoApprove($comments = 'Auto-approved upon creation')
     {
+        // Temporarily disabled for testing approval workflow
+        return;
+
         $this->refresh();
 
         $module = $this->getApprovalModule();

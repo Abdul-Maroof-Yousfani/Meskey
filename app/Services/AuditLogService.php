@@ -410,9 +410,35 @@ class AuditLogService
             return json_encode($val);
         }
 
-        // Standard boolean flags
-        if (in_array($key, ['allow_excess_amount', 'is_direct', 'is_active', 'status_flag'])) {
-            return $val ? 'Yes' : 'No';
+        // Dates ending with 00:00:00 (clean date display)
+        if (is_string($val) && preg_match('/^(\d{4}-\d{2}-\d{2})[ T]00:00:00(\.\d+)?(Z)?$/', $val, $m)) {
+            return $m[1];
+        }
+
+        // Beneficiary / Party Bank Account (Payment Voucher, Direct PV, etc.)
+        if ($key === 'bank_account_id' && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+            $cacheKey = "party_bank_{$val}";
+            if (isset(self::$relationCache[$cacheKey])) return self::$relationCache[$cacheKey];
+
+            $bank = \App\Models\SupplierCompanyBankDetail::find($val)
+                ?? \App\Models\SupplierOwnerBankDetail::find($val)
+                ?? \App\Models\CustomerCompanyBankDetail::find($val)
+                ?? \App\Models\CustomerOwnerBankDetail::find($val)
+                ?? \App\Models\BrokerCompanyBankDetail::find($val)
+                ?? \App\Models\BrokerOwnerBankDetail::find($val)
+                ?? \App\Models\TransporterCompanyBankDetail::find($val)
+                ?? \App\Models\TransporterOwnerBankDetail::find($val)
+                ?? \App\Models\VendorCompanyBankDetail::find($val)
+                ?? \App\Models\VendorOwnerBankDetail::find($val);
+
+            if ($bank) {
+                $bankName = $bank->bank_name ?? 'Bank';
+                $title = $bank->account_title ?? ($bank->title ?? '');
+                $accNo = $bank->account_number ?? '';
+                $res = "{$bankName} - {$title}" . ($accNo ? " ({$accNo})" : "");
+                self::$relationCache[$cacheKey] = $res;
+                return $res;
+            }
         }
 
         // Accounts
