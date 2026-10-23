@@ -767,6 +767,7 @@ class ArrivalApproveController extends Controller
 
             }
 
+
             $collection = $tickets->get()->map($formatTicket);
 
             return ApiResponse::success([
