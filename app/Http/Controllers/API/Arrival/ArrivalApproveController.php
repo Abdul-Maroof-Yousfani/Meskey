@@ -117,6 +117,8 @@ class ArrivalApproveController extends Controller
     }
 
 
+
+
     public function getAvailableTicketsInnerSamplingStatusbk(Request $request)
     {
         try {
@@ -569,6 +571,167 @@ class ArrivalApproveController extends Controller
             });
 
             return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
+
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                'Failed to retrieve available tickets: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+
+    public function getAvailableTicketsWithQcStatusV2(Request $request)
+    {
+        try {
+            $authUser = auth()->user();
+
+            $tickets = ArrivalTicket::with([
+                'unloadingLocation:arrival_location_id',
+                'unloadingLocation.arrivalLocation:id,name',
+            ])
+                ->where('arrival_tickets.first_weighbridge_status', 'completed')
+                ->whereNull('arrival_tickets.document_approval_status')
+                ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product')
+                ->leftJoin('sauda_types', 'sauda_types.id', '=', 'arrival_tickets.sauda_type_id')
+                ->leftJoin('arrival_location_transfers', 'arrival_location_transfers.arrival_ticket_id', '=', 'arrival_tickets.id')
+                ->leftJoin('arrival_locations', 'arrival_locations.id', '=', 'arrival_location_transfers.arrival_location_id')
+                ->leftJoin(DB::raw("
+                (
+                    SELECT r1.*
+                    FROM arrival_sampling_requests r1
+                    WHERE r1.id = (
+                        SELECT MAX(r2.id)
+                        FROM arrival_sampling_requests r2
+                        WHERE r2.arrival_ticket_id = r1.arrival_ticket_id
+                    )
+                ) AS arrival_sampling_requests
+            "), 'arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
+                ->whereHas('unloadingLocation', function ($query) {
+                    $query->whereIn(
+                        'arrival_location_id',
+                        getUserCurrentCompanyArrivalLocations()
+                    );
+                })
+                // ✅ Filter by ticket_no / unique_no
+                ->when($request->filled('ticket_no'), function ($q) use ($request) {
+                    return $q->where('arrival_tickets.unique_no', 'LIKE', '%' . $request->ticket_no . '%');
+                })
+                ->select(
+                    'arrival_tickets.id',
+                    'arrival_tickets.unique_no',
+                    'arrival_tickets.truck_no',
+                    'arrival_tickets.bilty_no',
+                    'arrival_tickets.bags as no_of_bags',
+                    'arrival_tickets.first_qc_status',
+                    'arrival_tickets.second_qc_status',
+                    'arrival_tickets.document_approval_status',
+                    'arrival_tickets.sauda_type_id',
+                    'arrival_tickets.created_at',
+                    'arrival_sampling_requests.approved_status as sampling_approved_status',
+                    'arrival_sampling_requests.sampling_type as sampling_type',
+                    'arrival_sampling_requests.is_done as sampling_is_done',
+                    'arrival_sampling_requests.is_re_sampling as sampling_is_re_sampling',
+                    'arrival_sampling_requests.created_at as sampling_created_at',
+                    'arrival_sampling_requests.approved_remarks as purchaser_remarks',
+                    'products.name as qc_product_name',
+                    'sauda_types.name as sauda_type_name',
+                    'arrival_locations.id as arrival_location_id',
+                    'arrival_locations.name as arrival_location_name'
+                )
+                ->orderBy('arrival_tickets.id', 'desc');
+
+            // ✅ Helper closure to format each ticket
+            $formatTicket = function ($ticket) {
+                $ticket->warehouse = $ticket->unloadingLocation->arrivalLocation ?? null;
+                unset($ticket->unloadingLocation);
+
+                $ticket->purchaser_remarks = $ticket->second_qc_status == 'resampling'
+                    ? getQcRequestExceptResampling($ticket->id)->approved_remarks ?? null
+                    : $ticket->purchaser_remarks;
+
+                $approvalFormattedStatus = 'RF';
+
+                if ($ticket->first_qc_status === 'rejected') {
+                    $approvalFormattedStatus = 'RF';
+                } elseif (isset($ticket->sauda_type_id)) {
+                    if ($ticket->sampling_approved_status == 'approved') {
+                        $docStatus = 'fully_approved';
+                    } elseif ($ticket->sampling_approved_status == 'rejected') {
+                        $docStatus = 'half_approved';
+                    } else {
+                        $docStatus = 'pending';
+                    }
+
+                    if ($ticket->sauda_type_id == 1) { // Pohanch
+                        if ($docStatus === 'fully_approved') {
+                            $approvalFormattedStatus = 'OK';
+                        } elseif ($docStatus === 'half_approved') {
+                            $approvalFormattedStatus = 'P-RH';
+                        } else {
+                            $approvalFormattedStatus = 'Unknown Status';
+                        }
+                    } elseif ($ticket->sauda_type_id == 2) { // Thadda
+                        if ($docStatus === 'fully_approved') {
+                            $approvalFormattedStatus = 'TS';
+                        } elseif ($docStatus === 'half_approved') {
+                            $approvalFormattedStatus = 'TS-RH';
+                        } else {
+                            $approvalFormattedStatus = 'RF';
+                        }
+                    } else {
+                        $approvalFormattedStatus = 'RFtt';
+                    }
+                } else {
+                    $approvalFormattedStatus = 'RF-sls';
+                }
+
+                $qcFormattedStatus = 'RdddddF';
+                if ($ticket->sampling_is_re_sampling == 'yes' && $ticket->sampling_approved_status == 'pending') {
+                    $qcFormattedStatus = 'Resampling';
+                    $approvalFormattedStatus = 'In-Process';
+                } elseif ($ticket->sampling_approved_status == 'pending') {
+                    $qcFormattedStatus = 'Pending';
+                    $approvalFormattedStatus = 'In-Process';
+                } elseif ($ticket->sampling_approved_status == 'approved') {
+                    $qcFormattedStatus = 'fully_approved';
+                } elseif ($ticket->sampling_approved_status == 'rejected') {
+                    $qcFormattedStatus = 'half_approved';
+                }
+
+                $ticket->qcFormattedStatus = $qcFormattedStatus;
+                $ticket->approvalFormattedStatus = $approvalFormattedStatus;
+                $ticket->slabsQc = SlabTypeWisegetTicketDeductions($ticket);
+
+                return $ticket;
+            };
+
+            // ✅ Pagination with metadata
+            if ($request->has('paginate')) {
+                $paginated = $tickets->paginate(10);
+
+                $paginated->getCollection()->transform($formatTicket);
+
+                return ApiResponse::success([
+                    'data' => $paginated->items(),
+                    'pagination' => [
+                        'current_page' => $paginated->currentPage(),
+                        'per_page' => $paginated->perPage(),
+                        'total' => $paginated->total(),
+                        'last_page' => $paginated->lastPage(),
+                        'from' => $paginated->firstItem(),
+                        'to' => $paginated->lastItem(),
+                        'has_more' => $paginated->hasMorePages(),
+                    ],
+                ], 'Available tickets retrieved successfully');
+            }
+
+            $collection = $tickets->get()->map($formatTicket);
+
+            return ApiResponse::success([
+                'data' => $collection,
+                'pagination' => null,
+            ], 'Available tickets retrieved successfully');
 
         } catch (\Exception $e) {
             return ApiResponse::error(
