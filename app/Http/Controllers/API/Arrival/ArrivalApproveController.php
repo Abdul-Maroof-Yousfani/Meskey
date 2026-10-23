@@ -592,6 +592,7 @@ class ArrivalApproveController extends Controller
                     'unloadingLocation:arrival_location_id',
                     'unloadingLocation.arrivalLocation:id,name',
                 ])
+
                     ->where('arrival_tickets.first_weighbridge_status', 'completed')
                     ->whereNull('arrival_tickets.document_approval_status')
                     ->leftJoin('products', 'products.id', '=', 'arrival_tickets.qc_product')
