@@ -26,6 +26,7 @@ class JobOrderRequestPackingSubItem extends Model
         'packing_size',
         'no_of_bags',
         'empty_bags',
+        'empty_bags_percentage',
         'extra_bags',
         'extra_bags_percentage',
         'empty_bag_weight',

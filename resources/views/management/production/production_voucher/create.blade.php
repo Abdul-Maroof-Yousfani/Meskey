@@ -81,8 +81,15 @@
                                             <div class="form-group">
                                                 <label>Head Product:</label>
                                                 <select name="product_id" id="product_id" class="form-control select2"
-                                                    required onchange="loadJobOrdersByLocation();loadHeadProductsData();autoSelectByProduct();">
-                                                    <option value="">Select Commodity</option>
+                                                    required onchange="loadJobOrdersByLocation();loadHeadProductsData();loadB2ProductsData();autoSelectByProduct();">
+                                                    <option value="">Select Head Product</option>
+                                                    @foreach(getFinishGoodProducts() as $product)
+                                                        <option value="{{ $product->id }}"
+                                                            data-parent-id="{{ $product->parent_id ?? $product->id }}"
+                                                            data-parent-name="{{ $product->parent ? $product->parent->name : $product->name }}">
+                                                            {{ $product->name }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
                                             </div>
                                         </div>
@@ -92,7 +99,7 @@
                                                 <label>Job Ord. No:</label>
                                                 <select name="job_order_id[]" id="job_order_id" class="form-control select2"
                                                     multiple required
-                                                    onchange="loadPackingItems();loadHeadProductsData();loadData();">
+                                                    onchange="loadPackingItems();loadHeadProductsData();loadB2ProductsData();loadData();">
                                                     <option value="">Select Job Order</option>
                                                 </select>
                                             </div>
@@ -141,8 +148,13 @@
 
                             <div id="productionInputsSection" class="mt-3">
                                 <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
-                                    <div class="col-md-12">
+                                    <div class="col-md-10 col-8">
                                         <h6 class="m-0">Production Inputs</h6>
+                                    </div>
+                                    <div class="col-md-2 col-4 text-right">
+                                        <button type="button" class="btn btn-sm btn-primary" id="addInputRowBtn" title="Add Input Row">
+                                            <i class="fa fa-plus"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -161,7 +173,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr>
+                                                    <tr class="input-data-row">
                                                         <td>
                                                             <select name="input_product_id[]" class="form-control select2"
                                                                 required onchange="loadCostingPreview();">
@@ -204,15 +216,12 @@
                                                         <td>
                                                             <textarea name="input_remarks[]" class="form-control" rows="1"></textarea>
                                                         </td>
-                                                        <td><button type="button"
-                                                                class="btn btn-sm btn-primary copythis"><i
-                                                                    class="fa fa-plus"></i></button>
-                                                            <button type="button"
-                                                                class="btn btn-sm btn-danger removethis"><i
-                                                                    class="fa fa-trash"></i></button>
+                                                        <td>
+                                                            <button type="button" class="btn btn-sm btn-primary copythis"><i class="fa fa-plus"></i></button>
+                                                            <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
                                                         </td>
                                                     </tr>
-                                                     <tr>
+                                                    <tr id="inputTotalRow">
                                                         <td>
                                                             <strong>Total</strong>
                                                         </td>
@@ -237,6 +246,56 @@
                                     </div>
                                 </div>
                             </div>
+                            <template id="inputRowTemplate">
+                                <tr class="input-data-row">
+                                    <td>
+                                        <select name="input_product_id[]" class="form-control select2"
+                                            required onchange="loadCostingPreview();">
+                                            <option value="">Select Commodity</option>
+                                            @if (isset($products))
+                                                @foreach ($products as $product)
+                                                    <option value="{{ $product->id }}">
+                                                        {{ $product->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="input_location_id[]"
+                                            class="form-control select2" required onchange="loadCostingPreview();">
+                                            <option value="">Select Location</option>
+                                            @if (isset($sublocations))
+                                                @foreach ($sublocations as $sublocation)
+                                                    <option value="{{ $sublocation->id }}" data-location-id="{{ $sublocation->company_location_id }}">
+                                                        {{ $sublocation->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="input_qty[]" class="form-control"
+                                            step="0.01" min="0.01" required oninput="loadCostingPreview();">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="input_rate[]" class="form-control"
+                                            step="0.01" min="0" placeholder="Auto" oninput="loadCostingPreview();" title="Leave blank for automatic stock-in cost price">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="input_yield[]"
+                                            class="form-control" step="0.01" min="0.01"
+                                            readonly>
+                                    </td>
+                                    <td>
+                                        <textarea name="input_remarks[]" class="form-control" rows="1"></textarea>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary copythis"><i class="fa fa-plus"></i></button>
+                                        <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </template>
                             <div id="productionOutputsSection">
                                 <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center">
                                     <div class="col-md-12">
@@ -354,6 +413,19 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 <td colspan="5"></td>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </tbody>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </table> -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                            style="background-color: #93c3f2;">
+                                            <div class="col-md-12">
+                                                <h6 class="m-0">B2 Products</h6>
+                                            </div>
+                                        </div>
+                                        <div id="productionB2ProductsTable">
+                                            @include('management.production.production_voucher.partials.b2_products_table')
                                         </div>
                                     </div>
                                 </div>
@@ -634,7 +706,7 @@
 
                 var outputQtys = [];
                 var outputProductIds = [];
-                $('#productionHeadProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
+                $('#productionHeadProductsTable tbody tr, #productionB2ProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
                     var pid = $(this).find('input[name="output_product_id[]"], select[name="output_product_id[]"]').val();
                     var qty = $(this).find('input[name="output_qty[]"]').val();
                     if (pid && qty && parseFloat(qty) > 0) {
@@ -699,7 +771,7 @@
             $('#location_id, #plant_id, #product_id').on('change', function() {
                 loadCostingPreview();
             });
-            $(document).on('input change keyup', '#productionInputsTable input, #productionHeadProductsTable input, #productionByProductsTable input', function() {
+            $(document).on('input change keyup', '#productionInputsTable input, #productionHeadProductsTable input, #productionB2ProductsTable input, #productionByProductsTable input', function() {
                 loadCostingPreview();
             });
             // Initialize Select2 for all selects
@@ -771,11 +843,12 @@
         function loadCommoditiesByLocation() {
             const locationId = $('#location_id').val();
             const commoditySelect = $('#product_id');
+            const currentVal = commoditySelect.val();
             const jobOrderSelect = $('#job_order_id');
             const plantSelect = $('#plant_id');
 
             // Clear commodity and job order dropdowns
-            commoditySelect.empty().append('<option value="">Select Commodity</option>');
+            commoditySelect.empty().append('<option value="">Select Head Product</option>');
             jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
             plantSelect.empty().append('<option value="">Select Plant</option>');
             $('#packingItemsSection').hide();
@@ -787,9 +860,6 @@
                 plantSelect.trigger('change');
                 return;
             }
-
-            // Load plants for this location
-            // loadPlantsByLocation();
 
             // Show loading
             commoditySelect.prop('disabled', true);
@@ -812,10 +882,16 @@
                                 .text(commodity.name)
                             );
                         });
+                        if (currentVal) {
+                            commoditySelect.val(currentVal);
+                        }
                     } else {
                         commoditySelect.append('<option value="">No Commodities Found</option>');
                     }
                     commoditySelect.trigger('change');
+                },
+                complete: function() {
+                    commoditySelect.prop('disabled', false);
                 },
                 error: function(xhr) {
                     console.error('Error loading commodities:', xhr);
@@ -924,9 +1000,17 @@
             $('#production_labour_charges_per_kg').val(productionLabourChargesPerKg);
         }
 
+        var isResettingPlant = false;
+
         function loadMachinesByPlant() {
+            if (isResettingPlant) {
+                return;
+            }
+
             const plantId = $('#plant_id').val();
             const date = $('input[name="prod_date"]').val();
+            const locationId = $('#location_id').val();
+            const subLocationId = $('#sub_location_id').val();
             const container = $('#productionMachinesContainer');
             const section = $('#productionMachinesSection');
 
@@ -946,10 +1030,32 @@
                 data: {
                     plant_id: plantId,
                     date: date,
+                    location_id: locationId,
+                    sub_location_id: subLocationId,
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
                     container.empty();
+
+                    if (!response || response.success === false || !response.machines || response.machines.length === 0) {
+                        section.hide();
+                        var errorMsg = (response && response.message) ? response.message : 'No Production Machine exists for the selected plant. Please create at least one Production Machine for this plant first.';
+                        
+                        Swal.fire({
+                            title: "Validation Error",
+                            html: errorMsg,
+                            icon: "warning",
+                            confirmButtonColor: "#D95000",
+                            confirmButtonText: "OK",
+                        });
+
+                        isResettingPlant = true;
+                        $('#plant_id').val(null).trigger('change');
+                        $('#production_labour_charges_per_kg').val('');
+                        isResettingPlant = false;
+                        return;
+                    }
+
                     if (response.machine_plan_setting) {
                         $('#machinePlanSettingBadgeCreate').html(`
                             <span class="badge badge-success" style="font-size: 11px;">
@@ -963,121 +1069,118 @@
                             </span>
                         `);
                     }
-                    if (response.machines && response.machines.length > 0) {
-                        section.show();
-                        let html = `<div class="row">`;
-                        $.each(response.machines, function(index, machine) {
-                            const isEnabled = machine.is_enabled;
-                            const headerBg = isEnabled ? '#e8f3fc' : '#f5f5f5';
-                            const statusLabel = isEnabled ? 'Active' : 'Inactive';
-                            const statusColor = isEnabled ? '#007bff' : '#6c757d';
-                            const cardBorder = isEnabled ? '#93c3f2' : '#e0e0e0';
 
-                            let timeSlotsHtml = '';
-                            const slots = (machine.time_slots && machine.time_slots.length > 0) ?
-                                machine.time_slots :
-                                [{
-                                    start_time: machine.start_time || '',
-                                    end_time: machine.end_time || '',
-                                    breakdowns: []
-                                }];
+                    section.show();
+                    let html = `<div class="row">`;
+                    $.each(response.machines, function(index, machine) {
+                        const isEnabled = machine.is_enabled;
+                        const headerBg = isEnabled ? '#e8f3fc' : '#f5f5f5';
+                        const statusLabel = isEnabled ? 'Active' : 'Inactive';
+                        const statusColor = isEnabled ? '#007bff' : '#6c757d';
+                        const cardBorder = isEnabled ? '#93c3f2' : '#e0e0e0';
 
-                            $.each(slots, function(sIdx, slot) {
-                                const startTimeVal = slot.start_time || '';
-                                const endTimeVal = slot.end_time || '';
-                                let breakdownsHtml = '';
-                                if (slot.breakdowns && slot.breakdowns.length > 0) {
-                                    $.each(slot.breakdowns, function(bIdx, bd) {
-                                        breakdownsHtml += renderSlotBreakdownRowHtml(
-                                            machine.id, sIdx, bd);
-                                    });
-                                }
+                        let timeSlotsHtml = '';
+                        const slots = (machine.time_slots && machine.time_slots.length > 0) ?
+                            machine.time_slots :
+                            [{
+                                start_time: machine.start_time || '',
+                                end_time: machine.end_time || '',
+                                breakdowns: []
+                            }];
 
-                                timeSlotsHtml += `
-                                    <div class="time-slot-block mb-3 p-3" data-slot-index="${sIdx}" style="border: 1px solid #dcdfe6; border-radius: 6px; background: #fafbfc;">
-                                        <div class="row time-row align-items-end mb-2">
-                                            <div class="col-md-3">
-                                                <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Start Time</label>
-                                                <input type="time" name="machine_start_time[${machine.id}][]" class="form-control start-time" value="${startTimeVal}" onchange="handleSlotTimeChange(this, ${machine.id})" style="font-size:14px; height:38px;">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">End Time</label>
-                                                <input type="time" name="machine_end_time[${machine.id}][]" class="form-control end-time" value="${endTimeVal}" onchange="handleSlotTimeChange(this, ${machine.id})" style="font-size:14px; height:38px;">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Duration</label>
-                                                <input type="text" class="form-control duration-display" readonly style="background:#f1f3f5; font-weight:bold; font-size:14px; text-align:center; height:38px;">
-                                            </div>
-                                            <div class="col-md-3 text-right">
-                                                <button type="button" class="btn btn-sm btn-outline-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machine.id})" title="Remove Time Slot" style="height:38px; width:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;"><i class="fa fa-trash"></i></button>
-                                            </div>
+                        $.each(slots, function(sIdx, slot) {
+                            const startTimeVal = slot.start_time || '';
+                            const endTimeVal = slot.end_time || '';
+                            let breakdownsHtml = '';
+                            if (slot.breakdowns && slot.breakdowns.length > 0) {
+                                $.each(slot.breakdowns, function(bIdx, bd) {
+                                    breakdownsHtml += renderSlotBreakdownRowHtml(
+                                        machine.id, sIdx, bd);
+                                });
+                            }
+
+                            timeSlotsHtml += `
+                                <div class="time-slot-block mb-3 p-3" data-slot-index="${sIdx}" style="border: 1px solid #dcdfe6; border-radius: 6px; background: #fafbfc;">
+                                    <div class="row time-row align-items-end mb-2">
+                                        <div class="col-md-3">
+                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Start Time</label>
+                                            <input type="time" name="machine_start_time[${machine.id}][]" class="form-control start-time" value="${startTimeVal}" onchange="handleSlotTimeChange(this, ${machine.id})" style="font-size:14px; height:38px;">
                                         </div>
-
-                                        <!-- Child Breakdowns Section -->
-                                        <div class="slot-breakdowns-container mt-2 pt-2" style="border-top: 1px dashed #ced4da;">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span style="font-size:12px; font-weight:bold; color:#e06d53;"><i class="fa fa-wrench mr-1"></i> Inner Breakdowns (Within Time Slot)</span>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSlotBreakdownRow(${machine.id}, this)" style="font-size:11px; padding: 2px 10px;">
-                                                    <i class="fa fa-plus mr-1"></i> Add Breakdown
-                                                </button>
-                                            </div>
-                                            <div class="slot-breakdown-list">
-                                                ${breakdownsHtml}
-                                            </div>
+                                        <div class="col-md-3">
+                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">End Time</label>
+                                            <input type="time" name="machine_end_time[${machine.id}][]" class="form-control end-time" value="${endTimeVal}" onchange="handleSlotTimeChange(this, ${machine.id})" style="font-size:14px; height:38px;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Duration</label>
+                                            <input type="text" class="form-control duration-display" readonly style="background:#f1f3f5; font-weight:bold; font-size:14px; text-align:center; height:38px;">
+                                        </div>
+                                        <div class="col-md-3 text-right">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machine.id})" title="Remove Time Slot" style="height:38px; width:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;"><i class="fa fa-trash"></i></button>
                                         </div>
                                     </div>
-                                `;
-                            });
 
-                            html += `
-                                <div class="col-md-12 mb-3">
-                                    <div class="machine-card" id="machine_card_${machine.id}" style="border: 1px solid ${cardBorder}; border-radius: 4px; overflow: hidden; transition: all 0.3s;">
-                                        <div class="machine-card-header d-flex align-items-center justify-content-between px-3 py-2" id="machine_card_header_${machine.id}" style="background: ${headerBg}; border-bottom: 1px solid ${cardBorder};">
-                                            <div class="d-flex align-items-center">
-                                                <div>
-                                                    <div style="font-weight:bold; font-size:14px; color: #333;">${machine.name}</div>
-                                                    <div style="font-size:12px; color: #666;">Machine #${index + 1}</div>
-                                                </div>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <label class="machine-toggle-label mb-0" for="machine_${machine.id}" style="cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                                    <span id="machine_status_${machine.id}" style="font-size:12px; font-weight:bold; color:${statusColor};">${statusLabel}</span>
-                                                    <div class="custom-control custom-switch mb-0">
-                                                        <input type="checkbox" class="custom-control-input machine-toggle" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" ${isEnabled ? 'checked' : ''} onchange="updateMachineCardStyle(this, ${machine.id})">
-                                                        <label class="custom-control-label" for="machine_${machine.id}"></label>
-                                                    </div>
-                                                </label>
-                                            </div>
+                                    <!-- Child Breakdowns Section -->
+                                    <div class="slot-breakdowns-container mt-2 pt-2" style="border-top: 1px dashed #ced4da;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span style="font-size:12px; font-weight:bold; color:#e06d53;"><i class="fa fa-wrench mr-1"></i> Inner Breakdowns (Within Time Slot)</span>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSlotBreakdownRow(${machine.id}, this)" style="font-size:11px; padding: 2px 10px;">
+                                                <i class="fa fa-plus mr-1"></i> Add Breakdown
+                                            </button>
                                         </div>
-                                        <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fff;">
-                                            <div style="font-size:14px; font-weight:bold; color:#333; margin-bottom:12px;">Time Slots</div>
-                                            <div id="machine_time_table_${machine.id}">
-                                                ${timeSlotsHtml}
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
-                                                <div class="d-flex align-items-center" style="gap:10px;">
-                                                    <span style="font-size:15px; font-weight:bold; color:#333;">Grand Total Time:</span>
-                                                    <input type="text" class="grand-total-display form-control" readonly style="width:120px; font-weight:bold; text-align:center; font-size:15px; height:42px;">
-                                                </div>
-                                                <button type="button" class="btn btn-primary" onclick="addMachineTimeRow(${machine.id})" style="height:42px; padding:0 20px;">
-                                                    <i class="fa fa-plus mr-1"></i> Add Time Slot
-                                                </button>
-                                            </div>
+                                        <div class="slot-breakdown-list">
+                                            ${breakdownsHtml}
                                         </div>
                                     </div>
                                 </div>
                             `;
                         });
-                        html += `</div>`;
-                        container.append(html);
 
-                        $.each(response.machines, function(index, machine) {
-                            calculateMachineTime(machine.id);
-                            updateMachineCardStyle($(`#machine_${machine.id}`), machine.id);
-                        });
-                    } else {
-                        section.hide();
-                    }
+                        html += `
+                            <div class="col-md-12 mb-3">
+                                <div class="machine-card" id="machine_card_${machine.id}" style="border: 1px solid ${cardBorder}; border-radius: 4px; overflow: hidden; transition: all 0.3s;">
+                                    <div class="machine-card-header d-flex align-items-center justify-content-between px-3 py-2" id="machine_card_header_${machine.id}" style="background: ${headerBg}; border-bottom: 1px solid ${cardBorder};">
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <div style="font-weight:bold; font-size:14px; color: #333;">${machine.name}</div>
+                                                <div style="font-size:12px; color: #666;">Machine #${index + 1}</div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <label class="machine-toggle-label mb-0" for="machine_${machine.id}" style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                                <span id="machine_status_${machine.id}" style="font-size:12px; font-weight:bold; color:${statusColor};">${statusLabel}</span>
+                                                <div class="custom-control custom-switch mb-0">
+                                                    <input type="checkbox" class="custom-control-input machine-toggle" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" ${isEnabled ? 'checked' : ''} onchange="updateMachineCardStyle(this, ${machine.id})">
+                                                    <label class="custom-control-label" for="machine_${machine.id}"></label>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fff;">
+                                        <div style="font-size:14px; font-weight:bold; color:#333; margin-bottom:12px;">Time Slots</div>
+                                        <div id="machine_time_table_${machine.id}">
+                                            ${timeSlotsHtml}
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
+                                            <div class="d-flex align-items-center" style="gap:10px;">
+                                                <span style="font-size:15px; font-weight:bold; color:#333;">Grand Total Time:</span>
+                                                <input type="text" class="grand-total-display form-control" readonly style="width:120px; font-weight:bold; text-align:center; font-size:15px; height:42px;">
+                                            </div>
+                                            <button type="button" class="btn btn-primary" onclick="addMachineTimeRow(${machine.id})" style="height:42px; padding:0 20px;">
+                                                <i class="fa fa-plus mr-1"></i> Add Time Slot
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                    container.append(html);
+
+                    $.each(response.machines, function(index, machine) {
+                        calculateMachineTime(machine.id);
+                        updateMachineCardStyle($(`#machine_${machine.id}`), machine.id);
+                    });
                 },
                 error: function(xhr) {
                     console.error('Error loading machines:', xhr);
@@ -1085,6 +1188,12 @@
                 }
             });
         }
+
+        $(document).on('change', 'input[name="prod_date"]', function() {
+            if ($('#plant_id').val()) {
+                loadMachinesByPlant();
+            }
+        });
 
         function autoSelectByProduct() {
             const headProductId = $('#product_id').val();
@@ -1208,6 +1317,39 @@
             );
         }
 
+        // Add Input Row (+) Button Click Handler
+        $(document).on('click', '#addInputRowBtn', function(e) {
+            e.preventDefault();
+            var templateHtml = $('#inputRowTemplate').html();
+            var $newRow = $(templateHtml);
+
+            var $targetTable = $('#productionInputsTable');
+            var $tbody = $targetTable.find('tbody');
+            var $totalRow = $tbody.find('#inputTotalRow');
+
+            if ($totalRow.length > 0) {
+                $totalRow.before($newRow);
+            } else {
+                $tbody.append($newRow);
+            }
+
+            // Populate input location dropdown
+            var $locSelect = $newRow.find('select[name="input_location_id[]"]');
+            var currentSubLocation = $('#sub_location_id').val() || '';
+            populateInputLocationsSelect($locSelect, currentSubLocation);
+
+            // Initialize select2 cleanly
+            $newRow.find('select.select2').each(function() {
+                var $select = $(this);
+                $select.select2({
+                    dropdownParent: $select.closest('.modal-body, .card-body, body')
+                });
+            });
+
+            calculateProductionInputs();
+            loadCostingPreview();
+        });
+
         $(document).on('click', '.copythis', function(e) {
             e.stopImmediatePropagation();
 
@@ -1317,45 +1459,36 @@
             function runAppropriateCalculation() {
                 var containerId = $container.attr('id');
 
-                // Check by container ID first
                 if (containerId === 'productionInputsTable') {
                     calculateProductionInputs();
                 } else if (containerId === 'productionHeadProductsTable') {
-                    // Recalculate both head and by products since total outputs changed
                     calculateHeadProducts();
+                    calculateB2Products();
+                    calculateByProducts();
+                } else if (containerId === 'productionB2ProductsTable') {
+                    calculateHeadProducts();
+                    calculateB2Products();
                     calculateByProducts();
                 } else if (containerId === 'productionByProductsTable') {
-                    // Recalculate both head and by products since total outputs changed
                     calculateHeadProducts();
+                    calculateB2Products();
                     calculateByProducts();
                 } else {
-                    // Check by looking at the table structure
                     var hasYield = $table.find('th:contains("Yield %")').length > 0;
                     var hasAvgWeight = $table.find('th:contains("Avg Weight")').length > 0;
                     var hasStorage = $table.find('th:contains("Storage")').length > 0;
                     var hasLocation = $table.find('th:contains("Location")').length > 0;
 
                     if (hasYield && hasAvgWeight && hasStorage) {
-                        // This could be Head Products or By Products
-                        // Check if it's inside productionHeadProductsTable or productionByProductsTable
-                        if ($table.closest('#productionHeadProductsTable').length > 0) {
-                            calculateHeadProducts();
-                            calculateByProducts(); // Recalculate both
-                        } else if ($table.closest('#productionByProductsTable').length > 0) {
-                            calculateHeadProducts(); // Recalculate both
-                            calculateByProducts();
-                        } else {
-                            // Run both to be safe
-                            calculateHeadProducts();
-                            calculateByProducts();
-                        }
+                        calculateHeadProducts();
+                        calculateB2Products();
+                        calculateByProducts();
                     } else if (hasYield && hasLocation) {
-                        // This looks like Production Inputs table
                         calculateProductionInputs();
                     } else {
-                        // Fallback: run all calculations
                         calculateProductionInputs();
                         calculateHeadProducts();
+                        calculateB2Products();
                         calculateByProducts();
                     }
                 }
@@ -1373,7 +1506,6 @@
             clone.find('input[name="output_no_of_bags[]"], input[name="output_bag_size[]"]').on(
                 'input change keyup',
                 function() {
-                    // Clear manual-change flag so qty can be recalculated
                     $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
                     setTimeout(runAppropriateCalculation, 10);
                 });
@@ -1384,31 +1516,39 @@
             var $tbody = $row.closest('tbody');
             var $table = $tbody.closest('table');
             var $container = $table.closest('div');
+            var isInputRow = ($container.attr('id') === 'productionInputsTable' || $table.closest('#productionInputsTable').length > 0 || $row.find('select[name="input_location_id[]"]').length > 0);
+
+            if (isInputRow) {
+                $row.remove();
+                setTimeout(function() {
+                    calculateProductionInputs();
+                    loadCostingPreview();
+                }, 50);
+                return;
+            }
 
             if ($tbody.find('tr').length > 1) {
                 $row.remove();
 
-                // Immediately trigger calculations after removing row
                 setTimeout(function() {
                     var containerId = $container.attr('id');
 
-                    if (containerId === 'productionInputsTable' || $container.find('#productionInputsTable')
-                        .length > 0) {
-                        calculateProductionInputs();
-                    } else if (containerId === 'productionHeadProductsTable' || $container.find(
-                            '#productionHeadProductsTable').length > 0) {
-                        // Recalculate both head and by products since total outputs changed
+                    if (containerId === 'productionHeadProductsTable' || $container.find('#productionHeadProductsTable').length > 0) {
                         calculateHeadProducts();
+                        calculateB2Products();
                         calculateByProducts();
-                    } else if (containerId === 'productionByProductsTable' || $container.find(
-                            '#productionByProductsTable').length > 0) {
-                        // Recalculate both head and by products since total outputs changed
+                    } else if (containerId === 'productionB2ProductsTable' || $container.find('#productionB2ProductsTable').length > 0) {
                         calculateHeadProducts();
+                        calculateB2Products();
+                        calculateByProducts();
+                    } else if (containerId === 'productionByProductsTable' || $container.find('#productionByProductsTable').length > 0) {
+                        calculateHeadProducts();
+                        calculateB2Products();
                         calculateByProducts();
                     } else {
-                        // Fallback: run all calculations
                         calculateProductionInputs();
                         calculateHeadProducts();
+                        calculateB2Products();
                         calculateByProducts();
                     }
                 }, 50);
@@ -1425,7 +1565,7 @@
             const jobOrderIds = $('#job_order_id').val();
             console.log(jobOrderIds);
             const headProductId = $('[name="product_id"]').val();
-            if (byProductId) {
+            if (byProductId && locationId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-by-product-table') }}', 'productionByProductsTable', {
                     by_product_id: byProductId,
                     location_id: locationId,
@@ -1449,7 +1589,7 @@
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = $('#job_order_id').val();
             console.log(jobOrderIds);
-            if (productId) {
+            if (productId && locationId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}',
                 'productionHeadProductsTable', {
                     product_id: productId,
@@ -1460,6 +1600,28 @@
                     onSuccess: function(response, target) {
                         target.html(response);
                         // Reinitialize calculations after table loads
+                        setTimeout(function() {
+                            initializeCalculations();
+                        }, 300);
+                    }
+                });
+            }
+        }
+
+        function loadB2ProductsData() {
+            const productId = $('[name="product_id"]').val();
+            const locationId = $('[name="location_id"]').val();
+            const jobOrderIds = $('#job_order_id').val();
+            if (productId && locationId) {
+                fetchDynamicHTML('{{ route('production-voucher.get-b2-products-data') }}',
+                'productionB2ProductsTable', {
+                    product_id: productId,
+                    location_id: locationId,
+                    job_order_ids: jobOrderIds
+                }, {
+                    method: 'POST',
+                    onSuccess: function(response, target) {
+                        target.html(response);
                         setTimeout(function() {
                             initializeCalculations();
                         }, 300);
@@ -1482,15 +1644,24 @@
             if (tbody.length === 0) return;
 
             let totalQty = 0;
+            const dataRows = tbody.find('tr').not('#inputTotalRow').not(':last');
+
+            if (dataRows.length === 0) {
+                const totalRow = tbody.find('#inputTotalRow, tr:last');
+                totalRow.find('input[name="input_total_qty[]"]').val('');
+                totalRow.find('input[name="input_total_yield[]"]').val('');
+                calculateNetTotalInput();
+                return;
+            }
 
             // First, calculate total input qty (excluding total row)
-            tbody.find('tr').not(':last').each(function() {
+            dataRows.each(function() {
                 const qty = parseFloat($(this).find('input[name="input_qty[]"]').val()) || 0;
                 totalQty += qty;
             });
 
             // Now calculate yield for each input row (total input = 100%)
-            tbody.find('tr').not(':last').each(function() {
+            dataRows.each(function() {
                 const qtyInput = $(this).find('input[name="input_qty[]"]');
                 const yieldInput = $(this).find('input[name="input_yield[]"]');
 
@@ -1520,12 +1691,18 @@
             calculateNetTotalInput();
         }
 
-        // Calculate total outputs (head products + by products)
+        // Calculate total outputs (head products + b2 products + by products)
         function getTotalOutputs() {
             let totalOutputs = 0;
 
             // Sum all head products qty
             $('#productionHeadProductsTable tbody tr').not(':last').each(function() {
+                const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
+                totalOutputs += qty;
+            });
+
+            // Sum all B2 products qty
+            $('#productionB2ProductsTable tbody tr').not(':last').each(function() {
                 const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
                 totalOutputs += qty;
             });
@@ -1550,7 +1727,7 @@
 
             if (tbody.length === 0) return;
 
-            // Get total outputs (head + by products) - this will be 100%
+            // Get total outputs (head + b2 + by products) - this will be 100%
             const totalOutputs = getTotalOutputs();
 
             let totalQty = 0;
@@ -1580,7 +1757,6 @@
                 const qty = parseFloat(qtyInput.val()) || 0;
 
                 // Calculate avg_weight_per_bag = qty / no_of_bags
-                // Only calculate if both qty and no_of_bags are provided
                 if (noOfBags > 0 && qty > 0) {
                     const avgWeight = qty / noOfBags;
                     avgWeightInput.val(roundToTwo(avgWeight));
@@ -1620,6 +1796,90 @@
                     totalYieldInput.val(roundToTwo(overallYield));
                 } else {
                     totalYieldInput.val('');
+                }
+            }
+            calculateNetTotalInput();
+        }
+
+        // Calculate B2 Products Yield, Avg Weight, and Totals
+        function calculateB2Products() {
+            const tbody = $('#productionB2ProductsTable tbody');
+
+            if (tbody.length === 0) return;
+
+            // Get total outputs (head + b2 + by products) - this will be 100%
+            const totalOutputs = getTotalOutputs();
+
+            let totalQty = 0;
+            let totalNoOfBags = 0;
+
+            // Calculate for each product row (excluding total row)
+            tbody.find('tr').not(':last').not('.b2-total-row').each(function() {
+                const qtyInput = $(this).find('input[name="output_qty[]"]');
+                const noOfBagsInput = $(this).find('input[name="output_no_of_bags[]"]');
+                const bagSizeInput = $(this).find('input[name="output_bag_size[]"]');
+                const avgWeightInput = $(this).find('input[name="output_avg_weight_per_bag[]"]');
+                const yieldInput = $(this).find('input[name="output_yield[]"]');
+
+                if (qtyInput.length === 0) return;
+
+                const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
+                const bagSize = parseFloat(bagSizeInput.val()) || 0;
+
+                // Calculate Qty = No of Bags × Bag Size (only if qty wasn't manually changed)
+                if (!qtyInput.data('manual-change')) {
+                    if (noOfBags > 0 && bagSize > 0) {
+                        const calculatedQty = noOfBags * bagSize;
+                        qtyInput.val(roundToTwo(calculatedQty));
+                    } else if (noOfBags === 0 || bagSize === 0) {
+                        qtyInput.val('');
+                    }
+                }
+
+                const qty = parseFloat(qtyInput.val()) || 0;
+
+                // Calculate avg_weight_per_bag = qty / no_of_bags
+                if (noOfBags > 0 && qty > 0) {
+                    const avgWeight = qty / noOfBags;
+                    avgWeightInput.val(roundToTwo(avgWeight));
+                } else if (qty === 0 || noOfBags === 0) {
+                    avgWeightInput.val('');
+                }
+
+                // Calculate yield: (qty / total_outputs) * 100
+                if (qty > 0 && totalOutputs > 0) {
+                    const yieldVal = (qty / totalOutputs) * 100;
+                    yieldInput.val(roundToTwo(yieldVal));
+                } else {
+                    yieldInput.val('');
+                }
+
+                totalQty += qty;
+                totalNoOfBags += noOfBags;
+            });
+
+            // Update total row
+            const totalRow = tbody.find('tr.b2-total-row, tr:last');
+            if (totalRow.length > 0 && totalRow.find('strong').text().includes('Total')) {
+                const totalQtyInput = totalRow.find('input[name="commodity_total_qty[]"], input[name="total_qty[]"]');
+                const totalBagsInput = totalRow.find('input[name="commodity_total_no_of_bags[]"]');
+                const totalYieldInput = totalRow.find('input[name="total_yield[]"]');
+
+                if (totalQtyInput.length > 0) {
+                    totalQtyInput.val(roundToTwo(totalQty));
+                }
+                if (totalBagsInput.length > 0) {
+                    totalBagsInput.val(Math.round(totalNoOfBags));
+                }
+
+                // Calculate total yield: (total_qty / total_outputs) * 100
+                if (totalYieldInput.length > 0) {
+                    if (totalQty > 0 && totalOutputs > 0) {
+                        const overallYield = (totalQty / totalOutputs) * 100;
+                        totalYieldInput.val(roundToTwo(overallYield));
+                    } else {
+                        totalYieldInput.val('');
+                    }
                 }
             }
             calculateNetTotalInput();
@@ -1762,7 +2022,7 @@
             // Reinitialize Select2 for dynamically loaded selects - properly destroy and reinitialize
             setTimeout(function() {
                 // Destroy existing select2 instances first
-                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select')
+                $('#productionInputsTable select, #productionHeadProductsTable select, #productionB2ProductsTable select, #productionByProductsTable select')
                     .each(function() {
                         var $select = $(this);
                         if ($select.data('select2')) {
@@ -1771,16 +2031,16 @@
                     });
 
                 // Remove existing select2 containers
-                $('#productionInputsTable .select2-container, #productionHeadProductsTable .select2-container, #productionByProductsTable .select2-container')
+                $('#productionInputsTable .select2-container, #productionHeadProductsTable .select2-container, #productionB2ProductsTable .select2-container, #productionByProductsTable .select2-container')
                     .remove();
 
                 // Clean up all selects
-                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select')
+                $('#productionInputsTable select, #productionHeadProductsTable select, #productionB2ProductsTable select, #productionByProductsTable select')
                     .removeClass('select2-hidden-accessible')
                     .removeAttr('data-select2-id');
 
                 // Reinitialize all select2 with proper settings
-                $('#productionInputsTable select, #productionHeadProductsTable select, #productionByProductsTable select')
+                $('#productionInputsTable select, #productionHeadProductsTable select, #productionB2ProductsTable select, #productionByProductsTable select')
                     .each(function() {
                         var $select = $(this);
                         // Make sure it has select2 class
@@ -1811,6 +2071,7 @@
                     // Clear manual-change flag so qty can be recalculated
                     $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
                     calculateHeadProducts();
+                    calculateB2Products();
                     calculateByProducts(); // Recalculate by products too since total outputs changed
                     validateOutputRow($(this).closest('tr'));
                 });
@@ -1820,7 +2081,33 @@
             $(document).on('input change keyup', '#productionHeadProductsTable input[name="output_qty[]"]', function() {
                 $(this).data('manual-change', true);
                 calculateHeadProducts();
+                calculateB2Products();
                 calculateByProducts(); // Recalculate by products too since total outputs changed
+                validateOutputRow($(this).closest('tr'));
+            });
+
+            // B2 Products - no_of_bags and bag_size changes (auto calculate qty)
+            $(document).off('input change keyup',
+                '#productionB2ProductsTable input[name="output_no_of_bags[]"], #productionB2ProductsTable input[name="output_bag_size[]"]'
+                );
+            $(document).on('input change keyup',
+                '#productionB2ProductsTable input[name="output_no_of_bags[]"], #productionB2ProductsTable input[name="output_bag_size[]"]',
+                function() {
+                    // Clear manual-change flag so qty can be recalculated
+                    $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
+                    calculateHeadProducts();
+                    calculateB2Products();
+                    calculateByProducts();
+                    validateOutputRow($(this).closest('tr'));
+                });
+
+            // B2 Products - qty manual change (mark as manual, then recalculate)
+            $(document).off('input change keyup', '#productionB2ProductsTable input[name="output_qty[]"]');
+            $(document).on('input change keyup', '#productionB2ProductsTable input[name="output_qty[]"]', function() {
+                $(this).data('manual-change', true);
+                calculateHeadProducts();
+                calculateB2Products();
+                calculateByProducts();
                 validateOutputRow($(this).closest('tr'));
             });
 
@@ -1834,6 +2121,7 @@
                     // Clear manual-change flag so qty can be recalculated
                     $(this).closest('tr').find('input[name="output_qty[]"]').removeData('manual-change');
                     calculateHeadProducts(); // Recalculate head products too since total outputs changed
+                    calculateB2Products();
                     calculateByProducts();
                     validateOutputRow($(this).closest('tr'));
                 });
@@ -1843,6 +2131,7 @@
             $(document).on('input change keyup', '#productionByProductsTable input[name="output_qty[]"]', function() {
                 $(this).data('manual-change', true);
                 calculateHeadProducts(); // Recalculate head products too since total outputs changed
+                calculateB2Products();
                 calculateByProducts();
                 validateOutputRow($(this).closest('tr'));
             });
@@ -1877,6 +2166,7 @@
 
                 validateOutputRow($row);
                 calculateHeadProducts();
+                calculateB2Products();
                 calculateByProducts();
                 calculateNetTotalInput();
             });
@@ -1887,6 +2177,7 @@
             // Run initial calculations
             calculateProductionInputs();
             calculateHeadProducts();
+            calculateB2Products();
             calculateByProducts();
             calculateNetTotalInput();
         }
@@ -1951,9 +2242,9 @@
             let firstInvalid = null;
             let errorMessages = [];
 
-            $('#productionHeadProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
+            $('#productionHeadProductsTable tbody tr, #productionB2ProductsTable tbody tr, #productionByProductsTable tbody tr').each(function() {
                 const $row = $(this);
-                if ($row.hasClass('commodity-total-row') || $row.find('strong').text().includes('Total') || $row.find('strong').text().includes('Commodity Total')) {
+                if ($row.hasClass('commodity-total-row') || $row.hasClass('b2-total-row') || $row.find('strong').text().includes('Total') || $row.find('strong').text().includes('Commodity Total')) {
                     return;
                 }
                 const noOfBagsInput = $row.find('input[name="output_no_of_bags[]"]');
@@ -2053,7 +2344,7 @@
             // Reinitialize after dynamic content loads
             $(document).on('DOMNodeInserted', function(e) {
                 if ($(e.target).find(
-                        '#productionInputsTable, #productionHeadProductsTable, #productionByProductsTable')
+                        '#productionInputsTable, #productionHeadProductsTable, #productionB2ProductsTable, #productionByProductsTable')
                     .length > 0) {
                     setTimeout(function() {
                         initializeCalculations();
@@ -2661,6 +2952,16 @@
         });
 
         $(document).off('submit.pv_breakdown', '#ajaxSubmit').on('submit.pv_breakdown', '#ajaxSubmit', function(e) {
+            var totalInput = parseFloat($('input[name="net_total_input"]').val()) || 0;
+            var totalOutput = parseFloat($('input[name="net_total_output"]').val()) || 0;
+
+            if (totalOutput > totalInput) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                toastr.error('Total input must be greater than or equal to total output (Total Output: ' + totalOutput.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' KG)');
+                return false;
+            }
+
             if (!validateBreakdownTimes() || !validateAllSlotBreakdowns()) {
                 e.preventDefault();
                 e.stopImmediatePropagation();

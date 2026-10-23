@@ -53,7 +53,7 @@ class JobOrderRequestController extends Controller
             ->latest()
             ->get();
 
-        $products = Product::where('status', 'active')->get();
+        $products = getFinishGoodProducts();
         $bagProducts = Product::where('status', 'active')->where('product_type', 'general_items')
             ->with('category')
             ->whereHas('category', function ($query) {
@@ -148,6 +148,7 @@ class JobOrderRequestController extends Controller
 
                 $item['extra_bags'] = $item['extra_bags'] ?? 0;
                 $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
                 $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                 $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
                 $item['total_bags'] = ($item['no_of_bags'] ?? 0) + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
@@ -174,10 +175,39 @@ class JobOrderRequestController extends Controller
                 if (!empty($subItems)) {
                     foreach ($subItems as $sIdx => $subItem) {
                         $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['empty_bags_percentage'] = $subItem['empty_bags_percentage'] ?? 0;
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['total_bags'] = ($subItem['no_of_bags'] ?? 0) + $subItem['extra_bags'] + $subItem['empty_bags'];
+
+                        if (!empty($subItem['bag_type_id']) && empty($subItem['bag_product_id'])) {
+                            $bagType = BagType::find($subItem['bag_type_id']);
+                            if ($bagType) {
+                                $matchingProduct = Product::where('product_type', 'general_items')
+                                    ->where(function ($q) use ($bagType) {
+                                        $q->where('name', $bagType->name)
+                                          ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($bagType->name))]);
+                                    })->first();
+                                if ($matchingProduct) {
+                                    $subItem['bag_product_id'] = $matchingProduct->id;
+                                }
+                            }
+                        } elseif (!empty($subItem['bag_product_id']) && empty($subItem['bag_type_id'])) {
+                            $product = Product::find($subItem['bag_product_id']);
+                            if ($product) {
+                                $matchingBagType = BagType::where('name', $product->name)
+                                    ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($product->name))])
+                                    ->first();
+                                if ($matchingBagType) {
+                                    $subItem['bag_type_id'] = $matchingBagType->id;
+                                }
+                            }
+                        }
+
+                        if (empty($subItem['brand_id']) && !empty($packingItem->brand_id)) {
+                            $subItem['brand_id'] = $packingItem->brand_id;
+                        }
 
                         $subAttachmentFile = $request->file("packing_items.{$pIndex}.sub_items.{$sIdx}.attachment") ?? (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile ? $subItem['attachment'] : null);
                         if ($subAttachmentFile) {
@@ -249,7 +279,7 @@ class JobOrderRequestController extends Controller
             ->latest()
             ->get();
 
-        $products = Product::where('status', 'active')->get();
+        $products = getFinishGoodProducts($jobOrderRequest->product_id);
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $user = auth()->user();
@@ -341,6 +371,7 @@ class JobOrderRequestController extends Controller
 
                 $item['extra_bags'] = $item['extra_bags'] ?? 0;
                 $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
                 $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                 $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
                 $item['total_bags'] = ($item['no_of_bags'] ?? 0) + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
@@ -367,10 +398,39 @@ class JobOrderRequestController extends Controller
                 if (!empty($subItems)) {
                     foreach ($subItems as $sIdx => $subItem) {
                         $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['empty_bags_percentage'] = $subItem['empty_bags_percentage'] ?? 0;
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['total_bags'] = ($subItem['no_of_bags'] ?? 0) + $subItem['extra_bags'] + $subItem['empty_bags'];
+
+                        if (!empty($subItem['bag_type_id']) && empty($subItem['bag_product_id'])) {
+                            $bagType = BagType::find($subItem['bag_type_id']);
+                            if ($bagType) {
+                                $matchingProduct = Product::where('product_type', 'general_items')
+                                    ->where(function ($q) use ($bagType) {
+                                        $q->where('name', $bagType->name)
+                                          ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($bagType->name))]);
+                                    })->first();
+                                if ($matchingProduct) {
+                                    $subItem['bag_product_id'] = $matchingProduct->id;
+                                }
+                            }
+                        } elseif (!empty($subItem['bag_product_id']) && empty($subItem['bag_type_id'])) {
+                            $product = Product::find($subItem['bag_product_id']);
+                            if ($product) {
+                                $matchingBagType = BagType::where('name', $product->name)
+                                    ->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($product->name))])
+                                    ->first();
+                                if ($matchingBagType) {
+                                    $subItem['bag_type_id'] = $matchingBagType->id;
+                                }
+                            }
+                        }
+
+                        if (empty($subItem['brand_id']) && !empty($packingItem->brand_id)) {
+                            $subItem['brand_id'] = $packingItem->brand_id;
+                        }
 
                         $subAttachmentFile = $request->file("packing_items.{$pIndex}.sub_items.{$sIdx}.attachment") ?? (isset($subItem['attachment']) && $subItem['attachment'] instanceof \Illuminate\Http\UploadedFile ? $subItem['attachment'] : null);
                         if ($subAttachmentFile) {

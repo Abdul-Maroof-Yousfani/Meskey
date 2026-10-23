@@ -329,6 +329,13 @@
                         </div>
                         <div class="col-md-1">
                             <div class="form-group">
+                                <label>Empty Bags %:</label>
+                                <input type="number" name="packing_items[{{ $packingIndex }}][empty_bags_percentage]"
+                                    class="form-control empty-bags-percentage" step="0.01" value="{{ $packingItem->empty_bags_percentage ?? 0 }}">
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
                                 <label>Total Bags:</label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][total_bags]"
                                     class="form-control total-bags" readonly value="{{ $packingItem->total_bags }}">
@@ -385,10 +392,16 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Fumigation By:</label>
-                                <select name="packing_items[{{ $packingIndex }}][fumigation_company_id][]" class="form-control select2" multiple>
-                                    <option value="">Select Fumigation Company</option>
+                                @php
+                                    $savedFumigation = is_array($packingItem->fumigation_company_id) 
+                                        ? $packingItem->fumigation_company_id 
+                                        : (is_string($packingItem->fumigation_company_id) ? (json_decode($packingItem->fumigation_company_id, true) ?? []) : []);
+                                    $savedFumigation = collect($savedFumigation)->flatten()->map(fn($v) => (string)$v)->all();
+                                @endphp
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_company_id][]" class="form-control select2" multiple data-placeholder="Select Fumigation Company">
+                                    <option value="null" {{ in_array('null', $savedFumigation) ? 'selected' : '' }}>N/A</option>
                                     @foreach($fumigationCompanies as $company)
-                                        <option value="{{ $company->id }}" {{ in_array($company->id, $packingItem->fumigation_company_id ?? []) ? 'selected' : '' }}>
+                                        <option value="{{ $company->id }}" {{ in_array((string)$company->id, $savedFumigation) ? 'selected' : '' }}>
                                             {{ $company->name }}
                                         </option>
                                     @endforeach
@@ -426,10 +439,11 @@
                                                 <tr>
                                                     <th class="col-2">Bag Type</th>
                                                     <th>Bag Size</th>
-                                                    <th>No of Primary Bags fit in master bag</th>
                                                     <th>Packing Size (kg)</th>
+                                                    <th>No of Primary Bags fit in master bag</th>
                                                     <th>No. of Bags</th>
                                                     <th>Empty Bags</th>
+                                                    <th>Empty Bags %</th>
                                                     <th>Extra Bags</th>
                                                     <th>Extra Bags %</th>
                                                     <th>Empty Bag Weight (g)</th>
@@ -463,14 +477,14 @@
                                                             </select>
                                                         </td>
                                                         <td>
-                                                            <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][no_of_primary_bags]" 
-                                                                class="form-control form-control-sm sub-no-of-primary-bags" placeholder="Enter No of Primary Bags fit in master bag" value="{{ $subItem->no_of_primary_bags ?? 0 }}">
+                                                            @php
+                                                                $calcSize = $subItem->packing_size ?? (($packingItem->bag_size ?? 0) * ($subItem->no_of_primary_bags ?? 0));
+                                                            @endphp
+                                                            <input type="number" step="0.01" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][packing_size]" class="form-control form-control-sm sub-calculated-packing-size" placeholder="Enter / Auto calc" value="{{ $calcSize }}">
                                                         </td>
                                                         <td>
-                                                            @php
-                                                                $calcSize = ($packingItem->bag_size ?? 0) * ($subItem->no_of_primary_bags ?? 0);
-                                                            @endphp
-                                                            <input type="number" step="0.01" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][packing_size]" readonly class="form-control form-control-sm sub-calculated-packing-size" placeholder="Auto calc" value="{{ $calcSize }}">
+                                                            <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][no_of_primary_bags]" 
+                                                                class="form-control form-control-sm sub-no-of-primary-bags" placeholder="Enter No of Primary Bags fit in master bag" value="{{ $subItem->no_of_primary_bags ?? 0 }}">
                                                         </td>
                                                         <td>
                                                             <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][no_of_bags]" 
@@ -479,6 +493,10 @@
                                                         <td>
                                                             <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][empty_bags]" 
                                                                 class="form-control form-control-sm sub-empty-bags" value="{{ $subItem->empty_bags ?? 0 }}" min="0">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][empty_bags_percentage]" 
+                                                                class="form-control form-control-sm sub-empty-bags-percentage" value="{{ $subItem->empty_bags_percentage ?? 0 }}" min="0" step="0.01">
                                                         </td>
                                                         <td>
                                                             <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][extra_bags]" 
@@ -576,8 +594,8 @@
                             }
                             $savedInspectionCompanies = collect($savedInspectionCompanies)->flatten()->map(fn($v) => (string)$v)->all();
                         @endphp
-                        <select name="inspection_company_id[]" class="form-control select2" multiple>
-                            <option value="">Select Inspection Company</option>
+                        <select name="inspection_company_id[]" class="form-control select2" multiple data-placeholder="Select Inspection Company">
+                            <option value="null" {{ in_array('null', $savedInspectionCompanies) ? 'selected' : '' }}>N/A</option>
                             @foreach($inspectionCompanies as $company)
                                 <option value="{{ $company->id }}" {{ in_array((string)$company->id, $savedInspectionCompanies) ? 'selected' : '' }}>
                                     {{ $company->name }}
@@ -598,8 +616,8 @@
                             }
                             $savedFumigationCompanies = collect($savedFumigationCompanies)->flatten()->map(fn($v) => (string)$v)->all();
                         @endphp
-                        <select name="fumigation_company_id[]" class="form-control select2" multiple>
-                            <option value="">Select Fumigation Company</option>
+                        <select name="fumigation_company_id[]" class="form-control select2" multiple data-placeholder="Select Fumigation Company">
+                            <option value="null" {{ in_array('null', $savedFumigationCompanies) ? 'selected' : '' }}>N/A</option>
                             @foreach($fumigationCompanies as $company)
                                 <option value="{{ $company->id }}" {{ in_array((string)$company->id, $savedFumigationCompanies) ? 'selected' : '' }}>
                                     {{ $company->name }}
@@ -752,11 +770,11 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_primary_bags]" 
-                    class="form-control form-control-sm sub-no-of-primary-bags" placeholder="Enter No of Primary Bags fit in master bag">
+                <input type="number" step="0.01" name="packing_items[INDEX][sub_items][SUB_INDEX][packing_size]" class="form-control form-control-sm sub-calculated-packing-size" placeholder="Enter / Auto calc">
             </td>
             <td>
-                <input type="number" step="0.01" name="packing_items[INDEX][sub_items][SUB_INDEX][packing_size]" readonly class="form-control form-control-sm sub-calculated-packing-size" placeholder="Auto calc">
+                <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_primary_bags]" 
+                    class="form-control form-control-sm sub-no-of-primary-bags" placeholder="Enter No of Primary Bags fit in master bag">
             </td>
             <td>
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_bags]" 
@@ -765,6 +783,10 @@
             <td>
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bags]" 
                     class="form-control form-control-sm sub-empty-bags" value="0" min="0">
+            </td>
+            <td>
+                <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bags_percentage]" 
+                    class="form-control form-control-sm sub-empty-bags-percentage" value="0" min="0" step="0.01">
             </td>
             <td>
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags]" 
@@ -1283,8 +1305,31 @@
             $(this).closest('.sub-packing-item-row').remove();
         });
 
+        // Calculate No. of Primary Bags when sub packing size changes
+        $(document).off('input.jobOrderEdit', '.sub-calculated-packing-size').on('input.jobOrderEdit', '.sub-calculated-packing-size', function () {
+            if ($(this).hasClass('is-calculating')) return;
+            var subRow = $(this).closest('.sub-packing-item-row');
+            var packingItem = subRow.closest('.packing-item');
+            var parentBagSize = parseFloat(packingItem.find('.bag-size').val()) || 0;
+            var packingSize = parseFloat($(this).val()) || 0;
+
+            if (parentBagSize > 0 && packingSize > 0) {
+                var noOfPrimaryBags = Math.round(packingSize / parentBagSize);
+                subRow.find('.sub-no-of-primary-bags').addClass('is-calculating').val(noOfPrimaryBags).removeClass('is-calculating');
+                
+                var noOfBagsPrimary = parseInt(packingItem.find('.no-of-bags').val()) || 0;
+                if (noOfBagsPrimary > 0 && noOfPrimaryBags > 0) {
+                    var noOfBags = Math.floor(noOfBagsPrimary / noOfPrimaryBags);
+                    subRow.find('.sub-no-of-bags').val(noOfBags).trigger('input');
+                } else {
+                    subRow.find('.sub-no-of-bags').val('0').trigger('input');
+                }
+            }
+        });
+
         // Calculate No. of Bags for sub item when no_of_primary_bags changes
         $(document).off('input.jobOrderEdit', '.sub-no-of-primary-bags').on('input.jobOrderEdit', '.sub-no-of-primary-bags', function () {
+            if ($(this).hasClass('is-calculating')) return;
             var subRow = $(this).closest('.sub-packing-item-row');
             var packingItem = subRow.closest('.packing-item');
             calculateSubItemNoOfBags(subRow, packingItem);
@@ -1298,30 +1343,50 @@
             });
         });
 
-        // Calculate total bags for sub item
+        // Calculate total bags for sub item & sync percentages
         $(document).off('input.jobOrderEdit', '.sub-no-of-bags, .sub-empty-bags, .sub-extra-bags').on('input.jobOrderEdit', '.sub-no-of-bags, .sub-empty-bags, .sub-extra-bags', function () {
             var subRow = $(this).closest('.sub-packing-item-row');
             var noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
             var emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
             var extraBags = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
 
-            // If no-of-bags changed, update extra bags from percentage
+            // If sub-no-of-bags changed, update extra and empty bags from percentage
             if ($(this).hasClass('sub-no-of-bags')) {
-                var percentageVal = subRow.find('.sub-extra-bags-percentage').val();
-                if (percentageVal !== '' && noOfBags > 0) {
-                    var percentage = parseFloat(percentageVal) || 0;
-                    extraBags = Math.round((percentage / 100) * noOfBags);
+                var extraPercentageVal = subRow.find('.sub-extra-bags-percentage').val();
+                if (extraPercentageVal !== '' && noOfBags > 0) {
+                    var extraPercentage = parseFloat(extraPercentageVal) || 0;
+                    extraBags = Math.round((extraPercentage / 100) * noOfBags);
                     subRow.find('.sub-extra-bags').val(extraBags);
+                }
+                var emptyPercentageVal = subRow.find('.sub-empty-bags-percentage').val();
+                if (emptyPercentageVal !== '' && noOfBags > 0) {
+                    var emptyPercentage = parseFloat(emptyPercentageVal) || 0;
+                    emptyBags = Math.round((emptyPercentage / 100) * noOfBags);
+                    subRow.find('.sub-empty-bags').val(emptyBags);
                 }
             }
 
-            // Update percentage only if extra-bags was changed directly
-            if ($(this).hasClass('sub-extra-bags') && noOfBags > 0 && !$(this).hasClass('is-calculating')) {
-                if ($(this).val() === '') {
-                    subRow.find('.sub-extra-bags-percentage').val('');
-                } else {
-                    var percentage = (extraBags / noOfBags) * 100;
-                    subRow.find('.sub-extra-bags-percentage').val(percentage.toFixed(2));
+            // Update extra bags percentage only if extra-bags was changed directly
+            if ($(this).hasClass('sub-extra-bags') && !$(this).hasClass('is-calculating')) {
+                if (noOfBags > 0) {
+                    if ($(this).val() === '') {
+                        subRow.find('.sub-extra-bags-percentage').val('');
+                    } else {
+                        var extraPerc = (extraBags / noOfBags) * 100;
+                        subRow.find('.sub-extra-bags-percentage').val(extraPerc.toFixed(2));
+                    }
+                }
+            }
+
+            // Update empty bags percentage only if empty-bags was changed directly
+            if ($(this).hasClass('sub-empty-bags') && !$(this).hasClass('is-calculating')) {
+                if (noOfBags > 0) {
+                    if ($(this).val() === '') {
+                        subRow.find('.sub-empty-bags-percentage').val('');
+                    } else {
+                        var emptyPerc = (emptyBags / noOfBags) * 100;
+                        subRow.find('.sub-empty-bags-percentage').val(emptyPerc.toFixed(2));
+                    }
                 }
             }
 
@@ -1347,6 +1412,24 @@
             }
         });
 
+        // Calculate empty bags for sub item from percentage
+        $(document).off('input.jobOrderEdit', '.sub-empty-bags-percentage').on('input.jobOrderEdit', '.sub-empty-bags-percentage', function () {
+            var subRow = $(this).closest('.sub-packing-item-row');
+            var noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
+            var val = $(this).val();
+
+            if (val === '') {
+                subRow.find('.sub-empty-bags').addClass('is-calculating').val('').trigger('input').removeClass('is-calculating');
+                return;
+            }
+
+            var percentage = parseFloat(val) || 0;
+            if (noOfBags > 0) {
+                var emptyBags = Math.round((percentage / 100) * noOfBags);
+                subRow.find('.sub-empty-bags').addClass('is-calculating').val(emptyBags).trigger('input').removeClass('is-calculating');
+            }
+        });
+
         // Function to calculate no of bags from packing item's no_of_bags / no_of_primary_bags
         function calculateSubItemNoOfBags(subRow, packingItem) {
             var noOfBagsPrimary = parseInt(packingItem.find('.no-of-bags').val()) || 0;
@@ -1355,7 +1438,7 @@
             // Also calculate calculated packing size (kg)
             var parentBagSize = parseFloat(packingItem.find('.bag-size').val()) || 0;
             var calculatedPackingSize = parentBagSize * noOfPrimaryBags;
-            subRow.find('.sub-calculated-packing-size').val(calculatedPackingSize > 0 ? calculatedPackingSize.toFixed(2) : '0');
+            subRow.find('.sub-calculated-packing-size').addClass('is-calculating').val(calculatedPackingSize > 0 ? calculatedPackingSize.toFixed(2) : '0').removeClass('is-calculating');
 
             if (noOfBagsPrimary > 0 && noOfPrimaryBags > 0) {
                 var noOfBags = Math.floor(noOfBagsPrimary / noOfPrimaryBags);
@@ -1364,21 +1447,28 @@
                 subRow.find('.sub-no-of-bags').trigger('input');
             } else {
                 subRow.find('.sub-no-of-bags').val('0');
+                subRow.find('.sub-no-of-bags').trigger('input');
             }
         }
 
-        // Auto-calculate totals
+        // Auto-calculate totals for parent packing items
         $(document).off('input.jobOrderEdit', '.bag-size, .no-of-bags, .extra-bags, .empty-bags').on('input.jobOrderEdit', '.bag-size, .no-of-bags, .extra-bags, .empty-bags', function () {
             var item = $(this).closest('.packing-item');
 
-            // If no-of-bags changed, update extra-bags from percentage if percentage exists
+            // If no-of-bags changed, update extra-bags and empty-bags from percentage if percentage exists
             if ($(this).hasClass('no-of-bags')) {
                 var noOfBags = parseInt($(this).val()) || 0;
-                var percentageVal = item.find('.extra-bags-percentage').val();
-                if (percentageVal !== '' && noOfBags > 0) {
-                    var percentage = parseFloat(percentageVal) || 0;
-                    var extraBags = Math.round((percentage / 100) * noOfBags);
+                var extraPercentageVal = item.find('.extra-bags-percentage').val();
+                if (extraPercentageVal !== '' && noOfBags > 0) {
+                    var extraPercentage = parseFloat(extraPercentageVal) || 0;
+                    var extraBags = Math.round((extraPercentage / 100) * noOfBags);
                     item.find('.extra-bags').addClass('is-calculating').val(extraBags).removeClass('is-calculating');
+                }
+                var emptyPercentageVal = item.find('.empty-bags-percentage').val();
+                if (emptyPercentageVal !== '' && noOfBags > 0) {
+                    var emptyPercentage = parseFloat(emptyPercentageVal) || 0;
+                    var emptyBags = Math.round((emptyPercentage / 100) * noOfBags);
+                    item.find('.empty-bags').addClass('is-calculating').val(emptyBags).removeClass('is-calculating');
                 }
             }
 
@@ -1390,8 +1480,22 @@
                     if ($(this).val() === '') {
                         item.find('.extra-bags-percentage').val('');
                     } else {
-                        var percentage = (extraBags / noOfBags) * 100;
-                        item.find('.extra-bags-percentage').val(percentage.toFixed(2));
+                        var extraPercentage = (extraBags / noOfBags) * 100;
+                        item.find('.extra-bags-percentage').val(extraPercentage.toFixed(2));
+                    }
+                }
+            }
+
+            // If empty-bags changed, update percentage
+            if ($(this).hasClass('empty-bags') && !$(this).hasClass('is-calculating')) {
+                var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+                var emptyBags = parseInt($(this).val());
+                if (noOfBags > 0) {
+                    if ($(this).val() === '') {
+                        item.find('.empty-bags-percentage').val('');
+                    } else {
+                        var emptyPercentage = (emptyBags / noOfBags) * 100;
+                        item.find('.empty-bags-percentage').val(emptyPercentage.toFixed(2));
                     }
                 }
             }
@@ -1414,6 +1518,24 @@
             if (noOfBags > 0) {
                 var extraBags = Math.round((percentage / 100) * noOfBags);
                 item.find('.extra-bags').addClass('is-calculating').val(extraBags).trigger('input').removeClass('is-calculating');
+            }
+        });
+
+        // Calculate empty bags from percentage
+        $(document).off('input.jobOrderEdit', '.empty-bags-percentage').on('input.jobOrderEdit', '.empty-bags-percentage', function () {
+            var item = $(this).closest('.packing-item');
+            var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+            var val = $(this).val();
+
+            if (val === '') {
+                item.find('.empty-bags').addClass('is-calculating').val('').trigger('input').removeClass('is-calculating');
+                return;
+            }
+
+            var percentage = parseFloat(val) || 0;
+            if (noOfBags > 0) {
+                var emptyBags = Math.round((percentage / 100) * noOfBags);
+                item.find('.empty-bags').addClass('is-calculating').val(emptyBags).trigger('input').removeClass('is-calculating');
             }
         });
 
@@ -1653,6 +1775,20 @@
             });
         } else {
             $('select[name="arrival_locations[]"]').empty().trigger('change');
+        }
+    });
+
+    $(document).on('change', 'select[name*="fumigation_company_id"], select[name*="inspection_company_id"]', function() {
+        var val = $(this).val();
+        if (Array.isArray(val) && val.length > 1) {
+            if (val.indexOf('null') !== -1) {
+                if (val[val.length - 1] === 'null') {
+                    $(this).val(['null']).trigger('change.select2');
+                } else {
+                    var filtered = val.filter(function(v) { return v !== 'null'; });
+                    $(this).val(filtered).trigger('change.select2');
+                }
+            }
         }
     });
 </script>

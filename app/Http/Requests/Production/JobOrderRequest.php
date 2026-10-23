@@ -154,9 +154,19 @@ class JobOrderRequest extends FormRequest
                 'integer',
                 'min:0'
             ],
+            'packing_items.*.sub_items.*.empty_bags_percentage' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
             'packing_items.*.sub_items.*.extra_bags' => [
                 'nullable',
                 'integer',
+                'min:0'
+            ],
+            'packing_items.*.sub_items.*.extra_bags_percentage' => [
+                'nullable',
+                'numeric',
                 'min:0'
             ],
             'packing_items.*.sub_items.*.empty_bag_weight' => [
@@ -192,6 +202,16 @@ class JobOrderRequest extends FormRequest
                 'integer',
                 'min:0',
                 'max:10000'
+            ],
+            'packing_items.*.empty_bags_percentage' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'packing_items.*.extra_bags_percentage' => [
+                'nullable',
+                'numeric',
+                'min:0'
             ],
             'packing_items.*.total_bags' => [
                 'nullable',
@@ -260,7 +280,14 @@ class JobOrderRequest extends FormRequest
                 'array'
             ],
             'packing_items.*.fumigation_company_id.*' => [
-                'exists:fumigation_companies,id'
+                function ($attribute, $value, $fail) {
+                    if ($value === 'null' || $value === null || $value === '') {
+                        return;
+                    }
+                    if (!\DB::table('fumigation_companies')->where('id', $value)->exists()) {
+                        $fail("The selected {$attribute} is invalid.");
+                    }
+                }
             ],
 
             // Operational Details Validation (without delivery_date and fumigation_company_id)
@@ -269,7 +296,14 @@ class JobOrderRequest extends FormRequest
                 'array'
             ],
             'inspection_company_id.*' => [
-                'exists:inspection_companies,id'
+                function ($attribute, $value, $fail) {
+                    if ($value === 'null' || $value === null || $value === '') {
+                        return;
+                    }
+                    if (!\DB::table('inspection_companies')->where('id', $value)->exists()) {
+                        $fail("The selected {$attribute} is invalid.");
+                    }
+                }
             ],
             'arrival_locations' => [
                 'nullable',

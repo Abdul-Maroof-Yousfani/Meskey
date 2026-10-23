@@ -2862,3 +2862,41 @@ if (!function_exists('formatTime')) {
     }
 }
 
+if (!function_exists('getFinishGoodProducts')) {
+    /**
+     * Get products where product_type is finish_good
+     *
+     * @param array|int|null $includeIds Optional product IDs to include (e.g. for existing selections in edit views)
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function getFinishGoodProducts($includeIds = null)
+    {
+        return \App\Models\Product::where(function ($q) {
+                $q->where('status', 'active')->orWhere('status', 1);
+            })
+            ->where(function ($q) use ($includeIds) {
+                $q->where('product_type', 'finish_good');
+                if (!empty($includeIds)) {
+                    $ids = is_array($includeIds) ? $includeIds : [$includeIds];
+                    $q->orWhereIn('id', array_filter($ids));
+                }
+            })
+            ->orderBy('name')
+            ->get();
+    }
+}
+
+if (!function_exists('getFinishedGoodProducts')) {
+    /**
+     * Alias for getFinishGoodProducts
+     *
+     * @param array|int|null $includeIds
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function getFinishedGoodProducts($includeIds = null)
+    {
+        return getFinishGoodProducts($includeIds);
+    }
+}
+
+

@@ -132,6 +132,26 @@ class JobOrderRequestFormRequest extends FormRequest
                 'integer',
                 'min:1'
             ],
+            'packing_items.*.empty_bags' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'packing_items.*.empty_bags_percentage' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'packing_items.*.extra_bags' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'packing_items.*.extra_bags_percentage' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
             'packing_items.*.brand_id' => [
                 'required',
                 'exists:brands,id'
@@ -157,14 +177,28 @@ class JobOrderRequestFormRequest extends FormRequest
                 'array'
             ],
             'packing_items.*.fumigation_company_id.*' => [
-                'exists:fumigation_companies,id'
+                function ($attribute, $value, $fail) {
+                    if ($value === 'null' || $value === null || $value === '') {
+                        return;
+                    }
+                    if (!\DB::table('fumigation_companies')->where('id', $value)->exists()) {
+                        $fail("The selected {$attribute} is invalid.");
+                    }
+                }
             ],
             'inspection_company_id' => [
                 'nullable',
                 'array'
             ],
             'inspection_company_id.*' => [
-                'exists:inspection_companies,id'
+                function ($attribute, $value, $fail) {
+                    if ($value === 'null' || $value === null || $value === '') {
+                        return;
+                    }
+                    if (!\DB::table('inspection_companies')->where('id', $value)->exists()) {
+                        $fail("The selected {$attribute} is invalid.");
+                    }
+                }
             ],
             'arrival_locations' => [
                 'nullable',

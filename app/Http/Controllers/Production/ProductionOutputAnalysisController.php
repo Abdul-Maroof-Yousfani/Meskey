@@ -70,7 +70,7 @@ class ProductionOutputAnalysisController extends Controller
         }
         
         $units = UnitOfMeasure::all();
-        $products = Product::where('status', 'active')->get();
+        $products = getFinishGoodProducts();
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
@@ -213,7 +213,7 @@ class ProductionOutputAnalysisController extends Controller
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
-        $products = Product::where('status', 'active')->get();
+        $products = getFinishGoodProducts($item->product_id);
 
         // Slab type resolution logic
         $productSlabTypes = collect();

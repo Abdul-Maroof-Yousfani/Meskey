@@ -3,7 +3,7 @@
         <tr>
             <th width="15%">Request No#</th>
             <th width="10%">Date</th>
-            <th width="15%">Gala</th>
+            <th width="15%">Location</th>
             <th width="20%">Items</th>
             <th width="25%">Remarks</th>
             <th width="15%">Actions</th>
@@ -15,7 +15,7 @@
                 <tr>
                     <td><strong>{{ $request->request_number }}</strong></td>
                     <td>{{ \Carbon\Carbon::parse($request->request_date)->format('d/m/Y') }}</td>
-                    <td>{{ $request->gala->name ?? 'N/A' }}</td>
+                    <td>{{ $request->companyLocation->name ?? $request->gala->name ?? 'N/A' }}</td>
                     <td>
                         <ul class="list-unstyled mb-0">
                             @foreach($request->items as $item)

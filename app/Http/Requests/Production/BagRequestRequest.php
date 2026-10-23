@@ -23,7 +23,9 @@ class BagRequestRequest extends FormRequest
     {
         return [
             'request_date' => 'required|date',
-            'gala_id' => 'required|exists:arrival_sub_locations,id',
+            'company_location_id' => 'required|exists:company_locations,id',
+            'arrival_location_id' => 'nullable|exists:arrival_locations,id',
+            'gala_id' => 'nullable|exists:arrival_sub_locations,id',
             'remarks' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:products,id',
@@ -40,6 +42,7 @@ class BagRequestRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'company_location_id.required' => 'Company location is required.',
             'items.required' => 'At least one item is required.',
             'items.*.item_id.required' => 'Item is required for all rows.',
             'items.*.unit_id.required' => 'Unit is required for all rows.',

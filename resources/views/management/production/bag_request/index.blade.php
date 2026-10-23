@@ -43,7 +43,7 @@
                                         <tr>
                                             <th>Request No#</th>
                                             <th>Request Date</th>
-                                            <th>Gala</th>
+                                            <th>Location</th>
                                             <th>Remarks</th>
                                             <th>Action</th>
                                         </tr>

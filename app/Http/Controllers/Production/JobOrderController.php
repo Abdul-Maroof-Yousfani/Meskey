@@ -158,7 +158,7 @@ class JobOrderController extends Controller
                 return ($totalMt - $consumedMt) > 0;
             });
             
-        $products = Product::where('status', 'active')->get();
+        $products = getFinishGoodProducts();
         $bagProducts = Product::where('status', 'active')->where('product_type', 'general_items')
             ->with('category')
             ->whereHas('category', function ($query) {
@@ -320,6 +320,7 @@ class JobOrderController extends Controller
                 // Fallback numeric fields to 0
                 $item['extra_bags'] = $item['extra_bags'] ?? 0;
                 $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
                 $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                 $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
                 $item['total_bags'] = $item['total_bags'] ?? 0;
@@ -369,10 +370,12 @@ class JobOrderController extends Controller
                 if (!empty($subItems)) {
                     foreach ($subItems as $sIdx => $subItem) {
                         $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['empty_bags_percentage'] = $subItem['empty_bags_percentage'] ?? 0;
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
+                        $subItem['total_bags'] = ($subItem['no_of_bags'] ?? 0) + ($subItem['extra_bags'] ?? 0) + ($subItem['empty_bags'] ?? 0);
 
                         if (!empty($subItem['bag_type_id']) && empty($subItem['bag_product_id'])) {
                             $bagType = BagType::find($subItem['bag_type_id']);
@@ -499,7 +502,7 @@ class JobOrderController extends Controller
                 return ($totalMt - $consumedMt) > 0;
             });
             
-        $products = Product::where('status', 1)->get();
+        $products = getFinishGoodProducts($jobOrder->product_id);
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $user = auth()->user();
@@ -654,6 +657,7 @@ class JobOrderController extends Controller
                 // Fallback numeric fields to 0
                 $item['extra_bags'] = $item['extra_bags'] ?? 0;
                 $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
                 $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                 $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
                 $item['total_bags'] = $item['total_bags'] ?? 0;
@@ -708,10 +712,12 @@ class JobOrderController extends Controller
                 if (!empty($subItems)) {
                     foreach ($subItems as $sIdx => $subItem) {
                         $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['empty_bags_percentage'] = $subItem['empty_bags_percentage'] ?? 0;
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
+                        $subItem['total_bags'] = ($subItem['no_of_bags'] ?? 0) + ($subItem['extra_bags'] ?? 0) + ($subItem['empty_bags'] ?? 0);
 
                         if (!empty($subItem['bag_type_id']) && empty($subItem['bag_product_id'])) {
                             $bagType = BagType::find($subItem['bag_type_id']);
