@@ -15,11 +15,13 @@ class ApprovalStatus extends Component
     public $currentApprovals;
     public $approvalLogs;
     public $listRefresh;
+    public $readOnly;
 
-    public function __construct($model, $listRefresh = null)
+    public function __construct($model, $listRefresh = null, $readOnly = false)
     {
         $this->model = $model;
         $this->listRefresh = $listRefresh;
+        $this->readOnly = (bool) $readOnly;
         $this->module = $model->getApprovalModule();
         // $this->requiredApprovals = $model->getRequiredApprovals();
         // $this->currentApprovals = $model->getCurrentApprovals();

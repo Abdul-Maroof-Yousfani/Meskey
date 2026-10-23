@@ -948,7 +948,7 @@ class DeliveryChallanController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $delivery_challans = DeliveryChallan::with(['delivery_order', 'delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
+        $delivery_challans = DeliveryChallan::with(['delivery_order', 'delivery_challan_data.loadingProgramItem.acceptedDispatchQc', 'approvalRows'])
             ->when(!$isSuperAdmin && !$isApprover, function ($query) use ($locations, $authUser) {
                 $query->where(function ($q) use ($locations, $authUser) {
                     if (!empty($locations)) {
@@ -1081,6 +1081,7 @@ class DeliveryChallanController extends Controller
                 'customer_id' => $delivery_challan->customer_id,
                 'factory_name' => $factoryName,
                 'status' => $delivery_challan->am_approval_status,
+                'pending_stage' => $delivery_challan->getCurrentPendingStage(),
                 'created_at' => $delivery_challan->created_at,
                 'customer' => $delivery_challan->customer,
                 'rowspan' => count($itemRows),

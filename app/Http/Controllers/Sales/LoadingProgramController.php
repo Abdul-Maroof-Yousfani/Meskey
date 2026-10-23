@@ -18,6 +18,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Models\User;
 
 class LoadingProgramController extends Controller
 {
@@ -25,6 +26,50 @@ class LoadingProgramController extends Controller
     {
         // $this->middleware('check.company:sales-loading-program', ['only' => ['index']]);
         // $this->middleware('check.company:sales-loading-program', ['only' => ['edit']]);
+    }
+
+    /**
+     * Get IDs of current user, their parent, siblings, and children.
+     */
+    private function getFamilyUserIds(?User $user = null): array
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return [];
+        }
+
+        $userId = $user->id;
+        $parentId = $user->parent_user_id;
+
+        $childUserIds = User::where('parent_user_id', $userId)->pluck('id')->toArray();
+        $siblingUserIds = !empty($parentId)
+            ? User::where('parent_user_id', $parentId)->where('id', '!=', $userId)->pluck('id')->toArray()
+            : [];
+
+        return array_values(array_unique(array_filter(array_merge(
+            [$userId],
+            $parentId ? [$parentId] : [],
+            $siblingUserIds,
+            $childUserIds
+        ))));
+    }
+
+    /**
+     * Apply family visibility filter to LoadingProgram query.
+     */
+    private function applyLoadingProgramFamilyFilter($query, array $familyUserIds)
+    {
+        return $query->where(function ($sub) use ($familyUserIds) {
+            $sub->whereIn('loading_programs.created_by', $familyUserIds)
+                ->orWhereHas('saleOrders', function ($sq) use ($familyUserIds) {
+                    $sq->whereIn('sales_orders.created_by', $familyUserIds)
+                       ->orWhereIn('sales_orders.parent_user_id', $familyUserIds);
+                })
+                ->orWhereHas('saleOrder', function ($sq) use ($familyUserIds) {
+                    $sq->whereIn('sales_orders.created_by', $familyUserIds)
+                       ->orWhereIn('sales_orders.parent_user_id', $familyUserIds);
+                });
+        });
     }
 
     /**
@@ -39,13 +84,8 @@ class LoadingProgramController extends Controller
         // Get loading programs filtered by user
         $lpQuery = LoadingProgram::query();
         if (!$isSuperAdmin) {
-            $lpQuery->where(function($q) use ($userId) {
-                $q->whereHas('saleOrders', function($sq) use ($userId) {
-                    $sq->where('created_by', $userId);
-                })->orWhereHas('saleOrder', function($sq) use ($userId) {
-                    $sq->where('created_by', $userId);
-                });
-            });
+            $familyUserIds = $this->getFamilyUserIds();
+            $this->applyLoadingProgramFamilyFilter($lpQuery, $familyUserIds);
         }
         $lpIds = $lpQuery->pluck('id');
 
@@ -74,7 +114,7 @@ class LoadingProgramController extends Controller
     {
         abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
 
-        $userId = auth()->id();
+        $familyUserIds = $this->getFamilyUserIds();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
 
         $LoadingPrograms = LoadingProgram::with([
@@ -90,14 +130,8 @@ class LoadingProgramController extends Controller
             'loadingProgramItems.secondWeighbridge'
         ])
 
-            ->when(!$isSuperAdmin, function ($q) use ($userId) {
-                return $q->where(function($sub) use ($userId) {
-                    $sub->whereHas('saleOrders', function($sq) use ($userId) {
-                        $sq->where('created_by', $userId);
-                    })->orWhereHas('saleOrder', function($sq) use ($userId) {
-                        $sq->where('created_by', $userId);
-                    });
-                });
+            ->when(!$isSuperAdmin, function ($q) use ($familyUserIds) {
+                return $this->applyLoadingProgramFamilyFilter($q, $familyUserIds);
             })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
@@ -436,7 +470,7 @@ class LoadingProgramController extends Controller
     public function show($id)
     {
         abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
-        $userId = auth()->id();
+        $familyUserIds = $this->getFamilyUserIds();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
 
         $LoadingProgram = LoadingProgram::with([
@@ -458,14 +492,8 @@ class LoadingProgramController extends Controller
             'deliveryOrders.delivery_order_data.item',
             'deliveryOrders.delivery_order_data.brand'
         ])
-            ->when(!$isSuperAdmin, function ($q) use ($userId) {
-                return $q->where(function($sub) use ($userId) {
-                    $sub->whereHas('saleOrders', function($sq) use ($userId) {
-                        $sq->where('created_by', $userId);
-                    })->orWhereHas('saleOrder', function($sq) use ($userId) {
-                        $sq->where('created_by', $userId);
-                    });
-                });
+            ->when(!$isSuperAdmin, function ($q) use ($familyUserIds) {
+                return $this->applyLoadingProgramFamilyFilter($q, $familyUserIds);
             })
             ->findOrFail($id);
 
@@ -483,7 +511,7 @@ class LoadingProgramController extends Controller
     public function edit($id)
     {
         abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
-        $userId = auth()->id();
+        $familyUserIds = $this->getFamilyUserIds();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
 
         $data['LoadingProgram'] = LoadingProgram::with([
@@ -508,14 +536,8 @@ class LoadingProgramController extends Controller
             'deliveryOrders.delivery_order_data.item',
             'deliveryOrders.delivery_order_data.brand'
         ])
-            ->when(!$isSuperAdmin, function ($q) use ($userId) {
-                return $q->where(function($sub) use ($userId) {
-                    $sub->whereHas('saleOrders', function($sq) use ($userId) {
-                        $sq->where('created_by', $userId);
-                    })->orWhereHas('saleOrder', function($sq) use ($userId) {
-                        $sq->where('created_by', $userId);
-                    });
-                });
+            ->when(!$isSuperAdmin, function ($q) use ($familyUserIds) {
+                return $this->applyLoadingProgramFamilyFilter($q, $familyUserIds);
             })
             ->findOrFail($id);
 
@@ -532,12 +554,10 @@ class LoadingProgramController extends Controller
         }
         $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
 
-        $userId = auth()->id();
-        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
-        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($userId) {
-                $q->where(function ($sub) use ($userId) {
-                    $sub->where('created_by', $userId)
-                        ->orWhere('parent_user_id', $userId);
+        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($familyUserIds) {
+                $q->where(function ($sub) use ($familyUserIds) {
+                    $sub->whereIn('created_by', $familyUserIds)
+                        ->orWhereIn('parent_user_id', $familyUserIds);
                 });
             })
             ->activeContract()
@@ -1009,17 +1029,11 @@ class LoadingProgramController extends Controller
     public function destroy($id)
     {
         abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
-        $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
         $query = LoadingProgram::query();
         if (!$isSuperAdmin) {
-            $query->where(function($q) use ($userId) {
-                $q->whereHas('saleOrders', function($sq) use ($userId) {
-                    $sq->where('created_by', $userId);
-                })->orWhereHas('saleOrder', function($sq) use ($userId) {
-                    $sq->where('created_by', $userId);
-                });
-            });
+            $familyUserIds = $this->getFamilyUserIds();
+            $this->applyLoadingProgramFamilyFilter($query, $familyUserIds);
         }
         $loadingProgram = $query->findOrFail($id);
         $loadingProgram->delete();
@@ -1426,12 +1440,13 @@ class LoadingProgramController extends Controller
                 $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
             }
         }
-        $userId = auth()->user()->id;
+        $familyUserIds = $this->getFamilyUserIds();
+
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
-        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($userId) {
-                $q->where(function ($sub) use ($userId) {
-                    $sub->where('created_by', $userId)
-                        ->orWhere('parent_user_id', $userId);
+        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($familyUserIds) {
+                $q->where(function ($sub) use ($familyUserIds) {
+                    $sub->whereIn('created_by', $familyUserIds)
+                        ->orWhereIn('parent_user_id', $familyUserIds);
                 });
             })
             ->activeContract()

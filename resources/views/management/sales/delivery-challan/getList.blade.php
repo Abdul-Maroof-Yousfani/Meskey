@@ -84,17 +84,35 @@
 
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                             @php
-                                $status = $group['status'];
-                                $badge = match (strtolower($status)) {
-                                    'approved' => 'badge-success',
-                                    'rejected' => 'badge-danger',
-                                    'pending' => 'badge-warning',
-                                    'reverted' => 'badge-secondary',
-                                };
+                                $status = strtolower($group['status'] ?? 'pending');
+                                $stage = $group['pending_stage'] ?? null;
                             @endphp
-                            <span class="badge {{ $badge }} px-3 py-2">
-                                {{ ucfirst($status) }}
-                            </span>
+
+                            @if($status === 'approved')
+                                <span class="badge badge-success px-3 py-2">
+                                    Approved
+                                </span>
+                            @elseif($status === 'rejected')
+                                <span class="badge badge-danger px-3 py-2">
+                                    Rejected
+                                </span>
+                            @elseif($status === 'reverted')
+                                <span class="badge badge-secondary px-3 py-2" style="background-color: #6c757d;">
+                                    Reverted
+                                </span>
+                            @elseif($stage && $stage > 1)
+                                <span class="badge badge-info px-3 py-2" style="background-color: #17a2b8;" title="Stage {{ $stage - 1 }} Approved - Awaiting Stage {{ $stage }} Approval">
+                                    Pending Stage {{ $stage }}
+                                </span>
+                            @elseif($stage == 1)
+                                <span class="badge badge-warning px-3 py-2" title="Awaiting Stage 1 Approval">
+                                    Pending Stage 1
+                                </span>
+                            @else
+                                <span class="badge badge-warning px-3 py-2">
+                                    Pending
+                                </span>
+                            @endif
                             @if($group['is_bardana'] ?? false)
                                 <div class="mt-1">
                                     <span class="badge badge-warning text-white px-2 py-1 font-weight-bold" style="background-color: #f39c12; color: #ffffff !important;" title="Bardana Deduction Applied">
