@@ -1561,7 +1561,7 @@ class JournalVoucherController extends Controller
                         
                 if($receipt_vouucher_id != 0 && $recieptVoucher && $recieptVoucher->receipt_voucher_id == $receipt_vouucher_id)
                 {
-                    throw new \Exception("You can't select both Sale Order and Receipt Voucher for the same JV.");
+                    throw new \Exception("Please select either the Sale Order or its Receipt Voucher not Both.");
                 }
                 
                 // Concurrency safety check: Ensure no other tab has created Receiving for any selected RV
