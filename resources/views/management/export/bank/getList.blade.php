@@ -23,6 +23,9 @@
                         </label>
                     </td>
                     <td>
+                        <a class="primary p-1 text-center position-relative mr-1" style="cursor: pointer;" title="View Audit Logs"
+                            onclick="openModal(this,'{{ route('bank.audit-logs', $bank->id) }}','Audit Logs: {{ $bank->bank_name }} ({{ $bank->branch }})', false, '55%')">
+                            <i class="fa fa-history font-medium-3"></i></a>
                         @canAccess('bank-edit')
                         <a class="info p-1 text-center position-relative "
                             onclick="openModal(this,'{{ route('bank.edit', $bank->id) }}','Edit Bank Account')">

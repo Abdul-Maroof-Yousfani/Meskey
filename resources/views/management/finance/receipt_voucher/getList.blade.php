@@ -77,7 +77,7 @@
                             @endcanAccess
                         @endif
 
-                        <a onclick="openModal(this, '{{ route('receipt-voucher.audit-logs', $voucher->id) }}', 'Audit Logs: Receipt Voucher #{{ $voucher->unique_no }}', false, '55%')"
+                        <a onclick="openModal(this, '{{ route('audit-logs.modal', ['modelType' => 'receipt-voucher', 'id' => $voucher->id]) }}', 'Audit Logs: Receipt Voucher #{{ $voucher->unique_no }}', false, '55%')"
                             class="info p-1 text-center mr-2 position-relative" title="Audit Logs" role="button">
                             <i class="fa fa-history font-medium-3"></i>
                         </a>

@@ -1,3 +1,9 @@
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('bank.audit-logs', $bank->id) }}','Audit Logs: {{ $bank->bank_name }} ({{ $bank->branch }})', false, '55%')">
+        <i class="fa fa-history mr-1"></i> Audit Logs
+    </button>
+</div>
+
 <div class="row">
 
     <div class="col-md-12">

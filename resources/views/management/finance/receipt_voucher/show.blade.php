@@ -144,6 +144,10 @@
         <button type="button" class="btn btn-info mr-2" id="printButton">
             <i class="ft-printer mr-1"></i> Print
         </button>
+        <button type="button" class="btn btn-outline-info mr-2"
+            onclick="openModal(this,'{{ route('receipt-voucher.audit-logs', $receiptVoucher->id) }}','Audit Logs: Receipt Voucher #{{ $receiptVoucher->unique_no }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
     </div>
 </div>
 
