@@ -259,7 +259,10 @@ class AuditLogService
                     });
                 }
                 if (!empty($modelUniqueNo) && !$isMasterModel) {
-                    $q->orWhere('description', 'like', "%#{$modelUniqueNo}%");
+                    $q->orWhere(function ($sq) use ($modelTypes, $modelUniqueNo) {
+                        $sq->whereIn('model_type', $modelTypes)
+                           ->where('description', 'like', "%#{$modelUniqueNo}%");
+                    });
                 }
             })
             ->orderBy('created_at', 'desc')
