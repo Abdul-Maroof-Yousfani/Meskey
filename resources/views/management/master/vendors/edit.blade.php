@@ -4,24 +4,30 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.vendor') }}" />
 
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('vendor.audit-logs', $supplier->id) }}','Audit Logs: {{ $supplier->company_name ?? $supplier->name }} ({{ $supplier->unique_no }})', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Company Detail
             </h6>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12 d-none">
+        <!-- <div class="col-xs-12 col-sm-12 col-md-12 d-none">
             <div class="form-group ">
                 <label>Supplier Type</label>
                 <select class="form-control" name="type">
                     <option value="">Select Supplier Type</option>
-                    <option {{ $supplier->type == 'raw_material' ? 'selected' : '' }} value="raw_material" selected>Raw
+                    <option {{ ($supplier->type ?? '') == 'raw_material' ? 'selected' : '' }} value="raw_material" selected>Raw
                         Material Supplier</option>
-                    <option {{ $supplier->type == 'store_supplier' ? 'selected' : '' }} value="store_supplier">Store
+                    <option {{ ($supplier->type ?? '') == 'store_supplier' ? 'selected' : '' }} value="store_supplier">Store
                         Supplier</option>
                 </select>
             </div>
-        </div>
+        </div> -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Company Name:</label>

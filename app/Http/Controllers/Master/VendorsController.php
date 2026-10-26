@@ -108,6 +108,7 @@ class VendorsController extends Controller
             $requestData['owner_name'] = $ownerName;
             $requestData['company_location_ids'] = $request->company_location_ids;
             $requestData['arrival_location_ids'] = $request->arrival_location_ids;
+            unset($requestData['type'], $requestData['rate']);
 
             // COA Account Deduplication / Reuse
             if (!empty($request->account_id)) {
@@ -221,6 +222,7 @@ class VendorsController extends Controller
     public function update(VendorRequest $request, $id)
     {
         $supplier = Vendor::findOrFail($id);
+
         DB::beginTransaction();
 
         try {
@@ -249,12 +251,24 @@ class VendorsController extends Controller
             $requestData['name'] = $companyName;
             $requestData['company_name'] = $companyName;
             $requestData['owner_name'] = $ownerName;
+            unset($requestData['type'], $requestData['rate']);
 
             // Handle Account Update / Creation
             if (!empty($request->account_id)) {
                 $requestData['account_id'] = $request->account_id;
+
+                if (
+                    $supplier->account_id == $request->account_id
+                    && $supplier->account
+                    && $supplier->account->table_name === 'vendors'
+                    && $supplier->company_name !== $companyName
+                ) {
+                    $supplier->account->update(['name' => $companyName]);
+                }
             } elseif ($supplier->account) {
-                $supplier->account->update(['name' => $companyName]);
+                if ($supplier->account->table_name === 'vendors' && $supplier->company_name !== $companyName) {
+                    $supplier->account->update(['name' => $companyName]);
+                }
             } else {
                 $existingAccount = Account::where('company_id', $companyId)
                     ->where(function ($q) {
@@ -351,11 +365,15 @@ class VendorsController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Vendor $supplier)
+    public function destroy($id)
     {
+        $supplier = $id instanceof Vendor ? $id : Vendor::findOrFail($id);
         $supplier->delete();
-        return response()->json(['success' => 'Category deleted successfully.'], 200);
+
+        return response()->json(['success' => 'Vendor deleted successfully.'], 200);
     }
+
+
 
     public function getArrivalLocations($companyLocationId)
     {
