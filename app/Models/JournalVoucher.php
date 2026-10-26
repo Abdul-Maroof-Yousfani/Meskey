@@ -15,6 +15,11 @@ class JournalVoucher extends Model
         approve as traitApprove;
     }
 
+    /**
+     * Cached old audit snapshot of details.
+     */
+    protected ?array $auditOldSnapshot = null;
+
     protected $fillable = [
         'jv_date',
         'jv_no',
@@ -36,9 +41,23 @@ class JournalVoucher extends Model
 
     protected static function booted()
     {
+        static::observe(\App\Observers\UniversalAuditObserver::class);
+
+        static::retrieved(function ($model) {
+            if (!request() || !request()->isMethodSafe() || app()->runningInConsole()) {
+                $model->captureInitialAuditSnapshot();
+            }
+        });
+
+        static::saving(function ($model) {
+            if ($model->exists && method_exists($model, 'hasReferencesChanged') && $model->hasReferencesChanged()) {
+                $model->updated_at = now();
+            }
+        });
+
         static::creating(function ($model) {
             if (auth()->check() && empty($model->created_by)) {
-                $model->created_by = auth()->id();
+                $model->created_by = auth()->user()?->id ?? 1;
             }
             if (empty($model->am_approval_status)) {
                 $model->am_approval_status = 'pending';
@@ -571,5 +590,307 @@ class JournalVoucher extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Map unique_no attribute to jv_no for generic audit log handlers.
+     */
+    public function getUniqueNoAttribute(): ?string
+    {
+        return $this->jv_no;
+    }
+
+    /**
+     * Calculate total voucher amount (total debit).
+     */
+    public function getTotalAmountAttribute(): float
+    {
+        if (request() && request()->has('details') && is_array(request()->details)) {
+            $sum = 0;
+            foreach (request()->details as $d) {
+                $sum += (float) ($d['debit_amount'] ?? 0);
+            }
+            if ($sum > 0) {
+                return (float) $sum;
+            }
+        }
+
+        if ($this->relationLoaded('journalVoucherDetails')) {
+            return (float) $this->journalVoucherDetails->sum('debit_amount');
+        }
+        return (float) $this->journalVoucherDetails()->sum('debit_amount');
+    }
+
+    /**
+     * Identifier for audit logs.
+     */
+    public function auditIdentifier(): string
+    {
+        return (string) ($this->jv_no ?: "#{$this->id}");
+    }
+
+    /**
+     * Human-readable model display name for audit logs.
+     */
+    public function auditModelName(): string
+    {
+        return 'Journal Voucher';
+    }
+
+    /**
+     * Action prefix for audit logs.
+     */
+    public function auditActionPrefix(): string
+    {
+        return 'journal_voucher';
+    }
+
+    /**
+     * Configuration for audit logs modal rendering.
+     */
+    public static function auditLogConfig(): array
+    {
+        return [
+            'field_labels' => [
+                'jv_no'              => 'JV Number',
+                'jv_date'            => 'JV Date',
+                'description'        => 'Description / Remarks',
+                'am_approval_status' => 'Approval Status',
+                'comments'           => 'Approval Comments',
+                'entry_account'      => 'Accounts',
+                'entry_debit'        => 'Debit Amounts',
+                'entry_credit'       => 'Credit Amounts',
+                'entry_description'  => 'Line Descriptions',
+                'entry_reference'    => 'References / Vouchers',
+                'total_debit'        => 'Total Debit',
+                'total_credit'       => 'Total Credit',
+                'items_count'        => 'Items Count',
+            ],
+            'skip_keys' => [
+                'company_id',
+                'deleted_at',
+                'am_change_made',
+                'created_by',
+                'approve_user_id',
+                'delete_user_id',
+                'username',
+                'jv_status',
+                'status',
+            ],
+            'relation_resolvers' => [
+                'am_approval_status' => function ($val) {
+                    return ucwords(str_replace('_', ' ', (string) $val));
+                },
+                'total_debit' => function ($val) {
+                    return is_numeric($val) ? 'Rs. ' . number_format((float) $val, 2) : $val;
+                },
+                'total_credit' => function ($val) {
+                    return is_numeric($val) ? 'Rs. ' . number_format((float) $val, 2) : $val;
+                },
+            ],
+            'subtitle' => function ($model) {
+                $parts = ['JV #' . ($model->jv_no ?? $model->id)];
+                if (!empty($model->jv_date)) {
+                    $parts[] = 'Date: ' . (\Carbon\Carbon::parse($model->jv_date)->format('d M Y'));
+                }
+                $totalDebit = (float) $model->total_amount;
+                if ($totalDebit > 0) {
+                    $parts[] = 'Rs. ' . number_format($totalDebit, 2);
+                }
+                $customer = $model->customer_name;
+                if (!empty($customer) && $customer !== '—') {
+                    $parts[] = 'Customer: ' . $customer;
+                }
+                if (!empty($model->am_approval_status)) {
+                    $parts[] = 'Status: ' . ucfirst($model->am_approval_status);
+                }
+                return implode(' | ', $parts);
+            },
+            'empty_message' => 'No edits or updates have been recorded for this journal voucher yet.',
+        ];
+    }
+
+    /**
+     * Capture initial snapshot of references for audit logging before any deletes/updates.
+     */
+    public function captureInitialAuditSnapshot(): void
+    {
+        if ($this->auditOldSnapshot !== null || !$this->exists) {
+            return;
+        }
+        $this->auditOldSnapshot = $this->buildCurrentReferencesSnapshot();
+    }
+
+    /**
+     * Get the cached old snapshot of references.
+     */
+    public function getOldReferencesSnapshot(): ?array
+    {
+        if ($this->auditOldSnapshot === null && $this->exists) {
+            $this->auditOldSnapshot = $this->buildCurrentReferencesSnapshot();
+        }
+        return $this->auditOldSnapshot;
+    }
+
+    /**
+     * Build reference snapshot from current database state.
+     */
+    public function buildCurrentReferencesSnapshot(): array
+    {
+        $details = $this->relationLoaded('journalVoucherDetails')
+            ? $this->journalVoucherDetails
+            : $this->journalVoucherDetails()->with('account')->get();
+
+        $accounts = [];
+        $debits = [];
+        $credits = [];
+        $descriptions = [];
+        $references = [];
+        $totalDebit = 0;
+        $totalCredit = 0;
+
+        foreach ($details as $d) {
+            $accName = $d->account ? ($d->account->name . ($d->account->unique_no ? " ({$d->account->unique_no})" : "")) : ($d->acc_id ? "Account #{$d->acc_id}" : '-');
+            $accounts[] = $accName;
+            $debit = (float) $d->debit_amount;
+            $credit = (float) $d->credit_amount;
+            $debits[] = number_format($debit, 2);
+            $credits[] = number_format($credit, 2);
+            $descriptions[] = !empty($d->description) ? trim($d->description) : '-';
+
+            $ref = '-';
+            if (!empty($d->voucher_no)) {
+                $type = $d->voucher_type ? ucwords(str_replace('_', ' ', $d->voucher_type)) : 'Ref';
+                $ref = "{$type} #{$d->voucher_no}";
+            } elseif (!empty($d->receipt_voucher_id)) {
+                $ref = "RV #{$d->receipt_voucher_id}";
+            } elseif (!empty($d->sales_order_id)) {
+                $ref = "SO #{$d->sales_order_id}";
+            } elseif (!empty($d->delivery_order_id)) {
+                $ref = "DO #{$d->delivery_order_id}";
+            } elseif (!empty($d->customer_advance_id)) {
+                $ref = "Advance #{$d->customer_advance_id}";
+            } elseif (!empty($d->reference_jv_id)) {
+                $ref = "JV #{$d->reference_jv_id}";
+            }
+            $references[] = $ref;
+            $totalDebit += $debit;
+            $totalCredit += $credit;
+        }
+
+        return [
+            'entry_account'     => !empty($accounts) ? implode(', ', $accounts) : null,
+            'entry_debit'       => !empty($debits) ? implode(', ', $debits) : null,
+            'entry_credit'      => !empty($credits) ? implode(', ', $credits) : null,
+            'entry_description' => !empty($descriptions) ? implode(', ', $descriptions) : null,
+            'entry_reference'   => !empty($references) ? implode(', ', $references) : null,
+            'total_debit'       => (float) $totalDebit,
+            'total_credit'      => (float) $totalCredit,
+            'items_count'       => count($details),
+        ];
+    }
+
+    /**
+     * Build reference snapshot from incoming request payload.
+     */
+    public function buildNewReferencesSnapshot(): array
+    {
+        $req = request();
+        if ($req && $req->has('details') && is_array($req->details)) {
+            $accounts = [];
+            $debits = [];
+            $credits = [];
+            $descriptions = [];
+            $references = [];
+            $totalDebit = 0;
+            $totalCredit = 0;
+
+            foreach ($req->details as $d) {
+                if (empty($d['acc_id']) && empty($d['debit_amount']) && empty($d['credit_amount'])) {
+                    continue;
+                }
+                $accId = $d['acc_id'] ?? null;
+                $acc = $accId ? \App\Models\Master\Account\Account::find($accId) : null;
+                $accName = $acc ? ($acc->name . ($acc->unique_no ? " ({$acc->unique_no})" : "")) : ($accId ? "Account #{$accId}" : '-');
+                $accounts[] = $accName;
+
+                $debit = isset($d['debit_amount']) ? round((float) $d['debit_amount'], 2) : 0;
+                $credit = isset($d['credit_amount']) ? round((float) $d['credit_amount'], 2) : 0;
+                $debits[] = number_format($debit, 2);
+                $credits[] = number_format($credit, 2);
+                $descriptions[] = !empty($d['description']) ? trim($d['description']) : '-';
+
+                $vNo = $d['voucher_no'] ?? null;
+                $vType = $d['voucher_type'] ?? null;
+                if (empty($vNo)) {
+                    if (!empty($d['customer_advance_id'])) {
+                        $adv = \App\Models\CustomerAdvance::find($d['customer_advance_id']);
+                        $vNo = $adv ? $adv->voucher_no : "Advance #{$d['customer_advance_id']}";
+                        $vType = 'customer_advance';
+                    } elseif (!empty($d['delivery_order_id'])) {
+                        $do = \App\Models\Sales\DeliveryOrder::find($d['delivery_order_id']);
+                        $vNo = $do ? ($do->reference_no ?: "DO #{$do->id}") : "DO #{$d['delivery_order_id']}";
+                        $vType = 'delivery_order';
+                    } elseif (!empty($d['reference_jv_id'])) {
+                        $refJv = JournalVoucher::find($d['reference_jv_id']);
+                        $vNo = $refJv ? $refJv->jv_no : "JV #{$d['reference_jv_id']}";
+                        $vType = 'journal_voucher';
+                    } elseif (!empty($d['sales_order_id'])) {
+                        $so = \App\Models\Sales\SalesOrder::find($d['sales_order_id']);
+                        $vNo = $so ? ($so->reference_no ?? $so->unique_no) : "SO #{$d['sales_order_id']}";
+                        $vType = 'sales_order';
+                    } elseif (!empty($d['receipt_voucher_id'])) {
+                        $rv = \App\Models\ReceiptVoucher::find($d['receipt_voucher_id']);
+                        $vNo = $rv ? $rv->unique_no : "RV #{$d['receipt_voucher_id']}";
+                        $vType = 'receipt_voucher';
+                    }
+                }
+
+                $ref = '-';
+                if (!empty($vNo)) {
+                    $typeStr = $vType ? ucwords(str_replace('_', ' ', $vType)) : 'Ref';
+                    $ref = "{$typeStr} #{$vNo}";
+                }
+                $references[] = $ref;
+                $totalDebit += $debit;
+                $totalCredit += $credit;
+            }
+
+            return [
+                'entry_account'     => !empty($accounts) ? implode(', ', $accounts) : null,
+                'entry_debit'       => !empty($debits) ? implode(', ', $debits) : null,
+                'entry_credit'      => !empty($credits) ? implode(', ', $credits) : null,
+                'entry_description' => !empty($descriptions) ? implode(', ', $descriptions) : null,
+                'entry_reference'   => !empty($references) ? implode(', ', $references) : null,
+                'total_debit'       => (float) $totalDebit,
+                'total_credit'      => (float) $totalCredit,
+                'items_count'       => count($accounts),
+            ];
+        }
+
+        return $this->buildCurrentReferencesSnapshot();
+    }
+
+    /**
+     * Check if child reference snapshot changed between old and new state.
+     */
+    public function hasReferencesChanged(): bool
+    {
+        $old = $this->getOldReferencesSnapshot() ?? [];
+        $new = $this->buildNewReferencesSnapshot();
+
+        if (empty($old) && empty($new)) {
+            return false;
+        }
+
+        $allKeys = array_unique(array_merge(array_keys($old), array_keys($new)));
+        foreach ($allKeys as $k) {
+            $o = $old[$k] ?? null;
+            $n = $new[$k] ?? null;
+            if ($o != $n) {
+                return true;
+            }
+        }
+        return false;
     }
 }

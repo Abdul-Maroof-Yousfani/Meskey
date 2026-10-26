@@ -228,7 +228,7 @@ class AuditLogService
             }
         }
 
-        $modelUniqueNo = $model->unique_no ?? $model->code ?? $model->contract_no ?? null;
+        $modelUniqueNo = $model->unique_no ?? $model->code ?? $model->contract_no ?? $model->jv_no ?? null;
 
         $logs = AuditLog::with('user')
             ->where(function ($q) use ($modelTypes, $modelId, $foreignKeys, $extraModelTypeIds, $modelUniqueNo, $isMasterModel) {
