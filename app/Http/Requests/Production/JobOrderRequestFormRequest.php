@@ -23,6 +23,12 @@ class JobOrderRequestFormRequest extends FormRequest
                 'company_id' => auth()->user()?->current_company_id ?? 1
             ]);
         }
+
+        if (empty($this->company_location_id) && !empty($this->packing_items[0]['company_location_id'])) {
+            $this->merge([
+                'company_location_id' => $this->packing_items[0]['company_location_id']
+            ]);
+        }
     }
 
     /**
@@ -115,6 +121,10 @@ class JobOrderRequestFormRequest extends FormRequest
                 'array',
                 'min:1'
             ],
+            'packing_items.*.company_location_id' => [
+                'nullable',
+                'exists:company_locations,id'
+            ],
             'packing_items.*.bag_product_id' => [
                 'required',
                 'exists:products,id'
@@ -173,18 +183,41 @@ class JobOrderRequestFormRequest extends FormRequest
                 'date'
             ],
             'packing_items.*.fumigation_company_id' => [
-                'nullable',
-                'array'
+                $this->filled('export_order_id') ? 'required' : 'nullable',
+                'array',
+                function ($attribute, $value, $fail) {
+                    if ($this->filled('export_order_id')) {
+                        $validValues = array_filter((array) $value, function ($v) {
+                            return $v !== 'null' && $v !== null && $v !== '';
+                        });
+                        if (empty($validValues)) {
+                            $fail('Fumigation Company is required for each packing item when an Export Order is selected.');
+                        }
+                    }
+                }
             ],
             'packing_items.*.fumigation_company_id.*' => [
                 function ($attribute, $value, $fail) {
                     if ($value === 'null' || $value === null || $value === '') {
+                        if ($this->filled('export_order_id')) {
+                            $fail('N/A is not allowed for Fumigation Company when an Export Order is selected.');
+                        }
                         return;
                     }
                     if (!\DB::table('fumigation_companies')->where('id', $value)->exists()) {
                         $fail("The selected {$attribute} is invalid.");
                     }
                 }
+            ],
+            'packing_items.*.fumigation_type' => [
+                'nullable',
+                'string',
+                'max:150'
+            ],
+            'fumigation_type' => [
+                'nullable',
+                'string',
+                'max:150'
             ],
             'inspection_company_id' => [
                 'nullable',
@@ -232,5 +265,59 @@ class JobOrderRequestFormRequest extends FormRequest
         ];
 
         return $rules;
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'packing_items.required' => 'At least one packing item is required.',
+            'packing_items.min' => 'At least one packing item is required.',
+            'packing_items.*.company_location_id.required' => 'Location is required for each packing item.',
+            'packing_items.*.company_location_id.exists' => 'Selected location does not exist.',
+            'packing_items.*.brand_id.required' => 'Brand is required for each packing item.',
+            'packing_items.*.bag_product_id.required' => 'Bag product is required for each packing item.',
+            'packing_items.*.bag_condition_id.required' => 'Bag condition is required for each packing item.',
+            'packing_items.*.bag_color_id.required' => 'Bag color is required for each packing item.',
+            'packing_items.*.bag_size.required' => 'Packing size (kg) is required for each packing item.',
+            'packing_items.*.bag_size.numeric' => 'Packing size (kg) must be a number.',
+            'packing_items.*.bag_size.min' => 'Packing size (kg) must be at least 0.01 kg.',
+            'packing_items.*.no_of_bags.required' => 'No. of bags is required for each packing item.',
+            'packing_items.*.no_of_bags.integer' => 'No. of bags must be an integer.',
+            'packing_items.*.no_of_bags.min' => 'No. of bags must be at least 1.',
+            'packing_items.*.fumigation_company_id.required' => 'Fumigation Company is required for each packing item when an Export Order is selected.',
+        ];
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     */
+    public function attributes(): array
+    {
+        return [
+            'company_location_id' => 'company location',
+            'export_order_id' => 'export order',
+            'request_no' => 'request number',
+            'request_date' => 'request date',
+            'product_id' => 'product',
+            'crop_year_id' => 'crop year',
+            'packing_items' => 'packing items',
+            'packing_items.*.company_location_id' => 'location',
+            'packing_items.*.brand_id' => 'brand',
+            'packing_items.*.bag_product_id' => 'bag product',
+            'packing_items.*.bag_condition_id' => 'bag condition',
+            'packing_items.*.bag_color_id' => 'bag color',
+            'packing_items.*.thread_color_id' => 'thread color',
+            'packing_items.*.stitching_id' => 'stitching',
+            'packing_items.*.bag_size' => 'packing size (kg)',
+            'packing_items.*.no_of_bags' => 'no. of bags',
+            'packing_items.*.extra_bags' => 'extra bags',
+            'packing_items.*.empty_bags' => 'empty bags',
+            'packing_items.*.delivery_date' => 'delivery date',
+            'packing_items.*.fumigation_company_id' => 'fumigation company',
+            'packing_items.*.fumigation_type' => 'fumigation type',
+        ];
     }
 }

@@ -28,6 +28,7 @@ class JobOrder extends Model
         'delivery_date',
         'loading_date',
         'arrival_locations',
+        'fumigation_type',
         'packing_description',
         'crop_year_id',
         'other_specifications',
@@ -48,6 +49,17 @@ class JobOrder extends Model
         'loading_date' => 'date'
     ];
 
+
+    public function getCompanyLocationIdAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        if ($this->relationLoaded('packingItems')) {
+            return $this->packingItems->first()?->company_location_id ?? null;
+        }
+        return null;
+    }
 
     public function companyLocation()
     {

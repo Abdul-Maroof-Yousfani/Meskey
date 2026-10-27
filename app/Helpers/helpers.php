@@ -2899,4 +2899,17 @@ if (!function_exists('getFinishedGoodProducts')) {
     }
 }
 
+if (!function_exists('getFumigationTypes')) {
+    /**
+     * Get configured fumigation types for production
+     *
+     * @return array
+     */
+    function getFumigationTypes()
+    {
+        return \App\Models\Setting::getFumigationTypes();
+    }
+}
+
+
 

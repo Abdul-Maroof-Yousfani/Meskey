@@ -125,6 +125,7 @@
                 <table class="table table-bordered table-sm">
                     <thead>
                         <tr class="bg-light">
+                            <th>Location</th>
                             <th>Brand</th>
                             <th>Bag Product</th>
                             <th>Condition</th>
@@ -134,12 +135,14 @@
                             <th>Total Bags</th>
                             <th>Total MT</th>
                             <th>Containers</th>
+                            <th>Fumigation Type</th>
                             <th>Attachment</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($request->packingItems as $pi)
                         <tr>
+                            <td>{{ $pi->companyLocation->name ?? ($request->companyLocation->name ?? 'N/A') }}</td>
                             <td>{{ $pi->brand->name ?? 'N/A' }}</td>
                             <td>{{ $pi->bagProduct->name ?? 'N/A' }}</td>
                             <td>{{ $pi->bagCondition->name ?? 'N/A' }}</td>
@@ -149,6 +152,7 @@
                             <td><strong>{{ number_format($pi->total_bags) }}</strong></td>
                             <td>{{ number_format($pi->metric_tons, 3) }}</td>
                             <td>{{ $pi->no_of_containers }}</td>
+                            <td>{{ $pi->fumigation_type ? ucfirst($pi->fumigation_type) : ($request->fumigation_type ? ucfirst($request->fumigation_type) : '-') }}</td>
                             <td>
                                 @if($pi->attachment)
                                     <a href="{{ asset('storage/' . $pi->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">

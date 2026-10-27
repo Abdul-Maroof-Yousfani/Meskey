@@ -83,6 +83,7 @@ Route::post('production-voucher-get-by-product-table', [ProductionVoucherControl
 Route::post('production-voucher-get-head-products-data', [ProductionVoucherController::class, 'getHeadProductsData'])->name('production-voucher.get-head-products-data');
 Route::post('production-voucher-get-b2-products-data', [ProductionVoucherController::class, 'getB2ProductsData'])->name('production-voucher.get-b2-products-data');
 Route::post('production-voucher-get-costing-preview', [ProductionVoucherController::class, 'getCostingPreview'])->name('production-voucher.get-costing-preview');
+Route::post('production-voucher-get-job-orders-for-output-product', [ProductionVoucherController::class, 'getJobOrdersForOutputProduct'])->name('production-voucher.get-job-orders-for-output-product');
 // Production Slots Routes
 use App\Http\Controllers\Production\ProductionSlotController;
 Route::resource('production-slot', ProductionSlotController::class);

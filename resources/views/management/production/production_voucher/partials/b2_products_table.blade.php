@@ -1,3 +1,52 @@
+@php
+    $allB2Commodities = collect();
+    if (isset($allB2Products) && $allB2Products) {
+        $allB2Commodities = $allB2Commodities->merge($allB2Products);
+    }
+    if (isset($packingItemsProducts) && $packingItemsProducts) {
+        $allB2Commodities = $allB2Commodities->merge($packingItemsProducts);
+    }
+    if (isset($nonPackingItemsProducts) && $nonPackingItemsProducts) {
+        $allB2Commodities = $allB2Commodities->merge($nonPackingItemsProducts);
+    }
+    if (isset($b2ProductOutputs) && $b2ProductOutputs) {
+        foreach ($b2ProductOutputs as $bpo) {
+            if (is_object($bpo) && isset($bpo->product) && $bpo->product) {
+                $allB2Commodities->push($bpo->product);
+            }
+        }
+    }
+    $allB2Commodities = $allB2Commodities->filter(function($p) {
+        return $p && ($p->product_category_flags ?? '') === 'b2';
+    })->unique('id')->sortBy('name');
+
+    $renderB2CommoditySelect = function($selectedId) use ($allB2Commodities) {
+        $html = '<select name="output_product_id[]" class="form-control select2 output-commodity-select" required>';
+        $html .= '<option value="">Select Commodity</option>';
+        $found = false;
+        foreach ($allB2Commodities as $item) {
+            $isSel = ($selectedId == $item->id);
+            if ($isSel) $found = true;
+            $html .= '<option value="' . e($item->id) . '" ' . ($isSel ? 'selected' : '') . '>' . e($item->name) . '</option>';
+        }
+        if ($selectedId && !$found) {
+            $extraProd = \App\Models\Product::find($selectedId);
+            if ($extraProd) {
+                $html .= '<option value="' . e($extraProd->id) . '" selected>' . e($extraProd->name) . '</option>';
+            }
+        }
+        $html .= '</select>';
+        return $html;
+    };
+@endphp
+<div style="display:none;" class="commodity-select-template">
+    <select class="form-control select2" name="output_product_id[]">
+        <option value="">Select Commodity</option>
+        @foreach($allB2Commodities as $item)
+            <option value="{{ $item->id }}">{{ $item->name }}</option>
+        @endforeach
+    </select>
+</div>
 <table class="table table-bordered">
     <thead>
         <tr>
@@ -24,7 +73,22 @@
             $jobOrdersList = isset($jobOrders) && $jobOrders ? $jobOrders : collect();
             $renderJobOrderOptions = function($selectedJobOrderId, $rowProdId) use ($jobOrdersList) {
                 $html = '<option value="">Select Job Order</option>';
-                foreach ($jobOrdersList as $jobOrder) {
+
+                $matching = collect();
+                if ($rowProdId) {
+                    $matching = $jobOrdersList->filter(function($jo) use ($rowProdId) {
+                        return $jo->product_id == $rowProdId;
+                    });
+                }
+
+                if ($selectedJobOrderId && !$matching->contains('id', $selectedJobOrderId)) {
+                    $existingJo = $jobOrdersList->firstWhere('id', $selectedJobOrderId);
+                    if ($existingJo && $existingJo->product_id == $rowProdId) {
+                        $matching->push($existingJo);
+                    }
+                }
+
+                foreach ($matching as $jobOrder) {
                     $joPacking = null;
                     if ($jobOrder->relationLoaded('packingItems') && $jobOrder->packingItems) {
                         $joPacking = $jobOrder->packingItems->first(function($pi) use ($rowProdId) {
@@ -36,7 +100,9 @@
                     $optQty = $joPacking->total_kgs ?? (($optBags && $optSize) ? ($optBags * $optSize) : '');
                     $optBrand = $joPacking->brand_id ?? '';
                     $isSelected = ($selectedJobOrderId == $jobOrder->id) ? 'selected' : '';
-                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($jobOrder->job_order_no) . '</option>';
+                    $pName = $jobOrder->product->name ?? '';
+                    $displayText = $jobOrder->job_order_no . ($jobOrder->ref_no ? ' (' . $jobOrder->ref_no . ')' : '') . ($pName ? ' - ' . $pName : '');
+                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($displayText) . '</option>';
                 }
                 return $html;
             };
@@ -75,8 +141,7 @@
                             @endphp
                             <tr>
                                 <td>
-                                    <strong>{{ $prod->name ?? '' }}</strong>
-                                    <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
+                                    {!! $renderB2CommoditySelect($output->product_id ?? $product->id) !!}
                                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                                     @if($output->id)
                                         <input type="hidden" name="output_id[]" value="{{ $output->id }}">
@@ -140,8 +205,7 @@
                         <tr>
                             <td>
                                 @php $prod = $jobOrderPacking->jobOrder->product ?? $product; @endphp
-                                <strong>{{ $prod->name ?? '' }}</strong>
-                                <input type="hidden" name="output_product_id[]" value="{{ $jobOrderPacking->jobOrder->product->id ?? $product->id }}">
+                                {!! $renderB2CommoditySelect($jobOrderPacking->jobOrder->product->id ?? $product->id) !!}
                                 <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                             </td>
                             <td>
@@ -211,8 +275,7 @@
                     @endphp
                     <tr>
                         <td>
-                            <strong>{{ $prod->name ?? '' }}</strong>
-                            <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
+                            {!! $renderB2CommoditySelect($output->product_id ?? $product->id) !!}
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                             @if($output->id)
                                 <input type="hidden" name="output_id[]" value="{{ $output->id }}">
@@ -295,8 +358,7 @@
                         @endphp
                         <tr>
                             <td>
-                                <strong>{{ $prod->name ?? '' }}</strong>
-                                <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
+                                {!! $renderB2CommoditySelect($output->product_id ?? $product->id) !!}
                                 <input type="hidden" name="job_order_packing_item_id[]" value="{{ $output->job_order_packing_item_id ?? '' }}">
                                 @if($output->id)
                                     <input type="hidden" name="output_id[]" value="{{ $output->id }}">
@@ -360,8 +422,7 @@
                     <tr>
                         <td>
                             @php $prod = $product; @endphp
-                            <strong>{{ $prod->name ?? '' }}</strong>
-                            <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
+                            {!! $renderB2CommoditySelect($product->id) !!}
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                         </td>
                         <td>
@@ -422,8 +483,7 @@
             @php $prod = $output->product; @endphp
             <tr>
                 <td>
-                    <strong>{{ $prod->name ?? '' }}</strong>
-                    <input type="hidden" name="output_product_id[]" value="{{ $output->product_id }}">
+                    {!! $renderB2CommoditySelect($output->product_id) !!}
                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $output->job_order_packing_item_id ?? '' }}">
                     @if($output->id)
                         <input type="hidden" name="output_id[]" value="{{ $output->id }}">

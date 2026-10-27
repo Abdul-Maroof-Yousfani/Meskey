@@ -80,6 +80,17 @@ Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])
 Route::resource('plant-breakdown-type', \App\Http\Controllers\Master\PlantBreakdownTypeController::class);
 Route::post('/get-plant-breakdown-type', [\App\Http\Controllers\Master\PlantBreakdownTypeController::class, 'getList'])->name('get.plant-breakdown-type');
 
+// Production Settings
+Route::prefix('production-settings')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Master\ProductionSettingController::class, 'index'])->name('production-settings.index');
+    Route::get('/fumigation-types/list', [\App\Http\Controllers\Master\ProductionSettingController::class, 'getFumigationTypesList'])->name('production-settings.fumigation-types.list');
+    Route::get('/fumigation-types/create', [\App\Http\Controllers\Master\ProductionSettingController::class, 'createFumigationType'])->name('production-settings.fumigation-types.create');
+    Route::post('/fumigation-types', [\App\Http\Controllers\Master\ProductionSettingController::class, 'storeFumigationType'])->name('production-settings.fumigation-types.store');
+    Route::get('/fumigation-types/{index}/edit', [\App\Http\Controllers\Master\ProductionSettingController::class, 'editFumigationType'])->name('production-settings.fumigation-types.edit');
+    Route::put('/fumigation-types/{index}', [\App\Http\Controllers\Master\ProductionSettingController::class, 'updateFumigationType'])->name('production-settings.fumigation-types.update');
+    Route::delete('/fumigation-types/{index}', [\App\Http\Controllers\Master\ProductionSettingController::class, 'destroyFumigationType'])->name('production-settings.fumigation-types.destroy');
+});
+
 Route::resource('truck-size-ranges', TruckSizeRangeController::class);
 Route::post('get-truck-size-ranges', [TruckSizeRangeController::class, 'getList'])->name('get.truck_size_ranges');
 

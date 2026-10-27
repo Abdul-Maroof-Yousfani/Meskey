@@ -15,6 +15,19 @@ class ProductionVoucherRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('job_order_id')) {
+            $raw = $this->job_order_id;
+            $filtered = is_array($raw)
+                ? array_values(array_filter($raw, fn($val) => $val !== null && $val !== ''))
+                : ($raw ? [$raw] : []);
+            $this->merge([
+                'job_order_id' => $filtered
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

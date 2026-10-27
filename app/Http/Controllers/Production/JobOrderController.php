@@ -190,15 +190,34 @@ class JobOrderController extends Controller
         $users = User::get(); // Users for attention_to
         $sizes = Size::get();
         $stitchings = Stitching::where('status', 'active')->get();
-        $selectedLocation = count($companyLocations) == 1 ? $companyLocations->first() : null;
+        $selectedLocation = $companyLocations->first() ?: null;
         $jobOrderNo = $selectedLocation ? self::generateUniqueNumber(date('Y-m-d'), $selectedLocation->id) : '';
-        $jobOrderRequests = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])
+        $jobOrderRequests = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems', 'exportOrder'])
             ->whereIn('status', ['pending', 'partial'])
             ->latest()
             ->get()
             ->filter(function ($jor) {
                 return $jor->remaining_kgs > 0.001;
             });
+
+        $requestedJorId = request('job_order_request_id', request('request_id'));
+        if ($requestedJorId && !$jobOrderRequests->contains('id', $requestedJorId)) {
+            $extraJor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems', 'exportOrder'])->find($requestedJorId);
+            if ($extraJor) {
+                $jobOrderRequests->push($extraJor);
+            }
+        }
+
+        foreach ($jobOrderRequests as $jor) {
+            if ($jor->export_order_id && !$exportOrders->contains('id', $jor->export_order_id)) {
+                $extraEo = $jor->exportOrder ?? \App\Models\Export\ExportOrder::find($jor->export_order_id);
+                if ($extraEo) {
+                    $exportOrders->push($extraEo);
+                }
+            }
+        }
+
+        $fumigationTypes = getFumigationTypes();
 
         return view('management.production.job_orders.create', compact(
             'exportOrders',
@@ -208,6 +227,7 @@ class JobOrderController extends Controller
             'containerProtectionProducts',
             'inspectionCompanies',
             'fumigationCompanies',
+            'fumigationTypes',
             'companyLocations',
             'arrivalLocations',
             'bagTypes',
@@ -218,7 +238,8 @@ class JobOrderController extends Controller
             'cropYears',
             'sizes',
             'stitchings',
-            'jobOrderNo'
+            'jobOrderNo',
+            'selectedLocation'
         ));
     }
 
@@ -275,7 +296,8 @@ class JobOrderController extends Controller
                 }
             }
 
-            $uniqueJobNo = self::generateUniqueNumber($request->job_order_date, $request->company_location_id);
+            $firstPackingLocation = $request->packing_items[0]['company_location_id'] ?? $request->company_location_id;
+            $uniqueJobNo = self::generateUniqueNumber($request->job_order_date, $firstPackingLocation);
 
             $jobOrderData = $request->only([
                 'job_order_no',
@@ -293,13 +315,21 @@ class JobOrderController extends Controller
                 'job_order_request_id',
             ]);
 
+            if ($request->job_order_request_id && empty($jobOrderData['export_order_id'])) {
+                $jorRecord = \App\Models\Production\JobOrderRequest\JobOrderRequest::find($request->job_order_request_id);
+                if ($jorRecord && !empty($jorRecord->export_order_id)) {
+                    $jobOrderData['export_order_id'] = $jorRecord->export_order_id;
+                }
+            }
+
             $jobOrderData['company_id'] = $request->company_id;
             $jobOrderData['job_order_no'] = $uniqueJobNo;
-            $jobOrderData['company_location_id'] = $request->company_location_id;
+            $jobOrderData['company_location_id'] = $firstPackingLocation;
             $jobOrderData['attention_to'] = $request->attention_to ?? [];
             $jobOrderData['inspection_company_id'] = $request->inspection_company_id ?? [];
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = $request->arrival_locations ?? [];
+            $jobOrderData['fumigation_type'] = $request->fumigation_type ?? ($request->packing_items[0]['fumigation_type'] ?? null);
 
             //  Reset am approval status and set am change made to 1
             $jobOrderData['am_approval_status'] = 'approved';
@@ -312,7 +342,8 @@ class JobOrderController extends Controller
 
             foreach ($request->packing_items as $pIndex => $item) {
                 // Ensure packing item has company_location_id
-                $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
+                $item['company_location_id'] = $item['company_location_id'] ?? $request->company_location_id;
+                $item['fumigation_type'] = $item['fumigation_type'] ?? null;
 
                 // Extract sub-items if they exist
                 $subItems = $item['sub_items'] ?? [];
@@ -474,6 +505,8 @@ class JobOrderController extends Controller
         // dd($request->all());
         // $jobOrder = JobOrder::with(['packingItems:where(company_location_id, $request->company_location_id)', 'specifications', 'product'])->findOrFail($id);
         $jobOrder = JobOrder::with([
+            'exportOrder',
+            'jobOrderRequest.exportOrder',
             'packingItems' => function ($query) use ($request) {
                 $query->when($request->filled('company_location_id'), function ($q) use ($request) {
                     $q->where('company_location_id', $request->company_location_id);
@@ -502,6 +535,33 @@ class JobOrderController extends Controller
                 });
                 return ($totalMt - $consumedMt) > 0;
             });
+
+        $jobOrderRequests = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems', 'exportOrder'])
+            ->whereIn('status', ['pending', 'partial'])
+            ->latest()
+            ->get()
+            ->filter(function ($jor) use ($jobOrder) {
+                if ($jobOrder->job_order_request_id == $jor->id) {
+                    return true;
+                }
+                return $jor->remaining_kgs > 0.001;
+            });
+
+        if ($jobOrder->job_order_request_id && !$jobOrderRequests->contains('id', $jobOrder->job_order_request_id)) {
+            $currentJor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems', 'exportOrder'])->find($jobOrder->job_order_request_id);
+            if ($currentJor) {
+                $jobOrderRequests->push($currentJor);
+            }
+        }
+
+        foreach ($jobOrderRequests as $jor) {
+            if ($jor->export_order_id && !$exportOrders->contains('id', $jor->export_order_id)) {
+                $extraEo = $jor->exportOrder ?? \App\Models\Export\ExportOrder::find($jor->export_order_id);
+                if ($extraEo) {
+                    $exportOrders->push($extraEo);
+                }
+            }
+        }
             
         $products = getFinishGoodProducts($jobOrder->product_id);
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
@@ -536,14 +596,18 @@ class JobOrderController extends Controller
             })
             ->get();
         // dd($bagColors);
+        $fumigationTypes = getFumigationTypes();
+
         return view('management.production.job_orders.edit', compact(
             'exportOrders',
+            'jobOrderRequests',
             'jobOrder',
             'products',
             'bagProducts',
             'containerProtectionProducts',
             'inspectionCompanies',
             'fumigationCompanies',
+            'fumigationTypes',
             'companyLocations',
             'arrivalLocations',
             'bagTypes',
@@ -563,6 +627,8 @@ class JobOrderController extends Controller
         DB::beginTransaction();
 
         try {
+            $oldJobOrderRequestId = $jobOrder->job_order_request_id;
+
             $jobOrderData = $request->only([
                 'job_order_no',
                 'job_order_date',
@@ -579,12 +645,25 @@ class JobOrderController extends Controller
                 'job_order_request_id',
             ]);
 
+            if ($request->filled('job_order_request_id') && empty($jobOrderData['export_order_id'])) {
+                $jorRecord = \App\Models\Production\JobOrderRequest\JobOrderRequest::find($request->job_order_request_id);
+                if ($jorRecord && !empty($jorRecord->export_order_id)) {
+                    $jobOrderData['export_order_id'] = $jorRecord->export_order_id;
+                }
+            }
+
+            // Ensure empty string foreign keys are saved as null
+            $jobOrderData['job_order_request_id'] = $request->input('job_order_request_id') ?: null;
+            $jobOrderData['export_order_id'] = $jobOrderData['export_order_id'] ?? ($request->input('export_order_id') ?: null);
+
             // $jobOrderData['location'] = $request->location;
-            $jobOrderData['company_location_id'] = $request->company_location_id;
+            $firstPackingLocation = $request->packing_items[0]['company_location_id'] ?? $request->company_location_id;
+            $jobOrderData['company_location_id'] = $firstPackingLocation;
             $jobOrderData['attention_to'] = $request->attention_to ?? [];
             $jobOrderData['inspection_company_id'] = $request->inspection_company_id ?? [];
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = $request->arrival_locations ?? [];
+            $jobOrderData['fumigation_type'] = $request->fumigation_type ?? ($request->packing_items[0]['fumigation_type'] ?? null);
             //  Reset am approval status and set am change made to 1
             $jobOrderData['am_approval_status'] = 'approved';
             // $jobOrderData['am_approval_status'] = 'pending';
@@ -649,7 +728,8 @@ class JobOrderController extends Controller
 
             foreach ($request->packing_items as $pIndex => $item) {
                 // Ensure packing item has company_location_id
-                $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
+                $item['company_location_id'] = $item['company_location_id'] ?? $request->company_location_id;
+                $item['fumigation_type'] = $item['fumigation_type'] ?? null;
 
                 // Extract sub-items if they exist
                 $subItems = $item['sub_items'] ?? [];
@@ -796,6 +876,16 @@ class JobOrderController extends Controller
                     $consumedKg = (float) $jor->consumed_kgs;
                     $newStatus = ($consumedKg >= ($totalAllowedKg - 0.01)) ? 'converted' : ($consumedKg > 0.001 ? 'partial' : 'pending');
                     $jor->update(['status' => $newStatus]);
+                }
+            }
+
+            if ($oldJobOrderRequestId && $oldJobOrderRequestId != $jobOrder->job_order_request_id) {
+                $oldJor = \App\Models\Production\JobOrderRequest\JobOrderRequest::with(['packingItems', 'jobOrders.packingItems'])->find($oldJobOrderRequestId);
+                if ($oldJor) {
+                    $totalAllowedKg = (float) $oldJor->total_kgs;
+                    $consumedKg = (float) $oldJor->consumed_kgs;
+                    $oldStatus = ($consumedKg >= ($totalAllowedKg - 0.01)) ? 'converted' : ($consumedKg > 0.001 ? 'partial' : 'pending');
+                    $oldJor->update(['status' => $oldStatus]);
                 }
             }
 

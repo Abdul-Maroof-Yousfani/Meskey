@@ -98,11 +98,15 @@ class MachinePlanSettingController extends Controller
                 'production_voucher_id',
                 'remarks',
             ]);
+            $companyId = $request->company_id ?: (auth()->user()->company_id ?? 1);
+            $machinePlanSettingData['company_id'] = $companyId;
             $machinePlanSettingData['user_id'] = auth()->user()->id;
 
-            $existingPlan = MachinePlanSetting::where('company_id', $request->company_id)
-                ->where('plant_id', $request->plant_id)
+            $existingPlan = MachinePlanSetting::where('plant_id', $request->plant_id)
                 ->whereDate('date', $request->date)
+                ->when($companyId, function ($q) use ($companyId) {
+                    return $q->where('company_id', $companyId);
+                })
                 ->first();
 
             if ($existingPlan) {
@@ -664,7 +668,11 @@ class MachinePlanSettingController extends Controller
 
             $slots = [];
             if ($items->isNotEmpty()) {
-                foreach ($items as $item) {
+                $uniqueItems = $items->unique(function ($item) {
+                    return ($item->start_time ? substr($item->start_time, 0, 5) : '') . '_' . ($item->end_time ? substr($item->end_time, 0, 5) : '');
+                });
+
+                foreach ($uniqueItems as $item) {
                     $bList = [];
                     if ($item->breakdowns && $item->breakdowns->isNotEmpty()) {
                         foreach ($item->breakdowns as $bd) {

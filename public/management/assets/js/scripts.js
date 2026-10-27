@@ -1290,8 +1290,9 @@ function printErrorMsg(errors) {
         .find("ul")
         .append("<li>" + messages[0] + "</li>");
     } else {
-      // Regular field (non-array)
-      var fields = $("[name='" + key + "']");
+      // Regular or nested field (e.g. packing_items.0.no_of_bags -> packing_items[0][no_of_bags])
+      var bracketKey = key.replace(/\.([^.]+)/g, "[$1]");
+      var fields = $("[name='" + key + "'], [name='" + bracketKey + "']");
 
       fields.each(function () {
         var field = $(this);

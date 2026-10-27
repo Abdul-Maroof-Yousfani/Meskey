@@ -8,21 +8,18 @@
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
-                <!-- Row 1: Company Location | Export Order | Request No | Request Date -->
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Company Location: <span class="text-danger">*</span></label>
-                        <select name="company_location_id" id="company_location_id" class="form-control select2" required>
-                            <option value="">Select Location</option>
-                            @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}" {{ ($jobOrderRequest->company_location_id == $location->id || (empty($jobOrderRequest->company_location_id) && $jobOrderRequest->packingItems->first()?->company_location_id == $location->id)) ? 'selected' : '' }}>
-                                    {{ $location->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <!-- Row 1: Export Order | Request No | Request Date (Company Location hidden) -->
+                <div style="display: none;">
+                    <select name="company_location_id" id="company_location_id" class="form-control select2">
+                        <option value="">Select Location</option>
+                        @foreach($companyLocations as $location)
+                            <option value="{{ $location->id }}" {{ ($jobOrderRequest->company_location_id == $location->id || (empty($jobOrderRequest->company_location_id) && $jobOrderRequest->packingItems->first()?->company_location_id == $location->id)) ? 'selected' : '' }}>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <fieldset>
                         <label>Export Order:</label>
                         <div class="input-group">
@@ -37,14 +34,14 @@
                         </div>
                     </fieldset>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label>Request No:</label>
                         <input type="text" readonly name="request_no" class="form-control"
                             value="{{ $jobOrderRequest->request_no }}">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label>Request Date:</label>
                         <input readonly type="date" name="request_date" class="form-control"
@@ -211,11 +208,23 @@
             <div id="packingItems">
                 @foreach($jobOrderRequest->packingItems as $packingIndex => $packingItem)
                     <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
-                    <input type="hidden" name="packing_items[{{ $packingIndex }}][company_location_id]" class="packing-company-location-id" value="{{ $jobOrderRequest->company_location_id ?? $packingItem->company_location_id }}">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Location: <span class="text-danger">*</span></label>
+                            <select name="packing_items[{{ $packingIndex }}][company_location_id]" class="form-control select2 packing-company-location-id" required>
+                                <option value="">Select Location</option>
+                                @foreach($companyLocations as $location)
+                                    <option data-code="{{ $location->code }}" value="{{ $location->id }}" {{ (($packingItem->company_location_id ?? $jobOrderRequest->company_location_id) == $location->id) ? 'selected' : '' }}>
+                                        {{ $location->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                     <div class="col-md-2">
                             <div class="form-group">
-                                <label>Brand:</label>
-                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control select2">
+                                <label>Brand: <span class="text-danger">*</span></label>
+                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control select2" required>
                                     <option value="">Select Brand</option>
                                     @foreach($brands as $brand)
                                         <option value="{{ $brand->id }}" {{ $packingItem->brand_id == $brand->id ? 'selected' : '' }}>
@@ -240,8 +249,8 @@
                         </div> -->
                         <div class="col-md-2">
                             <div class="form-group">
-                                <label>Bag Product:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_product_id]" class="form-control select2">
+                                <label>Bag Product: <span class="text-danger">*</span></label>
+                                <select name="packing_items[{{ $packingIndex }}][bag_product_id]" class="form-control select2" required>
                                     <option value="">Select Bag Product</option>
                                     @foreach($bagProducts as $bagProduct)
                                         <option value="{{ $bagProduct->id }}" {{ $packingItem->bag_product_id == $bagProduct->id ? 'selected' : '' }}>
@@ -253,8 +262,8 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <label>Bag Condition:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_condition_id]" class="form-control select2">
+                                <label>Bag Condition: <span class="text-danger">*</span></label>
+                                <select name="packing_items[{{ $packingIndex }}][bag_condition_id]" class="form-control select2" required>
                                     <option value="">Select Condition</option>
                                     @foreach($bagConditions as $condition)
                                         <option value="{{ $condition->id }}" {{ $packingItem->bag_condition_id == $condition->id ? 'selected' : '' }}>
@@ -266,8 +275,8 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <label>Bag Color:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control select2">
+                                <label>Bag Color: <span class="text-danger">*</span></label>
+                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control select2" required>
                                     <option value="">Select Color</option>
                                     @foreach($bagColors as $color)
                                         <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
@@ -303,16 +312,16 @@
                         </div>
                         <div class="col-md-1">
                             <div class="form-group">
-                                <label>Packing Size (kg):</label>
+                                <label>Packing Size (kg): <span class="text-danger">*</span></label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][bag_size]"
-                                    class="form-control bag-size" step="0.01" value="{{ $packingItem->bag_size }}">
+                                    class="form-control bag-size" step="0.01" min="0.01" value="{{ $packingItem->bag_size }}" required>
                             </div>
                         </div>
                         <div class="col-md-1">
                             <div class="form-group">
-                                <label>No. of Bags:</label>
+                                <label>No. of Bags: <span class="text-danger">*</span></label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][no_of_bags]"
-                                    class="form-control no-of-bags" value="{{ $packingItem->no_of_bags }}">
+                                    class="form-control no-of-bags" min="1" value="{{ $packingItem->no_of_bags }}" required>
                             </div>
                         </div>
                         <div class="col-md-1">
@@ -398,9 +407,9 @@
                                     value="{{ $packingItem->delivery_date ? $packingItem->delivery_date->format('Y-m-d') : '' }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label>Fumigation By:</label>
+                                <label>Fumigation By: <span class="text-danger fumigation-required-star" style="{{ (isset($jobOrderRequest) && $jobOrderRequest->export_order_id) ? '' : 'display:none;' }}">*</span></label>
                                 @php
                                     $savedFumigation = is_array($packingItem->fumigation_company_id) 
                                         ? $packingItem->fumigation_company_id 
@@ -412,6 +421,19 @@
                                     @foreach($fumigationCompanies as $company)
                                         <option value="{{ $company->id }}" {{ in_array((string)$company->id, $savedFumigation) ? 'selected' : '' }}>
                                             {{ $company->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Fumigation Type:</label>
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_type]" class="form-control select2" data-placeholder="Select Fumigation Type">
+                                    <option value="">Select Fumigation Type</option>
+                                    @foreach($fumigationTypes as $fType)
+                                        <option value="{{ $fType }}" {{ ($packingItem->fumigation_type == $fType || old("packing_items.{$packingIndex}.fumigation_type") == $fType) ? 'selected' : '' }}>
+                                            {{ ucfirst($fType) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -900,6 +922,7 @@
                 $('#mainProductSelect').prop('disabled', false);
                 $('#mainProductSelect').next('.select2-container').css('pointer-events', '');
                 $('#hidden_product_id').remove();
+                updateFumigationRequirement();
                 return;
             }
 
@@ -950,6 +973,7 @@
                     addPackingRowsFromExportOrder(data.packing_items);
                 }
                 isInitialLoad = false;
+                updateFumigationRequirement();
             }).fail(function(xhr) {
                 console.error('Export Order Details Error:', xhr.status, xhr.responseText);
                 alert('Failed to load export order details. Please check console.');
@@ -994,6 +1018,36 @@
             $('#productSpecs').html(html);
         }
 
+        function updateFumigationRequirement() {
+            let hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+            
+            $('.packing-item').each(function() {
+                let formGroup = $(this).find('select[name*="[fumigation_company_id][]"]').closest('.form-group');
+                let label = formGroup.find('label').first();
+                let select = formGroup.find('select[name*="[fumigation_company_id][]"]');
+                let naOption = select.find('option[value="null"]');
+                
+                if (hasExportOrder) {
+                    if (label.find('.fumigation-required-star').length === 0) {
+                        label.append(' <span class="text-danger fumigation-required-star">*</span>');
+                    } else {
+                        label.find('.fumigation-required-star').show();
+                    }
+                    naOption.prop('disabled', true).hide();
+                    
+                    let currentVal = select.val();
+                    if (Array.isArray(currentVal) && currentVal.includes('null')) {
+                        let filtered = currentVal.filter(v => v !== 'null');
+                        select.val(filtered).trigger('change.select2');
+                    }
+                } else {
+                    label.find('.fumigation-required-star').hide();
+                    naOption.prop('disabled', false).show();
+                    select.next('.select2-container').find('.select2-selection').css('border', '');
+                }
+            });
+        }
+
         function addPackingRowsFromExportOrder(items) {
             let container = $('#packingItems');
             let templateRow = container.find('.packing-item').first().clone();
@@ -1030,6 +1084,9 @@
                     return id;
                 }
 
+                // Set location
+                row.find('.packing-company-location-id').val(item.company_location_id || $('#company_location_id').val());
+
                 // Fill values
                 row.find(`select[name="packing_items[${index}][brand_id]"]`).val(item.brand_id);
                 
@@ -1058,6 +1115,15 @@
                 row.find(`input[name="packing_items[${index}][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                
+                if (item.fumigation_company_id) {
+                    let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
+                    fumigationSelect.val(item.fumigation_company_id);
+                }
+                if (item.fumigation_type) {
+                    let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
+                    fumigationTypeSelect.val(item.fumigation_type);
+                }
                 
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
@@ -1120,6 +1186,11 @@
                 row.find('.no-of-bags').trigger('input');
             });
             reindexPackingItems();
+            updateFumigationRequirement();
+            let firstLocAfterPopulate = container.find('.packing-item').first().find('.packing-company-location-id').val();
+            if (firstLocAfterPopulate && firstLocAfterPopulate !== $('#company_location_id').val()) {
+                $('#company_location_id').val(firstLocAfterPopulate).trigger('change');
+            }
         }
 
         // Product selection change
@@ -1202,8 +1273,12 @@
                 $select.siblings('.select2-container').remove();
                 $select.next('.select2-container').remove();
                 $select.removeClass('select2-hidden-accessible').show();
-                $select.prop('selectedIndex', 0);
-                $select.val('');
+                if ($select.hasClass('packing-company-location-id')) {
+                    $select.val($('#company_location_id').val() || '');
+                } else {
+                    $select.prop('selectedIndex', 0);
+                    $select.val('');
+                }
             });
 
             // Add to container
@@ -1223,6 +1298,7 @@
             
             isAddingItem = false;
             updateOverallTotalRequestQty();
+            updateFumigationRequirement();
         }
 
         // Remove packing item
@@ -1233,6 +1309,7 @@
                 reindexPackingItems();
                 $('#company_location_id').trigger('change');
                 updateOverallTotalRequestQty();
+                updateFumigationRequirement();
             }
         });
 
@@ -1746,6 +1823,17 @@
         }
     });
 
+    // When the first Packing Details location changes, auto-update company_location_id
+    $(document).on('change', '.packing-company-location-id', function() {
+        var $item = $(this).closest('.packing-item');
+        if ($item.is(':first-child') || $item.index() === 0) {
+            var firstLoc = $(this).val();
+            if (firstLoc && firstLoc !== $('#company_location_id').val()) {
+                $('#company_location_id').val(firstLoc).trigger('change');
+            }
+        }
+    });
+
     // Auto-populate arrival locations based on company location selection
     $(document).on('change', '#company_location_id, select[name*="company_location_id"]', function() {
         var locationIds = [];
@@ -1756,8 +1844,12 @@
             if (val && !locationIds.includes(val)) locationIds.push(val);
         });
 
-        if (mainLoc) {
-            $('.packing-company-location-id').val(mainLoc);
+        if (mainLoc && $(this).is('#company_location_id')) {
+            $('.packing-company-location-id').each(function() {
+                if (!$(this).val()) {
+                    $(this).val(mainLoc).trigger('change.select2');
+                }
+            });
         }
         
         if (locationIds.length > 0) {
@@ -1787,16 +1879,70 @@
     });
 
     $(document).on('change', 'select[name*="fumigation_company_id"], select[name*="inspection_company_id"]', function() {
-        var val = $(this).val();
-        if (Array.isArray(val) && val.length > 1) {
+        var select = $(this);
+        var val = select.val();
+        var hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+        var isFumigation = select.attr('name') && select.attr('name').indexOf('fumigation_company_id') !== -1;
+
+        if (isFumigation && hasExportOrder && Array.isArray(val) && val.indexOf('null') !== -1) {
+            val = val.filter(function(v) { return v !== 'null'; });
+            select.val(val).trigger('change.select2');
+        } else if (Array.isArray(val) && val.length > 1) {
             if (val.indexOf('null') !== -1) {
                 if (val[val.length - 1] === 'null') {
-                    $(this).val(['null']).trigger('change.select2');
+                    select.val(['null']).trigger('change.select2');
                 } else {
                     var filtered = val.filter(function(v) { return v !== 'null'; });
-                    $(this).val(filtered).trigger('change.select2');
+                    select.val(filtered).trigger('change.select2');
                 }
             }
         }
+
+        if (isFumigation) {
+            var validVals = Array.isArray(val) ? val.filter(function(v) { return v !== 'null' && v !== null && v !== ''; }) : [];
+            if (validVals.length > 0) {
+                select.next('.select2-container').find('.select2-selection').css('border', '');
+            }
+        }
     });
+
+    $('form#ajaxSubmit').on('submit', function(e) {
+        var hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+        if (hasExportOrder) {
+            var missingFumigation = false;
+            $('.packing-item').each(function() {
+                var select = $(this).find('select[name*="[fumigation_company_id][]"]');
+                var val = select.val() || [];
+                var valid = Array.isArray(val) && val.filter(function(v) { return v !== 'null' && v !== null && v !== ''; }).length > 0;
+                if (!valid) {
+                    missingFumigation = true;
+                    select.next('.select2-container').find('.select2-selection').css('border', '1px solid #d9534f');
+                } else {
+                    select.next('.select2-container').find('.select2-selection').css('border', '');
+                }
+            });
+            if (missingFumigation) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Validation Error',
+                        text: 'Fumigation Company is required for each packing item when an Export Order is selected.',
+                        confirmButtonColor: '#D95000'
+                    });
+                } else {
+                    alert('Fumigation Company is required for each packing item when an Export Order is selected.');
+                }
+                return false;
+            }
+        }
+    });
+
+    updateFumigationRequirement();
+
+    var initialPackingLoc = $('#packingItems .packing-item').first().find('.packing-company-location-id').val();
+    if (initialPackingLoc) {
+        $('#company_location_id').val(initialPackingLoc);
+    }
 </script>

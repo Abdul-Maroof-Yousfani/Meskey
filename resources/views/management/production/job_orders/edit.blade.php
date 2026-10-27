@@ -8,25 +8,40 @@
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
-                <!-- Row 1: Company Location | Export Order | Job Order No | Job Order Date -->
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Company Location: <span class="text-danger">*</span></label>
-                        <select name="company_location_id" id="company_location_id" class="form-control select2" required>
-                            <option value="">Select Location</option>
-                            @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}" {{ ($jobOrder->company_location_id == $location->id || (empty($jobOrder->company_location_id) && $jobOrder->packingItems->first()?->company_location_id == $location->id)) ? 'selected' : '' }}>
-                                    {{ $location->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <!-- Row 1: Job Order Request | Export Order | Company Location | Job Order Date -->
+                <div class="col-md-4">
+                    <fieldset>
+                        <label>Job Order Request (Optional):</label>
+                        <div class="input-group">
+                            <select name="job_order_request_id" class="form-control select2" id="jobOrderRequestSelect">
+                                <option value="">Select Request</option>
+                                @foreach($jobOrderRequests as $jor)
+                                    <option value="{{ $jor->id }}" data-remaining="{{ $jor->remaining_kgs }}" {{ ($jobOrder->job_order_request_id == $jor->id) ? 'selected' : '' }}>
+                                        {{ $jor->request_no }} (Rem: {{ number_format($jor->remaining_kgs) }} KG)
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </fieldset>
                 </div>
-                <div class="col-md-3">
+                @php
+                    $isExportOrderFixed = !empty($jobOrder->job_order_request_id) && (!empty($jobOrder->jobOrderRequest?->export_order_id) || !empty($jobOrder->export_order_id));
+                @endphp
+                <div style="display: none;">
+                    <select name="company_location_id" id="company_location_id" class="form-control select2">
+                        <option value="">Select Location</option>
+                        @foreach($companyLocations as $location)
+                            <option value="{{ $location->id }}" {{ ($jobOrder->company_location_id == $location->id || (empty($jobOrder->company_location_id) && $jobOrder->packingItems->first()?->company_location_id == $location->id)) ? 'selected' : '' }}>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
                     <fieldset>
                         <label>Export Order:</label>
                         <div class="input-group">
-                            <select name="export_order_id" class="form-control select2" id="exportOrderSelect">
+                            <select name="export_order_id" class="form-control select2" id="exportOrderSelect" {{ $isExportOrderFixed ? 'disabled' : '' }}>
                                 <option value="">Select Export Order</option>
                                 @foreach($exportOrders as $eo)
                                     <option value="{{ $eo->id }}" {{ $jobOrder->export_order_id == $eo->id ? 'selected' : '' }}>
@@ -34,9 +49,21 @@
                                     </option>
                                 @endforeach
                             </select>
+                            @if($isExportOrderFixed)
+                                <input type="hidden" name="export_order_id" id="hidden_export_order_id" value="{{ $jobOrder->export_order_id }}">
+                            @endif
                         </div>
                     </fieldset>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Job Order Date:</label>
+                        <input readonly type="date" name="job_order_date" class="form-control"
+                            value="{{ $jobOrder->job_order_date->format('Y-m-d') }}">
+                    </div>
+                </div>
+
+                <!-- Row 2: Job Order No | Ref No | Attention To -->
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order No:</label>
@@ -46,20 +73,11 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Job Order Date:</label>
-                        <input readonly type="date" name="job_order_date" class="form-control"
-                            value="{{ $jobOrder->job_order_date->format('Y-m-d') }}">
-                    </div>
-                </div>
-
-                <!-- Row 2: Ref No | Attention To -->
-                <div class="col-md-4">
-                    <div class="form-group">
                         <label>Ref No:</label>
                         <input type="text" name="ref_no" class="form-control" value="{{ $jobOrder->ref_no }}">
                     </div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Attention To:</label>
                         <select name="attention_to[]" class="form-control select2" multiple>
@@ -176,7 +194,7 @@
           <div class="col-md-12">
             <div class="form-group">
                 <label>Crop Year:</label>
-                <select name="crop_year_id" class="form-control select2" id="productSelect">
+                <select name="crop_year_id" class="form-control select2" id="cropYearSelect">
                     <option value="">Select Crop Year</option>
                     @foreach($cropYears as $cropYear)
                         <option {{ $jobOrder->crop_year_id == $cropYear->id ? 'selected' : '' }} value="{{ $cropYear->id }}">{{ $cropYear->name }}</option>
@@ -198,14 +216,27 @@
             </h6>
 
             <div id="export-order-quantity-info" class="mb-3" style="display: none;"></div>
+            <div id="job-order-request-quantity-info" class="mb-3" style="display: none;"></div>
 
             <div id="packingItems">
                 @foreach($jobOrder->packingItems as $packingIndex => $packingItem)
                     <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
-                    <input type="hidden" name="packing_items[{{ $packingIndex }}][company_location_id]" class="packing-company-location-id" value="{{ $jobOrder->company_location_id ?? $packingItem->company_location_id }}">
                     <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Brand:</label>
+                        <div class="form-group">
+                            <label>Location: <span class="text-danger">*</span></label>
+                            <select name="packing_items[{{ $packingIndex }}][company_location_id]" class="form-control select2 packing-company-location-id" required>
+                                <option value="">Select Location</option>
+                                @foreach($companyLocations as $location)
+                                    <option data-code="{{ $location->code }}" value="{{ $location->id }}" {{ (($packingItem->company_location_id ?? $jobOrder->company_location_id) == $location->id) ? 'selected' : '' }}>
+                                        {{ $location->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Brand:</label>
                                 <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control select2">
                                     <option value="">Select Brand</option>
                                     @foreach($brands as $brand)
@@ -294,16 +325,16 @@
                         </div>
                         <div class="col-md-1">
                             <div class="form-group">
-                                <label>Packing Size (kg):</label>
+                                <label>Packing Size (kg): <span class="text-danger">*</span></label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][bag_size]"
-                                    class="form-control bag-size" step="0.01" value="{{ $packingItem->bag_size }}">
+                                    class="form-control bag-size" step="0.01" min="0.01" value="{{ $packingItem->bag_size }}" required>
                             </div>
                         </div>
                         <div class="col-md-1">
                             <div class="form-group">
-                                <label>No. of Bags:</label>
+                                <label>No. of Bags: <span class="text-danger">*</span></label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][no_of_bags]"
-                                    class="form-control no-of-bags" value="{{ $packingItem->no_of_bags }}">
+                                    class="form-control no-of-bags" min="1" value="{{ $packingItem->no_of_bags }}" required>
                             </div>
                         </div>
                         <div class="col-md-1">
@@ -389,9 +420,9 @@
                                     value="{{ $packingItem->delivery_date ? $packingItem->delivery_date->format('Y-m-d') : '' }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label>Fumigation By:</label>
+                                <label>Fumigation By: <span class="text-danger fumigation-required-star" style="{{ !empty($jobOrder->export_order_id) ? '' : 'display: none;' }}">*</span></label>
                                 @php
                                     $savedFumigation = is_array($packingItem->fumigation_company_id) 
                                         ? $packingItem->fumigation_company_id 
@@ -399,10 +430,23 @@
                                     $savedFumigation = collect($savedFumigation)->flatten()->map(fn($v) => (string)$v)->all();
                                 @endphp
                                 <select name="packing_items[{{ $packingIndex }}][fumigation_company_id][]" class="form-control select2" multiple data-placeholder="Select Fumigation Company">
-                                    <option value="null" {{ in_array('null', $savedFumigation) ? 'selected' : '' }}>N/A</option>
+                                    <option value="null" {{ in_array('null', $savedFumigation) ? 'selected' : '' }} {{ !empty($jobOrder->export_order_id) ? 'disabled style=display:none;' : '' }}>N/A</option>
                                     @foreach($fumigationCompanies as $company)
                                         <option value="{{ $company->id }}" {{ in_array((string)$company->id, $savedFumigation) ? 'selected' : '' }}>
                                             {{ $company->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Fumigation Type:</label>
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_type]" class="form-control select2" data-placeholder="Select Fumigation Type">
+                                    <option value="">Select Fumigation Type</option>
+                                    @foreach($fumigationTypes as $fType)
+                                        <option value="{{ $fType }}" {{ ($packingItem->fumigation_type == $fType || old("packing_items.{$packingIndex}.fumigation_type") == $fType) ? 'selected' : '' }}>
+                                            {{ ucfirst($fType) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -881,39 +925,131 @@
             });
         });
 
-        // Initialize state for edit view
-        if($('#exportOrderSelect').val()) {
-            $('#exportOrderSelect').trigger('change');
-            
-            $('#mainProductSelect').prop('disabled', true);
-            $('#mainProductSelect').next('.select2-container').css('pointer-events', 'none');
-            if($('#hidden_product_id').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'hidden_product_id',
-                    name: 'product_id',
-                    value: $('#mainProductSelect').val()
-                }).appendTo('form#ajaxSubmit');
-            }
-        }
+        let isInitialJorLoad = true;
+        let isInitialEoLoad = true;
 
-        let isInitialLoad = true;
+        // Job Order Request selection change
+        $('#jobOrderRequestSelect').off('change.jobOrderEdit').on('change.jobOrderEdit', function() {
+            let id = $(this).val();
+            if(!id) {
+                $('#job-order-request-quantity-info').html('').hide();
+                $('#exportOrderSelect').prop('disabled', false);
+                $('#exportOrderSelect').next('.select2-container').css({'pointer-events': '', 'opacity': ''});
+                $('#hidden_export_order_id').remove();
+                if (!isInitialJorLoad) {
+                    $('#exportOrderSelect').val('').trigger('change.select2');
+                    $('#export-order-quantity-info').html('').hide();
+                }
+                isInitialJorLoad = false;
+                updateFumigationRequirement();
+                return;
+            }
+
+            $.get('{{ url("production/job-orders/get-request-details") }}/' + id, function(data) {
+                // Show quantity info
+                let totalKg = data.total_request_kgs || 0;
+                let consumedKg = data.consumed_kgs || 0;
+                let remainingKg = data.remaining_kgs || 0;
+                let totalMt = data.total_request_mt || (totalKg / 1000).toFixed(3);
+                let remainingMt = data.remaining_mt || (remainingKg / 1000).toFixed(3);
+
+                let reqAlertHtml = `
+                    <div class="mb-2 alert alert-info py-2" style="font-weight: 500;">
+                        <i class="ft-info mr-1"></i>
+                        Job Order Request Capacity: Total: <strong>${Number(totalKg).toLocaleString()} KG (${totalMt} MT)</strong> | Consumed: <strong>${Number(consumedKg).toLocaleString()} KG</strong> | Remaining: <strong class="text-success">${Number(remainingKg).toLocaleString()} KG (${remainingMt} MT)</strong>
+                    </div>
+                `;
+                $('#job-order-request-quantity-info').html(reqAlertHtml).show();
+
+                // Export Order (if present in request, select, fix and disable it)
+                $('#hidden_export_order_id').remove();
+
+                if (data.export_order_id) {
+                    if ($('#exportOrderSelect option[value="' + data.export_order_id + '"]').length === 0) {
+                        let optText = data.export_order_voucher_no || ('Export Order #' + data.export_order_id);
+                        $('#exportOrderSelect').append(new Option(optText, data.export_order_id, true, true));
+                    }
+                    $('#exportOrderSelect').val(data.export_order_id).trigger('change.select2');
+                    $('#exportOrderSelect').prop('disabled', true);
+                    $('#exportOrderSelect').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+                    $('#exportOrderSelect').after('<input type="hidden" name="export_order_id" id="hidden_export_order_id" value="' + data.export_order_id + '">');
+
+                    // Load export order details for alert box
+                    $.get('{{ url("production/get-export-order-details") }}/' + data.export_order_id, function(eoData) {
+                        let eoAlertHtml = `
+                            <div class="mb-2" style="color: #d9534f; font-weight: 500;">
+                                <i class="ft-info mr-1"></i>
+                                Export Order Quantity Info: Total: ${eoData.total_eo_mt} MT | Consumed: ${eoData.consumed_mt} MT | Remaining: ${eoData.remaining_mt} MT
+                            </div>
+                        `;
+                        $('#export-order-quantity-info').html(eoAlertHtml).show();
+                    });
+                } else {
+                    $('#exportOrderSelect').prop('disabled', false);
+                    $('#exportOrderSelect').next('.select2-container').css({'pointer-events': '', 'opacity': ''});
+                    if (!isInitialJorLoad) {
+                        $('#exportOrderSelect').val('').trigger('change.select2');
+                        $('#export-order-quantity-info').html('').hide();
+                    }
+                }
+
+                // If user selected a new request (not initial page load)
+                if (!isInitialJorLoad) {
+                    if (data.ref_no) $('input[name="ref_no"]').val(data.ref_no);
+                    if (data.remarks) $('textarea[name="remarks"]').val(data.remarks);
+                    if (data.order_description) $('textarea[name="order_description"]').val(data.order_description);
+                    if (data.other_specifications) $('textarea[name="other_specifications"]').val(data.other_specifications);
+                    if (data.packing_description) $('textarea[name="packing_description"]').val(data.packing_description);
+                    if (data.loading_date) $('input[name="loading_date"]').val(data.loading_date);
+                    if (data.crop_year_id) $('#cropYearSelect').val(data.crop_year_id).trigger('change');
+                    if (data.attention_to && data.attention_to.length > 0) {
+                        $('select[name="attention_to[]"]').val(data.attention_to.map(String)).trigger('change');
+                    }
+                    if (data.inspection_company_id && data.inspection_company_id.length > 0) {
+                        $('select[name="inspection_company_id[]"]').val(data.inspection_company_id.map(String)).trigger('change');
+                    }
+                    if (data.product_id) {
+                        $('#mainProductSelect').val(data.product_id).trigger('change.select2');
+                        $('#specificationsSection').show();
+                        if (data.specifications && data.specifications.length > 0) {
+                            buildSpecsTable(data.specifications);
+                        }
+                    }
+                    if (data.packing_items && data.packing_items.length > 0) {
+                        addPackingRowsFromJobOrderRequest(data.packing_items);
+                    }
+                    if (data.container_protection_items && data.container_protection_items.length > 0) {
+                        addContainerProtectionRows(data.container_protection_items);
+                    }
+                }
+                isInitialJorLoad = false;
+                updateFumigationRequirement();
+            }).fail(function(xhr) {
+                isInitialJorLoad = false;
+                console.error('Job Order Request Details Error:', xhr.status, xhr.responseText);
+            });
+        });
+
         // Export Order selection change
         $('#exportOrderSelect').off('change.jobOrderEdit').on('change.jobOrderEdit', function() {
             let id = $(this).val();
             if(!id) {
+                $('#export-order-quantity-info').html('').hide();
                 $('#mainProductSelect').prop('disabled', false);
                 $('#mainProductSelect').next('.select2-container').css('pointer-events', '');
                 $('#hidden_product_id').remove();
+                updateFumigationRequirement();
                 return;
             }
 
             $.get('{{ url("production/get-export-order-details") }}/' + id, function(data) {
-                if (data.ref_no) {
-                    $('input[name="ref_no"]').val(data.ref_no);
-                }
-                if (data.other_specifications) {
-                    $('textarea[name="other_specifications"]').val(data.other_specifications);
+                if (!isInitialEoLoad) {
+                    if (data.ref_no) {
+                        $('input[name="ref_no"]').val(data.ref_no);
+                    }
+                    if (data.other_specifications) {
+                        $('textarea[name="other_specifications"]').val(data.other_specifications);
+                    }
                 }
 
                 // Show quantity info
@@ -929,37 +1065,84 @@
                 `;
                 $('#export-order-quantity-info').html(alertHtml).show();
 
-                // Set and lock product
-                if (data.product_id) {
-                    $('#mainProductSelect').val(data.product_id).trigger('change');
-                    $('#mainProductSelect').prop('disabled', true);
-                    $('#mainProductSelect').next('.select2-container').css('pointer-events', 'none');
-                }
-                
-                if($('#hidden_product_id').length === 0) {
-                    $('<input>').attr({
-                        type: 'hidden',
-                        id: 'hidden_product_id',
-                        name: 'product_id',
-                        value: data.product_id
-                    }).appendTo('form#ajaxSubmit');
-                } else {
-                    $('#hidden_product_id').val(data.product_id);
-                }
+                if (!isInitialEoLoad) {
+                    // Set and lock product
+                    if (data.product_id) {
+                        $('#mainProductSelect').val(data.product_id).trigger('change');
+                        $('#mainProductSelect').prop('disabled', true);
+                        $('#mainProductSelect').next('.select2-container').css('pointer-events', 'none');
+                    }
+                    
+                    if($('#hidden_product_id').length === 0) {
+                        $('<input>').attr({
+                            type: 'hidden',
+                            id: 'hidden_product_id',
+                            name: 'product_id',
+                            value: data.product_id
+                        }).appendTo('form#ajaxSubmit');
+                    } else {
+                        $('#hidden_product_id').val(data.product_id);
+                    }
 
-                setTimeout(function() {
-                    buildSpecsTable(data.specifications);
-                }, 900);
+                    setTimeout(function() {
+                        buildSpecsTable(data.specifications);
+                    }, 900);
 
-                if (!isInitialLoad && data.packing_items && data.packing_items.length > 0) {
-                    addPackingRowsFromExportOrder(data.packing_items);
+                    if (data.packing_items && data.packing_items.length > 0) {
+                        addPackingRowsFromExportOrder(data.packing_items);
+                    }
                 }
-                isInitialLoad = false;
+                isInitialEoLoad = false;
+                updateFumigationRequirement();
             }).fail(function(xhr) {
+                isInitialEoLoad = false;
                 console.error('Export Order Details Error:', xhr.status, xhr.responseText);
                 alert('Failed to load export order details. Please check console.');
             });
         });
+
+        // Initialize state on edit load
+        if ($('#jobOrderRequestSelect').val()) {
+            $('#jobOrderRequestSelect').trigger('change');
+        } else if ($('#exportOrderSelect').val()) {
+            $('#exportOrderSelect').trigger('change');
+        }
+
+        if ($('#exportOrderSelect').prop('disabled')) {
+            $('#exportOrderSelect').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+        }
+
+        updateFumigationRequirement();
+
+        function updateFumigationRequirement() {
+            let hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+            
+            $('.packing-item').each(function() {
+                let formGroup = $(this).find('select[name*="[fumigation_company_id][]"]').closest('.form-group');
+                let label = formGroup.find('label').first();
+                let select = formGroup.find('select[name*="[fumigation_company_id][]"]');
+                let naOption = select.find('option[value="null"]');
+                
+                if (hasExportOrder) {
+                    if (label.find('.fumigation-required-star').length === 0) {
+                        label.append(' <span class="text-danger fumigation-required-star">*</span>');
+                    } else {
+                        label.find('.fumigation-required-star').show();
+                    }
+                    naOption.prop('disabled', true).hide();
+                    
+                    let currentVal = select.val();
+                    if (Array.isArray(currentVal) && currentVal.includes('null')) {
+                        let filtered = currentVal.filter(v => v !== 'null');
+                        select.val(filtered).trigger('change.select2');
+                    }
+                } else {
+                    label.find('.fumigation-required-star').hide();
+                    naOption.prop('disabled', false).show();
+                    select.next('.select2-container').find('.select2-selection').css('border', '');
+                }
+            });
+        }
 
         function buildSpecsTable(specs) {
             if(!specs || specs.length === 0) return;
@@ -1047,6 +1230,9 @@
                     bagProductSelect.val(item.bag_product_id); // Fallback to ID
                 }
 
+                // Location sync
+                row.find(`select[name="packing_items[${index}][company_location_id]"]`).val(item.company_location_id || $('#company_location_id').val());
+
                 row.find(`select[name="packing_items[${index}][bag_condition_id]"]`).val(item.bag_condition_id);
                 row.find(`select[name="packing_items[${index}][bag_color_id]"]`).val(item.bag_color_id);
                 row.find(`select[name="packing_items[${index}][thread_color_id]"]`).val(item.thread_color_id);
@@ -1063,6 +1249,16 @@
                 row.find(`input[name="packing_items[${index}][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                
+                // Fumigation sync
+                if (item.fumigation_company_id) {
+                    let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
+                    fumigationSelect.val(item.fumigation_company_id);
+                }
+                if (item.fumigation_type) {
+                    let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
+                    fumigationTypeSelect.val(item.fumigation_type);
+                }
                 
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
@@ -1125,10 +1321,192 @@
                 row.find('.no-of-bags').trigger('input');
             });
             reindexPackingItems();
+            updateFumigationRequirement();
+        }
+
+        function addPackingRowsFromJobOrderRequest(items) {
+            if (!items || items.length === 0) {
+                return;
+            }
+
+            let container = $('#packingItems');
+            let templateRow = container.find('.packing-item').first().clone();
+            templateRow.find('.select2-container').remove();
+            templateRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+
+            container.empty();
+
+            items.forEach(function(item, index) {
+                let row = templateRow.clone();
+                row.find('.select2-container').remove();
+                row.find('select').removeClass('select2-hidden-accessible').show();
+                row.find('option').removeAttr('data-select2-id');
+
+                row.attr('data-index', index);
+
+                // Update names
+                row.find('input, select, textarea').each(function() {
+                    let name = $(this).attr('name');
+                    if(name) {
+                        name = name.replace(/\[\d+\]/, `[${index}]`);
+                        $(this).attr('name', name);
+                    }
+                });
+
+                // Set location
+                row.find('.packing-company-location-id').val(item.company_location_id || $('#company_location_id').val());
+
+                // Set packing dropdown values
+                row.find(`select[name="packing_items[${index}][brand_id]"]`).val(item.brand_id);
+                row.find(`select[name="packing_items[${index}][bag_product_id]"]`).val(item.bag_product_id);
+                row.find(`select[name="packing_items[${index}][bag_condition_id]"]`).val(item.bag_condition_id);
+                row.find(`select[name="packing_items[${index}][bag_color_id]"]`).val(item.bag_color_id);
+                row.find(`select[name="packing_items[${index}][thread_color_id]"]`).val(item.thread_color_id);
+                row.find(`select[name="packing_items[${index}][stitching_id]"]`).val(item.stitching_id);
+
+                // Set packing inputs
+                row.find(`input[name="packing_items[${index}][bag_size]"]`).val(item.bag_size);
+                row.find(`input[name="packing_items[${index}][no_of_bags]"]`).val(item.no_of_bags);
+                row.find(`input[name="packing_items[${index}][extra_bags]"]`).val(item.extra_bags);
+                row.find(`input[name="packing_items[${index}][extra_bags_percentage]"]`).val(item.extra_bags_percentage || (item.no_of_bags > 0 && item.extra_bags > 0 ? ((item.extra_bags / item.no_of_bags) * 100).toFixed(2) : 0));
+                row.find(`input[name="packing_items[${index}][empty_bags]"]`).val(item.empty_bags);
+                row.find(`input[name="packing_items[${index}][empty_bags_percentage]"]`).val(item.empty_bags_percentage || (item.no_of_bags > 0 && item.empty_bags > 0 ? ((item.empty_bags / item.no_of_bags) * 100).toFixed(2) : 0));
+                row.find(`input[name="packing_items[${index}][total_bags]"]`).val(item.total_bags);
+                row.find(`input[name="packing_items[${index}][total_kgs]"]`).val(item.total_kgs);
+                row.find(`input[name="packing_items[${index}][metric_tons]"]`).val(item.metric_tons);
+                row.find(`input[name="packing_items[${index}][stuffing_in_container]"]`).val(item.stuffing_in_container);
+                row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
+                row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                if (item.delivery_date) {
+                    row.find(`input[name="packing_items[${index}][delivery_date]"]`).val(item.delivery_date);
+                }
+
+                // Fumigation sync
+                if (item.fumigation_company_id) {
+                    let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
+                    fumigationSelect.val(item.fumigation_company_id);
+                }
+                if (item.fumigation_type) {
+                    let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
+                    fumigationTypeSelect.val(item.fumigation_type);
+                }
+
+                // Attachment sync
+                if (item.attachment_path || item.attachment) {
+                    let attachPath = item.attachment_path || item.attachment;
+                    let attachUrl = item.attachment || ('/storage/' + attachPath);
+                    row.find('.existing-attachment-wrap').html(`
+                        <a href="${attachUrl}" target="_blank" class="btn btn-sm btn-info mb-1">
+                            <i class="ft-eye"></i> View Attachment
+                        </a>
+                        <input type="hidden" name="packing_items[${index}][old_attachment]" value="${attachPath}" class="old-attachment-input">
+                    `);
+                }
+
+                // Clear sub items container
+                let subContainer = row.find('.sub-packing-items-container');
+                subContainer.attr('data-index', index);
+                subContainer.empty();
+                row.find('.add-sub-packing-item').attr('data-index', index);
+
+                container.append(row);
+
+                // Initialize Select2 for packing item selects
+                row.find('select.select2').each(function() {
+                    $(this).select2({
+                        width: '100%',
+                        dropdownParent: $(this).closest('.table-responsive').length ? $(this).closest('.table-responsive') : $('body')
+                    });
+                    if ($(this).val()) {
+                        $(this).trigger('change');
+                    }
+                });
+
+                // Master Packing sub items
+                if (item.sub_items && item.sub_items.length > 0) {
+                    item.sub_items.forEach(function(sub, sIdx) {
+                        let $template = $('.sub-packing-item-template tbody');
+                        let subRowHtml = $template.html();
+
+                        subRowHtml = subRowHtml.replace(/\[SUB_INDEX\]/g, '[' + sIdx + ']').replace(/\[INDEX\]/g, '[' + index + ']');
+                        let subRow = $(subRowHtml);
+
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_type_id]"]`).val(sub.bag_type_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_size_id]"]`).val(sub.bag_size_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][stitching_id]"]`).val(sub.stitching_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_color_id]"]`).val(sub.bag_color_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][brand_id]"]`).val(sub.brand_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][thread_color_id]"]`).val(sub.thread_color_id);
+
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][packing_size]"]`).val(sub.packing_size || (parseFloat(item.bag_size) * parseInt(sub.no_of_primary_bags)));
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][no_of_primary_bags]"]`).val(sub.no_of_primary_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][no_of_bags]"]`).val(sub.no_of_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bags]"]`).val(sub.empty_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bags_percentage]"]`).val(sub.empty_bags_percentage || (sub.no_of_bags > 0 && sub.empty_bags > 0 ? ((sub.empty_bags / sub.no_of_bags) * 100).toFixed(2) : 0));
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][extra_bags]"]`).val(sub.extra_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][extra_bags_percentage]"]`).val(sub.extra_bags_percentage || (sub.no_of_bags > 0 && sub.extra_bags > 0 ? ((sub.extra_bags / sub.no_of_bags) * 100).toFixed(2) : 0));
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bag_weight]"]`).val(sub.empty_bag_weight);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][total_bags]"]`).val(sub.total_bags);
+
+                        if (sub.attachment_path || sub.attachment) {
+                            let subAttachPath = sub.attachment_path || sub.attachment;
+                            let subAttachUrl = sub.attachment || ('/storage/' + subAttachPath);
+                            let attachCell = subRow.find('.sub-attachment').parent();
+                            attachCell.prepend(`
+                                <a href="${subAttachUrl}" target="_blank" class="btn btn-sm btn-info mb-1 d-inline-block">View</a>
+                                <input type="hidden" name="packing_items[${index}][sub_items][${sIdx}][old_attachment]" value="${subAttachPath}" class="sub-old-attachment">
+                            `);
+                        }
+
+                        subContainer.append(subRow);
+                        subRow.find('select.select2').select2({ width: '100%' });
+                    });
+                }
+
+                // Trigger total bags calculation
+                row.find('.no-of-bags').trigger('input');
+            });
+            reindexPackingItems();
+            updateFumigationRequirement();
+        }
+
+        function addContainerProtectionRows(items) {
+            let container = $('#containerProtectionItems');
+            container.empty();
+            if (!items || items.length === 0) return;
+
+            items.forEach(function(item, index) {
+                var template = $('.container-protection-item-template').find('.container-protection-item').first();
+                var newItem = template.clone(true, true);
+
+                newItem.find('select.select2').each(function () {
+                    var $select = $(this);
+                    if ($select.data('select2')) {
+                        $select.select2('destroy');
+                    }
+                    $select.siblings('.select2-container').remove();
+                    $select.show().removeClass('select2-hidden-accessible');
+                });
+
+                newItem.find('input, select').each(function () {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        name = name.replace(/\[INDEX\]/g, '[' + index + ']');
+                        $(this).attr('name', name);
+                    }
+                });
+
+                newItem.find('.container-protection-product').val(item.product_id);
+                newItem.find('.container-protection-quantity').val(item.quantity_per_container);
+
+                $('#containerProtectionSection').show();
+                container.append(newItem);
+                newItem.find('select.select2').select2({ width: '100%' });
+            });
         }
 
         // Product selection change
-        $('#productSelect').off('change.jobOrderEdit').on('change.jobOrderEdit', function () {
+        $('#mainProductSelect').off('change.jobOrderEdit').on('change.jobOrderEdit', function () {
             var productId = $(this).val();
             if (productId) {
                 $.get('{{ route("get.product_specs", "") }}/' + productId, function (data) {
@@ -1207,8 +1585,12 @@
                 $select.siblings('.select2-container').remove();
                 $select.next('.select2-container').remove();
                 $select.removeClass('select2-hidden-accessible').show();
-                $select.prop('selectedIndex', 0);
-                $select.val('');
+                if ($select.hasClass('packing-company-location-id')) {
+                    $select.val($('#company_location_id').val() || '');
+                } else {
+                    $select.prop('selectedIndex', 0);
+                    $select.val('');
+                }
             });
 
             // Add to container
@@ -1227,6 +1609,7 @@
             });
             
             isAddingItem = false;
+            updateFumigationRequirement();
         }
 
         // Remove packing item
@@ -1236,6 +1619,7 @@
                 // Re-index remaining items
                 reindexPackingItems();
                 $('#company_location_id').trigger('change');
+                updateFumigationRequirement();
             }
         });
 
@@ -1738,6 +2122,17 @@
         }
     });
 
+    // When the first Packing Details location changes, auto-update company_location_id
+    $(document).on('change', '.packing-company-location-id', function() {
+        var $item = $(this).closest('.packing-item');
+        if ($item.is(':first-child') || $item.index() === 0) {
+            var firstLoc = $(this).val();
+            if (firstLoc && firstLoc !== $('#company_location_id').val()) {
+                $('#company_location_id').val(firstLoc).trigger('change');
+            }
+        }
+    });
+
     // Auto-populate arrival locations based on company location selection
     $(document).on('change', '#company_location_id, select[name*="company_location_id"]', function() {
         var locationIds = [];
@@ -1748,8 +2143,12 @@
             if (val && !locationIds.includes(val)) locationIds.push(val);
         });
 
-        if (mainLoc) {
-            $('.packing-company-location-id').val(mainLoc);
+        if (mainLoc && $(this).is('#company_location_id')) {
+            $('.packing-company-location-id').each(function() {
+                if (!$(this).val()) {
+                    $(this).val(mainLoc).trigger('change.select2');
+                }
+            });
         }
         
         if (locationIds.length > 0) {
@@ -1779,16 +2178,65 @@
     });
 
     $(document).on('change', 'select[name*="fumigation_company_id"], select[name*="inspection_company_id"]', function() {
-        var val = $(this).val();
-        if (Array.isArray(val) && val.length > 1) {
+        var select = $(this);
+        var val = select.val();
+        var hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+        var isFumigation = select.attr('name') && select.attr('name').indexOf('fumigation_company_id') !== -1;
+
+        if (isFumigation && hasExportOrder && Array.isArray(val) && val.indexOf('null') !== -1) {
+            val = val.filter(function(v) { return v !== 'null'; });
+            select.val(val).trigger('change.select2');
+        } else if (Array.isArray(val) && val.length > 1) {
             if (val.indexOf('null') !== -1) {
                 if (val[val.length - 1] === 'null') {
-                    $(this).val(['null']).trigger('change.select2');
+                    select.val(['null']).trigger('change.select2');
                 } else {
                     var filtered = val.filter(function(v) { return v !== 'null'; });
-                    $(this).val(filtered).trigger('change.select2');
+                    select.val(filtered).trigger('change.select2');
                 }
             }
         }
+
+        if (isFumigation) {
+            var validVals = Array.isArray(val) ? val.filter(function(v) { return v !== 'null' && v !== null && v !== ''; }) : [];
+            if (validVals.length > 0) {
+                select.next('.select2-container').find('.select2-selection').css('border', '');
+            }
+        }
     });
+
+    $('form#ajaxSubmit').on('submit', function(e) {
+        var hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+        if (hasExportOrder) {
+            var missingFumigation = false;
+            $('.packing-item').each(function() {
+                var select = $(this).find('select[name*="[fumigation_company_id][]"]');
+                var val = select.val() || [];
+                var valid = Array.isArray(val) && val.filter(function(v) { return v !== 'null' && v !== null && v !== ''; }).length > 0;
+                if (!valid) {
+                    missingFumigation = true;
+                    select.next('.select2-container').find('.select2-selection').css('border', '1px solid #d9534f');
+                } else {
+                    select.next('.select2-container').find('.select2-selection').css('border', '');
+                }
+            });
+            if (missingFumigation) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Validation Error',
+                        text: 'Fumigation Company is required for each packing item when an Export Order is selected.',
+                        confirmButtonColor: '#D95000'
+                    });
+                } else {
+                    alert('Fumigation Company is required for each packing item when an Export Order is selected.');
+                }
+                return false;
+            }
+        }
+    });
+
+    updateFumigationRequirement();
 </script>

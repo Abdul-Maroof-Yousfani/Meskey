@@ -283,7 +283,11 @@
                                         $fumis = !empty($fumiIds) ? \App\Models\Master\FumigationCompany::whereIn('id', $fumiIds)->pluck('name')->implode(', ') : '-';
                                     }
                                 @endphp
-                                <td colspan="3">{{ $fumis }}</td>
+                                <td>{{ $fumis }}</td>
+                                <th class="text-uppercase bg-light">Fumigation Type</th>
+                                <td>
+                                    {{ $item->fumigation_type ? ucfirst($item->fumigation_type) : ($jobOrder->fumigation_type ? ucfirst($jobOrder->fumigation_type) : '-') }}
+                                </td>
                                 <th class="text-uppercase bg-light">Attachment</th>
                                 <td>
                                     @if($item->attachment)

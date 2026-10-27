@@ -84,8 +84,9 @@ class JobOrderRequestController extends Controller
         $users = User::get();
         $sizes = Size::get();
         $stitchings = Stitching::where('status', 'active')->get();
-        $selectedLocation = count($companyLocations) == 1 ? $companyLocations->first() : null;
+        $selectedLocation = $companyLocations->first() ?: null;
         $requestNo = $selectedLocation ? self::generateUniqueNumber(date('Y-m-d'), $selectedLocation->id) : '';
+        $fumigationTypes = getFumigationTypes();
 
         return view('management.production.job_order_requests.create', compact(
             'exportOrders',
@@ -94,6 +95,7 @@ class JobOrderRequestController extends Controller
             'containerProtectionProducts',
             'inspectionCompanies',
             'fumigationCompanies',
+            'fumigationTypes',
             'companyLocations',
             'arrivalLocations',
             'bagTypes',
@@ -104,7 +106,8 @@ class JobOrderRequestController extends Controller
             'cropYears',
             'sizes',
             'stitchings',
-            'requestNo'
+            'requestNo',
+            'selectedLocation'
         ));
     }
 
@@ -113,7 +116,8 @@ class JobOrderRequestController extends Controller
         DB::beginTransaction();
 
         try {
-            $uniqueRequestNo = self::generateUniqueNumber($request->request_date, $request->company_location_id);
+            $firstPackingLocation = $request->packing_items[0]['company_location_id'] ?? $request->company_location_id;
+            $uniqueRequestNo = self::generateUniqueNumber($request->request_date, $firstPackingLocation);
 
             $requestData = $request->only([
                 'request_date',
@@ -130,10 +134,12 @@ class JobOrderRequestController extends Controller
             ]);
 
             $requestData['company_id'] = $request->company_id ?? (auth()->user()?->current_company_id ?? 1);
+            $requestData['company_location_id'] = $firstPackingLocation;
             $requestData['request_no'] = $uniqueRequestNo;
             $requestData['attention_to'] = $request->attention_to ?? [];
             $requestData['inspection_company_id'] = $request->inspection_company_id ?? [];
             $requestData['arrival_locations'] = $request->arrival_locations ?? [];
+            $requestData['fumigation_type'] = $request->fumigation_type ?? ($request->packing_items[0]['fumigation_type'] ?? null);
             $requestData['status'] = 'pending';
             $requestData['created_by'] = auth()->user()->id;
 
@@ -141,7 +147,8 @@ class JobOrderRequestController extends Controller
 
             // Packing items
             foreach ($request->packing_items as $pIndex => $item) {
-                $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
+                $item['company_location_id'] = $item['company_location_id'] ?? $request->company_location_id;
+                $item['fumigation_type'] = $item['fumigation_type'] ?? null;
 
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
@@ -269,6 +276,7 @@ class JobOrderRequestController extends Controller
     {
         $jobOrderRequest = JobOrderRequest::with([
             'packingItems.subItems',
+            'packingItems.companyLocation',
             'specifications',
             'product',
             'containerProtectionItems'
@@ -310,6 +318,7 @@ class JobOrderRequestController extends Controller
                 $query->whereIn(strtolower('name'), ['store & spare']);
             })
             ->get();
+        $fumigationTypes = getFumigationTypes();
 
         return view('management.production.job_order_requests.edit', compact(
             'exportOrders',
@@ -319,6 +328,7 @@ class JobOrderRequestController extends Controller
             'containerProtectionProducts',
             'inspectionCompanies',
             'fumigationCompanies',
+            'fumigationTypes',
             'companyLocations',
             'arrivalLocations',
             'bagTypes',
@@ -353,9 +363,12 @@ class JobOrderRequestController extends Controller
                 'other_specifications',
             ]);
 
+            $firstPackingLocation = $request->packing_items[0]['company_location_id'] ?? $request->company_location_id;
+            $requestData['company_location_id'] = $firstPackingLocation;
             $requestData['attention_to'] = $request->attention_to ?? [];
             $requestData['inspection_company_id'] = $request->inspection_company_id ?? [];
             $requestData['arrival_locations'] = $request->arrival_locations ?? [];
+            $requestData['fumigation_type'] = $request->fumigation_type ?? ($request->packing_items[0]['fumigation_type'] ?? null);
             $requestData['updated_by'] = auth()->user()->id;
 
             $jobOrderRequest->update($requestData);
@@ -364,7 +377,8 @@ class JobOrderRequestController extends Controller
             $jobOrderRequest->packingItems()->delete();
 
             foreach ($request->packing_items as $pIndex => $item) {
-                $item['company_location_id'] = $request->company_location_id ?? ($item['company_location_id'] ?? null);
+                $item['company_location_id'] = $item['company_location_id'] ?? $request->company_location_id;
+                $item['fumigation_type'] = $item['fumigation_type'] ?? null;
 
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
@@ -621,6 +635,7 @@ class JobOrderRequestController extends Controller
     public function getRequestDetails($id)
     {
         $jobOrderRequest = JobOrderRequest::with([
+            'exportOrder',
             'packingItems.subItems',
             'specifications.productSlabType',
             'containerProtectionItems',
@@ -651,7 +666,7 @@ class JobOrderRequestController extends Controller
         $consumedKg = (float) $jobOrderRequest->consumed_kgs;
         $tempConsumed = $consumedKg;
 
-        $packingItems = $jobOrderRequest->packingItems->sortBy('id')->map(function ($pi) use (&$tempConsumed) {
+        $packingItems = $jobOrderRequest->packingItems->sortBy('id')->map(function ($pi) use (&$tempConsumed, $jobOrderRequest) {
             $bagSize = (float) $pi->bag_size;
             $originalTotalKg = (float) $pi->total_kgs ?: ($bagSize * (int) $pi->no_of_bags);
             $originalBags = (int) $pi->no_of_bags;
@@ -713,6 +728,7 @@ class JobOrderRequestController extends Controller
                 'min_weight_empty_bags' => $pi->min_weight_empty_bags,
                 'delivery_date'         => $pi->delivery_date ? Carbon::parse($pi->delivery_date)->format('Y-m-d') : null,
                 'fumigation_company_id' => $fumigationCompanies,
+                'fumigation_type'       => $pi->fumigation_type ?: $jobOrderRequest->fumigation_type,
                 'attachment'            => $pi->attachment ? asset('storage/' . $pi->attachment) : null,
                 'attachment_path'         => $pi->attachment,
                 'sub_items'             => $subItems,
@@ -742,8 +758,9 @@ class JobOrderRequestController extends Controller
             'consumed_kgs'           => (float) $jobOrderRequest->consumed_kgs,
             'remaining_kgs'          => (float) $jobOrderRequest->remaining_kgs,
             'remaining_mt'           => round((float) $jobOrderRequest->remaining_kgs / 1000, 3),
-            'company_location_id'    => $jobOrderRequest->company_location_id,
+            'company_location_id'    => $jobOrderRequest->packingItems->first()?->company_location_id ?? $jobOrderRequest->company_location_id,
             'export_order_id'        => $jobOrderRequest->export_order_id,
+            'export_order_voucher_no' => $jobOrderRequest->exportOrder->voucher_no ?? '',
             'ref_no'                 => $jobOrderRequest->ref_no,
             'attention_to'           => $attentionTo,
             'product_id'             => $jobOrderRequest->product_id,

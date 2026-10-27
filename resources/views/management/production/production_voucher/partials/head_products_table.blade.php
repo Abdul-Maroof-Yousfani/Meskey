@@ -1,3 +1,57 @@
+@php
+    $allHeadCommodities = collect();
+    if (isset($allHeadProducts) && $allHeadProducts) {
+        $allHeadCommodities = $allHeadCommodities->merge($allHeadProducts);
+    }
+    if (isset($packingItemsProducts) && $packingItemsProducts) {
+        $allHeadCommodities = $allHeadCommodities->merge($packingItemsProducts);
+    }
+    if (isset($nonPackingItemsProducts) && $nonPackingItemsProducts) {
+        $allHeadCommodities = $allHeadCommodities->merge($nonPackingItemsProducts);
+    }
+    if (isset($headProduct) && $headProduct) {
+        $allHeadCommodities->push($headProduct);
+    }
+    if (isset($headProductOutputs) && $headProductOutputs) {
+        foreach ($headProductOutputs as $hpo) {
+            if (is_object($hpo) && isset($hpo->product) && $hpo->product) {
+                $allHeadCommodities->push($hpo->product);
+            }
+        }
+    }
+    $allHeadCommodities = $allHeadCommodities->filter(function($p) {
+        return $p && ($p->product_type ?? '') !== 'raw_material' 
+                  && ($p->product_category_flags ?? '') !== 'b2' 
+                  && ($p->product_category_flags ?? '') !== 'by';
+    })->unique('id')->sortBy('name');
+
+    $renderHeadCommoditySelect = function($selectedId) use ($allHeadCommodities) {
+        $html = '<select name="output_product_id[]" class="form-control select2 output-commodity-select" required>';
+        $html .= '<option value="">Select Commodity</option>';
+        $found = false;
+        foreach ($allHeadCommodities as $item) {
+            $isSel = ($selectedId == $item->id);
+            if ($isSel) $found = true;
+            $html .= '<option value="' . e($item->id) . '" ' . ($isSel ? 'selected' : '') . '>' . e($item->name) . '</option>';
+        }
+        if ($selectedId && !$found) {
+            $extraProd = \App\Models\Product::find($selectedId);
+            if ($extraProd) {
+                $html .= '<option value="' . e($extraProd->id) . '" selected>' . e($extraProd->name) . '</option>';
+            }
+        }
+        $html .= '</select>';
+        return $html;
+    };
+@endphp
+<div style="display:none;" class="commodity-select-template">
+    <select class="form-control select2" name="output_product_id[]">
+        <option value="">Select Commodity</option>
+        @foreach($allHeadCommodities as $item)
+            <option value="{{ $item->id }}">{{ $item->name }}</option>
+        @endforeach
+    </select>
+</div>
 <table class="table table-bordered">
     <thead>
         <tr>
@@ -25,7 +79,22 @@
             $jobOrdersList = isset($jobOrders) && $jobOrders ? $jobOrders : collect();
             $renderJobOrderOptions = function($selectedJobOrderId, $rowProdId) use ($jobOrdersList) {
                 $html = '<option value="">Select Job Order</option>';
-                foreach ($jobOrdersList as $jobOrder) {
+
+                $matching = collect();
+                if ($rowProdId) {
+                    $matching = $jobOrdersList->filter(function($jo) use ($rowProdId) {
+                        return $jo->product_id == $rowProdId;
+                    });
+                }
+
+                if ($selectedJobOrderId && !$matching->contains('id', $selectedJobOrderId)) {
+                    $existingJo = $jobOrdersList->firstWhere('id', $selectedJobOrderId);
+                    if ($existingJo && $existingJo->product_id == $rowProdId) {
+                        $matching->push($existingJo);
+                    }
+                }
+
+                foreach ($matching as $jobOrder) {
                     $joPacking = null;
                     if ($jobOrder->relationLoaded('packingItems') && $jobOrder->packingItems) {
                         $joPacking = $jobOrder->packingItems->first(function($pi) use ($rowProdId) {
@@ -37,7 +106,9 @@
                     $optQty = $joPacking->total_kgs ?? (($optBags && $optSize) ? ($optBags * $optSize) : '');
                     $optBrand = $joPacking->brand_id ?? '';
                     $isSelected = ($selectedJobOrderId == $jobOrder->id) ? 'selected' : '';
-                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($jobOrder->job_order_no) . '</option>';
+                    $pName = $jobOrder->product->name ?? '';
+                    $displayText = $jobOrder->job_order_no . ($jobOrder->ref_no ? ' (' . $jobOrder->ref_no . ')' : '') . ($pName ? ' - ' . $pName : '');
+                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($displayText) . '</option>';
                 }
                 return $html;
             };
@@ -48,26 +119,28 @@
             $headProduct = $headProduct ?? null;
 
             $isRawOrB2 = function($product) use ($headProduct) {
-                if (!$product) return false;
-                $name = $product->name ?? '';
+                if (!$product) return true;
                 $flag = $product->product_category_flags ?? '';
-                $catId = $product->category_id ?? null;
+                $type = $product->product_type ?? '';
                 $prodId = $product->id ?? null;
-                $parentId = $product->parent_id ?? null;
 
                 $inputProdId = (isset($headProduct) && $headProduct) ? $headProduct->id : null;
+
+                // If type is finish_good and not b2/by, it ALWAYS belongs in Head Products!
+                if ($type === 'finish_good' && $flag !== 'b2' && $flag !== 'by') {
+                    return false;
+                }
+
+                $parentId = $product->parent_id ?? null;
                 $inputParentId = (isset($headProduct) && $headProduct) ? $headProduct->parent_id : null;
                 $isInputCommodity = ($inputProdId && $prodId == $inputProdId) 
                     || ($inputParentId && $prodId == $inputParentId);
 
-                $isRootParent = ($parentId === null && \App\Models\Product::where('parent_id', $prodId)->exists());
+                $isRootParent = ($parentId === null);
 
-                return stripos($name, 'Paddy') !== false 
-                    || $catId == 11
-                    || stripos($name, 'Hybrid') !== false
-                    || stripos($name, 'Husk') !== false
+                return $type === 'raw_material'
+                    || $type === 'general_items'
                     || $flag === 'b2' 
-                    || stripos($name, 'B2') !== false
                     || $flag === 'by'
                     || $isInputCommodity
                     || $isRootParent;
@@ -111,8 +184,7 @@
                             @endif
                             <tr>
                                 <td>
-                                    <strong>{{ $prod->name ?? '' }}</strong>
-                                    <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
+                                    {!! $renderHeadCommoditySelect($output->product_id ?? $product->id) !!}
                                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                                     @if($output->id)
                                         <input type="hidden" name="output_id[]" value="{{ $output->id }}">
@@ -178,8 +250,7 @@
                         @if(!$isRawOrB2($prod))
                         <tr>
                             <td>
-                                <strong>{{ $prod->name ?? '' }}</strong>
-                                <input type="hidden" name="output_product_id[]" value="{{ $jobOrderPacking->jobOrder->product->id ?? $product->id }}">
+                                {!! $renderHeadCommoditySelect($jobOrderPacking->jobOrder->product->id ?? $product->id) !!}
                                 <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
                             </td>
                             <td>
@@ -254,8 +325,7 @@
                     @endif
                     <tr>
                         <td>
-                            <strong>{{ $prod->name ?? '' }}</strong>
-                            <input type="hidden" name="output_product_id[]" value="{{ $output->product_id ?? $product->id }}">
+                            {!! $renderHeadCommoditySelect($output->product_id ?? $product->id) !!}
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                             @if($output->id)
                                 <input type="hidden" name="output_id[]" value="{{ $output->id }}">
@@ -346,8 +416,7 @@
                         @endif
                         <tr>
                             <td>
-                                <strong>{{ $prod->name ?? '' }}</strong>
-                                <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
+                                {!! $renderHeadCommoditySelect($output->product_id ?? $product->id) !!}
                                 <input type="hidden" name="job_order_packing_item_id[]" value="">
                                 @if($output->id)
                                     <input type="hidden" name="output_id[]" value="{{ $output->id }}">
@@ -413,8 +482,7 @@
                     @if(!$isRawOrB2($prod))
                     <tr>
                         <td>
-                            <strong>{{ $prod->name ?? '' }}</strong>
-                            <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
+                            {!! $renderHeadCommoditySelect($product->id) !!}
                             <input type="hidden" name="job_order_packing_item_id[]" value="">
                         </td>
                         <td>
@@ -484,8 +552,7 @@
             @endif
             <tr>
                 <td>
-                    <strong>{{ $prod->name ?? '' }}</strong>
-                    <input type="hidden" name="output_product_id[]" value="{{ $output->product_id }}">
+                    {!! $renderHeadCommoditySelect($output->product_id) !!}
                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $output->job_order_packing_item_id ?? '' }}">
                     @if($output->id)
                         <input type="hidden" name="output_id[]" value="{{ $output->id }}">

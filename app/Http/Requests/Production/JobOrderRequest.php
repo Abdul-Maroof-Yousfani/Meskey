@@ -15,6 +15,7 @@ class JobOrderRequest extends FormRequest
         return true;
     }
 
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -249,7 +250,7 @@ class JobOrderRequest extends FormRequest
                 'min:0'
             ],
             'packing_items.*.company_location_id' => [
-                'nullable',
+                'required',
                 'exists:company_locations,id'
             ],
             'packing_items.*.no_of_containers' => [
@@ -276,18 +277,41 @@ class JobOrderRequest extends FormRequest
             ],
             // Fumigation Company moved to packing items
             'packing_items.*.fumigation_company_id' => [
-                'nullable',
-                'array'
+                $this->filled('export_order_id') ? 'required' : 'nullable',
+                'array',
+                function ($attribute, $value, $fail) {
+                    if ($this->filled('export_order_id')) {
+                        $validValues = array_filter((array) $value, function ($v) {
+                            return $v !== 'null' && $v !== null && $v !== '';
+                        });
+                        if (empty($validValues)) {
+                            $fail('Fumigation Company is required for each packing item when an Export Order is selected.');
+                        }
+                    }
+                }
             ],
             'packing_items.*.fumigation_company_id.*' => [
                 function ($attribute, $value, $fail) {
                     if ($value === 'null' || $value === null || $value === '') {
+                        if ($this->filled('export_order_id')) {
+                            $fail('N/A is not allowed for Fumigation Company when an Export Order is selected.');
+                        }
                         return;
                     }
                     if (!\DB::table('fumigation_companies')->where('id', $value)->exists()) {
                         $fail("The selected {$attribute} is invalid.");
                     }
                 }
+            ],
+            'packing_items.*.fumigation_type' => [
+                'nullable',
+                'string',
+                'max:150'
+            ],
+            'fumigation_type' => [
+                'nullable',
+                'string',
+                'max:150'
             ],
 
             // Operational Details Validation (without delivery_date and fumigation_company_id)
@@ -373,10 +397,16 @@ class JobOrderRequest extends FormRequest
             'company_location_id.exists' => 'Selected company location does not exist',
             'packing_items.*.brand_id.required' => 'Brand is required for all packing items',
             'packing_items.*.bag_color_id.required' => 'Bag color is required for all packing items',
+            'packing_items.*.company_location_id.required' => 'Location is required for each packing item',
             'packing_items.*.company_location_id.exists' => 'Selected company location does not exist',
             'packing_items.*.min_weight_empty_bags.required' => 'Minimum weight for empty bags is required',
+            'packing_items.*.bag_size.required' => 'Packing size (kg) is required for each packing item',
+            'packing_items.*.bag_size.min' => 'Packing size (kg) must be at least 0.01 kg',
+            'packing_items.*.no_of_bags.required' => 'No. of bags is required for each packing item',
+            'packing_items.*.no_of_bags.min' => 'No. of bags must be at least 1',
             // New packing items messages for delivery_date and fumigation_company_id
             'packing_items.*.delivery_date.after_or_equal' => 'Delivery date must be on or after job order date',
+            'packing_items.*.fumigation_company_id.required' => 'Fumigation Company is required for each packing item when an Export Order is selected.',
             'packing_items.*.fumigation_company_id.exists' => 'Selected fumigation company does not exist',
 
             // Operational Details Messages
@@ -405,7 +435,13 @@ class JobOrderRequest extends FormRequest
             'attention_to' => 'attention to',
             'inspection_company_id' => 'inspection company',
             'arrival_locations' => 'arrival locations',
-            'packing_items.*.company_location_id' => 'company location',
+            'packing_items.*.company_location_id' => 'location',
+            'packing_items.*.brand_id' => 'brand',
+            'packing_items.*.bag_product_id' => 'bag product',
+            'packing_items.*.bag_condition_id' => 'bag condition',
+            'packing_items.*.bag_color_id' => 'bag color',
+            'packing_items.*.bag_size' => 'packing size (kg)',
+            'packing_items.*.no_of_bags' => 'no. of bags',
             'packing_items.*.delivery_date' => 'delivery date',
             'packing_items.*.fumigation_company_id' => 'fumigation company',
         ];
@@ -416,6 +452,12 @@ class JobOrderRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
+        if (empty($this->company_location_id) && !empty($this->packing_items[0]['company_location_id'])) {
+            $this->merge([
+                'company_location_id' => $this->packing_items[0]['company_location_id']
+            ]);
+        }
+
         // Auto-generate unique job order number on create if empty or already taken
         if ($this->isMethod('post')) {
             $currentNo = $this->input('job_order_no');
@@ -434,6 +476,14 @@ class JobOrderRequest extends FormRequest
             }
         }
 
+        // If job_order_request_id is provided and export_order_id is empty, auto-sync export_order_id from request
+        if ($this->filled('job_order_request_id') && empty($this->input('export_order_id'))) {
+            $jor = \App\Models\Production\JobOrderRequest\JobOrderRequest::find($this->input('job_order_request_id'));
+            if ($jor && !empty($jor->export_order_id)) {
+                $this->merge(['export_order_id' => $jor->export_order_id]);
+            }
+        }
+
         // Ensure arrays are properly formatted even if empty
         $this->merge([
             'attention_to' => $this->attention_to ?? [],
@@ -443,12 +493,16 @@ class JobOrderRequest extends FormRequest
             'packing_items' => $this->packing_items ?? [],
         ]);
 
-        // Ensure each packing item has delivery_date and fumigation_company_id
+        // Ensure each packing item has delivery_date, fumigation_company_id, and company_location_id
         if ($this->has('packing_items')) {
             $packingItems = $this->packing_items;
+            $mainLocation = $this->input('company_location_id');
             foreach ($packingItems as &$item) {
                 $item['delivery_date'] = $item['delivery_date'] ?? null;
                 $item['fumigation_company_id'] = $item['fumigation_company_id'] ?? null;
+                if (empty($item['company_location_id']) && $mainLocation) {
+                    $item['company_location_id'] = $mainLocation;
+                }
             }
             $this->merge(['packing_items' => $packingItems]);
         }

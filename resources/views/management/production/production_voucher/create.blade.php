@@ -22,104 +22,185 @@
                                 <div class="col-md-12">
                                     <h6 class="header-heading-sepration">Production Voucher</h6>
                                     <div class="row">
-                                        <div class="col-md-3">
-                                            <fieldset>
-                                                <label>Prod. No:</label>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-primary" type="button">Prod. No</button>
-                                                    </div>
-                                                    <input type="text" readonly name="prod_no" class="form-control">
+                                        <!-- Left Side: All selects and inputs except Job Order -->
+                                        <div class="col-md-6">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <fieldset>
+                                                        <label>Prod. No:</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <button class="btn btn-primary" type="button">Prod. No</button>
+                                                            </div>
+                                                            <input type="text" readonly name="prod_no" class="form-control">
+                                                        </div>
+                                                    </fieldset>
                                                 </div>
-                                            </fieldset>
-                                        </div>
 
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Prod. Date:</label>
-                                                <input type="date" name="prod_date" class="form-control"
-                                                    value="{{ date('Y-m-d') }}" required>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Prod. Date:</label>
+                                                        <input type="date" name="prod_date" class="form-control"
+                                                            value="{{ date('Y-m-d') }}" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Location:</label>
+                                                        <select name="location_id" id="location_id"
+                                                            onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();filterAllInputLocations();loadJobOrdersByLocation();"
+                                                            class="form-control select2" required>
+                                                            <option value="">Select Location</option>
+                                                            @foreach ($companyLocations as $location)
+                                                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Sub Location:</label>
+                                                        <select name="sub_location_id" onchange="loadPlantsBySubLocation();"
+                                                            id="sub_location_id" class="form-control select2" required>
+                                                            <option value="">Select Sub Location</option>
+                                                            <!-- Plants will be loaded dynamically based on location -->
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Plant:</label>
+                                                        <select name="plant_id" id="plant_id"
+                                                            onchange="loadlabourCharges();loadMachinesByPlant();"
+                                                            class="form-control select2" required>
+                                                            <option value="">Select Plant</option>
+                                                            <!-- Plants will be loaded dynamically based on location -->
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Head Product:</label>
+                                                        <select name="product_id" id="product_id" class="form-control select2"
+                                                            required onchange="loadJobOrdersByLocation();loadHeadProductsData();loadB2ProductsData();autoSelectByProduct();">
+                                                            <option value="">Select Head Product</option>
+                                                            @foreach(getFinishGoodProducts() as $product)
+                                                                <option value="{{ $product->id }}"
+                                                                    data-parent-id="{{ $product->parent_id ?? $product->id }}"
+                                                                    data-parent-name="{{ $product->parent ? $product->parent->name : $product->name }}">
+                                                                    {{ $product->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label>By Product:</label>
+                                                        <select name="by_product_id" id="by_product_id" onchange="loadData();loadJobOrdersByLocation();"
+                                                            class="form-control select2">
+                                                            <option value="">Select By Product</option>
+                                                            @if (isset($byheadsproducts))
+                                                                @foreach ($byheadsproducts as $product)
+                                                                    <option value="{{ $product->id }}">{{ $product->name }}
+                                                                    </option>
+                                                                @endforeach
+                                                            @endif
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Location:</label>
-                                                <select name="location_id" id="location_id"
-                                                    onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();filterAllInputLocations();"
-                                                    class="form-control select2" required>
-                                                    <option value="">Select Location</option>
-                                                    @foreach ($companyLocations as $location)
-                                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                                    @endforeach
-                                                </select>
+                                        <!-- Right Side: 9 Job Order selects grouped by Head, B2, and BY with Headings -->
+                                        <div class="col-md-6">
+                                            <!-- Head Products Job Orders (1-3) -->
+                                            <div class="header-heading-sepration py-1 px-2 mb-1" style="background-color: #93c3f2;">
+                                                <h6 class="m-0 font-weight-bold" style="font-size: 12px; color: #000;">Head Products</h6>
                                             </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Sub Location:</label>
-                                                <select name="sub_location_id" onchange="loadPlantsBySubLocation();"
-                                                    id="sub_location_id" class="form-control select2" required>
-                                                    <option value="">Select Sub Location</option>
-                                                    <!-- Plants will be loaded dynamically based on location -->
-                                                </select>
+                                            <div class="row mb-1">
+                                                @for ($i = 1; $i <= 3; $i++)
+                                                    <div class="col-md-4">
+                                                        <div class="form-group mb-1">
+                                                            <label class="mb-0 small font-weight-bold">Job Ord. {{ $i }}:</label>
+                                                            <select name="job_order_id[]" id="job_order_id_{{ $i }}"
+                                                                class="form-control select2 job-order-select job-order-head"
+                                                                data-category="head"
+                                                                onchange="onJobOrderChanged();">
+                                                                <option value="">Select Job Order</option>
+                                                                 @php
+                                                                    $headList = $headJobOrders ?? collect();
+                                                                @endphp
+                                                                @foreach($headList as $jobOrder)
+                                                                    <option value="{{ $jobOrder->id }}">
+                                                                        {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif @if($jobOrder->product) - {{ $jobOrder->product->name }}@endif
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                @endfor
                                             </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Plant:</label>
-                                                <select name="plant_id" id="plant_id"
-                                                    onchange="loadlabourCharges();loadMachinesByPlant();"
-                                                    class="form-control select2" required>
-                                                    <option value="">Select Plant</option>
-                                                    <!-- Plants will be loaded dynamically based on location -->
-                                                </select>
+
+                                            <!-- B2 Products Job Orders (4-6) -->
+                                            <div class="header-heading-sepration py-1 px-2 mb-1 mt-1" style="background-color: #93c3f2;">
+                                                <h6 class="m-0 font-weight-bold" style="font-size: 12px; color: #000;">B2 Products</h6>
                                             </div>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Head Product:</label>
-                                                <select name="product_id" id="product_id" class="form-control select2"
-                                                    required onchange="loadJobOrdersByLocation();loadHeadProductsData();loadB2ProductsData();autoSelectByProduct();">
-                                                    <option value="">Select Head Product</option>
-                                                    @foreach(getFinishGoodProducts() as $product)
-                                                        <option value="{{ $product->id }}"
-                                                            data-parent-id="{{ $product->parent_id ?? $product->id }}"
-                                                            data-parent-name="{{ $product->parent ? $product->parent->name : $product->name }}">
-                                                            {{ $product->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                            <div class="row mb-1">
+                                                @for ($i = 4; $i <= 6; $i++)
+                                                    <div class="col-md-4">
+                                                        <div class="form-group mb-1">
+                                                            <label class="mb-0 small font-weight-bold">Job Ord. {{ $i - 3 }}:</label>
+                                                            <select name="job_order_id[]" id="job_order_id_{{ $i }}"
+                                                                class="form-control select2 job-order-select job-order-b2"
+                                                                data-category="b2"
+                                                                onchange="onJobOrderChanged();">
+                                                                <option value="">Select Job Order</option>
+                                                                @php
+                                                                    $b2List = $b2JobOrders ?? collect();
+                                                                @endphp
+                                                                @foreach($b2List as $jobOrder)
+                                                                    <option value="{{ $jobOrder->id }}">
+                                                                        {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif @if($jobOrder->product) - {{ $jobOrder->product->name }}@endif
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                @endfor
                                             </div>
-                                        </div>
 
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Job Ord. No:</label>
-                                                <select name="job_order_id[]" id="job_order_id" class="form-control select2"
-                                                    multiple required
-                                                    onchange="loadPackingItems();loadHeadProductsData();loadB2ProductsData();loadData();">
-                                                    <option value="">Select Job Order</option>
-                                                </select>
+                                            <!-- BY Products Job Orders (7-9) -->
+                                            <div class="header-heading-sepration py-1 px-2 mb-1 mt-1" style="background-color: #93c3f2;">
+                                                <h6 class="m-0 font-weight-bold" style="font-size: 12px; color: #000;">BY Products</h6>
                                             </div>
-                                        </div>
-
-
-
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>By Product:</label>
-                                                <select name="by_product_id" id="by_product_id" onchange="loadData()"
-                                                    class="form-control select2">
-                                                    <option value="">Select By Product</option>
-                                                    @if (isset($byheadsproducts))
-                                                        @foreach ($byheadsproducts as $product)
-                                                            <option value="{{ $product->id }}">{{ $product->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
+                                            <div class="row mb-1">
+                                                @for ($i = 7; $i <= 9; $i++)
+                                                    <div class="col-md-4">
+                                                        <div class="form-group mb-1">
+                                                            <label class="mb-0 small font-weight-bold">Job Ord. {{ $i - 6 }}:</label>
+                                                            <select name="job_order_id[]" id="job_order_id_{{ $i }}"
+                                                                class="form-control select2 job-order-select job-order-by"
+                                                                data-category="by"
+                                                                onchange="onJobOrderChanged();">
+                                                                <option value="">Select Job Order</option>
+                                                                @php
+                                                                    $byList = $byJobOrders ?? collect();
+                                                                @endphp
+                                                                @foreach($byList as $jobOrder)
+                                                                    <option value="{{ $jobOrder->id }}">
+                                                                        {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif @if($jobOrder->product) - {{ $jobOrder->product->name }}@endif
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                @endfor
                                             </div>
                                         </div>
 
@@ -844,19 +925,19 @@
             const locationId = $('#location_id').val();
             const commoditySelect = $('#product_id');
             const currentVal = commoditySelect.val();
-            const jobOrderSelect = $('#job_order_id');
+            const jobOrderSelects = $('select.job-order-select');
             const plantSelect = $('#plant_id');
 
             // Clear commodity and job order dropdowns
             commoditySelect.empty().append('<option value="">Select Head Product</option>');
-            jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
+            jobOrderSelects.empty().append('<option value="">Select Job Order</option>');
             plantSelect.empty().append('<option value="">Select Plant</option>');
             $('#packingItemsSection').hide();
             $('#packingItemsBody').empty();
 
             if (!locationId) {
                 commoditySelect.trigger('change');
-                jobOrderSelect.trigger('change');
+                jobOrderSelects.trigger('change');
                 plantSelect.trigger('change');
                 return;
             }
@@ -1079,8 +1160,7 @@
                         const statusColor = isEnabled ? '#007bff' : '#6c757d';
                         const cardBorder = isEnabled ? '#93c3f2' : '#e0e0e0';
 
-                        let timeSlotsHtml = '';
-                        const slots = (machine.time_slots && machine.time_slots.length > 0) ?
+                        let rawSlots = (machine.time_slots && machine.time_slots.length > 0) ?
                             machine.time_slots :
                             [{
                                 start_time: machine.start_time || '',
@@ -1088,6 +1168,17 @@
                                 breakdowns: []
                             }];
 
+                        const slots = [];
+                        const seenSlotKeys = new Set();
+                        $.each(rawSlots, function(_, sl) {
+                            const k = (sl.start_time || '') + '_' + (sl.end_time || '');
+                            if (k === '_' || !seenSlotKeys.has(k)) {
+                                if (k !== '_') seenSlotKeys.add(k);
+                                slots.push(sl);
+                            }
+                        });
+
+                        let timeSlotsHtml = '';
                         $.each(slots, function(sIdx, slot) {
                             const startTimeVal = slot.start_time || '';
                             const endTimeVal = slot.end_time || '';
@@ -1240,59 +1331,98 @@
             }
         }
 
+        function getSelectedJobOrderIds() {
+            var ids = [];
+            $('select.job-order-select').each(function() {
+                var v = $(this).val();
+                if (v && v !== '' && !ids.includes(v)) {
+                    ids.push(v);
+                }
+            });
+            return ids;
+        }
+
+        function onJobOrderChanged() {
+            loadPackingItems();
+            loadHeadProductsData();
+            loadB2ProductsData();
+            loadData();
+        }
+
+        function populateJobOrderSelect($select, list, prevVal) {
+            $select.empty().append('<option value="">Select Job Order</option>');
+            if (list && list.length > 0) {
+                $.each(list, function(index, jobOrder) {
+                    var isSelected = String(jobOrder.id) === String(prevVal);
+                    var text = jobOrder.display_text || (jobOrder.job_order_no + (jobOrder.ref_no ? ' (' + jobOrder.ref_no + ')' : '') + (jobOrder.product_name ? ' - ' + jobOrder.product_name : ''));
+                    var $opt = $('<option></option>')
+                        .attr('value', jobOrder.id)
+                        .text(text);
+                    if (isSelected) {
+                        $opt.prop('selected', true);
+                    }
+                    $select.append($opt);
+                });
+            }
+            $select.trigger('change.select2');
+        }
+
         function loadJobOrdersByLocation() {
             const locationId = $('#location_id').val();
             const productId = $('#product_id').val();
-            const jobOrderSelect = $('#job_order_id');
+            const byProductId = $('#by_product_id').val();
+            const jobOrderSelects = $('select.job-order-select');
 
-            // Clear existing options
-            jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
-            $('#packingItemsSection').hide();
-            $('#packingItemsContainer').empty();
-
-            if (!locationId || !productId) {
-                jobOrderSelect.trigger('change');
-                return;
-            }
+            // Save currently selected values for each of the 9 selects by id
+            const currentSelected = {};
+            jobOrderSelects.each(function() {
+                var id = $(this).attr('id');
+                currentSelected[id] = $(this).val() || '';
+            });
 
             // Show loading
-            jobOrderSelect.prop('disabled', true);
+            jobOrderSelects.prop('disabled', true);
 
-            $.ajax({
+            return $.ajax({
                 url: '{{ route('production-voucher.get-job-orders-by-location') }}',
                 method: 'POST',
                 data: {
                     location_id: locationId,
                     product_id: productId,
+                    by_product_id: byProductId,
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
-                    if (response.jobOrders && response.jobOrders.length > 0) {
-                        $.each(response.jobOrders, function(index, jobOrder) {
-                            jobOrderSelect.append(
-                                $('<option></option>')
-                                .attr('value', jobOrder.id)
-                                .text(jobOrder.job_order_no + (jobOrder.ref_no ? ' (' + jobOrder
-                                    .ref_no + ')' : ''))
-                            );
-                        });
-                    } else {
-                        jobOrderSelect.append('<option value="">No Job Orders Found</option>');
-                    }
-                    jobOrderSelect.trigger('change');
+                    var headList = response.headJobOrders || [];
+                    var b2List = response.b2JobOrders || [];
+                    var byList = response.byJobOrders || [];
+
+                    $('select.job-order-head').each(function() {
+                        var id = $(this).attr('id');
+                        populateJobOrderSelect($(this), headList, currentSelected[id]);
+                    });
+
+                    $('select.job-order-b2').each(function() {
+                        var id = $(this).attr('id');
+                        populateJobOrderSelect($(this), b2List, currentSelected[id]);
+                    });
+
+                    $('select.job-order-by').each(function() {
+                        var id = $(this).attr('id');
+                        populateJobOrderSelect($(this), byList, currentSelected[id]);
+                    });
                 },
                 error: function(xhr) {
                     console.error('Error loading job orders:', xhr);
-                    jobOrderSelect.append('<option value="">Error loading job orders</option>');
                 },
                 complete: function() {
-                    jobOrderSelect.prop('disabled', false);
+                    jobOrderSelects.prop('disabled', false);
                 }
             });
         }
 
         function loadPackingItems() {
-            const jobOrderIds = $('#job_order_id').val();
+            const jobOrderIds = getSelectedJobOrderIds();
             const locationId = $('#location_id').val();
 
             if (!jobOrderIds || !locationId || jobOrderIds.length === 0) {
@@ -1359,6 +1489,14 @@
             var $container = $table.closest('div');
 
             var isInputRow = ($container.attr('id') === 'productionInputsTable' || $table.closest('#productionInputsTable').length > 0 || $originalRow.find('select[name="input_location_id[]"]').length > 0);
+            var isHeadTable = ($container.attr('id') === 'productionHeadProductsTable' || $table.closest('#productionHeadProductsTable').length > 0);
+            var isB2Table = ($container.attr('id') === 'productionB2ProductsTable' || $table.closest('#productionB2ProductsTable').length > 0);
+            var isByTable = ($container.attr('id') === 'productionByProductsTable' || $table.closest('#productionByProductsTable').length > 0);
+            var isOutputRow = (isHeadTable || isB2Table || isByTable);
+
+            var origOutputProductId = $originalRow.find('select[name="output_product_id[]"]').val()
+                || $originalRow.find('input[name="output_product_id[]"]').val()
+                || '';
 
             // Capture select values from original row before cloning
             var selectValues = [];
@@ -1379,6 +1517,32 @@
             clone.find('textarea').val('');
             clone.find('input[readonly]').val(''); // Clear readonly fields too
             clone.find('input[name="output_qty[]"]').removeData('manual-change'); // Reset manual change flag
+
+            if (isOutputRow) {
+                // Remove existing output_id so saving creates a new record
+                clone.find('input[name="output_id[]"]').remove();
+
+                // Find commodity template for this table
+                var $selectTemplate = $table.closest('#productionHeadProductsTable, #productionB2ProductsTable, #productionByProductsTable').find('.commodity-select-template select');
+                if ($selectTemplate.length === 0) {
+                    $selectTemplate = $originalRow.closest('table').siblings('.commodity-select-template').find('select');
+                }
+                if ($selectTemplate.length === 0) {
+                    $selectTemplate = $originalRow.closest('.table-responsive, div, table').parent().find('.commodity-select-template select');
+                }
+
+                if ($selectTemplate.length > 0) {
+                    var $firstTd = clone.find('td').first();
+                    var $newSelect = $('<select name="output_product_id[]" class="form-control select2 output-commodity-select" required></select>');
+                    $newSelect.html($selectTemplate.html());
+                    if (origOutputProductId) {
+                        $newSelect.find('option[value="' + origOutputProductId + '"]').prop('selected', true);
+                        $newSelect.val(origOutputProductId);
+                    }
+                    $firstTd.empty().append($newSelect);
+                    $firstTd.append('<input type="hidden" name="job_order_packing_item_id[]" value="">');
+                }
+            }
 
             // Strip ALL Select2 artifacts, containers, classes and data-select2-id from clone completely
             clone.find('.select2-container').remove();
@@ -1431,13 +1595,23 @@
                     }
                 }
             } else {
-                clone.find('select').each(function(index) {
+                clone.find('select').each(function() {
                     var $select = $(this);
-                    var orig = selectValues[index];
-                    if (orig && orig.val !== undefined && orig.val !== null && orig.val !== '') {
+                    var selectName = $select.attr('name');
+                    if (selectName === 'output_product_id[]') {
+                        if (origOutputProductId) {
+                            $select.find('option[value="' + origOutputProductId + '"]').prop('selected', true);
+                            $select.val(origOutputProductId);
+                        }
+                        return;
+                    }
+                    var origMatch = selectValues.find(function(item) {
+                        return item.name === selectName;
+                    });
+                    if (origMatch && origMatch.val !== undefined && origMatch.val !== null && origMatch.val !== '') {
                         $select.find('option').prop('selected', false).removeAttr('selected');
-                        $select.find('option[value="' + orig.val + '"]').prop('selected', true);
-                        $select.val(orig.val);
+                        $select.find('option[value="' + origMatch.val + '"]').prop('selected', true);
+                        $select.val(origMatch.val);
                     }
                 });
             }
@@ -1562,7 +1736,7 @@
         function loadData() {
             const byProductId = $('[name="by_product_id"]').val();
             const locationId = $('[name="location_id"]').val();
-            const jobOrderIds = $('#job_order_id').val();
+            const jobOrderIds = getSelectedJobOrderIds();
             console.log(jobOrderIds);
             const headProductId = $('[name="product_id"]').val();
             if (byProductId && locationId) {
@@ -1587,7 +1761,7 @@
         function loadHeadProductsData() {
             const productId = $('[name="product_id"]').val();
             const locationId = $('[name="location_id"]').val();
-            const jobOrderIds = $('#job_order_id').val();
+            const jobOrderIds = getSelectedJobOrderIds();
             console.log(jobOrderIds);
             if (productId && locationId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}',
@@ -1611,7 +1785,7 @@
         function loadB2ProductsData() {
             const productId = $('[name="product_id"]').val();
             const locationId = $('[name="location_id"]').val();
-            const jobOrderIds = $('#job_order_id').val();
+            const jobOrderIds = getSelectedJobOrderIds();
             if (productId && locationId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-b2-products-data') }}',
                 'productionB2ProductsTable', {
@@ -2169,6 +2343,78 @@
                 calculateB2Products();
                 calculateByProducts();
                 calculateNetTotalInput();
+            });
+
+            // Output commodity (product) change -> dynamically fetch job orders of that line from above selected ones
+            $(document).off('change', 'select.output-commodity-select, select[name="output_product_id[]"]');
+            $(document).on('change', 'select.output-commodity-select, select[name="output_product_id[]"]', function() {
+                const $commoditySelect = $(this);
+                const $row = $commoditySelect.closest('tr');
+                const productId = $commoditySelect.val();
+                const $jobOrderSelect = $row.find('select[name="output_job_order_id[]"]');
+
+                if ($jobOrderSelect.length === 0) return;
+
+                const jobOrderIds = (typeof getSelectedJobOrderIds === 'function') ? getSelectedJobOrderIds() : [];
+                const prevJobOrderId = $jobOrderSelect.val() || '';
+
+                if (!productId) {
+                    $jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
+                    $jobOrderSelect.val('').trigger('change.select2');
+                    $jobOrderSelect.trigger('change');
+                    return;
+                }
+
+                $jobOrderSelect.prop('disabled', true);
+
+                $.ajax({
+                    url: '{{ route("production-voucher.get-job-orders-for-output-product") }}',
+                    method: 'POST',
+                    data: {
+                        product_id: productId,
+                        job_order_ids: jobOrderIds,
+                        production_voucher_id: $('#production_voucher_id').val() || $('[name="production_voucher_id"]').val() || '',
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        const list = response.jobOrders || [];
+                        $jobOrderSelect.empty().append('<option value="">Select Job Order</option>');
+
+                        let hasPrev = false;
+                        list.forEach(function(jo) {
+                            const isSelected = String(jo.id) === String(prevJobOrderId);
+                            if (isSelected) hasPrev = true;
+                            const $opt = $('<option></option>')
+                                .val(jo.id)
+                                .text(jo.display_text)
+                                .attr('data-no-of-bags', jo.no_of_bags !== null && jo.no_of_bags !== undefined ? jo.no_of_bags : '')
+                                .attr('data-bag-size', jo.bag_size !== null && jo.bag_size !== undefined ? jo.bag_size : '')
+                                .attr('data-qty', jo.qty !== null && jo.qty !== undefined ? jo.qty : '')
+                                .attr('data-brand-id', jo.brand_id !== null && jo.brand_id !== undefined ? jo.brand_id : '');
+                            if (isSelected) {
+                                $opt.prop('selected', true);
+                            }
+                            $jobOrderSelect.append($opt);
+                        });
+
+                        if (hasPrev) {
+                            $jobOrderSelect.val(prevJobOrderId);
+                        } else if (list.length === 1) {
+                            $jobOrderSelect.val(list[0].id);
+                        } else {
+                            $jobOrderSelect.val('');
+                        }
+
+                        $jobOrderSelect.trigger('change.select2');
+                        $jobOrderSelect.trigger('change');
+                    },
+                    error: function(xhr) {
+                        console.error('Error fetching line job orders:', xhr);
+                    },
+                    complete: function() {
+                        $jobOrderSelect.prop('disabled', false);
+                    }
+                });
             });
 
             // Note: produced_qty_kg no longer affects production inputs yield calculation

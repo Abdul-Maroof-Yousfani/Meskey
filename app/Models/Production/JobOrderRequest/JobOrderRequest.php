@@ -34,6 +34,7 @@ class JobOrderRequest extends Model
         'inspection_company_id',
         'loading_date',
         'arrival_locations',
+        'fumigation_type',
         'packing_description',
         'status',
         'created_by',
@@ -47,6 +48,17 @@ class JobOrderRequest extends Model
         'request_date' => 'date',
         'loading_date' => 'date',
     ];
+
+    public function getCompanyLocationIdAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        if ($this->relationLoaded('packingItems')) {
+            return $this->packingItems->first()?->company_location_id ?? null;
+        }
+        return null;
+    }
 
     public function companyLocation()
     {

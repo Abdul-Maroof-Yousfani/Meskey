@@ -1,3 +1,44 @@
+@php
+    $allByCommodities = collect();
+    if (isset($byProducts) && $byProducts) {
+        $allByCommodities = $allByCommodities->merge($byProducts);
+    }
+    if (isset($byProductOutputs) && $byProductOutputs) {
+        foreach ($byProductOutputs as $bpo) {
+            if (is_object($bpo) && isset($bpo->product) && $bpo->product) {
+                $allByCommodities->push($bpo->product);
+            }
+        }
+    }
+    $allByCommodities = $allByCommodities->unique('id')->sortBy('name');
+
+    $renderByCommoditySelect = function($selectedId) use ($allByCommodities) {
+        $html = '<select name="output_product_id[]" class="form-control select2 output-commodity-select" required>';
+        $html .= '<option value="">Select Commodity</option>';
+        $found = false;
+        foreach ($allByCommodities as $item) {
+            $isSel = ($selectedId == $item->id);
+            if ($isSel) $found = true;
+            $html .= '<option value="' . e($item->id) . '" ' . ($isSel ? 'selected' : '') . '>' . e($item->name) . '</option>';
+        }
+        if ($selectedId && !$found) {
+            $extraProd = \App\Models\Product::find($selectedId);
+            if ($extraProd) {
+                $html .= '<option value="' . e($extraProd->id) . '" selected>' . e($extraProd->name) . '</option>';
+            }
+        }
+        $html .= '</select>';
+        return $html;
+    };
+@endphp
+<div style="display:none;" class="commodity-select-template">
+    <select class="form-control select2" name="output_product_id[]">
+        <option value="">Select Commodity</option>
+        @foreach($allByCommodities as $item)
+            <option value="{{ $item->id }}">{{ $item->name }}</option>
+        @endforeach
+    </select>
+</div>
 <table class="table table-bordered">
     <thead>
         <tr>
@@ -19,7 +60,22 @@
             $jobOrdersList = isset($jobOrders) && $jobOrders ? $jobOrders : collect();
             $renderJobOrderOptions = function($selectedJobOrderId, $rowProdId) use ($jobOrdersList) {
                 $html = '<option value="">Select Job Order</option>';
-                foreach ($jobOrdersList as $jobOrder) {
+
+                $matching = collect();
+                if ($rowProdId) {
+                    $matching = $jobOrdersList->filter(function($jo) use ($rowProdId) {
+                        return $jo->product_id == $rowProdId;
+                    });
+                }
+
+                if ($selectedJobOrderId && !$matching->contains('id', $selectedJobOrderId)) {
+                    $existingJo = $jobOrdersList->firstWhere('id', $selectedJobOrderId);
+                    if ($existingJo && $existingJo->product_id == $rowProdId) {
+                        $matching->push($existingJo);
+                    }
+                }
+
+                foreach ($matching as $jobOrder) {
                     $joPacking = null;
                     if ($jobOrder->relationLoaded('packingItems') && $jobOrder->packingItems) {
                         $joPacking = $jobOrder->packingItems->first(function($pi) use ($rowProdId) {
@@ -31,7 +87,9 @@
                     $optQty = $joPacking->total_kgs ?? (($optBags && $optSize) ? ($optBags * $optSize) : '');
                     $optBrand = $joPacking->brand_id ?? '';
                     $isSelected = ($selectedJobOrderId == $jobOrder->id) ? 'selected' : '';
-                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($jobOrder->job_order_no) . '</option>';
+                    $pName = $jobOrder->product->name ?? '';
+                    $displayText = $jobOrder->job_order_no . ($jobOrder->ref_no ? ' (' . $jobOrder->ref_no . ')' : '') . ($pName ? ' - ' . $pName : '');
+                    $html .= '<option value="' . e($jobOrder->id) . '" data-no-of-bags="' . e($optBags) . '" data-bag-size="' . e($optSize) . '" data-qty="' . e($optQty) . '" data-brand-id="' . e($optBrand) . '" ' . $isSelected . '>' . e($displayText) . '</option>';
                 }
                 return $html;
             };
@@ -49,21 +107,21 @@
                     @endphp
                   
                     @if(isset($jobOrderPackings) && $jobOrderPackings->count() != 0)
-                        
-                 @php
-// Don't reassign to the same variable, use a new variable
-$filteredJobOrderPackings = $jobOrderPackings->whereHas('jobOrder', function ($query) use ($product) {
-    $query->where('product_id', $product->id);
-})->get();
-
-@endphp
-                    @foreach ($filteredJobOrderPackings as $jobOrderPacking)
+                        @php
+                            $filteredJobOrderPackings = ($jobOrderPackings instanceof \Illuminate\Database\Eloquent\Builder)
+                                ? (clone $jobOrderPackings)->whereHas('jobOrder', function ($query) use ($product) {
+                                    $query->where('product_id', $product->id);
+                                })->get()
+                                : $jobOrderPackings->filter(function ($item) use ($product) {
+                                    return $item->jobOrder && $item->jobOrder->product_id == $product->id;
+                                });
+                        @endphp
+                        @foreach ($filteredJobOrderPackings as $jobOrderPacking)
                             <tr>
                                 <td>
-                                    <strong>{{ $product->name }} fff</strong>
-                                    <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
+                                    {!! $renderByCommoditySelect($output ? ($output->product_id ?? $product->id) : $product->id) !!}
                                     <input type="hidden" name="job_order_packing_item_id[]" value="{{ $jobOrderPacking->id }}">
-                                    </td>
+                                </td>
                                 <td>
                                     <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0"
                                         value="{{ $output ? $output->no_of_bags : '' }}">
@@ -104,7 +162,7 @@ $filteredJobOrderPackings = $jobOrderPackings->whereHas('jobOrder', function ($q
                                 </td>
                                 <td>
                                     <select name="output_job_order_id[]" class="form-control select2">
-                                        {!! $renderJobOrderOptions($output->job_order_id ?? ($jobOrderPacking->job_order_id ?? ''), $product->id ?? null) !!}
+                                        {!! $renderJobOrderOptions($output->job_order_id ?? ($jobOrderPacking->job_order_id ?? ''), $output ? ($output->product_id ?? $product->id) : $product->id) !!}
                                     </select>
                                 </td>
                                 <td>
@@ -119,8 +177,7 @@ $filteredJobOrderPackings = $jobOrderPackings->whereHas('jobOrder', function ($q
                     @endif
                     <tr>
                         <td>
-                            <strong>{{ $product->name }}</strong>
-                            <input type="hidden" name="output_product_id[]" value="{{ $product->id }}">
+                            {!! $renderByCommoditySelect($output ? ($output->product_id ?? $product->id) : $product->id) !!}
                         </td>
                         <td>
                             <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0"
@@ -162,7 +219,7 @@ $filteredJobOrderPackings = $jobOrderPackings->whereHas('jobOrder', function ($q
                         </td>
                         <td>
                             <select name="output_job_order_id[]" class="form-control select2">
-                                {!! $renderJobOrderOptions($output->job_order_id ?? '', $product->id ?? null) !!}
+                                {!! $renderJobOrderOptions($output->job_order_id ?? '', $output ? ($output->product_id ?? $product->id) : $product->id) !!}
                             </select>
                         </td>
                         <td>
