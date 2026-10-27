@@ -38,6 +38,7 @@ class JobOrderController extends Controller
                         ->orWhere('ref_no', 'like', $searchTerm);
                 });
             })
+            ->where('status', 'active')
             ->latest()
             ->paginate(request('per_page', 25));
 
