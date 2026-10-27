@@ -26,6 +26,8 @@ use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\AuditLog;
+use App\Services\AuditLogService;
 
 class PaymentRequestApprovalController extends Controller
 {
@@ -216,51 +218,159 @@ class PaymentRequestApprovalController extends Controller
             $truckNo = $paymentRequestData->arrivalTicket->truck_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
             $biltyNo = $paymentRequestData->arrivalTicket->bilty_no ?? $paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
 
-            if ($request->has('total_amount') || $request->has('bag_weight')) {
-                $this->updatePaymentRequestData($paymentRequestData, $request, $ticket, ($moduleType === 'ticket' || $moduleType === 'freight_payment') ? false : true);
+            // Resolve sampling request based on module type
+            $samplingRequest = null;
+            if ($moduleType === 'ticket' || $moduleType === 'freight_payment') {
+                $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
+                    ->whereIn('approved_status', ['approved', 'rejected'])
+                    ->latest()
+                    ->first();
+                if (!$samplingRequest) {
+                    $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)->latest()->first();
+                }
+            } else if ($moduleType === 'purchase_order') {
+                $samplingRequest = PurchaseSamplingRequest::where('purchase_ticket_id', $ticket->id)
+                    ->whereIn('approved_status', ['approved', 'rejected'])
+                    ->latest()
+                    ->first();
+                if (!$samplingRequest) {
+                    $samplingRequest = PurchaseSamplingRequest::where('purchase_ticket_id', $ticket->id)->latest()->first();
+                }
             }
+
+            // Calculate net weight for lumpsum calculations
+            $loadingW = (float) ($ticket && $ticket->freight ? $ticket->freight->loading_weight : ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->loading_weight : ($ticket->arrived_net_weight ?? ($paymentRequestData->loading_weight ?? 0))));
+            $bagsCount = (float) ($ticket && $ticket->freight ? $ticket->freight->no_of_bags : ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->no_of_bags : ($ticket->bags ?? ($paymentRequestData->no_of_bags ?? 0))));
+            $oldBagW = (float) ($paymentRequestData->bag_weight ?? ($ticket ? $ticket->bag_weight : 0));
+            $oldNetWeight = $loadingW - ($oldBagW * $bagsCount);
+            $ratePerKg = (float) ($purchaseOrder->rate_per_kg ?? 0);
+
+            $oldLumpAmount = $samplingRequest ? (float) $samplingRequest->lumpsum_deduction : 0;
+            $oldLumpKgs = $samplingRequest ? (float) $samplingRequest->lumpsum_deduction_kgs : 0;
+            $oldLumpAmountTotal = $oldLumpAmount * $oldNetWeight;
+            $oldLumpKgsTotal = $oldNetWeight > 0 ? (($oldLumpKgs * $oldNetWeight / 100) * $ratePerKg) : 0;
+
+            $newLumpAmount = $request->input('lumpsum.amount.deduction_value') ?? $request->input('lump_sum_deduction_rupees');
+            $newLumpAmountTotal = $request->input('lumpsum.amount.deduction_amount') ?? $request->input('lump_sum_deduction_rupees_total');
+            $newLumpKgs = $request->input('lumpsum.kgs.deduction_value') ?? $request->input('lump_sum_deduction_kgs');
+            $newLumpKgsTotal = $request->input('lumpsum.kgs.deduction_amount') ?? $request->input('lump_sum_deduction_kgs_total');
+
+            // Save lumpsum deduction updates to sampling request if provided
+            if ($samplingRequest && ($request->has('lumpsum') || $request->has('lump_sum_deduction_rupees') || $request->has('lump_sum_deduction_kgs'))) {
+                $samplingUpdates = [];
+                if ($newLumpAmount !== null && $newLumpAmount !== '') {
+                    $samplingUpdates['lumpsum_deduction'] = $this->cleanNumber($newLumpAmount);
+                }
+                if ($newLumpKgs !== null && $newLumpKgs !== '') {
+                    $samplingUpdates['lumpsum_deduction_kgs'] = $this->cleanNumber($newLumpKgs);
+                }
+                if (!empty($samplingUpdates)) {
+                    $samplingRequest->update($samplingUpdates);
+                }
+            }
+
+            // Snapshot old values before making any updates
+            $oldStatus = $paymentRequest->status;
+            $oldAmount = $paymentRequest->amount;
+            $oldFillingBagsNo = $paymentRequest->no_of_filling_bags;
+            $oldFillingBagRate = $paymentRequest->filling_bag_rate;
+            $oldFillingBagAmount = $paymentRequest->filling_bag_amount;
+            $oldOtherDeductionKg = $paymentRequest->other_deduction_kg;
+            $oldOtherDeductionVal = $paymentRequest->other_deduction_value;
+            $oldRerateKg = $paymentRequest->rerate_on_access_weight_kg;
+            $oldRerateRate = $paymentRequest->rerate_on_access_weight_rate;
+            $oldRerateAmount = $paymentRequest->rerate_on_access_weight_amount;
+            $oldOtherAdj = $paymentRequest->other_adjustment_amount;
+
+            $oldTotalAmount = $paymentRequestData ? (float) $paymentRequestData->total_amount : 0;
+            $oldRemainingAmount = $paymentRequestData ? (float) $paymentRequestData->remaining_amount : 0;
+            $oldPaidAmount = $paymentRequestData ? (float) $paymentRequestData->paid_amount : 0;
+            $oldBagWeight = $oldBagW;
+            $oldBagWeightTotal = $paymentRequestData ? (float) $paymentRequestData->bag_weight_total : ($oldBagWeight * $bagsCount);
+            $oldBagWeightAmount = $paymentRequestData ? (float) $paymentRequestData->bag_weight_amount : ($ratePerKg * $oldBagWeightTotal);
+            $oldBagRate = $paymentRequestData ? (float) $paymentRequestData->bag_rate : ($ticket ? (float) $ticket->bag_rate : 0);
+            $oldBagRateAmount = $paymentRequestData ? (float) $paymentRequestData->bag_rate_amount : ($oldBagRate * $bagsCount);
+            $oldLoadingWeighbridge = $paymentRequestData ? (float) $paymentRequestData->loading_weighbridge_amount : 0;
+            $oldBrokerId = $paymentRequestData ? $paymentRequestData->broker_id : null;
+            $oldBrokeryAmount = $paymentRequestData ? (float) $paymentRequestData->brokery_amount : 0;
+            $oldCommissionAmount = $paymentRequestData ? (float) $paymentRequestData->commission_amount : 0;
+            $oldExemptedWeight = $paymentRequestData ? (float) $paymentRequestData->exempted_weight : 0;
+            $oldBillingWeight = $paymentRequestData ? (float) $paymentRequestData->billing_weight : 0;
+
+            $lastApproval = PaymentRequestApproval::where('payment_request_id', $paymentRequest->id)->latest()->first();
+            $oldRemarks = $lastApproval ? $lastApproval->remarks : null;
+
+            // Snapshot existing sampling results before updating/deleting them
+            $prevSlabResults = collect();
+            if ($paymentRequestData) {
+                $prevSlabResults = PaymentRequestSamplingResult::where('payment_request_data_id', $paymentRequestData->id)
+                    ->get()
+                    ->keyBy('slab_type_id');
+            }
+
+            $this->updatePaymentRequestData($paymentRequestData, $request, $ticket, ($moduleType === 'ticket' || $moduleType === 'freight_payment') ? false : true);
 
             if (($request->has('sampling_results') || $request->has('compulsory_results') || $request->has('other_deduction'))) {
                 $this->updateSamplingResults($paymentRequestData, $request);
             }
 
-            if ($request->has('payment_request_amount')) {
-                $paymentRequest->update(['amount' => $request->payment_request_amount]);
+            if ($request->has('bag_weight')) {
+                $cleanBagW = $this->cleanNumber($request->bag_weight);
+                $ticket->update(['bag_weight' => $cleanBagW]);
             }
 
-            if ($request->has('freight_pay_request_amount') && $request->freight_pay_request_amount > 0 && $moduleType !== 'ticket') {
+            $prUpdates = [];
+            if ($request->has('payment_request_amount')) {
+                $prUpdates['amount'] = $this->cleanNumber($request->payment_request_amount);
+            }
+            if ($request->has('filling_bags_no')) {
+                $prUpdates['no_of_filling_bags'] = $this->cleanNumber($request->filling_bags_no);
+            }
+            if ($request->has('filling_bags_rate')) {
+                $prUpdates['filling_bag_rate'] = $this->cleanNumber($request->filling_bags_rate);
+            }
+            if ($request->has('filling_bags_amount') || $request->has('filling_bags_amount_hidden') || $request->has('filling_bags.amount_hidden')) {
+                $fillingAmount = $request->filling_bags_amount_hidden ?? $request->input('filling_bags.amount_hidden') ?? $request->filling_bags_amount;
+                $prUpdates['filling_bag_amount'] = $this->cleanNumber($fillingAmount);
+            } elseif (isset($prUpdates['no_of_filling_bags']) && isset($prUpdates['filling_bag_rate'])) {
+                $prUpdates['filling_bag_amount'] = ((float) $prUpdates['no_of_filling_bags']) * ((float) $prUpdates['filling_bag_rate']);
+            }
+            if ($request->has('rerate_on_access_weight_kg')) {
+                $prUpdates['rerate_on_access_weight_kg'] = $this->cleanNumber($request->rerate_on_access_weight_kg);
+            }
+            if ($request->has('rerate_on_access_weight_rate')) {
+                $prUpdates['rerate_on_access_weight_rate'] = $this->cleanNumber($request->rerate_on_access_weight_rate);
+            }
+            if ($request->has('rerate_on_access_weight_amount')) {
+                $prUpdates['rerate_on_access_weight_amount'] = $this->cleanNumber($request->rerate_on_access_weight_amount);
+            }
+            if ($request->has('other_adjustment_amount')) {
+                $prUpdates['other_adjustment_amount'] = $this->cleanNumber($request->other_adjustment_amount);
+            }
+            if ($request->has('other_deduction')) {
+                $prUpdates['other_deduction_kg'] = $this->cleanNumber($request->other_deduction['kg_value'] ?? 0);
+                $prUpdates['other_deduction_value'] = $this->cleanNumber($request->other_deduction['kg_amount'] ?? 0);
+            }
+            $prUpdates['status'] = $request->status;
+
+            $paymentRequest->update($prUpdates);
+
+            if ($request->has('freight_pay_request_amount') && $this->cleanNumber($request->freight_pay_request_amount) > 0 && $moduleType !== 'ticket') {
                 $freightRequest = PaymentRequest::where('payment_request_data_id', $paymentRequestData->id)
                     ->where('request_type', 'freight_payment')
                     ->first();
 
                 if ($freightRequest) {
-                    $freightRequest->update(['amount' => $request->freight_pay_request_amount]);
+                    $freightRequest->update(['amount' => $this->cleanNumber($request->freight_pay_request_amount)]);
                 } else {
                     PaymentRequest::create([
                         'payment_request_data_id' => $paymentRequestData->id,
                         'request_type' => 'freight_payment',
-                        'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-                        'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-                        'amount' => $request->freight_pay_request_amount
+                        'other_deduction_kg' => $this->cleanNumber($request->other_deduction['kg_value'] ?? 0),
+                        'other_deduction_value' => $this->cleanNumber($request->other_deduction['kg_amount'] ?? 0),
+                        'amount' => $this->cleanNumber($request->freight_pay_request_amount)
                     ]);
                 }
-            }
-
-            if ($request->has('bag_weight')) {
-                $dataToUpdate = ['bag_weight' => $request->bag_weight];
-
-                if ($moduleType !== 'ticket') {
-                    $dataToUpdate = ['bag_weight' => (float) $request->bag_weight];
-                }
-
-                $ticket->update($dataToUpdate);
-            }
-
-            if ($request->has('other_deduction')) {
-                $paymentRequest->update([
-                    'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
-                    'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
-                ]);
             }
 
             PaymentRequestApproval::create([
@@ -275,7 +385,124 @@ class PaymentRequestApprovalController extends Controller
                 'request_type' => $paymentRequest->request_type
             ]);
 
-            $paymentRequest->update(['status' => $request->status]);
+            // Audit Log: Collect and compare all form fields with accurate tolerance diffs
+            $newFillingBagsNo = (float) ($this->cleanNumber($request->filling_bags_no) ?? $paymentRequest->no_of_filling_bags ?? 0);
+            $newFillingBagsRate = (float) ($this->cleanNumber($request->filling_bags_rate) ?? $paymentRequest->filling_bag_rate ?? 0);
+            $newFillingBagsAmount = (float) ($this->cleanNumber($request->filling_bags_amount) ?? $paymentRequest->filling_bag_amount ?? ($newFillingBagsNo * $newFillingBagsRate));
+
+            $newPaymentAmount = $request->has('payment_request_amount') ? (float) $this->cleanNumber($request->payment_request_amount) : (float) $paymentRequest->amount;
+            $newOtherDedKg = $request->has('other_deduction') ? (float) $this->cleanNumber($request->input('other_deduction.kg_value') ?? 0) : (float) ($paymentRequest->other_deduction_kg ?? 0);
+            $newOtherDedVal = $request->has('other_deduction') ? (float) $this->cleanNumber($request->input('other_deduction.kg_amount') ?? $request->input('other_deduction.deduction_amount') ?? 0) : (float) ($paymentRequest->other_deduction_value ?? 0);
+
+            $fieldsToTrack = [
+                'status'                         => ['old' => $oldStatus, 'new' => $request->status, 'type' => 'string'],
+                'remarks'                        => ['old' => $oldRemarks, 'new' => $request->remarks, 'type' => 'string'],
+                'amount'                         => ['old' => (float) $oldAmount, 'new' => $newPaymentAmount, 'type' => 'numeric'],
+                'total_amount'                   => ['old' => $oldTotalAmount, 'new' => (float) ($this->cleanNumber($request->total_amount) ?? $paymentRequestData?->total_amount ?? 0), 'type' => 'numeric'],
+                'remaining_amount'               => ['old' => $oldRemainingAmount, 'new' => (float) ($this->cleanNumber($request->remaining_amount) ?? $paymentRequestData?->remaining_amount ?? 0), 'type' => 'numeric'],
+
+                'lumpsum_deduction'              => ['old' => $oldLumpAmount, 'new' => $newLumpAmount !== null && $newLumpAmount !== '' ? (float) $this->cleanNumber($newLumpAmount) : $oldLumpAmount, 'type' => 'numeric'],
+                'lumpsum_deduction_amount'       => ['old' => $oldLumpAmountTotal, 'new' => $newLumpAmountTotal !== null && $newLumpAmountTotal !== '' ? (float) $this->cleanNumber($newLumpAmountTotal) : $oldLumpAmountTotal, 'type' => 'numeric'],
+                'lumpsum_deduction_kgs'          => ['old' => $oldLumpKgs, 'new' => $newLumpKgs !== null && $newLumpKgs !== '' ? (float) $this->cleanNumber($newLumpKgs) : $oldLumpKgs, 'type' => 'numeric'],
+                'lumpsum_deduction_kgs_amount'   => ['old' => $oldLumpKgsTotal, 'new' => $newLumpKgsTotal !== null && $newLumpKgsTotal !== '' ? (float) $this->cleanNumber($newLumpKgsTotal) : $oldLumpKgsTotal, 'type' => 'numeric'],
+
+                'other_deduction_kg'             => ['old' => (float) ($oldOtherDeductionKg ?? 0), 'new' => $newOtherDedKg, 'type' => 'numeric'],
+                'other_deduction_value'          => ['old' => (float) ($oldOtherDeductionVal ?? 0), 'new' => $newOtherDedVal, 'type' => 'numeric'],
+                'rerate_on_access_weight_kg'     => ['old' => (float) ($oldRerateKg ?? 0), 'new' => (float) ($this->cleanNumber($request->rerate_on_access_weight_kg) ?? $paymentRequest->rerate_on_access_weight_kg ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_rate'   => ['old' => (float) ($oldRerateRate ?? 0), 'new' => (float) ($this->cleanNumber($request->rerate_on_access_weight_rate) ?? $paymentRequest->rerate_on_access_weight_rate ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_amount' => ['old' => (float) ($oldRerateAmount ?? 0), 'new' => (float) ($this->cleanNumber($request->rerate_on_access_weight_amount) ?? $paymentRequest->rerate_on_access_weight_amount ?? 0), 'type' => 'numeric'],
+                'other_adjustment_amount'        => ['old' => (float) ($oldOtherAdj ?? 0), 'new' => (float) ($this->cleanNumber($request->other_adjustment_amount) ?? $paymentRequest->other_adjustment_amount ?? 0), 'type' => 'numeric'],
+
+                'no_of_filling_bags'             => ['old' => (float) ($oldFillingBagsNo ?? 0), 'new' => $newFillingBagsNo, 'type' => 'numeric'],
+                'filling_bag_rate'               => ['old' => (float) ($oldFillingBagRate ?? 0), 'new' => $newFillingBagsRate, 'type' => 'numeric'],
+                'filling_bag_amount'             => ['old' => (float) ($oldFillingBagAmount ?? 0), 'new' => $newFillingBagsAmount, 'type' => 'numeric'],
+                'exempted_weight'                => ['old' => $oldExemptedWeight, 'new' => (float) ($this->cleanNumber($request->exempted_weight) ?? $paymentRequestData?->exempted_weight ?? 0), 'type' => 'numeric'],
+                'billing_weight'                 => ['old' => $oldBillingWeight, 'new' => (float) ($this->cleanNumber($request->billing_weight) ?? $paymentRequestData?->billing_weight ?? 0), 'type' => 'numeric'],
+
+                'bag_weight'                     => ['old' => $oldBagWeight, 'new' => (float) ($this->cleanNumber($request->bag_weight) ?? $ticket?->bag_weight ?? 0), 'type' => 'numeric'],
+                'bag_weight_total'               => ['old' => $oldBagWeightTotal, 'new' => (float) ($this->cleanNumber($request->bag_weight_total) ?? $paymentRequestData?->bag_weight_total ?? 0), 'type' => 'numeric'],
+                'bag_weight_amount'              => ['old' => $oldBagWeightAmount, 'new' => (float) ($this->cleanNumber($request->bag_weight_amount) ?? $paymentRequestData?->bag_weight_amount ?? 0), 'type' => 'numeric'],
+                'bag_rate'                       => ['old' => $oldBagRate, 'new' => (float) ($this->cleanNumber($request->bag_rate) ?? $ticket?->bag_rate ?? 0), 'type' => 'numeric'],
+                'bag_rate_amount'                => ['old' => $oldBagRateAmount, 'new' => (float) ($this->cleanNumber($request->bag_rate_amount) ?? $paymentRequestData?->bag_rate_amount ?? 0), 'type' => 'numeric'],
+                'loading_weighbridge_amount'     => ['old' => $oldLoadingWeighbridge, 'new' => (float) ($this->cleanNumber($request->loading_weighbridge_amount) ?? $paymentRequestData?->loading_weighbridge_amount ?? 0), 'type' => 'numeric'],
+
+                'broker_id'                      => ['old' => $oldBrokerId, 'new' => $request->has('broker_id') ? ($request->broker_id ?: null) : $oldBrokerId, 'type' => 'string'],
+                'brokery_amount'                 => ['old' => $oldBrokeryAmount, 'new' => (float) ($this->cleanNumber($request->brokery_amount) ?? $paymentRequestData?->brokery_amount ?? 0), 'type' => 'numeric'],
+                'commission_amount'              => ['old' => $oldCommissionAmount, 'new' => (float) ($this->cleanNumber($request->supplier_commission ?? $request->commission_amount) ?? $paymentRequestData?->commission_amount ?? 0), 'type' => 'numeric'],
+            ];
+
+            if ($request->has('sampling_results') && is_array($request->sampling_results)) {
+                foreach ($request->sampling_results as $sId => $sData) {
+                    $slabTypeId = $sData['slab_type_id'] ?? $sId;
+                    $appliedVal = (float) ($sData['applied_deduction'] ?? 0);
+
+                    $prevSlab = $prevSlabResults->get($slabTypeId);
+                    $oldSlabVal = $prevSlab ? (float) $prevSlab->applied_deduction : 0;
+                    if (abs($oldSlabVal - $appliedVal) > 0.0001) {
+                        $fieldsToTrack["slab_deduction_{$slabTypeId}"] = [
+                            'old'  => $oldSlabVal,
+                            'new'  => $appliedVal,
+                            'type' => 'numeric',
+                        ];
+                    }
+                }
+            }
+
+            if ($request->has('compulsory_results') && is_array($request->compulsory_results)) {
+                foreach ($request->compulsory_results as $cId => $cData) {
+                    $qcParamId = $cData['qc_param_id'] ?? $cId;
+                    $appliedVal = (float) ($cData['applied_deduction'] ?? 0);
+
+                    $prevSlab = $prevSlabResults->get($qcParamId);
+                    $oldSlabVal = $prevSlab ? (float) $prevSlab->applied_deduction : 0;
+                    if (abs($oldSlabVal - $appliedVal) > 0.0001) {
+                        $fieldsToTrack["slab_deduction_{$qcParamId}"] = [
+                            'old'  => $oldSlabVal,
+                            'new'  => $appliedVal,
+                            'type' => 'numeric',
+                        ];
+                    }
+                }
+            }
+
+            $diffOld = [];
+            $diffNew = [];
+
+            foreach ($fieldsToTrack as $key => $conf) {
+                $hasDiff = false;
+                if ($conf['type'] === 'numeric') {
+                    $hasDiff = abs((float) $conf['old'] - (float) $conf['new']) > 0.0001;
+                } else {
+                    $hasDiff = trim((string) ($conf['old'] ?? '')) !== trim((string) ($conf['new'] ?? ''));
+                }
+
+                if ($hasDiff) {
+                    $diffOld[$key] = is_numeric($conf['old']) ? (string) $conf['old'] : $conf['old'];
+                    $diffNew[$key] = is_numeric($conf['new']) ? (string) $conf['new'] : $conf['new'];
+                }
+            }
+
+            if (empty($diffOld)) {
+                $diffOld['status'] = (string) $oldStatus;
+                $diffNew['status'] = (string) $request->status;
+            }
+
+            $diffOld['ticket_id'] = $paymentRequestData->ticket_id;
+            $diffOld['payment_request_id'] = $paymentRequest->id;
+            $diffNew['ticket_id'] = $paymentRequestData->ticket_id;
+            $diffNew['payment_request_id'] = $paymentRequest->id;
+
+            $ticketNo = $ticket ? ($ticket->unique_no ?? 'N/A') : 'N/A';
+            $contractNo = $purchaseOrder ? ($purchaseOrder->contract_no ?? 'N/A') : 'N/A';
+            $statusLabel = ucfirst($request->status);
+
+            AuditLogService::log(
+                $paymentRequest,
+                'payment_request_approval_updated',
+                "Payment Request Approval: {$statusLabel} for Ticket #{$ticketNo} (Contract #{$contractNo}) - Amount: " . number_format($paymentRequest->amount, 2),
+                $diffOld,
+                $diffNew
+            );
 
             // ---------------------- 
             if ($moduleType !== 'freight_payment') {
@@ -624,12 +851,27 @@ class PaymentRequestApprovalController extends Controller
         });
     }
 
+    private function cleanNumber($val)
+    {
+        if ($val === null || $val === '') {
+            return null;
+        }
+        if (is_string($val)) {
+            $val = str_replace(',', '', trim($val));
+        }
+        return is_numeric($val) ? (float) $val : 0;
+    }
+
     private function updatePaymentRequestData($paymentRequestData, $request, $ticket, $isTicket = false)
     {
         $updateData = [];
 
         if ($request->has('total_amount')) {
-            $updateData['total_amount'] = $request->total_amount;
+            $updateData['total_amount'] = $this->cleanNumber($request->total_amount);
+        }
+
+        if ($request->has('remaining_amount')) {
+            $updateData['remaining_amount'] = $this->cleanNumber($request->remaining_amount);
         }
 
         if ($request->has('supplier_name')) {
@@ -637,29 +879,56 @@ class PaymentRequestApprovalController extends Controller
         }
 
         if ($request->has('bag_weight')) {
-            $updateData['bag_weight'] = $request->bag_weight;
+            $updateData['bag_weight'] = $this->cleanNumber($request->bag_weight);
+        }
+
+        if ($request->has('bag_weight_total')) {
+            $updateData['bag_weight_total'] = $this->cleanNumber($request->bag_weight_total);
         }
 
         if ($request->has('bag_rate')) {
-            $updateData['bag_rate'] = $request->bag_rate;
+            $updateData['bag_rate'] = $this->cleanNumber($request->bag_rate);
         }
 
         if ($request->has('bag_weight_amount')) {
-            $updateData['bag_weight_amount'] = $request->bag_weight_amount;
-        }
-
-        if ($request->has('loading_weighbridge_amount')) {
-            $updateData['loading_weighbridge_amount'] = $request->loading_weighbridge_amount;
+            $updateData['bag_weight_amount'] = $this->cleanNumber($request->bag_weight_amount);
         }
 
         if ($request->has('bag_rate_amount')) {
-            $updateData['bag_rate_amount'] = $request->bag_rate_amount;
+            $updateData['bag_rate_amount'] = $this->cleanNumber($request->bag_rate_amount);
+        }
+
+        if ($request->has('loading_weighbridge_amount')) {
+            $updateData['loading_weighbridge_amount'] = $this->cleanNumber($request->loading_weighbridge_amount);
+        }
+
+        if ($request->has('broker_id')) {
+            $updateData['broker_id'] = $request->broker_id ?: null;
+        }
+
+        if ($request->has('brokery_amount')) {
+            $updateData['brokery_amount'] = $this->cleanNumber($request->brokery_amount);
+        }
+
+        if ($request->has('supplier_commission') || $request->has('commission_amount')) {
+            $updateData['commission_amount'] = $this->cleanNumber($request->supplier_commission ?? $request->commission_amount);
+        }
+
+        if ($request->has('exempted_weight')) {
+            $updateData['exempted_weight'] = $this->cleanNumber($request->exempted_weight);
+        }
+
+        if ($request->has('billing_weight')) {
+            $updateData['billing_weight'] = $this->cleanNumber($request->billing_weight);
         }
 
         if (!empty($updateData)) {
             $paymentRequestData->update($updateData);
-            if ($isTicket) {
-                $ticket->update($updateData);
+            if ($isTicket && $ticket) {
+                $ticketUpdates = array_intersect_key($updateData, array_flip(['bag_weight', 'bag_rate']));
+                if (!empty($ticketUpdates)) {
+                    $ticket->update($ticketUpdates);
+                }
             }
         }
     }
@@ -673,11 +942,11 @@ class PaymentRequestApprovalController extends Controller
                     'payment_request_data_id' => $paymentRequestData->id,
                     'slab_type_id' => $result['slab_type_id'] ?? null,
                     'name' => $result['slab_name'] ?? '',
-                    'checklist_value' => $result['checklist_value'] ?? 0,
-                    'suggested_deduction' => $result['suggested_deduction'] ?? 0,
-                    'applied_deduction' => $result['applied_deduction'] ?? 0,
+                    'checklist_value' => $this->cleanNumber($result['checklist_value'] ?? 0) ?? 0,
+                    'suggested_deduction' => $this->cleanNumber($result['suggested_deduction'] ?? 0) ?? 0,
+                    'applied_deduction' => $this->cleanNumber($result['applied_deduction'] ?? 0) ?? 0,
                     'deduction_type' => $result['deduction_type'] ?? 'amount',
-                    'deduction_amount' => $result['deduction_amount'] ?? 0,
+                    'deduction_amount' => $this->cleanNumber($result['deduction_amount'] ?? 0) ?? 0,
                     'is_other_deduction' => false
                 ]);
             }
@@ -691,10 +960,9 @@ class PaymentRequestApprovalController extends Controller
                     'name' => $result['qc_name'],
                     'checklist_value' => 0,
                     'suggested_deduction' => 0,
-                    'applied_deduction' => $result['applied_deduction'] ?? 0,
+                    'applied_deduction' => $this->cleanNumber($result['applied_deduction'] ?? 0) ?? 0,
                     'deduction_type' => 'amount',
-                    'deduction_amount' => $result['deduction_amount'] ?? 0,
-
+                    'deduction_amount' => $this->cleanNumber($result['deduction_amount'] ?? 0) ?? 0,
                 ]);
             }
         }
@@ -927,7 +1195,7 @@ class PaymentRequestApprovalController extends Controller
                 $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket, $moduleType) {
                     $query->where('ticket_id', $ticket->id);
                     $query->where('module_type', $moduleType);
-                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'other_adjustment_amount')
+                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'filling_bag_amount', 'filling_bag_rate', 'no_of_filling_bags', 'other_adjustment_amount')
                     ->latest()
                     ->first();
             }
@@ -989,4 +1257,5 @@ class PaymentRequestApprovalController extends Controller
             'approval' => $approval
         ]);
     }
-}
+
+    }

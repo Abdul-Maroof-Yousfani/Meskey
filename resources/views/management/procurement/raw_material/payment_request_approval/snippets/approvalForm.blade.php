@@ -8,10 +8,13 @@
     {!! $requestPurchaseForm !!}
 
     <div class="row">
-        <div class="col-12">
-            <h6 class="header-heading-sepration">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h6 class="header-heading-sepration mb-0">
                 Payment Request Approval
             </h6>
+            <button type="button" class="btn btn-sm btn-outline-info mb-2" onclick="openModal(this,'{{ route('raw-material.payment-request-approval.audit-logs', $paymentRequest->id) }}','Audit Logs: Payment Request #{{ $paymentRequest->id }}', false, '55%')">
+                <i class="fa fa-history mr-1"></i> Audit Logs
+            </button>
         </div>
     </div>
 

@@ -86,13 +86,20 @@
                     <td>
                         @canAccess('p-r-m-payment-request-approvals-action')
                         <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request'{{ $request->status == 'approved' ? ', true' : ', false' }}, '80%')"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mr-2 position-relative" title="Manage Payment Request">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
                         @endcanAccess
                         <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request','true', '80%')"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mr-2 position-relative" title="View Details">
                             <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        @php
+                            $rowLogTitle = $request->paymentRequestData->purchaseTicket->unique_no ?? ($request->paymentRequestData->arrivalTicket->unique_no ?? ($request->paymentRequestData->purchaseOrder->contract_no ?? $request->id));
+                        @endphp
+                        <a onclick="openModal(this,'{{ route('raw-material.payment-request-approval.audit-logs', $request->id) }}','Audit Logs: #{{ $rowLogTitle }}', false, '55%')"
+                            class="primary p-1 text-center mr-2 position-relative" title="View Audit Logs">
+                            <i class="fa fa-history font-medium-3"></i>
                         </a>
                     </td>
                 </tr>

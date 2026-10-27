@@ -17,6 +17,18 @@
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.ticket.get.payment-request') }}" />
     <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id ?? '' }}">
 
+    @php
+        $targetTicketId = $paymentRequestData->ticket_id ?? ($paymentRequestData->purchase_ticket_id ?? null);
+        $targetTicketNo = $paymentRequestData->purchaseTicket->unique_no ?? ($paymentRequestData->arrivalTicket->unique_no ?? $targetTicketId);
+    @endphp
+    @if ($targetTicketId)
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('raw-material.payment-request.audit-logs', $targetTicketId) }}','Audit Logs: Ticket #{{ $targetTicketNo }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
+    @endif
+
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">

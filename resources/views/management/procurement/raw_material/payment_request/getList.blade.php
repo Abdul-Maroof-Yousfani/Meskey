@@ -79,8 +79,13 @@
                     </td>
                     <td>
                         <a onclick="openModal(this,'{{ route('raw-material.payment-request.edit', $ticket->id) }}','Manage Payment Request')"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mr-2 position-relative" title="Manage Payment Request">
                             <i class="ft-edit font-medium-3"></i>
+                        </a>
+
+                        <a onclick="openModal(this,'{{ route('raw-material.payment-request.audit-logs', $ticket->id) }}','Audit Logs: Ticket #{{ $ticket->unique_no }}', false, '55%')"
+                            class="primary p-1 text-center mr-2 position-relative" title="View Audit Logs" style="cursor: pointer;">
+                            <i class="fa fa-history font-medium-3"></i>
                         </a>
                     </td>
                 </tr>
@@ -104,7 +109,7 @@
                             </g>
                         </svg>
                         <p class="ant-empty-description">No data</p>
-                    </div>
+                    </div>  
                 </td>
             </tr>
         @endif

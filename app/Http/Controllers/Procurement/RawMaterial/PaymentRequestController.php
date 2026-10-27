@@ -21,6 +21,8 @@ use App\Models\Arrival\PurchaseSamplingResult;
 use App\Models\Procurement\PaymentRequestSamplingResult;
 use App\Http\Requests\Procurement\PaymentRequestRequest;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
+use App\Models\AuditLog;
+use App\Services\AuditLogService;
 
 class PaymentRequestController extends Controller
 {
@@ -245,10 +247,74 @@ class PaymentRequestController extends Controller
             $accountId = $purchaseOrder->supplier->account_id ?? null;
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('ticket_id', $ticket->id)
+                ->latest('id')
                 ->first();
+
+            $samplingRequest = PurchaseSamplingRequest::where('purchase_ticket_id', $ticket->id)
+                ->whereIn('approved_status', ['approved', 'rejected'])
+                ->latest()
+                ->first();
+
+            $prevPaymentRequest = null;
+            $oldPaymentAmount = 0;
+            $oldFreightAmount = 0;
+            if ($existingApprovals) {
+                $oldPaymentAmount = (float) PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
+                    ->where('request_type', 'payment')
+                    ->sum('amount');
+                $oldFreightAmount = (float) PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
+                    ->where('request_type', 'freight_payment')
+                    ->sum('amount');
+                $prevPaymentRequest = PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
+                    ->where('request_type', 'payment')
+                    ->latest('id')
+                    ->first();
+            }
+            if (!$prevPaymentRequest) {
+                $prevPaymentRequest = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+                    $query->where('ticket_id', $ticket->id);
+                })->where('request_type', 'payment')->latest('id')->first();
+            }
+
+            $newPaymentAmount = (float) ($request->payment_request_amount ?? 0);
+            $newFreightAmount = (float) ($request->freight_pay_request_amount ?? 0);
+
+            // Calculate net weight for lumpsum calculations
+            $loadingW = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->loading_weight : 0);
+            $bagsCount = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->no_of_bags : 0);
+            $oldBagW = (float) ($existingApprovals->bag_weight ?? ($ticket ? $ticket->bag_weight : 0));
+            $oldNetWeight = $loadingW - ($oldBagW * $bagsCount);
+
+            $oldLumpAmount = $samplingRequest ? (float) $samplingRequest->lumpsum_deduction : 0;
+            $oldLumpKgs = $samplingRequest ? (float) $samplingRequest->lumpsum_deduction_kgs : 0;
+            $oldLumpAmountTotal = $oldLumpAmount * $oldNetWeight;
+            $ratePerKg = (float) ($purchaseOrder->rate_per_kg ?? 0);
+            $oldLumpKgsTotal = $oldNetWeight > 0 ? (($oldLumpKgs * $oldNetWeight / 100) * $ratePerKg) : 0;
+
+            $newLumpAmount = $request->input('lumpsum.amount.deduction_value');
+            $newLumpAmountTotal = $request->input('lumpsum.amount.deduction_amount');
+            $newLumpKgs = $request->input('lumpsum.kgs.deduction_value');
+            $newLumpKgsTotal = $request->input('lumpsum.kgs.deduction_amount');
+
+            // Save lumpsum deduction updates to sampling request if provided
+            if ($samplingRequest && $request->has('lumpsum')) {
+                $samplingUpdates = [];
+                if ($newLumpAmount !== null && $newLumpAmount !== '') {
+                    $samplingUpdates['lumpsum_deduction'] = (float) $newLumpAmount;
+                }
+                if ($newLumpKgs !== null && $newLumpKgs !== '') {
+                    $samplingUpdates['lumpsum_deduction_kgs'] = (float) $newLumpKgs;
+                }
+                if (!empty($samplingUpdates)) {
+                    $samplingRequest->update($samplingUpdates);
+                }
+            }
 
             $requestData['account_id'] = $accountId;
             $requestData['purchase_ticket_id'] = $requestData['ticket_id'];
+            $requestData['broker_id'] = $request->broker_id ?: null;
+            $requestData['brokery_amount'] = $request->brokery_amount ?? 0;
+            $requestData['commission_amount'] = $request->supplier_commission ?? ($request->commission_amount ?? 0);
             $paymentRequestData = PaymentRequestData::create($requestData);
 
             $this->createPaymentRequests($paymentRequestData, $request, $accountId);
@@ -258,6 +324,124 @@ class PaymentRequestController extends Controller
             }
 
             $this->manageLedgerCalculations($requestData, $purchaseOrder, $ticket, $stockInTransitAccount, $existingApprovals);
+
+            // Audit Log: Collect and compare all form fields
+            $oldOtherDedKg = $prevPaymentRequest ? (float) $prevPaymentRequest->other_deduction_kg : 0;
+            $oldOtherDedVal = $prevPaymentRequest ? (float) $prevPaymentRequest->other_deduction_value : 0;
+            $oldRerateKg = $prevPaymentRequest ? (float) $prevPaymentRequest->rerate_on_access_weight_kg : 0;
+            $oldRerateRate = $prevPaymentRequest ? (float) $prevPaymentRequest->rerate_on_access_weight_rate : 0;
+            $oldRerateAmount = $prevPaymentRequest ? (float) $prevPaymentRequest->rerate_on_access_weight_amount : 0;
+            $oldOtherAdj = $prevPaymentRequest ? (float) $prevPaymentRequest->other_adjustment_amount : 0;
+
+            $oldTotalAmount = $existingApprovals ? (float) $existingApprovals->total_amount : 0;
+            $oldRemainingAmount = $existingApprovals ? (float) $existingApprovals->remaining_amount : (float) ($requestData['total_amount'] ?? 0);
+            $oldPaidAmount = $existingApprovals ? (float) $existingApprovals->paid_amount : 0;
+
+            $oldBagWeight = $oldBagW;
+            $oldBagWeightTotal = $existingApprovals ? (float) $existingApprovals->bag_weight_total : ($oldBagWeight * $bagsCount);
+            $oldBagWeightAmount = $existingApprovals ? (float) $existingApprovals->bag_weight_amount : ($ratePerKg * $oldBagWeightTotal);
+            $oldBagRate = $existingApprovals ? (float) $existingApprovals->bag_rate : ($ticket ? (float) $ticket->bag_rate : 0);
+            $oldBagRateAmount = $existingApprovals ? (float) $existingApprovals->bag_rate_amount : ($oldBagRate * $bagsCount);
+            $oldLoadingWeighbridge = $existingApprovals ? (float) $existingApprovals->loading_weighbridge_amount : 0;
+            $oldBrokerId = $existingApprovals ? $existingApprovals->broker_id : null;
+            $oldBrokeryAmount = $existingApprovals ? (float) $existingApprovals->brokery_amount : 0;
+            $oldCommissionAmount = $existingApprovals ? (float) $existingApprovals->commission_amount : 0;
+            $oldAdvanceFreight = $existingApprovals ? (float) $existingApprovals->advance_freight : ($ticket && $ticket->purchaseFreight ? (float) $ticket->purchaseFreight->advance_freight : 0);
+            $oldNotes = $existingApprovals ? $existingApprovals->notes : null;
+
+            $fieldsToTrack = [
+                'payment_request_amount'         => ['old' => $oldPaymentAmount, 'new' => $newPaymentAmount, 'type' => 'numeric'],
+                'freight_pay_request_amount'     => ['old' => $oldFreightAmount, 'new' => $newFreightAmount, 'type' => 'numeric'],
+                'total_amount'                   => ['old' => $oldTotalAmount, 'new' => (float) ($request->total_amount ?? 0), 'type' => 'numeric'],
+                'remaining_amount'               => ['old' => $oldRemainingAmount, 'new' => (float) ($requestData['remaining_amount'] ?? 0), 'type' => 'numeric'],
+                'paid_amount'                    => ['old' => $oldPaidAmount, 'new' => (float) ($request->paid_amount ?? 0), 'type' => 'numeric'],
+                'advance_freight'                => ['old' => $oldAdvanceFreight, 'new' => (float) ($request->advance_freight ?? 0), 'type' => 'numeric'],
+
+                'lumpsum_deduction'              => ['old' => $oldLumpAmount, 'new' => $newLumpAmount !== null && $newLumpAmount !== '' ? (float) $newLumpAmount : $oldLumpAmount, 'type' => 'numeric'],
+                'lumpsum_deduction_amount'       => ['old' => $oldLumpAmountTotal, 'new' => $newLumpAmountTotal !== null && $newLumpAmountTotal !== '' ? (float) $newLumpAmountTotal : $oldLumpAmountTotal, 'type' => 'numeric'],
+                'lumpsum_deduction_kgs'          => ['old' => $oldLumpKgs, 'new' => $newLumpKgs !== null && $newLumpKgs !== '' ? (float) $newLumpKgs : $oldLumpKgs, 'type' => 'numeric'],
+                'lumpsum_deduction_kgs_amount'   => ['old' => $oldLumpKgsTotal, 'new' => $newLumpKgsTotal !== null && $newLumpKgsTotal !== '' ? (float) $newLumpKgsTotal : $oldLumpKgsTotal, 'type' => 'numeric'],
+
+                'other_deduction_kg'             => ['old' => $oldOtherDedKg, 'new' => (float) ($request->input('other_deduction.kg_value') ?? 0), 'type' => 'numeric'],
+                'other_deduction_value'          => ['old' => $oldOtherDedVal, 'new' => (float) ($request->input('other_deduction.kg_amount') ?? $request->input('other_deduction.deduction_amount') ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_kg'     => ['old' => $oldRerateKg, 'new' => (float) ($request->rerate_on_access_weight_kg ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_rate'   => ['old' => $oldRerateRate, 'new' => (float) ($request->rerate_on_access_weight_rate ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_amount' => ['old' => $oldRerateAmount, 'new' => (float) ($request->rerate_on_access_weight_amount ?? 0), 'type' => 'numeric'],
+                'other_adjustment_amount'        => ['old' => $oldOtherAdj, 'new' => (float) ($request->other_adjustment_amount ?? 0), 'type' => 'numeric'],
+
+                'bag_weight'                     => ['old' => $oldBagWeight, 'new' => (float) ($request->bag_weight ?? 0), 'type' => 'numeric'],
+                'bag_weight_total'               => ['old' => $oldBagWeightTotal, 'new' => (float) ($request->bag_weight_total ?? 0), 'type' => 'numeric'],
+                'bag_weight_amount'              => ['old' => $oldBagWeightAmount, 'new' => (float) ($request->bag_weight_amount ?? 0), 'type' => 'numeric'],
+                'bag_rate'                       => ['old' => $oldBagRate, 'new' => (float) ($request->bag_rate ?? 0), 'type' => 'numeric'],
+                'bag_rate_amount'                => ['old' => $oldBagRateAmount, 'new' => (float) ($request->bag_rate_amount ?? 0), 'type' => 'numeric'],
+                'loading_weighbridge_amount'     => ['old' => $oldLoadingWeighbridge, 'new' => (float) ($request->loading_weighbridge_amount ?? 0), 'type' => 'numeric'],
+
+                'broker_id'                      => ['old' => $oldBrokerId, 'new' => $request->broker_id ?: null, 'type' => 'string'],
+                'brokery_amount'                 => ['old' => $oldBrokeryAmount, 'new' => (float) ($request->brokery_amount ?? 0), 'type' => 'numeric'],
+                'commission_amount'              => ['old' => $oldCommissionAmount, 'new' => (float) ($request->supplier_commission ?? $request->commission_amount ?? 0), 'type' => 'numeric'],
+
+                'notes'                          => ['old' => $oldNotes, 'new' => $request->notes ?: null, 'type' => 'string'],
+            ];
+
+            $oldValues = [];
+            $newValues = [];
+
+            foreach ($fieldsToTrack as $key => $conf) {
+                $hasDiff = false;
+                if ($conf['type'] === 'numeric') {
+                    $hasDiff = abs((float) $conf['old'] - (float) $conf['new']) > 0.0001;
+                } else {
+                    $hasDiff = trim((string) ($conf['old'] ?? '')) !== trim((string) ($conf['new'] ?? ''));
+                }
+
+                if ($hasDiff) {
+                    $oldValues[$key] = is_numeric($conf['old']) ? (string) $conf['old'] : $conf['old'];
+                    $newValues[$key] = is_numeric($conf['new']) ? (string) $conf['new'] : $conf['new'];
+                }
+            }
+
+            // Also check individual sampling slab changes
+            if ($request->has('sampling_results') && is_array($request->sampling_results)) {
+                foreach ($request->sampling_results as $slabKey => $slabData) {
+                    $slabTypeId = $slabData['slab_type_id'] ?? null;
+                    if (!$slabTypeId) continue;
+                    $prevSlab = null;
+                    if ($existingApprovals) {
+                        $prevSlab = PaymentRequestSamplingResult::where('payment_request_data_id', $existingApprovals->id)
+                            ->where('slab_type_id', $slabTypeId)
+                            ->first();
+                    }
+                    $oldApplied = $prevSlab ? (float) $prevSlab->applied_deduction : 0;
+                    $newApplied = (float) ($slabData['applied_deduction'] ?? 0);
+                    if (abs($oldApplied - $newApplied) > 0.0001) {
+                        $slabKeyName = "slab_deduction_{$slabTypeId}";
+                        $oldValues[$slabKeyName] = (string) $oldApplied;
+                        $newValues[$slabKeyName] = (string) $newApplied;
+                    }
+                }
+            }
+
+            // Fallback: If no difference found, still record payment_request_amount & remaining_amount
+            if (empty($oldValues)) {
+                $oldValues['payment_request_amount'] = (string) $oldPaymentAmount;
+                $newValues['payment_request_amount'] = (string) $newPaymentAmount;
+            }
+
+            $descAmount = $newPaymentAmount > 0 ? "Payment: " . number_format($newPaymentAmount, 2) : "";
+            if ($newFreightAmount > 0) {
+                $descAmount .= ($descAmount ? ", " : "") . "Freight: " . number_format($newFreightAmount, 2);
+            }
+
+            $newValues['ticket_id'] = (int) $ticket->id;
+            $newValues['purchase_order_id'] = (int) $purchaseOrder->id;
+
+            AuditLogService::log(
+                $paymentRequestData,
+                'payment_request_updated',
+                "Payment Request updated for Ticket #{$ticket->unique_no} (Contract #{$purchaseOrder->contract_no}) - " . ($descAmount ?: "Updated"),
+                $oldValues,
+                $newValues
+            );
 
             $message = $request->freight_pay_request_amount ?
                 'Payment and freight payment requests created successfully' :
@@ -619,11 +803,92 @@ class PaymentRequestController extends Controller
     {
         return DB::transaction(function () use ($request, $id) {
             $paymentRequestData = PaymentRequestData::findOrFail($id);
+            $ticket = PurchaseTicket::where('id', $paymentRequestData->ticket_id)->first();
+            $purchaseOrder = ArrivalPurchaseOrder::where('id', $paymentRequestData->purchase_order_id)->first();
+
+            $samplingRequest = null;
+            if ($ticket) {
+                $samplingRequest = PurchaseSamplingRequest::where('purchase_ticket_id', $ticket->id)
+                    ->whereIn('approved_status', ['approved', 'rejected'])
+                    ->latest()
+                    ->first();
+            }
+
+            $oldPaymentAmount = (float) PaymentRequest::where('payment_request_data_id', $paymentRequestData->id)
+                ->where('request_type', 'payment')
+                ->sum('amount');
+            $oldFreightAmount = (float) PaymentRequest::where('payment_request_data_id', $paymentRequestData->id)
+                ->where('request_type', 'freight_payment')
+                ->sum('amount');
+            $prevPaymentRequest = PaymentRequest::where('payment_request_data_id', $paymentRequestData->id)
+                ->where('request_type', 'payment')
+                ->latest('id')
+                ->first();
+
+            $newPaymentAmount = (float) ($request->payment_request_amount ?? 0);
+            $newFreightAmount = (float) ($request->freight_pay_request_amount ?? 0);
+
+            // Calculate net weight for lumpsum calculations
+            $loadingW = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->loading_weight : 0);
+            $bagsCount = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->no_of_bags : 0);
+            $oldBagW = (float) ($paymentRequestData->bag_weight ?? ($ticket ? $ticket->bag_weight : 0));
+            $oldNetWeight = $loadingW - ($oldBagW * $bagsCount);
+
+            $oldLumpAmount = $samplingRequest ? (float) $samplingRequest->lumpsum_deduction : 0;
+            $oldLumpKgs = $samplingRequest ? (float) $samplingRequest->lumpsum_deduction_kgs : 0;
+            $oldLumpAmountTotal = $oldLumpAmount * $oldNetWeight;
+            $ratePerKg = (float) ($purchaseOrder ? ($purchaseOrder->rate_per_kg ?? 0) : 0);
+            $oldLumpKgsTotal = $oldNetWeight > 0 ? (($oldLumpKgs * $oldNetWeight / 100) * $ratePerKg) : 0;
+
+            $newLumpAmount = $request->input('lumpsum.amount.deduction_value');
+            $newLumpAmountTotal = $request->input('lumpsum.amount.deduction_amount');
+            $newLumpKgs = $request->input('lumpsum.kgs.deduction_value');
+            $newLumpKgsTotal = $request->input('lumpsum.kgs.deduction_amount');
+
+            // Save lumpsum deduction updates to sampling request if provided
+            if ($samplingRequest && $request->has('lumpsum')) {
+                $samplingUpdates = [];
+                if ($newLumpAmount !== null && $newLumpAmount !== '') {
+                    $samplingUpdates['lumpsum_deduction'] = (float) $newLumpAmount;
+                }
+                if ($newLumpKgs !== null && $newLumpKgs !== '') {
+                    $samplingUpdates['lumpsum_deduction_kgs'] = (float) $newLumpKgs;
+                }
+                if (!empty($samplingUpdates)) {
+                    $samplingRequest->update($samplingUpdates);
+                }
+            }
+
+            // Old values
+            $oldOtherDedKg = $prevPaymentRequest ? (float) $prevPaymentRequest->other_deduction_kg : 0;
+            $oldOtherDedVal = $prevPaymentRequest ? (float) $prevPaymentRequest->other_deduction_value : 0;
+            $oldRerateKg = $prevPaymentRequest ? (float) $prevPaymentRequest->rerate_on_access_weight_kg : 0;
+            $oldRerateRate = $prevPaymentRequest ? (float) $prevPaymentRequest->rerate_on_access_weight_rate : 0;
+            $oldRerateAmount = $prevPaymentRequest ? (float) $prevPaymentRequest->rerate_on_access_weight_amount : 0;
+            $oldOtherAdj = $prevPaymentRequest ? (float) $prevPaymentRequest->other_adjustment_amount : 0;
+
+            $oldTotalAmount = (float) $paymentRequestData->total_amount;
+            $oldRemainingAmount = (float) $paymentRequestData->remaining_amount;
+            $oldPaidAmount = (float) $paymentRequestData->paid_amount;
+
+            $oldBagWeight = $oldBagW;
+            $oldBagWeightTotal = (float) $paymentRequestData->bag_weight_total;
+            $oldBagWeightAmount = (float) $paymentRequestData->bag_weight_amount;
+            $oldBagRate = (float) ($paymentRequestData->bag_rate ?? ($ticket ? $ticket->bag_rate : 0));
+            $oldBagRateAmount = (float) $paymentRequestData->bag_rate_amount;
+            $oldLoadingWeighbridge = (float) $paymentRequestData->loading_weighbridge_amount;
+            $oldBrokerId = $paymentRequestData->broker_id;
+            $oldBrokeryAmount = (float) $paymentRequestData->brokery_amount;
+            $oldCommissionAmount = (float) $paymentRequestData->commission_amount;
+            $oldAdvanceFreight = (float) $paymentRequestData->advance_freight;
+            $oldNotes = $paymentRequestData->notes;
 
             // Prepare update data
-            // $requestData = $request->validated();
             $requestData = $request->all();
             $requestData['is_loading'] = $request->loading_type === 'loading';
+            $requestData['broker_id'] = $request->broker_id ?: null;
+            $requestData['brokery_amount'] = $request->brokery_amount ?? 0;
+            $requestData['commission_amount'] = $request->supplier_commission ?? ($request->commission_amount ?? 0);
 
             // Calculate remaining amount
             $requestData['remaining_amount'] = $requestData['total_amount'] -
@@ -639,6 +904,85 @@ class PaymentRequestController extends Controller
             if (isset($request->sampling_results) || isset($request->compulsory_results) || isset($request->other_deduction)) {
                 $this->updateSamplingResults($paymentRequestData, $request);
             }
+
+            $fieldsToTrack = [
+                'payment_request_amount'         => ['old' => $oldPaymentAmount, 'new' => $newPaymentAmount, 'type' => 'numeric'],
+                'freight_pay_request_amount'     => ['old' => $oldFreightAmount, 'new' => $newFreightAmount, 'type' => 'numeric'],
+                'total_amount'                   => ['old' => $oldTotalAmount, 'new' => (float) ($request->total_amount ?? 0), 'type' => 'numeric'],
+                'remaining_amount'               => ['old' => $oldRemainingAmount, 'new' => (float) ($requestData['remaining_amount'] ?? 0), 'type' => 'numeric'],
+                'paid_amount'                    => ['old' => $oldPaidAmount, 'new' => (float) ($request->paid_amount ?? 0), 'type' => 'numeric'],
+                'advance_freight'                => ['old' => $oldAdvanceFreight, 'new' => (float) ($request->advance_freight ?? 0), 'type' => 'numeric'],
+
+                'lumpsum_deduction'              => ['old' => $oldLumpAmount, 'new' => $newLumpAmount !== null && $newLumpAmount !== '' ? (float) $newLumpAmount : $oldLumpAmount, 'type' => 'numeric'],
+                'lumpsum_deduction_amount'       => ['old' => $oldLumpAmountTotal, 'new' => $newLumpAmountTotal !== null && $newLumpAmountTotal !== '' ? (float) $newLumpAmountTotal : $oldLumpAmountTotal, 'type' => 'numeric'],
+                'lumpsum_deduction_kgs'          => ['old' => $oldLumpKgs, 'new' => $newLumpKgs !== null && $newLumpKgs !== '' ? (float) $newLumpKgs : $oldLumpKgs, 'type' => 'numeric'],
+                'lumpsum_deduction_kgs_amount'   => ['old' => $oldLumpKgsTotal, 'new' => $newLumpKgsTotal !== null && $newLumpKgsTotal !== '' ? (float) $newLumpKgsTotal : $oldLumpKgsTotal, 'type' => 'numeric'],
+
+                'other_deduction_kg'             => ['old' => $oldOtherDedKg, 'new' => (float) ($request->input('other_deduction.kg_value') ?? 0), 'type' => 'numeric'],
+                'other_deduction_value'          => ['old' => $oldOtherDedVal, 'new' => (float) ($request->input('other_deduction.kg_amount') ?? $request->input('other_deduction.deduction_amount') ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_kg'     => ['old' => $oldRerateKg, 'new' => (float) ($request->rerate_on_access_weight_kg ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_rate'   => ['old' => $oldRerateRate, 'new' => (float) ($request->rerate_on_access_weight_rate ?? 0), 'type' => 'numeric'],
+                'rerate_on_access_weight_amount' => ['old' => $oldRerateAmount, 'new' => (float) ($request->rerate_on_access_weight_amount ?? 0), 'type' => 'numeric'],
+                'other_adjustment_amount'        => ['old' => $oldOtherAdj, 'new' => (float) ($request->other_adjustment_amount ?? 0), 'type' => 'numeric'],
+
+                'bag_weight'                     => ['old' => $oldBagWeight, 'new' => (float) ($request->bag_weight ?? 0), 'type' => 'numeric'],
+                'bag_weight_total'               => ['old' => $oldBagWeightTotal, 'new' => (float) ($request->bag_weight_total ?? 0), 'type' => 'numeric'],
+                'bag_weight_amount'              => ['old' => $oldBagWeightAmount, 'new' => (float) ($request->bag_weight_amount ?? 0), 'type' => 'numeric'],
+                'bag_rate'                       => ['old' => $oldBagRate, 'new' => (float) ($request->bag_rate ?? 0), 'type' => 'numeric'],
+                'bag_rate_amount'                => ['old' => $oldBagRateAmount, 'new' => (float) ($request->bag_rate_amount ?? 0), 'type' => 'numeric'],
+                'loading_weighbridge_amount'     => ['old' => $oldLoadingWeighbridge, 'new' => (float) ($request->loading_weighbridge_amount ?? 0), 'type' => 'numeric'],
+
+                'broker_id'                      => ['old' => $oldBrokerId, 'new' => $request->broker_id ?: null, 'type' => 'string'],
+                'brokery_amount'                 => ['old' => $oldBrokeryAmount, 'new' => (float) ($request->brokery_amount ?? 0), 'type' => 'numeric'],
+                'commission_amount'              => ['old' => $oldCommissionAmount, 'new' => (float) ($request->supplier_commission ?? $request->commission_amount ?? 0), 'type' => 'numeric'],
+
+                'notes'                          => ['old' => $oldNotes, 'new' => $request->notes ?: null, 'type' => 'string'],
+            ];
+
+            $oldValues = [];
+            $newValues = [];
+
+            foreach ($fieldsToTrack as $key => $conf) {
+                $hasDiff = false;
+                if ($conf['type'] === 'numeric') {
+                    $hasDiff = abs((float) $conf['old'] - (float) $conf['new']) > 0.0001;
+                } else {
+                    $hasDiff = trim((string) ($conf['old'] ?? '')) !== trim((string) ($conf['new'] ?? ''));
+                }
+
+                if ($hasDiff) {
+                    $oldValues[$key] = is_numeric($conf['old']) ? (string) $conf['old'] : $conf['old'];
+                    $newValues[$key] = is_numeric($conf['new']) ? (string) $conf['new'] : $conf['new'];
+                }
+            }
+
+            if (empty($oldValues)) {
+                $oldValues['payment_request_amount'] = (string) $oldPaymentAmount;
+                $newValues['payment_request_amount'] = (string) $newPaymentAmount;
+            }
+
+            $ticketNo = $ticket ? ($ticket->unique_no ?? 'N/A') : ($paymentRequestData->ticket_id ?? 'N/A');
+            $contractNo = $purchaseOrder ? ($purchaseOrder->contract_no ?? 'N/A') : 'N/A';
+            $descAmount = $newPaymentAmount > 0 ? "Payment: " . number_format($newPaymentAmount, 2) : "";
+            if ($newFreightAmount > 0) {
+                $descAmount .= ($descAmount ? ", " : "") . "Freight: " . number_format($newFreightAmount, 2);
+            }
+
+            $effectiveTicketId = $ticket ? $ticket->id : ($paymentRequestData->ticket_id ?? null);
+            if ($effectiveTicketId) {
+                $newValues['ticket_id'] = (int) $effectiveTicketId;
+            }
+            if ($purchaseOrder) {
+                $newValues['purchase_order_id'] = (int) $purchaseOrder->id;
+            }
+
+            AuditLogService::log(
+                $paymentRequestData,
+                'payment_request_updated',
+                "Payment Request updated for Ticket #{$ticketNo} (Contract #{$contractNo}) - " . ($descAmount ?: "Updated"),
+                $oldValues,
+                $newValues
+            );
 
             return response()->json(['success' => 'Payment request updated successfully']);
         });
@@ -966,4 +1310,5 @@ class PaymentRequestController extends Controller
 
         return response()->json(['success' => true, 'html' => $html]);
     }
-}
+
+    }
