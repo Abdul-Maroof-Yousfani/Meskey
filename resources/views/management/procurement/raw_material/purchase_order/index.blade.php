@@ -11,10 +11,11 @@
                 </div>
 
 
-                
+
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     @canAccess("procurement-raw-purchase-order-create")
-                    <button onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
+                    <button
+                        onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
                         type="button" class="btn btn-primary position-relative ">
                         Create Purchase Contract/Order
                     </button>
@@ -27,7 +28,7 @@
                     @endcanAccess
 
                 </div>
-           
+
             </div>
             <div class="row">
                 <div class="col-12">
@@ -58,17 +59,17 @@
                                                         class="form-control ">
                                                         <option value="">Location</option>
                                                         @foreach ($companyLocations as $location)
-                                                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                            <option value="{{ $location->id }}">{{ $location->name }}
+                                                            </option>
                                                         @endforeach
                                                     </select>
                                                 </div>
                                             </div>
-                                          
-                                             <div class="col-md-2">
+
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
-                                                    <select name="commodity_id_f" id="commodity_id_f"
-                                                        class="form-control po-filter-select">
+                                                    <select name="commodity_id_f" id="commodity_id_f" class="form-control">
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
                                                             <option value="{{ $commodity->id }}"
@@ -83,10 +84,16 @@
                                                 <div class="form-group mb-0">
                                                     <label>Contract Status:</label>
                                                     <select name="contract_status_f" id="contract_status_f"
-                                                        class="form-control po-filter-select">
-                                                        <option value="all" {{ request('contract_status_f') == 'all' ? 'selected' : '' }}>All Status</option>
-                                                        <option value="pending" {{ request('contract_status_f', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                                        <option value="closed" {{ request('contract_status_f') == 'closed' ? 'selected' : '' }}>Closed</option>
+                                                        class="form-control">
+                                                        <option value="all"
+                                                            {{ request('contract_status_f') == 'all' ? 'selected' : '' }}>
+                                                            All Status</option>
+                                                        <option value="pending"
+                                                            {{ request('contract_status_f', 'pending') == 'pending' ? 'selected' : '' }}>
+                                                            Pending</option>
+                                                        <option value="closed"
+                                                            {{ request('contract_status_f') == 'closed' ? 'selected' : '' }}>
+                                                            Closed</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -95,7 +102,8 @@
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                                <input type="hidden" name="per_page"
+                                                    value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
                                                     placeholder="Search here" name="search"
                                                     value="{{ request('search', '') }}">
@@ -109,14 +117,14 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                              <div class="col-md-2">
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Decision Of:</label>
-                                                    <select name="decision_of_f" id="decision_of_f"
-                                                        class="form-control po-filter-select">
+                                                    <select name="decision_of_f" id="decision_of_f" class="form-control">
                                                         <option value="">All Decision Of</option>
                                                         @foreach ($decisionofUsers as $decisionof)
-                                                            <option value="{{ $decisionof->id }}">{{ $decisionof->name }}</option>
+                                                            <option value="{{ $decisionof->id }}">{{ $decisionof->name }}
+                                                            </option>
                                                         @endforeach
                                                     </select>
                                                 </div>
@@ -160,7 +168,6 @@
 
 @section('script')
     <script>
-
         function exportCSV() {
             // Show processing SweetAlert
             Swal.fire({
@@ -200,7 +207,7 @@
                 xhrFields: {
                     responseType: 'blob'
                 },
-                success: function (response, status, xhr) {
+                success: function(response, status, xhr) {
                     // Close SweetAlert
                     Swal.close();
 
@@ -231,7 +238,7 @@
                         showConfirmButton: false
                     });
                 },
-                error: function (xhr, status, error) {
+                error: function(xhr, status, error) {
                     // Close SweetAlert
                     Swal.close();
 
@@ -242,7 +249,7 @@
                         if (response.message) {
                             errorMessage = response.message;
                         }
-                    } catch (e) { }
+                    } catch (e) {}
 
                     Swal.fire({
                         icon: 'error',
@@ -258,10 +265,10 @@
                 }
             });
         }
-        $(document).ready(function () {
-            $('.po-filter-select').select2({
-                width: '100%'
-            });
+        $(document).ready(function() {
+            // $('.po-filter-select').select2({
+            //     width: '100%'
+            // });
 
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
