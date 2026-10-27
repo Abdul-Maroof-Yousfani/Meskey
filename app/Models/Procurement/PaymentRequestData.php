@@ -91,6 +91,25 @@ class PaymentRequestData extends Model
         'is_paid_by_supplier' => 'boolean',
     ];
 
+    public function setAttribute($key, $value)
+    {
+        $decimalFields = [
+            'total_amount', 'remaining_amount', 'paid_amount', 'gross_amount',
+            'bag_weight', 'bag_weight_total', 'bag_weight_amount', 'bag_rate', 'bag_rate_amount',
+            'loading_weighbridge_amount', 'brokery_amount', 'commission_amount',
+            'advance_freight', 'access_weight', 'exempted_weight', 'billing_weight',
+            'freight_rs', 'freight_per_ton', 'loading_kanta', 'arrived_kanta',
+            'contract_rate', 'avg_rate'
+        ];
+
+        if (in_array($key, $decimalFields) && is_string($value)) {
+            $value = str_replace(',', '', trim($value));
+            $value = is_numeric($value) ? (float) $value : $value;
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
     public function paymentRequests()
     {
         return $this->hasMany(PaymentRequest::class);
@@ -124,5 +143,15 @@ class PaymentRequestData extends Model
     public function deliveryChallan()
     {
         return $this->belongsTo(\App\Models\Sales\DeliveryChallan::class, 'delivery_challan_id');
+    }
+
+    public function auditIdentifier(): string
+    {
+        return (string) ($this->purchaseOrder?->contract_no ?: "#{$this->id}");
+    }
+
+    public function auditModelName(): string
+    {
+        return 'Payment Request';
     }
 }

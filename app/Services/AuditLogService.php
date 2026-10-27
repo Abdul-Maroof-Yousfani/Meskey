@@ -211,6 +211,27 @@ class AuditLogService
         } elseif ($modelBasename === 'ArrivalPurchaseOrder') {
             $foreignKeys[] = 'purchase_order_id';
             $foreignKeys[] = 'arrival_purchase_order_id';
+
+            if (class_exists(\App\Models\Procurement\PaymentRequestData::class)) {
+                $poPrDataIds = \App\Models\Procurement\PaymentRequestData::where('purchase_order_id', $modelId)
+                    ->pluck('id')
+                    ->toArray();
+                if (!empty($poPrDataIds)) {
+                    $extraModelTypeIds[\App\Models\Procurement\PaymentRequestData::class] = $poPrDataIds;
+                    $extraModelTypeIds['PaymentRequestData'] = $poPrDataIds;
+
+                    if (class_exists(\App\Models\Procurement\PaymentRequest::class)) {
+                        $poPrIds = \App\Models\Procurement\PaymentRequest::whereIn('payment_request_data_id', $poPrDataIds)
+                            ->orWhere('purchase_order_id', $modelId)
+                            ->pluck('id')
+                            ->toArray();
+                        if (!empty($poPrIds)) {
+                            $extraModelTypeIds[\App\Models\Procurement\PaymentRequest::class] = $poPrIds;
+                            $extraModelTypeIds['PaymentRequest'] = $poPrIds;
+                        }
+                    }
+                }
+            }
         } elseif ($modelBasename === 'SalesOrder') {
             $foreignKeys[] = 'sale_order_id';
             $foreignKeys[] = 'sales_order_id';
@@ -267,6 +288,12 @@ class AuditLogService
             })
             ->orderBy('created_at', 'desc')
             ->get();
+
+        if (!empty($options['filter_actions'])) {
+            $logs = $logs->filter(function ($log) use ($options) {
+                return in_array($log->action, $options['filter_actions']);
+            })->values();
+        }
 
         if ($modelBasename === 'ArrivalQcReliefParameter' || !empty($options['exclude_create'])) {
             $logs = $logs->reject(function ($log) {

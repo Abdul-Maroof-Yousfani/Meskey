@@ -67,6 +67,19 @@ class AuditLogController extends Controller
             $options = [];
             if (in_array($modelType, ['payment-request', 'payment_request', 'ticket-payment-request'])) {
                 $options['title'] = 'Payment Request Audit Logs';
+            } elseif (in_array($modelType, ['advance-payment-request', 'advance_payment_request'])) {
+                $options['title'] = 'Advance Payment Request Audit Logs';
+                $contractNo = $model->contract_no ?? 'N/A';
+                $supplierName = $model->supplier?->name ?? 'N/A';
+                $productName = $model->product?->name ?? $model->qcProduct?->name ?? 'N/A';
+                $options['subtitle'] = "Contract #{$contractNo} | Supplier: {$supplierName} | Commodity: {$productName}";
+                $options['empty_message'] = 'No advance payment requests recorded for this contract yet.';
+                $options['filter_actions'] = [
+                    'advance_payment_request_created',
+                    'advance_payment_request_updated',
+                    'advance_payment_request_approval_updated',
+                    'payment_request_approval_updated',
+                ];
             } elseif (in_array($modelType, ['arrival-qc-relief', 'arrival_qc_relief'])) {
                 $productName = $model->product?->name ?? 'Product';
                 $locationName = $model->location?->name ?? 'All Locations';

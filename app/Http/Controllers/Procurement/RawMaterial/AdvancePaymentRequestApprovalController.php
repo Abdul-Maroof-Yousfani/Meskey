@@ -25,6 +25,7 @@ use App\Models\PurchaseTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\AuditLogService;
 
 class AdvancePaymentRequestApprovalController extends Controller
 {
@@ -110,7 +111,26 @@ class AdvancePaymentRequestApprovalController extends Controller
                 'request_type' => $paymentRequest->request_type
             ]);
 
+            $oldStatus = $paymentRequest->getOriginal('status') ?? 'pending';
+            $newStatus = $request->status;
+
             $paymentRequest->update(['status' => $request->status]);
+
+            AuditLogService::log(
+                $paymentRequest,
+                'advance_payment_request_approval_updated',
+                "Advance Payment Request: " . ucfirst($newStatus) . " for Contract #{$purchaseOrder->contract_no} - Amount: Rs. " . number_format($paymentRequest->amount, 2),
+                [
+                    'status' => $oldStatus,
+                    'purchase_order_id' => (int) $purchaseOrder->id,
+                    'remarks' => null,
+                ],
+                [
+                    'status' => $newStatus,
+                    'purchase_order_id' => (int) $purchaseOrder->id,
+                    'remarks' => $request->remarks,
+                ]
+            );
 
             return response()->json([
                 'success' => 'Payment request ' . $request->status . ' successfully!'
