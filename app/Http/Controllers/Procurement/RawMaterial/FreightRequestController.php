@@ -50,6 +50,9 @@ class FreightRequestController extends Controller
      */
     public function getList(Request $request)
     {
+        // Increase memory and execution time
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300); // 5 minutes
         // Query for Arrival Tickets (Pohanch requests)
         $arrivalQuery = ArrivalTicket::with([
             'purchaseOrder',
