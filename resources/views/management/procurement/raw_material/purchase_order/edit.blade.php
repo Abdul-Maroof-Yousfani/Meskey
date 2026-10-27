@@ -6,9 +6,12 @@
      <input type="hidden" name="id" value="{{ $arrivalPurchaseOrder->id }}">
      <input type="hidden" name="company_id" value="{{ $arrivalPurchaseOrder->company_id }}">
 
-     @if(in_array($arrivalPurchaseOrder->am_approval_status, ['approved', 'rejected']))
+     @if (in_array($arrivalPurchaseOrder->am_approval_status, ['approved', 'rejected']))
          <div class="alert alert-warning px-3 py-2">
-             <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Purchase Order is <strong>{{ ucfirst($arrivalPurchaseOrder->am_approval_status) }}</strong>, you can only update <strong>Delivery Date, Contract Status, Defaulter, and Remarks</strong>. Changes to any other fields will be ignored.
+             <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Purchase Order is
+             <strong>{{ ucfirst($arrivalPurchaseOrder->am_approval_status) }}</strong>, you can only update
+             <strong>Delivery Date, Contract Status, Defaulter, and Remarks</strong>. Changes to any other fields will
+             be ignored.
          </div>
      @endif
 
@@ -43,7 +46,8 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Sauda Type:</label>
-                 <select name="sauda_type_id" id="sauda_type_id{{ $ticketcounts != 0 ? 'ub-nh-chlunga' : '' }}" class="form-control ">
+                 <select name="sauda_type_id" id="sauda_type_id{{ $ticketcounts != 0 ? 'ub-nh-chlunga' : '' }}"
+                     class="form-control ">
                      <option value="{{ $arrivalPurchaseOrder->saudaType->id ?? null }}">
                          {{ $arrivalPurchaseOrder->saudaType?->name ?? 'Sauda Type Name' }}</option>
                  </select>
@@ -62,11 +66,14 @@
                  <label>Supplier:</label>
                  <select name="supplier_id" id="supplier_id" class="form-control ">
 
-                 @foreach ($suppliers as $supplier)
-                     <option value="{{ $supplier->id ?? null }}" data-phone="{{ $supplier->owner_mobile_no ?? 'N/A' }}" data-cnic="{{ $supplier->owner_cnic_no ?? 'N/A' }}" data-owner_name="{{ $supplier->owner_name ?? 'N/A' }}" data-email="{{ $supplier->email ?? 'N/A' }}"        
-                     @selected($supplier->id == $arrivalPurchaseOrder->supplier_id)>
-                         {{ $supplier->name ?? 'Supplier' }}</option>
-                 @endforeach
+                     @foreach ($suppliers as $supplier)
+                         <option value="{{ $supplier->id ?? null }}"
+                             data-phone="{{ $supplier->owner_mobile_no ?? 'N/A' }}"
+                             data-cnic="{{ $supplier->owner_cnic_no ?? 'N/A' }}"
+                             data-owner_name="{{ $supplier->owner_name ?? 'N/A' }}"
+                             data-email="{{ $supplier->email ?? 'N/A' }}" @selected($supplier->id == $arrivalPurchaseOrder->supplier_id)>
+                             {{ $supplier->name ?? 'Supplier' }}</option>
+                     @endforeach
                  </select>
              </div>
          </div>
@@ -80,28 +87,34 @@
          </div>
 
          <div class="col-xs-12 col-sm-12 col-md-12">
-            <!-- Supplier KYC Alert Container -->
-            <div id="supplierKycAlert" class="my-2 p-3 bg-light-info rounded border-left-info shadow-sm"
-                style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;" bis_skin_checked="1">
+             <!-- Supplier KYC Alert Container -->
+             <div id="supplierKycAlert" class="my-2 p-3 bg-light-info rounded border-left-info shadow-sm"
+                 style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;" bis_skin_checked="1">
 
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="text-info font-weight-bold mb-2"> Supplier KYC
-                        </h6>
+                 <div class="d-flex justify-content-between align-items-start">
+                     <div>
+                         <h6 class="text-info font-weight-bold mb-2"> Supplier KYC
+                         </h6>
 
-                        <div class="mt-1" style="font-size:13px; line-height:1.6;">
-                            <div><strong>Owner Name:</strong> <span id="kycName">{{ $arrivalPurchaseOrder->supplier->owner_name ?? 'N/A' }}</span></div>
-                            <div><strong>Phone:</strong> <span id="kycPhone">{{ $arrivalPurchaseOrder->supplier->owner_mobile_no ?? 'N/A' }}</span></div>
-                            <div><strong>CNIC:</strong> <span id="kycCnic">{{ $arrivalPurchaseOrder->supplier->owner_cnic_no ?? 'N/A' }}</span></div>
-                            <!-- <div><strong>Email:</strong> <span id="kycEmail">{{ $arrivalPurchaseOrder->supplier->email ?? 'N/A' }}</span></div> -->
-                        </div>
-                    </div>
-                    <!-- <button type="button" class="close ml-2" id="closeKycAlert" aria-label="Close">
+                         <div class="mt-1" style="font-size:13px; line-height:1.6;">
+                             <div><strong>Owner Name:</strong> <span
+                                     id="kycName">{{ $arrivalPurchaseOrder->supplier->owner_name ?? 'N/A' }}</span>
+                             </div>
+                             <div><strong>Phone:</strong> <span
+                                     id="kycPhone">{{ $arrivalPurchaseOrder->supplier->owner_mobile_no ?? 'N/A' }}</span>
+                             </div>
+                             <div><strong>CNIC:</strong> <span
+                                     id="kycCnic">{{ $arrivalPurchaseOrder->supplier->owner_cnic_no ?? 'N/A' }}</span>
+                             </div>
+                             <!-- <div><strong>Email:</strong> <span id="kycEmail">{{ $arrivalPurchaseOrder->supplier->email ?? 'N/A' }}</span></div> -->
+                         </div>
+                     </div>
+                     <!-- <button type="button" class="close ml-2" id="closeKycAlert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button> -->
-                </div>
-            </div>
-        </div>
+                 </div>
+             </div>
+         </div>
      </div>
      <div class="row">
          <div class="col-12">
@@ -110,38 +123,43 @@
              </h6>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group ">
-                <label>Broker:</label>
-                <select name="broker_one_id" id="broker_one_id" class="form-control select22 broker-select"
-                    data-commission="#broker_one_commission">
-                    <option value="">Select Broker</option>
-                    @foreach ($brokers as $broker)
-                        <option @selected($broker->id == ($arrivalPurchaseOrder->broker->id ?? null)) value="{{ $broker->id }}">{{ $broker->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+             <div class="form-group ">
+                 <label>Broker:</label>
+                 <select name="broker_one_id" id="broker_one_id" class="form-control select22 broker-select"
+                     data-commission="#broker_one_commission">
+                     <option value="">Select Broker</option>
+                     @foreach ($brokers as $broker)
+                         <option @selected($broker->id == ($arrivalPurchaseOrder->broker->id ?? null)) value="{{ $broker->id }}">{{ $broker->name }}
+                         </option>
+                     @endforeach
+                 </select>
+             </div>
+         </div>
 
-        <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group">
-                <label>Type:</label>
-                <select name="broker_one_calculation_type" id="broker_one_calculation_type" class="form-control select2">
-                    <option value="">Select Type</option>
-                    <option value="trucks" {{ $arrivalPurchaseOrder->broker_one_calculation_type == 'trucks' ? 'selected' : '' }}>Trucks Wise</option>
-                    <option value="quantity" {{ $arrivalPurchaseOrder->broker_one_calculation_type == 'quantity' ? 'selected' : '' }}>Quantity Wise</option>
-                </select>
-            </div>
-        </div>
+         <div class="col-xs-4 col-sm-4 col-md-4">
+             <div class="form-group">
+                 <label>Type:</label>
+                 <select name="broker_one_calculation_type" id="broker_one_calculation_type"
+                     class="form-control select2 select22">
+                     <option value="">Select Type</option>
+                     <option value="trucks"
+                         {{ $arrivalPurchaseOrder->broker_one_calculation_type == 'trucks' ? 'selected' : '' }}>Trucks
+                         Wise</option>
+                     <option value="quantity"
+                         {{ $arrivalPurchaseOrder->broker_one_calculation_type == 'quantity' ? 'selected' : '' }}>
+                         Quantity Wise</option>
+                 </select>
+             </div>
+         </div>
 
-        <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group ">
-                <label>Commission:</label>
-                <input type="number" value="{{ $arrivalPurchaseOrder->broker_one_commission }}"
-                    id="broker_one_commission" name="broker_one_commission" placeholder="Commission"
-                    class="form-control" step="any" min="-999999" max="999999" />
-            </div>
-        </div>
+         <div class="col-xs-4 col-sm-4 col-md-4">
+             <div class="form-group ">
+                 <label>Commission:</label>
+                 <input type="number" value="{{ $arrivalPurchaseOrder->broker_one_commission }}"
+                     id="broker_one_commission" name="broker_one_commission" placeholder="Commission"
+                     class="form-control" step="any" min="-999999" max="999999" />
+             </div>
+         </div>
      </div>
      <div class="row">
          <div class="col-12">
@@ -164,15 +182,20 @@
          </div>
 
          <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group">
-                <label>Type:</label>
-                <select name="broker_two_calculation_type" id="broker_two_calculation_type" class="form-control select2">
-                    <option value="">Select Type</option>
-                    <option value="trucks" {{ $arrivalPurchaseOrder->broker_two_calculation_type == 'trucks' ? 'selected' : '' }}>Trucks Wise</option>
-                    <option value="quantity" {{ $arrivalPurchaseOrder->broker_two_calculation_type == 'quantity' ? 'selected' : '' }}>Quantity Wise</option>
-                </select>
-            </div>
-        </div>
+             <div class="form-group">
+                 <label>Type:</label>
+                 <select name="broker_two_calculation_type" id="broker_two_calculation_type"
+                     class="form-control select2 select22">
+                     <option value="">Select Type</option>
+                     <option value="trucks"
+                         {{ $arrivalPurchaseOrder->broker_two_calculation_type == 'trucks' ? 'selected' : '' }}>Trucks
+                         Wise</option>
+                     <option value="quantity"
+                         {{ $arrivalPurchaseOrder->broker_two_calculation_type == 'quantity' ? 'selected' : '' }}>
+                         Quantity Wise</option>
+                 </select>
+             </div>
+         </div>
 
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
@@ -205,15 +228,20 @@
          </div>
 
          <div class="col-xs-4 col-sm-4 col-md-4">
-            <div class="form-group">
-                <label>Type:</label>
-                <select name="broker_three_calculation_type" id="broker_three_calculation_type" class="form-control select2">
-                    <option value="">Select Type</option>
-                    <option value="trucks" {{ $arrivalPurchaseOrder->broker_three_calculation_type == 'trucks' ? 'selected' : '' }}>Trucks Wise</option>
-                    <option value="quantity" {{ $arrivalPurchaseOrder->broker_three_calculation_type == 'quantity' ? 'selected' : '' }}>Quantity Wise</option>
-                </select>
-            </div>
-        </div>
+             <div class="form-group">
+                 <label>Type:</label>
+                 <select name="broker_three_calculation_type" id="broker_three_calculation_type"
+                     class="form-control select2 select22">
+                     <option value="">Select Type</option>
+                     <option value="trucks"
+                         {{ $arrivalPurchaseOrder->broker_three_calculation_type == 'trucks' ? 'selected' : '' }}>
+                         Trucks Wise</option>
+                     <option value="quantity"
+                         {{ $arrivalPurchaseOrder->broker_three_calculation_type == 'quantity' ? 'selected' : '' }}>
+                         Quantity Wise</option>
+                 </select>
+             </div>
+         </div>
 
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
@@ -299,22 +327,25 @@
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per KG:</label>
-                 <input type="number" step="0.0001"name="rate_per_kg" value="{{ $arrivalPurchaseOrder->rate_per_kg }}"
-                     placeholder="Rate Per KG" class="form-control" />
+                 <input type="number" step="0.0001"name="rate_per_kg"
+                     value="{{ $arrivalPurchaseOrder->rate_per_kg }}" placeholder="Rate Per KG"
+                     class="form-control" />
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per Mound:</label>
-                 <input type="number" step="0.0001" name="rate_per_mound" value="{{ $arrivalPurchaseOrder->rate_per_mound }}"
-                     placeholder="Rate Per Mound" class="form-control" />
+                 <input type="number" step="0.0001" name="rate_per_mound"
+                     value="{{ $arrivalPurchaseOrder->rate_per_mound }}" placeholder="Rate Per Mound"
+                     class="form-control" />
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per 100KG:</label>
-                 <input type="number" step="0.0001" name="rate_per_100kg" value="{{ $arrivalPurchaseOrder->rate_per_100kg }}"
-                     placeholder="Rate Per 100KG" class="form-control" />
+                 <input type="number" step="0.0001" name="rate_per_100kg"
+                     value="{{ $arrivalPurchaseOrder->rate_per_100kg }}" placeholder="Rate Per 100KG"
+                     class="form-control" />
              </div>
          </div>
      </div>
@@ -449,28 +480,32 @@
                  <label>Contract Status:</label>
                  <select name="contract_status" id="contract_status" class="form-control select22">
                      <option value="">Select Contract Status</option>
-                     <option @selected($arrivalPurchaseOrder->contract_status == 'close-contract-due-to-market-down') value="close-contract-due-to-market-down">Close Contract (due to market down)</option>
-                     <option @selected($arrivalPurchaseOrder->contract_status == 'continue-contract-due-to-high-market') value="continue-contract-due-to-high-market">Continue Contract (due to high market)</option>
-                     <option @selected($arrivalPurchaseOrder->contract_status == 'close-with-market-rate-penalty') value="close-with-market-rate-penalty">Close with market rate (Penalty)</option>
-                     @if(($isClosed ?? false) || $arrivalPurchaseOrder->contract_status == 'reopen-contract-closed-by-mistake')
-                         <option @selected($arrivalPurchaseOrder->contract_status == 'reopen-contract-closed-by-mistake') value="reopen-contract-closed-by-mistake">Reopen Contract (Closed by mistake)</option>
+                     <option @selected($arrivalPurchaseOrder->contract_status == 'close-contract-due-to-market-down') value="close-contract-due-to-market-down">Close Contract (due
+                         to market down)</option>
+                     <option @selected($arrivalPurchaseOrder->contract_status == 'continue-contract-due-to-high-market') value="continue-contract-due-to-high-market">Continue
+                         Contract (due to high market)</option>
+                     <option @selected($arrivalPurchaseOrder->contract_status == 'close-with-market-rate-penalty') value="close-with-market-rate-penalty">Close with market rate
+                         (Penalty)</option>
+                     @if (($isClosed ?? false) || $arrivalPurchaseOrder->contract_status == 'reopen-contract-closed-by-mistake')
+                         <option @selected($arrivalPurchaseOrder->contract_status == 'reopen-contract-closed-by-mistake') value="reopen-contract-closed-by-mistake">Reopen Contract
+                             (Closed by mistake)</option>
                      @endif
                  </select>
              </div>
          </div>
-            <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
+         <div class="col-xs-12 col-sm-12 col-md-12">
+             <div class="form-group ">
                  <div class="checkbox">
                      <input type="checkbox" name="defaulter" value="1" class="custom-control-input"
                          id="defaulter-yes" {{ $arrivalPurchaseOrder->defaulter == 1 ? 'checked' : '' }}>
                      <label for="defaulter-yes">
-                        <span>
-                            Mark as Defaulter
-                        </span>
+                         <span>
+                             Mark as Defaulter
+                         </span>
                      </label>
                  </div>
-            </div>
-            </div>
+             </div>
+         </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group">
                  <label>Remarks (Optional):</label>
@@ -501,7 +536,7 @@
 
  <script>
      $(document).ready(function() {
-         $('.select22').select2();
+         $('.select2, .select22').select2();
          $('#supplier_id').select2();
 
          $('.broker-select').on('change', function() {
@@ -593,7 +628,7 @@
 
 
 
-                         
+
 
              if (min && max) {
                  TRUCK_MIN = min;
@@ -650,9 +685,9 @@
                     </div>
                 </div>
             `);
-            $('#min_quantity_input, #max_quantity_input').on('input change', function() {
-                        calculateQuantityAndBags();
-                    });
+                 $('#min_quantity_input, #max_quantity_input').on('input change', function() {
+                     calculateQuantityAndBags();
+                 });
              }
          }
 
@@ -696,9 +731,9 @@
 
 
          $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change',
-                function() {
-                    calculateQuantityAndBags();
-                });
+             function() {
+                 calculateQuantityAndBags();
+             });
          // Quantity and bags calculation
          function calculateQuantityAndBags() {
              const MIN_QTY = 0;
@@ -708,9 +743,9 @@
              if ($('#calculation_type').val() === 'trucks') {
                  const trucks = parseInt($('#no_of_trucks').val()) || 0;
 
-                  const truck_size_range = $('#truck_size_range').find('option:selected');
-             const min = truck_size_range.data('min');
-             const max = truck_size_range.data('max');
+                 const truck_size_range = $('#truck_size_range').find('option:selected');
+                 const min = truck_size_range.data('min');
+                 const max = truck_size_range.data('max');
                  minQuantity = trucks * min;
                  maxQuantity = trucks * max;
 
@@ -746,99 +781,102 @@
              $('#maxBags').val(maxBags);
          }
 
-          let previousContractStatus = '{{ $arrivalPurchaseOrder->contract_status ?? '' }}';
-          let isRevertingContractStatus = false;
+         let previousContractStatus = '{{ $arrivalPurchaseOrder->contract_status ?? '' }}';
+         let isRevertingContractStatus = false;
 
-          $('#contract_status').on('change', function() {
-              if (isRevertingContractStatus) {
-                  return;
-              }
+         $('#contract_status').on('change', function() {
+             if (isRevertingContractStatus) {
+                 return;
+             }
 
-              let selectedStatus = $(this).val();
+             let selectedStatus = $(this).val();
 
-              if (selectedStatus === 'reopen-contract-closed-by-mistake' || selectedStatus === 'reopen' || selectedStatus === 'open') {
-                  let calculationType = '{{ $arrivalPurchaseOrder->calculation_type }}';
-                  let balanceTrucks = parseFloat('{{ $balanceTrucks ?? 0 }}') || 0;
-                  let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
+             if (selectedStatus === 'reopen-contract-closed-by-mistake' || selectedStatus === 'reopen' ||
+                 selectedStatus === 'open') {
+                 let calculationType = '{{ $arrivalPurchaseOrder->calculation_type }}';
+                 let balanceTrucks = parseFloat('{{ $balanceTrucks ?? 0 }}') || 0;
+                 let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
 
-                  let canReopen = false;
-                  let errorMsg = '';
+                 let canReopen = false;
+                 let errorMsg = '';
 
-                  if (calculationType === 'trucks') {
-                      if (balanceTrucks > 0) {
-                          canReopen = true;
-                      } else {
-                          errorMsg = 'Remaining balance trucks is 0. Contract cannot be reopened.';
-                      }
-                  } else {
-                      if (balanceQuantity > 0) {
-                          canReopen = true;
-                      } else {
-                          errorMsg = 'Remaining balance quantity is 0. Contract cannot be reopened.';
-                      }
-                  }
+                 if (calculationType === 'trucks') {
+                     if (balanceTrucks > 0) {
+                         canReopen = true;
+                     } else {
+                         errorMsg = 'Remaining balance trucks is 0. Contract cannot be reopened.';
+                     }
+                 } else {
+                     if (balanceQuantity > 0) {
+                         canReopen = true;
+                     } else {
+                         errorMsg = 'Remaining balance quantity is 0. Contract cannot be reopened.';
+                     }
+                 }
 
-                  if (!canReopen) {
-                      isRevertingContractStatus = true;
-                      $(this).val(previousContractStatus).trigger('change');
-                      isRevertingContractStatus = false;
+                 if (!canReopen) {
+                     isRevertingContractStatus = true;
+                     $(this).val(previousContractStatus).trigger('change');
+                     isRevertingContractStatus = false;
 
-                      Swal.fire({
-                          icon: 'error',
-                          title: 'Cannot Reopen Contract',
-                          text: errorMsg,
-                          confirmButtonColor: '#d33',
-                          confirmButtonText: 'OK'
-                      });
-                      return false;
-                  }
+                     Swal.fire({
+                         icon: 'error',
+                         title: 'Cannot Reopen Contract',
+                         text: errorMsg,
+                         confirmButtonColor: '#d33',
+                         confirmButtonText: 'OK'
+                     });
+                     return false;
+                 }
 
-                  previousContractStatus = selectedStatus;
-              } else {
-                  previousContractStatus = selectedStatus;
-              }
-          });
+                 previousContractStatus = selectedStatus;
+             } else {
+                 previousContractStatus = selectedStatus;
+             }
+         });
 
-          // Form validation
-          $('#ajaxSubmit').on('submit', function(e) {
-              let contractStatusVal = $('#contract_status').val();
-              if (contractStatusVal === 'reopen-contract-closed-by-mistake' || contractStatusVal === 'reopen' || contractStatusVal === 'open') {
-                  let calculationType = '{{ $arrivalPurchaseOrder->calculation_type }}';
-                  let balanceTrucks = parseFloat('{{ $balanceTrucks ?? 0 }}') || 0;
-                  let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
+         // Form validation
+         $('#ajaxSubmit').on('submit', function(e) {
+             let contractStatusVal = $('#contract_status').val();
+             if (contractStatusVal === 'reopen-contract-closed-by-mistake' || contractStatusVal ===
+                 'reopen' || contractStatusVal === 'open') {
+                 let calculationType = '{{ $arrivalPurchaseOrder->calculation_type }}';
+                 let balanceTrucks = parseFloat('{{ $balanceTrucks ?? 0 }}') || 0;
+                 let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
 
-                  let canReopen = calculationType === 'trucks' ? (balanceTrucks > 0) : (balanceQuantity > 0);
+                 let canReopen = calculationType === 'trucks' ? (balanceTrucks > 0) : (balanceQuantity >
+                     0);
 
-                  if (!canReopen) {
-                      e.preventDefault();
-                      Swal.fire({
-                          icon: 'error',
-                          title: 'Cannot Reopen Contract',
-                          text: calculationType === 'trucks' 
-                              ? 'Remaining balance trucks is 0. Contract cannot be reopened.' 
-                              : 'Remaining balance quantity is 0. Contract cannot be reopened.',
-                          confirmButtonColor: '#d33',
-                          confirmButtonText: 'OK'
-                      });
-                      return false;
-                  }
-              }
+                 if (!canReopen) {
+                     e.preventDefault();
+                     Swal.fire({
+                         icon: 'error',
+                         title: 'Cannot Reopen Contract',
+                         text: calculationType === 'trucks' ?
+                             'Remaining balance trucks is 0. Contract cannot be reopened.' :
+                             'Remaining balance quantity is 0. Contract cannot be reopened.',
+                         confirmButtonColor: '#d33',
+                         confirmButtonText: 'OK'
+                     });
+                     return false;
+                 }
+             }
 
-              if ($('#calculation_type').val() === 'quantity') {
-                  const minValue = parseInt($('#min_quantity_input').val()) || 0;
-                  const maxValue = parseInt($('#max_quantity_input').val()) || 0;
+             if ($('#calculation_type').val() === 'quantity') {
+                 const minValue = parseInt($('#min_quantity_input').val()) || 0;
+                 const maxValue = parseInt($('#max_quantity_input').val()) || 0;
 
-                  if (maxValue < minValue) {
-                      $('#max_quantity_input').addClass('is-invalid');
-                      $('#max_quantity_input').after(
-                          '<div class="invalid-feedback">Max quantity cannot be less than min quantity</div>'
-                      );
-                      e.preventDefault();
-                      return false;
-                  }
-              }
-              return true;
-          });
+                 if (maxValue < minValue) {
+                     $('#max_quantity_input').addClass('is-invalid');
+                     $('#max_quantity_input').after(
+                         '<div class="invalid-feedback">Max quantity cannot be less than min quantity</div>'
+                     );
+                     e.preventDefault();
+                     return false;
+                 }
+             }
+             return true;
+         });
 
          $(document).on('input', '#max_quantity_input', function() {
              $(this).removeClass('is-invalid');
@@ -861,7 +899,7 @@
          // Initialize dynamic select2 fields
          initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
          initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
-        //  initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
+         //  initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
          initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
@@ -869,28 +907,28 @@
 
 
 
-                 $('#supplier_id').on('change', function () {
-            var selectedOption = $(this).find('option:selected');
-            var supplierId = $(this).val();
+         $('#supplier_id').on('change', function() {
+             var selectedOption = $(this).find('option:selected');
+             var supplierId = $(this).val();
 
-            // Reset if no supplier selected
-            if (!supplierId) {
-                $('#supplierKycAlert').addClass('d-none');
-                return;
-            }
+             // Reset if no supplier selected
+             if (!supplierId) {
+                 $('#supplierKycAlert').addClass('d-none');
+                 return;
+             }
 
-            var phone = selectedOption.data('phone') || 'N/A';
-            var cnic = selectedOption.data('cnic') || 'N/A';
-            var email = selectedOption.data('email') || 'N/A';
-            var ownerName = selectedOption.data('owner_name') || 'N/A';
+             var phone = selectedOption.data('phone') || 'N/A';
+             var cnic = selectedOption.data('cnic') || 'N/A';
+             var email = selectedOption.data('email') || 'N/A';
+             var ownerName = selectedOption.data('owner_name') || 'N/A';
 
-            $('#kycPhone').text(phone);
-            $('#kycCnic').text(cnic);
-            $('#kycEmail').text(email);
-            $('#kycName').text(ownerName);
+             $('#kycPhone').text(phone);
+             $('#kycCnic').text(cnic);
+             $('#kycEmail').text(email);
+             $('#kycName').text(ownerName);
 
-            $('#supplierKycAlert').removeClass('d-none');
-        });
+             $('#supplierKycAlert').removeClass('d-none');
+         });
 
      });
  </script>

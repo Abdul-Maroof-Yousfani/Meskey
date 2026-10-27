@@ -68,7 +68,7 @@
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
                                                     <select name="commodity_id_f" id="commodity_id_f"
-                                                        class="form-control selectWithoutAjax">
+                                                        class="form-control po-filter-select">
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
                                                             <option value="{{ $commodity->id }}"
@@ -83,7 +83,7 @@
                                                 <div class="form-group mb-0">
                                                     <label>Contract Status:</label>
                                                     <select name="contract_status_f" id="contract_status_f"
-                                                        class="form-control selectWithoutAjax">
+                                                        class="form-control po-filter-select">
                                                         <option value="all" {{ request('contract_status_f') == 'all' ? 'selected' : '' }}>All Status</option>
                                                         <option value="pending" {{ request('contract_status_f', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
                                                         <option value="closed" {{ request('contract_status_f') == 'closed' ? 'selected' : '' }}>Closed</option>
@@ -113,7 +113,7 @@
                                                 <div class="form-group mb-0">
                                                     <label>Decision Of:</label>
                                                     <select name="decision_of_f" id="decision_of_f"
-                                                        class="form-control selectWithoutAjax ">
+                                                        class="form-control po-filter-select">
                                                         <option value="">All Decision Of</option>
                                                         @foreach ($decisionofUsers as $decisionof)
                                                             <option value="{{ $decisionof->id }}">{{ $decisionof->name }}</option>
@@ -259,6 +259,10 @@
             });
         }
         $(document).ready(function () {
+            $('.po-filter-select').select2({
+                width: '100%'
+            });
+
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);

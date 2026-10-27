@@ -109,7 +109,7 @@
             <div class="form-group">
                 <label>Type:</label>
                 <select name="broker_one_calculation_type" id="broker_one_calculation_type"
-                    class="form-control select2">
+                    class="form-control select2 select22">
                     <option value="">Select Type</option>
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
@@ -148,7 +148,7 @@
             <div class="form-group">
                 <label>Type:</label>
                 <select name="broker_two_calculation_type" id="broker_two_calculation_type"
-                    class="form-control select2">
+                    class="form-control select2 select22">
                     <option value="">Select Type</option>
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
@@ -188,7 +188,7 @@
             <div class="form-group">
                 <label>Type:</label>
                 <select name="broker_three_calculation_type" id="broker_three_calculation_type"
-                    class="form-control select2">
+                    class="form-control select2 select22">
                     <option value="">Select Type</option>
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
@@ -424,7 +424,7 @@
 
 <script>
     $(document).ready(function () {
-        $('.select22').select2();
+        $('.select2, .select22').select2();
 
         $('.broker-select').on('change', function () {
             var commissionInput = $($(this).data('commission'));
