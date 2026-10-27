@@ -68,7 +68,7 @@
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                Ticket Information {{ $approvedAmount }}
+                Ticket Information {{ $approvedAmount }} {{ $requestedAmount }}
             </h6>
         </div>
         <div class="col-md-3">
