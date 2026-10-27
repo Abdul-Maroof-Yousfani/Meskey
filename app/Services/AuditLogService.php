@@ -80,20 +80,25 @@ class AuditLogService
             $effectiveUserId = 1;
         }
 
-        $log = AuditLog::create([
-            'user_id'     => $effectiveUserId,
-            'action'      => $action,
-            'description' => $description,
-            'model_type'  => $modelClass,
-            'model_id'    => $modelId,
-            'old_values'  => $oldValues,
-            'new_values'  => $newValues,
-            'ip_address'  => Request::ip(),
-            'user_agent'  => Request::userAgent(),
-        ]);
+        try {
+            $log = AuditLog::create([
+                'user_id'     => $effectiveUserId,
+                'action'      => $action,
+                'description' => $description,
+                'model_type'  => $modelClass,
+                'model_id'    => $modelId,
+                'old_values'  => $oldValues,
+                'new_values'  => $newValues,
+                'ip_address'  => Request::ip(),
+                'user_agent'  => Request::userAgent(),
+            ]);
 
-        self::$recentlyLogged[$cacheKey] = $log;
-        return $log;
+            self::$recentlyLogged[$cacheKey] = $log;
+            return $log;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('AuditLogService::log failed: ' . $e->getMessage());
+            return new AuditLog();
+        }
     }
 
     /**
@@ -119,17 +124,22 @@ class AuditLogService
             $effectiveUserId = 1;
         }
 
-        return AuditLog::create([
-            'user_id'     => $effectiveUserId,
-            'action'      => $action,
-            'description' => $description,
-            'model_type'  => $modelType,
-            'model_id'    => $modelId,
-            'old_values'  => $oldValues,
-            'new_values'  => $newValues,
-            'ip_address'  => Request::ip(),
-            'user_agent'  => Request::userAgent(),
-        ]);
+        try {
+            return AuditLog::create([
+                'user_id'     => $effectiveUserId,
+                'action'      => $action,
+                'description' => $description,
+                'model_type'  => $modelType,
+                'model_id'    => $modelId,
+                'old_values'  => $oldValues,
+                'new_values'  => $newValues,
+                'ip_address'  => Request::ip(),
+                'user_agent'  => Request::userAgent(),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('AuditLogService::logCustom failed: ' . $e->getMessage());
+            return new AuditLog();
+        }
     }
 
     /**

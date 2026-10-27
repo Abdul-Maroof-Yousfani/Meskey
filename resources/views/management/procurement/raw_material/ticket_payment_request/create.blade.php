@@ -2,6 +2,18 @@
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.ticket.get.payment-request') }}" />
 
+    @php
+        $ticketIdForLogs = $arrivalTicket->id ?? ($ticket->id ?? null);
+        $ticketNoForLogs = $arrivalTicket->unique_no ?? ($ticket->unique_no ?? 'N/A');
+    @endphp
+    @if ($ticketIdForLogs)
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('raw-material.ticket.payment-request.audit-logs', $ticketIdForLogs) }}','Audit Logs: Ticket #{{ $ticketNoForLogs }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
+    @endif
+
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">

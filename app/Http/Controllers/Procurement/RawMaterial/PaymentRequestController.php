@@ -259,12 +259,6 @@ class PaymentRequestController extends Controller
             $oldPaymentAmount = 0;
             $oldFreightAmount = 0;
             if ($existingApprovals) {
-                $oldPaymentAmount = (float) PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
-                    ->where('request_type', 'payment')
-                    ->sum('amount');
-                $oldFreightAmount = (float) PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
-                    ->where('request_type', 'freight_payment')
-                    ->sum('amount');
                 $prevPaymentRequest = PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
                     ->where('request_type', 'payment')
                     ->latest('id')
@@ -279,9 +273,27 @@ class PaymentRequestController extends Controller
             $newPaymentAmount = (float) ($request->payment_request_amount ?? 0);
             $newFreightAmount = (float) ($request->freight_pay_request_amount ?? 0);
 
+            // Calculate cumulative requested amounts across all tranches for this ticket
+            $oldTotalPaymentSum = (float) PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+                $query->where('ticket_id', $ticket->id);
+            })->where('request_type', 'payment')->sum('amount');
+
+            $oldTotalFreightSum = (float) PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+                $query->where('ticket_id', $ticket->id);
+            })->where('request_type', 'freight_payment')->sum('amount');
+
+            $newTotalPaymentSum = $oldTotalPaymentSum + $newPaymentAmount;
+            $newTotalFreightSum = $oldTotalFreightSum + $newFreightAmount;
+
             // Calculate net weight for lumpsum calculations
-            $loadingW = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->loading_weight : 0);
-            $bagsCount = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->no_of_bags : 0);
+            $loadingW = (float) (
+                ($ticket && $ticket->purchaseFreight ? ($ticket->purchaseFreight->loading_weight ?? $ticket->purchaseFreight->loaded_weight) : null)
+                ?? ($existingApprovals->loading_weight ?? $existingApprovals->billing_weight ?? 0)
+            );
+            $bagsCount = (float) (
+                ($ticket && $ticket->purchaseFreight ? ($ticket->purchaseFreight->no_of_bags ?? $ticket->purchaseFreight->bags) : null)
+                ?? ($existingApprovals->no_of_bags ?? 0)
+            );
             $oldBagW = (float) ($existingApprovals->bag_weight ?? ($ticket ? $ticket->bag_weight : 0));
             $oldNetWeight = $loadingW - ($oldBagW * $bagsCount);
 
@@ -334,7 +346,9 @@ class PaymentRequestController extends Controller
             $oldOtherAdj = $prevPaymentRequest ? (float) $prevPaymentRequest->other_adjustment_amount : 0;
 
             $oldTotalAmount = $existingApprovals ? (float) $existingApprovals->total_amount : 0;
-            $oldRemainingAmount = $existingApprovals ? (float) $existingApprovals->remaining_amount : (float) ($requestData['total_amount'] ?? 0);
+            $totalTicketAmount = (float) ($request->total_amount ?? ($existingApprovals->total_amount ?? 0));
+            $oldRemainingAmount = max(0, $totalTicketAmount - $oldTotalPaymentSum);
+            $newRemainingAmount = max(0, $totalTicketAmount - $newTotalPaymentSum);
             $oldPaidAmount = $existingApprovals ? (float) $existingApprovals->paid_amount : 0;
 
             $oldBagWeight = $oldBagW;
@@ -350,10 +364,10 @@ class PaymentRequestController extends Controller
             $oldNotes = $existingApprovals ? $existingApprovals->notes : null;
 
             $fieldsToTrack = [
-                'payment_request_amount'         => ['old' => $oldPaymentAmount, 'new' => $newPaymentAmount, 'type' => 'numeric'],
-                'freight_pay_request_amount'     => ['old' => $oldFreightAmount, 'new' => $newFreightAmount, 'type' => 'numeric'],
+                'payment_request_amount'         => ['old' => $oldTotalPaymentSum, 'new' => $newTotalPaymentSum, 'type' => 'numeric'],
+                'freight_pay_request_amount'     => ['old' => $oldTotalFreightSum, 'new' => $newTotalFreightSum, 'type' => 'numeric'],
                 'total_amount'                   => ['old' => $oldTotalAmount, 'new' => (float) ($request->total_amount ?? 0), 'type' => 'numeric'],
-                'remaining_amount'               => ['old' => $oldRemainingAmount, 'new' => (float) ($requestData['remaining_amount'] ?? 0), 'type' => 'numeric'],
+                'remaining_amount'               => ['old' => $oldRemainingAmount, 'new' => $newRemainingAmount, 'type' => 'numeric'],
                 'paid_amount'                    => ['old' => $oldPaidAmount, 'new' => (float) ($request->paid_amount ?? 0), 'type' => 'numeric'],
                 'advance_freight'                => ['old' => $oldAdvanceFreight, 'new' => (float) ($request->advance_freight ?? 0), 'type' => 'numeric'],
 
@@ -423,8 +437,8 @@ class PaymentRequestController extends Controller
 
             // Fallback: If no difference found, still record payment_request_amount & remaining_amount
             if (empty($oldValues)) {
-                $oldValues['payment_request_amount'] = (string) $oldPaymentAmount;
-                $newValues['payment_request_amount'] = (string) $newPaymentAmount;
+                $oldValues['payment_request_amount'] = (string) $oldTotalPaymentSum;
+                $newValues['payment_request_amount'] = (string) $newTotalPaymentSum;
             }
 
             $descAmount = $newPaymentAmount > 0 ? "Payment: " . number_format($newPaymentAmount, 2) : "";
@@ -829,8 +843,14 @@ class PaymentRequestController extends Controller
             $newFreightAmount = (float) ($request->freight_pay_request_amount ?? 0);
 
             // Calculate net weight for lumpsum calculations
-            $loadingW = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->loading_weight : 0);
-            $bagsCount = (float) ($ticket && $ticket->purchaseFreight ? $ticket->purchaseFreight->no_of_bags : 0);
+            $loadingW = (float) (
+                ($ticket && $ticket->purchaseFreight ? ($ticket->purchaseFreight->loading_weight ?? $ticket->purchaseFreight->loaded_weight) : null)
+                ?? ($paymentRequestData->loading_weight ?? $paymentRequestData->billing_weight ?? 0)
+            );
+            $bagsCount = (float) (
+                ($ticket && $ticket->purchaseFreight ? ($ticket->purchaseFreight->no_of_bags ?? $ticket->purchaseFreight->bags) : null)
+                ?? ($paymentRequestData->no_of_bags ?? 0)
+            );
             $oldBagW = (float) ($paymentRequestData->bag_weight ?? ($ticket ? $ticket->bag_weight : 0));
             $oldNetWeight = $loadingW - ($oldBagW * $bagsCount);
 
