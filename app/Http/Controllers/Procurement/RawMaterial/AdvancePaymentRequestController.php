@@ -32,6 +32,9 @@ use Illuminate\Http\Request;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\TruckSizeRange;
 use Illuminate\Support\Facades\DB;
+use App\Models\AuditLog;
+use App\Services\AuditLogService;
+
 
 class AdvancePaymentRequestController extends Controller
 {
@@ -215,11 +218,54 @@ class AdvancePaymentRequestController extends Controller
 
             $existingApprovals = PaymentRequestData::where('purchase_order_id', $purchaseOrder->id)
                 ->where('is_advance_payment', 1)
+                ->latest('id')
                 ->first();
+
+            $oldPaymentAmount = 0;
+            if ($existingApprovals) {
+                $oldPaymentAmount = PaymentRequest::where('payment_request_data_id', $existingApprovals->id)
+                    ->where('request_type', 'payment')
+                    ->sum('amount');
+            }
+
+            $newPaymentAmount = (float) ($request->payment_request_amount ?? 0);
 
             $paymentRequestData = PaymentRequestData::create($requestData);
 
             $this->createPaymentRequests($paymentRequestData, $request, $accountId);
+
+            // Audit Log: Record as CREATE / UPDATE log with old vs new values
+            $isCreate = !$existingApprovals;
+            $oldValues = [
+                'purchase_order_id'      => (int) $purchaseOrder->id,
+                'payment_request_amount' => $oldPaymentAmount > 0 ? (string) $oldPaymentAmount : '0',
+                'remaining_amount'       => $existingApprovals ? (string) $existingApprovals->remaining_amount : (string) ($requestData['total_amount'] ?? 0),
+            ];
+
+            $newValues = [
+                'purchase_order_id'      => (int) $purchaseOrder->id,
+                'payment_request_amount' => (string) $newPaymentAmount,
+                'remaining_amount'       => (string) ($requestData['remaining_amount'] ?? 0),
+            ];
+
+            if ($existingApprovals && $existingApprovals->paid_amount != ($requestData['paid_amount'] ?? 0)) {
+                $oldValues['paid_amount'] = (string) $existingApprovals->paid_amount;
+                $newValues['paid_amount'] = (string) ($requestData['paid_amount'] ?? 0);
+            }
+
+            if ($existingApprovals && $existingApprovals->notes != ($requestData['notes'] ?? null)) {
+                $oldValues['notes'] = $existingApprovals->notes;
+                $newValues['notes'] = $requestData['notes'] ?? null;
+            }
+
+            AuditLogService::log(
+                $paymentRequestData,
+                $isCreate ? 'advance_payment_request_created' : 'advance_payment_request_updated',
+                ($isCreate ? "Advance Payment Request created" : "Advance Payment Request updated") . " for Contract #{$purchaseOrder->contract_no} (Payment: Rs. " . number_format($newPaymentAmount, 2) . ")",
+                $oldValues,
+                $newValues
+            );
+
 
             // $this->manageLedgerCalculations($requestData, $purchaseOrder, $ticket, $stockInTransitAccount, $existingApprovals);
 
@@ -499,6 +545,9 @@ class AdvancePaymentRequestController extends Controller
         return DB::transaction(function () use ($request, $id) {
             $paymentRequestData = PaymentRequestData::findOrFail($id);
 
+            $oldAttributes = $paymentRequestData->getOriginal();
+
+
             // Prepare update data
             // $requestData = $request->validated();
             $requestData = $request->all();
@@ -521,6 +570,21 @@ class AdvancePaymentRequestController extends Controller
                 $this->updateSamplingResults($paymentRequestData, $request);
             }
 
+            // Audit Log: Advance Payment Request Updated
+            $newAttributes = $paymentRequestData->getChanges();
+            $changedOld = array_intersect_key($oldAttributes, $newAttributes);
+            $newAttributes['purchase_order_id'] = (int) $paymentRequestData->purchase_order_id;
+            $changedOld['purchase_order_id'] = (int) $paymentRequestData->purchase_order_id;
+            $contractNo = $paymentRequestData->purchaseOrder->contract_no ?? 'N/A';
+
+            AuditLogService::log(
+                $paymentRequestData,
+                'advance_payment_request_updated',
+                "Advance Payment Request updated for Contract #{$contractNo}",
+                $changedOld,
+                $newAttributes
+            );
+
             return response()->json(['success' => 'Payment request updated successfully']);
         });
     }
@@ -530,6 +594,7 @@ class AdvancePaymentRequestController extends Controller
         if ($request->payment_request_amount && $request->payment_request_amount > 0) {
             PaymentRequest::create([
                 'payment_request_data_id' => $paymentRequestData->id,
+                'purchase_order_id' => $paymentRequestData->purchase_order_id,
                 'other_deduction_kg' => 0,
                 'other_deduction_value' => 0,
                 'request_type' => 'payment',
@@ -758,4 +823,5 @@ class AdvancePaymentRequestController extends Controller
 
         return response()->json(['success' => true, 'html' => $html]);
     }
-}
+
+    }
