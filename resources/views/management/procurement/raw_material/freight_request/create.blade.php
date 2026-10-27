@@ -6,8 +6,7 @@
     $param0 = (
         ($requestedAmount ?? 0) != 0
         && $paymentRequestData->payment_to
-        && empty($isCreateFlow)
-    ) ? 'disabled' : '';
+        && !isset($isCreateFlow)) ? 'disabled' : '';
     $parampenalty_adjust_to = isset($paymentRequestData) && $paymentRequestData->penalty_adjust_to ? 'disabled' : '';
     $paramlabour_vendor_id = isset($paymentRequestData) && $paymentRequestData->labour_vendor_id ? 'disabled' : '';
     $param0 = (isset($paymentRequestData) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
