@@ -16,5 +16,5 @@ Route::name("logistics.")->group(function () {
     Route::resource("logistics", \App\Http\Controllers\Sales\LogisticsController::class);
     Route::post("get-logistics", [\App\Http\Controllers\Sales\LogisticsController::class, "getList"])->name("get.logistics.list");
     Route::get("logistics/get-order-details/{id}", [\App\Http\Controllers\Sales\LogisticsController::class, "getOrderDetails"])->name("logistics.getOrderDetails");
-    Route::get("logistics/{id}/audit-logs", [\App\Http\Controllers\Sales\LogisticsController::class, "getAuditLogs"])->name("logistics.audit-logs");
+    Route::get("logistics/{id}/audit-logs", [\App\Http\Controllers\AuditLogController::class, "showModal"])->defaults('modelType', 'logistics')->name("logistics.audit-logs");
 });

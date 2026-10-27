@@ -163,7 +163,15 @@ class AuditLogService
         $modelBasename = class_basename($model);
         $modelId = $model->getKey();
 
-        $foreignKeys = [strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelBasename)) . '_id'];
+        $isMasterModel = in_array($modelBasename, [
+            'Broker', 'Customer', 'Supplier', 'Vendor', 'Transporter', 'Bank', 'User', 'Product'
+        ]);
+
+        $includeForeignKeys = $options['include_foreign_keys'] ?? !$isMasterModel;
+
+        $foreignKeys = $includeForeignKeys
+            ? [strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelBasename)) . '_id']
+            : ($options['foreign_keys'] ?? []);
         $modelTypes = [$modelClass, $modelBasename, 'App\\Models\\' . $modelBasename];
 
         $extraModelTypeIds = [];
@@ -220,10 +228,10 @@ class AuditLogService
             }
         }
 
-        $modelUniqueNo = $model->unique_no ?? $model->code ?? $model->contract_no ?? null;
+        $modelUniqueNo = $model->unique_no ?? $model->code ?? $model->contract_no ?? $model->jv_no ?? null;
 
         $logs = AuditLog::with('user')
-            ->where(function ($q) use ($modelTypes, $modelId, $foreignKeys, $extraModelTypeIds, $modelUniqueNo) {
+            ->where(function ($q) use ($modelTypes, $modelId, $foreignKeys, $extraModelTypeIds, $modelUniqueNo, $isMasterModel) {
                 $q->where(function ($sq) use ($modelTypes, $modelId) {
                     $sq->whereIn('model_type', $modelTypes)
                         ->where('model_id', $modelId);
@@ -237,13 +245,24 @@ class AuditLogService
                     }
                 }
                 foreach ($foreignKeys as $fk) {
-                    $q->orWhere('old_values', 'like', '%"' . $fk . '":' . $modelId . '%')
-                      ->orWhere('old_values', 'like', '%"' . $fk . '":"' . $modelId . '"%')
-                      ->orWhere('new_values', 'like', '%"' . $fk . '":' . $modelId . '%')
-                      ->orWhere('new_values', 'like', '%"' . $fk . '":"' . $modelId . '"%');
+                    $q->orWhere(function ($sq) use ($fk, $modelId) {
+                        $sq->where('old_values', 'like', '%"' . $fk . '":' . $modelId . ',%')
+                           ->orWhere('old_values', 'like', '%"' . $fk . '":' . $modelId . '}%')
+                           ->orWhere('old_values', 'like', '%"' . $fk . '": ' . $modelId . ',%')
+                           ->orWhere('old_values', 'like', '%"' . $fk . '": ' . $modelId . '}%')
+                           ->orWhere('old_values', 'like', '%"' . $fk . '":"' . $modelId . '"%')
+                           ->orWhere('new_values', 'like', '%"' . $fk . '":' . $modelId . ',%')
+                           ->orWhere('new_values', 'like', '%"' . $fk . '":' . $modelId . '}%')
+                           ->orWhere('new_values', 'like', '%"' . $fk . '": ' . $modelId . ',%')
+                           ->orWhere('new_values', 'like', '%"' . $fk . '": ' . $modelId . '}%')
+                           ->orWhere('new_values', 'like', '%"' . $fk . '":"' . $modelId . '"%');
+                    });
                 }
-                if (!empty($modelUniqueNo)) {
-                    $q->orWhere('description', 'like', "%#{$modelUniqueNo}%");
+                if (!empty($modelUniqueNo) && !$isMasterModel) {
+                    $q->orWhere(function ($sq) use ($modelTypes, $modelUniqueNo) {
+                        $sq->whereIn('model_type', $modelTypes)
+                           ->where('description', 'like', "%#{$modelUniqueNo}%");
+                    });
                 }
             })
             ->orderBy('created_at', 'desc')

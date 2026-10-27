@@ -12,6 +12,7 @@ use App\Models\Master\GrnNumber;
 use App\Models\Master\Supplier;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\ReceiptVoucher;
+use App\Models\ReceiptVoucherItem;
 use App\Models\Sales\SalesOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1542,7 +1543,27 @@ class JournalVoucherController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($request, $totalDebits, $totalCredits) {
+                $receipt_vouucher_id = 0;
+                $sale_order_id = 0;
+                foreach ($request->details as $detail) {
+                    if(!empty($detail['receipt_voucher_id']))
+                    {
+                        $receipt_vouucher_id = $detail['receipt_voucher_id'];
+                    }
+                    if(!empty($detail['sales_order_id']))
+                    {
+                        $sale_order_id = $detail['sales_order_id'];
+                    }
+                }
+
+                $recieptVoucher = ReceiptVoucherItem::where('reference_id', $sale_order_id)->where('reference_type', 'sale_order')->first();
+                        
+                if($receipt_vouucher_id != 0 && $recieptVoucher && $recieptVoucher->receipt_voucher_id == $receipt_vouucher_id)
+                {
+                    throw new \Exception("Please select either the Sale Order or its Receipt Voucher not Both.");
+                }
+                
                 // Concurrency safety check: Ensure no other tab has created Receiving for any selected RV
                 foreach ($request->details as $detail) {
                     if (!empty($detail['receipt_voucher_id'])) {
@@ -1591,6 +1612,8 @@ class JournalVoucherController extends Controller
                     'approve_user_id' => null,
                     'company_id' => Auth::user()?->current_company_id ?? 1
                 ]);
+
+
 
                 foreach ($request->details as $detail) {
                     $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
@@ -1731,6 +1754,7 @@ class JournalVoucherController extends Controller
                         'status' => 'active',
                         'timestamp' => now()
                     ]);
+
                 }
             });
         } catch (\Exception $e) {
@@ -2030,7 +2054,7 @@ class JournalVoucherController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request, $journalVoucher) {
+            DB::transaction(function () use ($request, $journalVoucher, $totalDebits, $totalCredits) {
                 // Concurrency safety check
                 foreach ($request->details as $detail) {
                     if (!empty($detail['receipt_voucher_id'])) {
@@ -2092,6 +2116,8 @@ class JournalVoucherController extends Controller
                 Transaction::where('voucher_no', $journalVoucher->jv_no)
                     ->where('purpose', 'like', "journal-voucher-{$journalVoucher->id}%")
                     ->delete();
+
+
 
                 // Create new details
                 foreach ($request->details as $detail) {
@@ -2233,6 +2259,7 @@ class JournalVoucherController extends Controller
                         'status' => 'active',
                         'timestamp' => now()
                     ]);
+
                 }
             });
         } catch (\Exception $e) {
@@ -2339,6 +2366,8 @@ class JournalVoucherController extends Controller
 
         // Revert any settlement adjustments made by this voucher
         DB::table('settlement_adjustments')->where('voucher_no', $journalVoucher->jv_no)->delete();
+
+
 
         $journalVoucher->update([
             'delete_user_id' => optional(Auth::user())->id

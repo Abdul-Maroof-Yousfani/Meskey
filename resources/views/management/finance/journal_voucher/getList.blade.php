@@ -45,6 +45,10 @@
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
+                        <a onclick="openModal(this, '{{ route('journal-voucher.audit-logs', $voucher->id) }}', 'Audit Logs: Journal Voucher #{{ $voucher->jv_no }}', false, '55%')"
+                            class="info p-1 text-center mr-2 position-relative" title="Audit Logs" role="button">
+                            <i class="fa fa-history font-medium-3"></i>
+                        </a>
                         @if (in_array(strtolower($voucher->am_approval_status ?? ''), ['pending', 'reverted']))
                             <a class="info p-1 text-center mr-2 position-relative"
                                 href="{{ route('journal-voucher.edit', $voucher->id) }}" title="Edit">

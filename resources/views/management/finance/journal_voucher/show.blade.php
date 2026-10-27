@@ -57,7 +57,13 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Journal Voucher #{{ $journalVoucher->jv_no }}</h4>
-                <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                <div>
+                    <button type="button" class="btn btn-sm btn-info mr-2"
+                        onclick="openModal(this, '{{ route('journal-voucher.audit-logs', $journalVoucher->id) }}', 'Audit Logs: Journal Voucher #{{ $journalVoucher->jv_no }}', false, '55%')">
+                        <i class="fa fa-history mr-1"></i> Audit Logs
+                    </button>
+                    <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -300,6 +306,10 @@
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton" data-bs-dismiss="modal">Close</a>
         <button type="button" class="btn btn-info mr-2 me-2 print-jv-btn" id="printButtonBottom">
             <i class="ft-printer mr-1 me-1"></i> Print
+        </button>
+        <button type="button" class="btn btn-secondary mr-2 me-2"
+            onclick="openModal(this, '{{ route('journal-voucher.audit-logs', $journalVoucher->id) }}', 'Audit Logs: Journal Voucher #{{ $journalVoucher->jv_no }}', false, '55%')">
+            <i class="fa fa-history mr-1 me-1"></i> Audit Logs
         </button>
     </div>
 </div>

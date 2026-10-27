@@ -297,4 +297,139 @@ class ArrivalPurchaseOrder extends Model
     //     return $this->hasMany(PurchaseTicket::class, 'purchase_order_id')
     //         ->where('first_qc_status', 'rejected');
     // }
+
+    protected static function booted()
+    {
+        static::observe(\App\Observers\UniversalAuditObserver::class);
+    }
+
+    public function auditIdentifier(): string
+    {
+        return (string) ($this->contract_no ?: "#{$this->id}");
+    }
+
+    public function auditModelName(): string
+    {
+        return 'Purchase Order';
+    }
+
+    public function auditActionPrefix(): string
+    {
+        return 'purchase_order';
+    }
+
+    public static function auditLogConfig(): array
+    {
+        return [
+            'title' => 'Purchase Order Audit Logs',
+            'subtitle' => function ($model) {
+                $parts = ["PO #{$model->contract_no}"];
+                if ($model->supplier) {
+                    $parts[] = 'Supplier: ' . ($model->supplier->name ?? $model->supplier->company_name ?? 'N/A');
+                }
+                if ($model->product) {
+                    $parts[] = 'Product: ' . ($model->product->name ?? 'N/A');
+                }
+                $rate = $model->rate_per_mound ?? $model->rate_per_kg ?? $model->rate_per_100kg ?? $model->bag_rate;
+                if ($rate) {
+                    $parts[] = 'Rate: Rs. ' . number_format((float) $rate, 2);
+                }
+                if ($model->total_quantity) {
+                    $parts[] = 'Qty: ' . number_format((float) $model->total_quantity, 2);
+                } elseif ($model->no_of_trucks) {
+                    $parts[] = 'Trucks: ' . $model->no_of_trucks;
+                }
+                if ($model->contract_date) {
+                    $parts[] = 'Date: ' . (\Carbon\Carbon::parse($model->contract_date)->format('d M Y'));
+                }
+                if ($model->status) {
+                    $parts[] = 'Status: ' . ucfirst($model->status);
+                }
+                return implode(' | ', $parts);
+            },
+            'empty_message' => 'No changes or updates have been recorded for this purchase order yet.',
+            'skip_keys' => [
+                'company_id',
+                'created_by',
+                'decision_of_id',
+                'ref_no',
+                'am_change_made',
+                'deleted_at',
+                'broker_one_name',
+                'broker_two_name',
+                'broker_three_name',
+            ],
+            'field_labels' => [
+                'contract_no'                   => 'Contract #',
+                'contract_date'                 => 'Contract Date',
+                'delivery_date'                 => 'Delivery Date',
+                'company_location_id'           => 'Location',
+                'supplier_id'                   => 'Supplier',
+                'product_id'                    => 'Product',
+                'qc_product'                    => 'QC Product',
+                'broker_id'                     => 'Broker',
+                'broker_one_id'                 => 'Broker 1',
+                'broker_one_commission'         => 'Broker 1 Commission',
+                'broker_one_calculation_type'   => 'Broker 1 Calc Type',
+                'broker_two_id'                 => 'Broker 2',
+                'broker_two_commission'         => 'Broker 2 Commission',
+                'broker_two_calculation_type'   => 'Broker 2 Calc Type',
+                'broker_three_id'               => 'Broker 3',
+                'broker_three_commission'       => 'Broker 3 Commission',
+                'broker_three_calculation_type' => 'Broker 3 Calc Type',
+                'supplier_commission'           => 'Supplier Commission',
+                'division_id'                   => 'Division',
+                'sauda_type_id'                 => 'Sauda Type',
+                'truck_size_range_id'           => 'Truck Size Range',
+                'calculation_type'              => 'PO Calculation Type',
+                'purchase_type'                 => 'Purchase Type',
+                'rate_per_kg'                   => 'Rate (per Kg)',
+                'rate_per_mound'                => 'Rate (per Maund)',
+                'rate_per_100kg'                => 'Rate (per 100Kg)',
+                'line_type'                     => 'Line Type',
+                'bag_weight'                    => 'Bag Weight',
+                'bag_rate'                      => 'Bag Rate',
+                'credit_days'                   => 'Credit Days',
+                'no_of_trucks'                  => 'No of Trucks',
+                'total_quantity'                => 'Total Quantity',
+                'min_quantity'                  => 'Min Quantity',
+                'max_quantity'                  => 'Max Quantity',
+                'min_bags'                      => 'Min Bags',
+                'max_bags'                      => 'Max Bags',
+                'delivery_address'              => 'Delivery Address',
+                'weighbridge_from'              => 'Weighbridge From',
+                'is_replacement'                => 'Replacement',
+                'defaulter'                     => 'Defaulter',
+                'payment_term'                  => 'Payment Term',
+                'truck_no'                      => 'Truck No',
+                'remarks'                       => 'Remarks',
+                'status'                        => 'Status',
+                'contract_status'               => 'Contract Status',
+                'am_approval_status'            => 'Approval Status',
+            ],
+            'relation_resolvers' => [
+                'company_location_id'           => fn($val) => \App\Models\Master\CompanyLocation::find($val)?->name ?? $val,
+                'supplier_id'                   => fn($val) => \App\Models\Master\Supplier::find($val)?->name ?? $val,
+                'product_id'                    => fn($val) => \App\Models\Product::find($val)?->name ?? $val,
+                'qc_product'                    => fn($val) => \App\Models\Product::find($val)?->name ?? $val,
+                'division_id'                   => fn($val) => \App\Models\Master\Division::find($val)?->name ?? $val,
+                'sauda_type_id'                 => fn($val) => \App\Models\SaudaType::find($val)?->name ?? $val,
+                'truck_size_range_id'           => fn($val) => \App\Models\TruckSizeRange::find($val)?->name ?? $val,
+                'broker_id'                     => fn($val) => \App\Models\Master\Broker::find($val)?->name ?? $val,
+                'broker_one_id'                 => fn($val) => \App\Models\Master\Broker::find($val)?->name ?? $val,
+                'broker_two_id'                 => fn($val) => \App\Models\Master\Broker::find($val)?->name ?? $val,
+                'broker_three_id'               => fn($val) => \App\Models\Master\Broker::find($val)?->name ?? $val,
+                'broker_one_calculation_type'   => fn($val) => $val ? ucfirst($val) . ' Wise' : 'N/A',
+                'broker_two_calculation_type'   => fn($val) => $val ? ucfirst($val) . ' Wise' : 'N/A',
+                'broker_three_calculation_type' => fn($val) => $val ? ucfirst($val) . ' Wise' : 'N/A',
+                'is_replacement'                => fn($val) => ($val == 1 || $val === true || $val === '1') ? 'Yes' : 'No',
+                'defaulter'                     => fn($val) => ($val == 1 || $val === true || $val === '1') ? 'Yes' : 'No',
+                'am_approval_status'            => fn($val) => ucwords(str_replace(['_', '-'], ' ', (string) $val)),
+                'status'                        => fn($val) => ucwords(str_replace(['_', '-'], ' ', (string) $val)),
+                'contract_status'               => fn($val) => ucwords(str_replace(['_', '-'], ' ', (string) $val)),
+                'calculation_type'              => fn($val) => ucwords(str_replace(['_', '-'], ' ', (string) $val)),
+                'purchase_type'                 => fn($val) => ucwords(str_replace(['_', '-'], ' ', (string) $val)),
+            ]
+        ];
+    }
 }

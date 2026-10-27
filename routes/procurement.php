@@ -50,7 +50,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::get('purchase-order/{id}/view', [PurchaseOrderController::class, 'view'])->name('purchase-order.view');
-    Route::get('purchase-order/{id}/audit-logs', [PurchaseOrderController::class, 'getAuditLogs'])->name('purchase-order.audit-logs');
+    Route::get('purchase-order/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'purchase-order')->name('purchase-order.audit-logs');
     Route::post('get-purchase-order', [PurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('/export-csv', [PurchaseOrderController::class, 'exportCsv'])->name('purchase-order.export-csv');
 
@@ -81,27 +81,34 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::post('/ticket-contracts/park-arrival/{id}', [TicketContractController::class, 'parkArrival'])->name('ticket-contracts.park-arrival');
     Route::get('/ticket-contracts/search-contracts', [TicketContractController::class, 'searchContracts'])->name('ticket-contracts.search-contracts');
+    Route::get('/ticket-contracts/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'ticket-contracts')->name('ticket-contracts.audit-logs');
     Route::resource('ticket-contracts', TicketContractController::class);
     Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');
 
     Route::resource('doubt-trucks', DoubtTruckController::class);
     Route::post('/get-doubt-trucks', [DoubtTruckController::class, 'getList'])->name('get.doubt-trucks');
 
+    Route::get('/verified-contracts/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'verified-contracts')->name('verified-contracts.audit-logs');
     Route::resource('verified-contracts', TicketContractController::class);
     Route::post('/get-verified-contracts', [TicketContractController::class, 'getList'])->name('get.verified-contracts');
 
     Route::resource('payment-request', PaymentRequestController::class);
     Route::post('/get-payment-request', [PaymentRequestController::class, 'getList'])->name('get.payment-request');
+    Route::get('payment-request/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'payment-request')->name('payment-request.audit-logs');
 
     Route::resource('freight-request', FreightRequestController::class);
     Route::post('/get-freight-request', [FreightRequestController::class, 'getList'])->name('get.freight-request');
+    Route::get('freight-request/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'freight-request')->name('freight-request.audit-logs');
     Route::get('freight-request/view/{id}', [FreightRequestController::class, 'view'])->name('freight-request.view');
     Route::get('get-freight-request-form', [FreightRequestController::class, 'getFreightRequestForm'])->name('freight-request.getFreightRequestForm');
 
     Route::resource('advance-payment-request', AdvancePaymentRequestController::class);
     Route::post('/get-advance-payment-request', [AdvancePaymentRequestController::class, 'getList'])->name('get.advance-payment-request');
 
+    Route::get('advance-payment-request/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'advance-payment-request')->name('advance-payment-request.audit-logs');
     Route::resource('payment-request-approval', PaymentRequestApprovalController::class);
+    Route::get('payment-request-approval/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'payment-request-approval')->name('payment-request-approval.audit-logs');
+
     Route::resource('advance-payment-request-approval', AdvancePaymentRequestApprovalController::class);
     Route::post('pohouch-freight-payment-request-approval', [FreightRequestController::class, 'pohouch_freight_payment_request_approval'])->name('pohouch-freight-payment-request-approval');
     Route::post('pohouch-freight-payment-request-approval-wo-contract', [FreightRequestController::class, 'pohouch_freight_payment_request_approval_wo_contract'])->name('pohouch-freight-payment-request-approval-wo-contract');
@@ -121,9 +128,11 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::prefix('ticket')->group(function () {
         Route::resource('payment-request', TicketPaymentRequestController::class)->names('ticket.payment-request');
+        Route::get('payment-request/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'ticket-payment-request')->name('ticket.payment-request.audit-logs');
         Route::post('/get-payment-request', [TicketPaymentRequestController::class, 'getList'])->name('ticket.get.payment-request');
 
         Route::resource('payment-request-approval', PaymentRequestApprovalController::class)->names('ticket.payment-request-approval');
+        Route::get('payment-request-approval/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'payment-request-approval')->name('ticket.payment-request-approval.audit-logs');
         Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('ticket.get.payment-request-approval');
         Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('ticket.payment-request-approval.approve');
 

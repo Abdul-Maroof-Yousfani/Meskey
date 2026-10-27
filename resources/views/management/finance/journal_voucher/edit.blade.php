@@ -9,7 +9,13 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">Edit Journal Voucher #{{ $journalVoucher->jv_no }}</h4>
-                        <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-info mr-2"
+                                onclick="openModal(this, '{{ route('journal-voucher.audit-logs', $journalVoucher->id) }}', 'Audit Logs: Journal Voucher #{{ $journalVoucher->jv_no }}', false, '55%')">
+                                <i class="fa fa-history mr-1"></i> Audit Logs
+                            </button>
+                            <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                        </div>
                     </div>
                     <div class="card-body">
                         @if(strtolower($journalVoucher->am_approval_status ?? '') === 'reverted')

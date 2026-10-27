@@ -47,6 +47,7 @@ Route::post('/get-incoterm', [IncoTermController::class, 'getIncotermTable'])->n
 
 // bank
 Route::resource('bank', BankController::class);
+Route::get('/bank/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'bank')->name('bank.audit-logs');
 Route::post('/get-bank', [BankController::class, 'getBankTable'])->name('get.bank');
 
 // shipment company

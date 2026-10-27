@@ -53,24 +53,33 @@ class ReceiptVoucherController extends Controller
                 "is_direct" => 1
             ]);
             $amount = 0;
-
+            $newAccounts = [];
+            $newAmounts = [];
+            $newTaxes = [];
+            $newTaxAmounts = [];
+            $newNetAmounts = [];
+            $newDescriptions = [];
 
             foreach ($request->account as $index => $account) {
+                $itemAmount = (float) ($request->amount[$index] ?? 0);
+                $taxId = $request->tax_id[$index] ?? null;
+                $taxAmount = (float) ($request->tax_amount[$index] ?? 0);
+                $netAmount = (float) ($request->net_amount[$index] ?? ($itemAmount + $taxAmount));
+                $desc = $request->description[$index] ?? '';
 
                 $receipt_voucher->items()->create([
                     "reference_id" => "1234",
                     "reference_type" => "direct",
-                    "amount" => $request->amount[$index],
-                    "tax_id" => $request->tax_id[$index],
-                    "tax_amount" => $request->tax_amount[$index],
-
-                    "net_amount" => $request->net_amount[$index],
-                    "line_desc" => $request->description[$index],
-                    'account_id' => $request->account[$index]
+                    "amount" => $itemAmount,
+                    "tax_id" => $taxId,
+                    "tax_amount" => $taxAmount,
+                    "net_amount" => $netAmount,
+                    "line_desc" => $desc,
+                    'account_id' => $account
                 ]);
                 createTransaction(
-                    $request->net_amount[$index],
-                    $request->account[$index],
+                    $netAmount,
+                    $account,
                     4,
                     $receipt_voucher->unique_no,
                     'credit',
@@ -80,7 +89,19 @@ class ReceiptVoucherController extends Controller
                     ]
                 );
 
-                $amount += $request->net_amount[$index];
+                $amount += $netAmount;
+
+                $acc = Account::find($account);
+                $accName = $acc ? ($acc->name . ($acc->unique_no ? " ({$acc->unique_no})" : "")) : ($account ? "Account #{$account}" : '-');
+                $tax = $taxId ? Tax::find($taxId) : null;
+                $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+
+                $newAccounts[] = $accName;
+                $newAmounts[] = number_format($itemAmount, 2);
+                $newTaxes[] = $taxStr;
+                $newTaxAmounts[] = number_format($taxAmount, 2);
+                $newNetAmounts[] = number_format($netAmount, 2);
+                $newDescriptions[] = !empty($desc) ? trim($desc) : '-';
             }
 
             createTransaction(
@@ -90,10 +111,16 @@ class ReceiptVoucherController extends Controller
                 $receipt_voucher->unique_no,
                 'debit',
                 'no',
-
             );
 
+            $receipt_voucher->update(['total_amount' => $amount]);
+
             DB::commit();
+
+            return response()->json([
+                'success' => 'Direct Receipt Voucher created successfully!',
+                'redirect' => route('receipt-voucher.index'),
+            ]);
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
@@ -477,6 +504,12 @@ class ReceiptVoucherController extends Controller
 
             $totalNetAmount = 0;
             $items = [];
+            $newAccounts = [];
+            $newAmounts = [];
+            $newTaxes = [];
+            $newTaxAmounts = [];
+            $newNetAmounts = [];
+            $newDescriptions = [];
 
             for ($i = 0; $i < count($accounts_array); $i++) {
                 if (empty($accounts_array[$i]) || empty($amounts[$i]))
@@ -500,6 +533,18 @@ class ReceiptVoucherController extends Controller
                     'reference_id' => 1234,
                     'reference_type' => "direct"
                 ];
+
+                $acc = Account::find($accounts_array[$i]);
+                $accName = $acc ? ($acc->name . ($acc->unique_no ? " ({$acc->unique_no})" : "")) : ($accounts_array[$i] ? "Account #{$accounts_array[$i]}" : '-');
+                $tax = $tax_id ? Tax::find($tax_id) : null;
+                $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+
+                $newAccounts[] = $accName;
+                $newAmounts[] = number_format($amount, 2);
+                $newTaxes[] = $taxStr;
+                $newTaxAmounts[] = number_format($tax_amount, 2);
+                $newNetAmounts[] = number_format($net_amount, 2);
+                $newDescriptions[] = !empty($description) ? trim($description) : '-';
             }
 
             if (empty($items)) {
@@ -534,8 +579,6 @@ class ReceiptVoucherController extends Controller
             }
 
             // Create new transactions
-            // For direct receipt: Debit the main account (bank/cash) for each item's net_amount, credit the item's account
-            // This creates balanced pairs per item
             $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
             $remarks = $payload['remarks'] ?? null;
             $unique_no = $receiptVoucher->unique_no;
@@ -656,8 +699,27 @@ class ReceiptVoucherController extends Controller
             ]);
 
             $totalExcessAmount = 0;
+            $newDocTypes = [];
+            $newDocNos = [];
+            $newDocAmounts = [];
+            $newDocTaxes = [];
+            $newDocTaxAmounts = [];
+            $newDocNetAmounts = [];
+            $newDocDescs = [];
+
             foreach ($items as $item) {
+                $itemAmount = (float) ($item['amount'] ?? 0);
+                $taxId = $item['tax_id'] ?? null;
+                $taxAmount = (float) ($item['tax_amount'] ?? 0);
+                $netAmount = (float) ($item['net_amount'] ?? ($itemAmount + $taxAmount));
+                $desc = $item['line_desc'] ?? '';
+                $tax = $taxId ? Tax::find($taxId) : null;
+                $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+
                 if ($item['reference_type'] === 'advance') {
+                    $docType = 'Advance';
+                    $docNo = $item['adv_no'] ?? 'ADV';
+
                     $receiptVoucher->advances()->create([
                         'customer_id' => $payload['customer_id'],
                         'adv_no' => $item['adv_no'] ?? 'ADV-001',
@@ -668,6 +730,19 @@ class ReceiptVoucherController extends Controller
                         'line_desc' => $item['line_desc'] ?? null,
                     ]);
                 } else {
+                    if ($item['reference_type'] === 'sale_order') {
+                        $docType = 'Sale Order';
+                        $so = SalesOrder::find($item['reference_id']);
+                        $docNo = $so ? ($so->reference_no ?? "SO-{$item['reference_id']}") : "SO-{$item['reference_id']}";
+                    } elseif ($item['reference_type'] === 'sales_invoice') {
+                        $docType = 'Sale Invoice';
+                        $inv = SalesInvoice::find($item['reference_id']);
+                        $docNo = $inv ? ($inv->si_no ?? "INV-{$item['reference_id']}") : "INV-{$item['reference_id']}";
+                    } else {
+                        $docType = ucwords(str_replace(['_', '-'], ' ', $item['reference_type']));
+                        $docNo = (string) $item['reference_id'];
+                    }
+
                     $balance = receipt_voucher_balance($item['reference_id'], $item['reference_type']);
                     $excessAmount = $item['amount'] - $balance;
                     if ($excessAmount > 0) {
@@ -684,7 +759,6 @@ class ReceiptVoucherController extends Controller
                             'amount' => $excessAmount,
                             'tax_id' => $item['tax_id'] ?? null,
                             'account_id' => null,
-                            // Apply Tax on exceed amount
                             'tax_amount' => $tax_amount,
                             'net_amount' => $excessAmount + $tax_amount,
                             'line_desc' => $item['line_desc'] ?? null,
@@ -705,10 +779,7 @@ class ReceiptVoucherController extends Controller
 
                     $excess = $excessAmount < 0 ? 0 : $excessAmount;
 
-
-
                     $amount = $item['amount'] ?? 0;
-
                     $taxAmount = $item['tax_amount'] ?? 0;
                     $netAmount = $item['net_amount'] ?? $amount;
 
@@ -716,18 +787,23 @@ class ReceiptVoucherController extends Controller
                         'receipt_voucher_id' => $receiptVoucher->id,
                         'reference_type' => $item['reference_type'],
                         'reference_id' => $item['reference_id'],
-
-                        // safe subtraction
                         'amount' => max(0, $amount - $excess),
                         'tax_amount' => max(0, $taxAmount - $excess),
                         'net_amount' => max(0, $netAmount - $excess),
-
                         'tax_id' => $item['tax_id'] ?? null,
                         'account_id' => null,
                         'line_desc' => $item['line_desc'] ?? null,
                         'customer_id' => $payload['customer_id'],
                     ]);
                 }
+
+                $newDocTypes[] = $docType;
+                $newDocNos[] = $docNo;
+                $newDocAmounts[] = number_format($itemAmount, 2);
+                $newDocTaxes[] = $taxStr;
+                $newDocTaxAmounts[] = number_format($taxAmount, 2);
+                $newDocNetAmounts[] = number_format($netAmount, 2);
+                $newDocDescs[] = !empty($desc) ? trim($desc) : '-';
             }
 
             // Create transactions (debit bank/cash, credit customer)
@@ -736,6 +812,10 @@ class ReceiptVoucherController extends Controller
 
             // Save Bank Details and create Debit Transactions
             $totalAdvanceConsumed = 0;
+            $newBankAccounts = [];
+            $newBankAmounts = [];
+            $newAdvancesConsumed = [];
+
             if ($request->filled('bank_details')) {
                 foreach ($request->bank_details as $detail) {
                     if (!empty($detail['customer_advance_id']) && !empty($detail['amount'])) {
@@ -756,6 +836,7 @@ class ReceiptVoucherController extends Controller
                                 "amount" => $adjAmount
                             ]);
                             $totalAdvanceConsumed += $adjAmount;
+                            $newAdvancesConsumed[] = "{$advance->voucher_no} (Rs. " . number_format((float) $adjAmount, 2) . ")";
                         }
                     } elseif (!empty($detail['account_id']) && !empty($detail['amount'])) {
                         $receiptVoucher->bankDetails()->create([
@@ -763,6 +844,11 @@ class ReceiptVoucherController extends Controller
                             'amount' => $detail['amount'],
                             'cheque_no' => $detail['cheque_no'] ?? null,
                         ]);
+
+                        $bAcc = Account::find($detail['account_id']);
+                        $bName = $bAcc ? ($bAcc->name . ($bAcc->unique_no ? " ({$bAcc->unique_no})" : "")) : "Account #{$detail['account_id']}";
+                        $newBankAccounts[] = $bName;
+                        $newBankAmounts[] = number_format((float) $detail['amount'], 2);
                     }
                 }
             }
@@ -1000,7 +1086,7 @@ class ReceiptVoucherController extends Controller
     public function update(Request $request, $id)
     {
         abort_if(!canAccess('receipt-voucher-create') && !auth()->user()->can('receipt-voucher-create'), 403);
-        $receiptVoucher = ReceiptVoucher::findOrFail($id);
+        $receiptVoucher = ReceiptVoucher::with(['items', 'advances', 'bankDetails'])->findOrFail($id);
 
         if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
@@ -1090,18 +1176,50 @@ class ReceiptVoucherController extends Controller
             ]);
 
             $totalExcessAmount = 0;
+            $newDocTypes = [];
+            $newDocNos = [];
+            $newDocAmounts = [];
+            $newDocTaxes = [];
+            $newDocTaxAmounts = [];
+            $newDocNetAmounts = [];
+            $newDocDescs = [];
+
             foreach ($items as $item) {
+                $itemAmount = (float) ($item["amount"] ?? 0);
+                $taxId = $item["tax_id"] ?? null;
+                $taxAmount = (float) ($item["tax_amount"] ?? 0);
+                $netAmount = (float) ($item["net_amount"] ?? ($itemAmount + $taxAmount));
+                $desc = $item["line_desc"] ?? '';
+                $tax = $taxId ? Tax::find($taxId) : null;
+                $taxStr = $tax ? ($tax->name . ' (' . (float) $tax->percentage . '%)') : 'No Tax';
+
                 if ($item["reference_type"] === "advance") {
+                    $docType = 'Advance';
+                    $docNo = $item["adv_no"] ?? "ADV";
+
                     $receiptVoucher->advances()->create([
                         "customer_id" => $payload["customer_id"],
                         "adv_no" => $item["adv_no"] ?? "ADV-001",
-                        "amount" => $item["amount"] ?? 0,
-                        "tax_id" => $item["tax_id"] ?? null,
-                        "tax_amount" => $item["tax_amount"] ?? 0,
-                        "net_amount" => $item["net_amount"] ?? ($item["amount"] ?? 0),
-                        "line_desc" => $item["line_desc"] ?? null,
+                        "amount" => $itemAmount,
+                        "tax_id" => $taxId,
+                        "tax_amount" => $taxAmount,
+                        "net_amount" => $netAmount,
+                        "line_desc" => $desc,
                     ]);
                 } else {
+                    if ($item["reference_type"] === "sale_order") {
+                        $docType = 'Sale Order';
+                        $so = SalesOrder::find($item["reference_id"]);
+                        $docNo = $so ? ($so->reference_no ?? "SO-{$item["reference_id"]}") : "SO-{$item["reference_id"]}";
+                    } elseif ($item["reference_type"] === "sales_invoice") {
+                        $docType = 'Sale Invoice';
+                        $inv = SalesInvoice::find($item["reference_id"]);
+                        $docNo = $inv ? ($inv->si_no ?? "INV-{$item["reference_id"]}") : "INV-{$item["reference_id"]}";
+                    } else {
+                        $docType = ucwords(str_replace(["_", "-"], " ", $item["reference_type"]));
+                        $docNo = (string) $item["reference_id"];
+                    }
+
                     $balance = receipt_voucher_balance($item["reference_id"], $item["reference_type"]);
                     $excessAmount = $item["amount"] - $balance;
 
@@ -1140,29 +1258,37 @@ class ReceiptVoucherController extends Controller
 
                     $excess = $excessAmount < 0 ? 0 : $excessAmount;
 
-                    $amount = $item["amount"] ?? 0;
-                    $taxAmount = $item["tax_amount"] ?? 0;
-                    $netAmount = $item["net_amount"] ?? $amount;
-
                     ReceiptVoucherItem::create([
                         "receipt_voucher_id" => $receiptVoucher->id,
                         "reference_type" => $item["reference_type"],
                         "reference_id" => $item["reference_id"],
-                        "amount" => max(0, $amount - $excess),
+                        "amount" => max(0, $itemAmount - $excess),
                         "tax_amount" => max(0, $taxAmount - $excess),
                         "net_amount" => max(0, $netAmount - $excess),
                         "tax_id" => $item["tax_id"] ?? null,
                         "account_id" => null,
-                        "line_desc" => $item["line_desc"] ?? null,
+                        "line_desc" => $desc,
                         "customer_id" => $payload["customer_id"],
                     ]);
                 }
+
+                $newDocTypes[] = $docType;
+                $newDocNos[] = $docNo;
+                $newDocAmounts[] = number_format($itemAmount, 2);
+                $newDocTaxes[] = $taxStr;
+                $newDocTaxAmounts[] = number_format($taxAmount, 2);
+                $newDocNetAmounts[] = number_format($netAmount, 2);
+                $newDocDescs[] = !empty($desc) ? trim($desc) : '-';
             }
 
             $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
             $remarks = $payload["remarks"] ?? null;
 
             $totalAdvanceConsumed = 0;
+            $newBankAccounts = [];
+            $newBankAmounts = [];
+            $newAdvancesConsumed = [];
+
             if ($request->filled("bank_details")) {
                 foreach ($request->bank_details as $detail) {
                     if (!empty($detail["customer_advance_id"]) && !empty($detail["amount"])) {
@@ -1183,6 +1309,7 @@ class ReceiptVoucherController extends Controller
                                 "amount" => $adjAmount
                             ]);
                             $totalAdvanceConsumed += $adjAmount;
+                            $newAdvancesConsumed[] = "{$advance->voucher_no} (Rs. " . number_format((float) $adjAmount, 2) . ")";
                         }
                     } elseif (!empty($detail["account_id"]) && !empty($detail["amount"])) {
                         $receiptVoucher->bankDetails()->create([
@@ -1190,6 +1317,11 @@ class ReceiptVoucherController extends Controller
                             "amount" => $detail["amount"],
                             "cheque_no" => $detail["cheque_no"] ?? null,
                         ]);
+
+                        $bAcc = Account::find($detail["account_id"]);
+                        $bName = $bAcc ? ($bAcc->name . ($bAcc->unique_no ? " ({$bAcc->unique_no})" : "")) : "Account #{$detail["account_id"]}";
+                        $newBankAccounts[] = $bName;
+                        $newBankAmounts[] = number_format((float) $detail["amount"], 2);
                     }
                 }
             }
@@ -1205,7 +1337,7 @@ class ReceiptVoucherController extends Controller
             "redirect" => route("receipt-voucher.index")
         ]);
     }
-    
+
     public function destroy($id)
     {
         $receiptVoucher = ReceiptVoucher::find($id);

@@ -52,6 +52,10 @@
                         </p>
                     </td>
                     <td>
+                        <a onclick="openModal(this,'{{ route('vendor.audit-logs', $row->id) }}','Audit Logs: {{ $row->company_name ?? $row->name }} ({{ $row->unique_no }})', false, '55%')"
+                            class="primary p-1 text-center mr-2 position-relative" title="View Audit Logs" style="cursor: pointer;">
+                            <i class="fa fa-history font-medium-3"></i>
+                        </a>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('vendor.edit', $row->id) }}','Edit Vendor')"
                                 class="info p-1 text-center mr-2 position-relative ">

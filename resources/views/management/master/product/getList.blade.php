@@ -36,9 +36,13 @@
                     </td>
                     <td>{!! dateFormatHtml($parent->created_at) !!}</td>
                     <td>
+                        <a onclick="openModal(this,'{{ route('product.audit-logs', $parent->id) }}','Audit Logs: {{ $parent->name }} ({{ $parent->unique_no }})', false, '55%')"
+                            class="primary p-1 mr-2 position-relative" title="View Audit Logs" style="cursor: pointer;">
+                            <i class="fa fa-history font-medium-3"></i>
+                        </a>
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('product.edit', $parent->id) }}','Edit Product')"
-                                class="info p-1 mr-2 position-relative"><i class="ft-edit"></i></a>
+                                class="info p-1 mr-2 position-relative" title="Edit Product"><i class="ft-edit"></i></a>
                         @endcan
                         @can('role-delete')
                             <a onclick="deletemodal('{{ route('product.destroy', $parent->id) }}','{{ route('get.product') }}')"
@@ -70,9 +74,13 @@
                         </td>
                         <td>{!! dateFormatHtml($child->created_at) !!}</td>
                         <td>
+                            <a onclick="openModal(this,'{{ route('product.audit-logs', $child->id) }}','Audit Logs: {{ $child->name }} ({{ $child->unique_no }})', false, '55%')"
+                                class="primary p-1 mr-2 position-relative" title="View Audit Logs" style="cursor: pointer;">
+                                <i class="fa fa-history font-medium-3"></i>
+                            </a>
                             @can('role-edit')
                                 <a onclick="openModal(this,'{{ route('product.edit', $child->id) }}','Edit Product')"
-                                    class="info p-1 mr-2 position-relative"><i class="ft-edit"></i></a>
+                                    class="info p-1 mr-2 position-relative" title="Edit Product"><i class="ft-edit"></i></a>
                             @endcan
                             @can('role-delete')
                                 <a onclick="deletemodal('{{ route('product.destroy', $child->id) }}','{{ route('get.product') }}')"

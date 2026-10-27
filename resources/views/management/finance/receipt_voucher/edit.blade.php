@@ -8,8 +8,14 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Edit Receipt Voucher</h4>
-                        <a href="{{ route('receipt-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                        <h4 class="mb-0">Edit Receipt Voucher - {{ $receiptVoucher->unique_no }}</h4>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-info mr-1"
+                                onclick="openModal(this,'{{ route('receipt-voucher.audit-logs', $receiptVoucher->id) }}','Audit Logs: Receipt Voucher #{{ $receiptVoucher->unique_no }}', false, '55%')">
+                                <i class="fa fa-history mr-1"></i>Audit Logs
+                            </button>
+                            <a href="{{ route('receipt-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                        </div>
                     </div>
                     <div class="card-body">
                         <form action="{{ route('receipt-voucher.update', $receiptVoucher->id) }}" method="POST">
@@ -1036,8 +1042,8 @@
 
             // Remove any empty nested bank rows automatically
             $('.nested-bank-row').each(function() {
-                const account = $(this).find('.account-select').val();
-                const advance = $(this).find('.advance-select').val();
+                const account = $(this).find('.account-select, .bd-acc, select[name*="[account_id]"]').val();
+                const advance = $(this).find('.advance-select, select[name*="[customer_advance_id]"]').val();
                 if (!account && !advance) {
                     $(this).remove();
                 }
@@ -1136,7 +1142,7 @@
                                 const newRow = `
                                     <tr class="nested-bank-row">
                                         <td>
-                                            <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank bd-acc" required style="width: 100%;">
+                                            <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank bd-acc account-select" required style="width: 100%;">
                                                 <option value="">Select Account</option>
                                             </select>
                                         </td>

@@ -17,7 +17,7 @@ class VendorRequest extends FormRequest
         $resolvedCompanyId = $this->input('company_id') ?: (auth()->user()?->current_company_id ?? auth()->user()?->company_id ?? 1);
         $this->merge([
             'company_id' => $resolvedCompanyId,
-            'type' => $this->input('type', 'vendor') ?: 'vendor',
+            // 'type' => $this->input('type', 'vendor') ?: 'vendor',
             'company_name' => is_string($this->company_name) ? trim($this->company_name) : $this->company_name,
             'owner_name' => is_string($this->owner_name) ? trim($this->owner_name) : $this->owner_name,
         ]);
@@ -32,8 +32,8 @@ class VendorRequest extends FormRequest
 
         return [
             'company_id' => 'required|exists:companies,id',
-            'type' => 'nullable|in:vendor,clearing_agent',
-            'rate' => 'nullable|numeric|min:0',
+            // 'type' => 'nullable|in:vendor,clearing_agent',
+            // 'rate' => 'nullable|numeric|min:0',
             'unique_no' => 'nullable|string|max:255|unique:vendors,unique_no' . ($vendorId ? ",$vendorId" : ''),
             'company_name' => [
                 'required',

@@ -4,6 +4,12 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.product') }}" />
 
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('product.audit-logs', $product->id) }}','Audit Logs: {{ $product->name }} ({{ $product->unique_no }})', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
+
     <div class="row form-mar">
         <div class="col-md-12 mb-4">
             <div class="avatar-upload">
@@ -125,8 +131,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
-                <textarea name="description" value="{{ $product->description }}" placeholder="Description"
-                    class="form-control"></textarea>
+                <textarea name="description" placeholder="Description"
+                    class="form-control">{{ $product->description }}</textarea>
             </div>
         </div>
 
@@ -139,13 +145,13 @@
             </div>
         </div>
 
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        {{-- <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Barcode:</label>
-                <input type="text" name="barcode" value="{{ $product->barcode }}" placeholder="Barcode"
+                <input type="text" name="barcode" value="{{ $product->barcode ?? $product->bardcode }}" placeholder="Barcode"
                     class="form-control" />
             </div>
-        </div>
+        </div> --}}
         <div class="col-xs-6 col-sm-6 col-md-6 showhide"
             style="{{ $product->product_type == 'general_items' ? 'display:none' : '' }}">
             <div class="form-group">
@@ -177,8 +183,8 @@
             <div class="form-group ">
                 <label>Status:</label>
                 <select name="status" class="form-control">
-                    <option {{ $product->name == 'active' ? 'selected' : '' }} value="active">Active</option>
-                    <option {{ $product->name == 'inactive' ? 'selected' : '' }} value="inactive">Inactive</option>
+                    <option {{ $product->status == 'active' ? 'selected' : '' }} value="active">Active</option>
+                    <option {{ $product->status == 'inactive' ? 'selected' : '' }} value="inactive">Inactive</option>
                 </select>
             </div>
         </div>
