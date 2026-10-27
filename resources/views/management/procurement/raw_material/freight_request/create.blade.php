@@ -160,7 +160,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Freight Party</label>
-                <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
+                <select class="form-control editable-field select2" name="vendor_id" @disabled($requestedAmount != 0 && !isset($isCreateFlow))>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
                         <option value="{{ $vendor->id }}" @selected((isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id) || (isset($suggested_vendor_id) && $suggested_vendor_id == $vendor->id))>
