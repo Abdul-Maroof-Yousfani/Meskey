@@ -3,7 +3,11 @@
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
     //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
     // $param0 = (isset($paymentRequestData) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
-    $param0 = (isset($approvedAmount) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
+    $param0 = (
+        ($requestedAmount ?? 0) != 0
+        && $paymentRequestData->payment_to
+        && empty($isCreateFlow)
+    ) ? 'disabled' : '';
     $parampenalty_adjust_to = isset($paymentRequestData) && $paymentRequestData->penalty_adjust_to ? 'disabled' : '';
     $paramlabour_vendor_id = isset($paymentRequestData) && $paymentRequestData->labour_vendor_id ? 'disabled' : '';
     $param0 = (isset($paymentRequestData) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
@@ -68,7 +72,7 @@
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                Ticket Information {{ $approvedAmount }} {{ $requestedAmount }}
+                Ticket Information
             </h6>
         </div>
         <div class="col-md-3">
