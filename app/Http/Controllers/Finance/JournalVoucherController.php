@@ -1127,11 +1127,16 @@ class JournalVoucherController extends Controller
         $rvTotalUsage = [];
         $seenRvIds = [];
         $advTotalUsage = [];
+        $seenAdvIds = [];
         $soDebitUsage = [];
+        $seenSoIds = [];
         $doDebitUsage = [];
+        $seenDoIds = [];
         $soCreditUsage = [];
         $doCreditUsage = [];
         $jvTotalUsage = [];
+        $seenRefJvIds = [];
+        $seenOrderIds = [];
 
         foreach ($request->details as $index => $detail) {
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
@@ -1148,6 +1153,10 @@ class JournalVoucherController extends Controller
                     return "Line " . ($index + 1) . ": Receipt Voucher {$rv->unique_no} cannot be selected multiple times.";
                 }
                 $seenRvIds[] = $rvId;
+
+                if ($creditAmount > 0) {
+                    return "Line " . ($index + 1) . ": Receipt Voucher {$rv->unique_no} cannot be credited. Receipt Vouchers can only be debited (withdrawn/adjusted).";
+                }
 
                 $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
                 if (!$customer) {
@@ -1193,6 +1202,15 @@ class JournalVoucherController extends Controller
                     return "Line " . ($index + 1) . ": Customer Advance was not found.";
                 }
 
+                if (in_array($advId, $seenAdvIds)) {
+                    return "Line " . ($index + 1) . ": Excess Payment {$adv->voucher_no} cannot be selected multiple times.";
+                }
+                $seenAdvIds[] = $advId;
+
+                if ($creditAmount > 0) {
+                    return "Line " . ($index + 1) . ": Excess Payment {$adv->voucher_no} cannot be credited. Excess payments can only be debited.";
+                }
+
                 $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
                 if (!$customer) {
                     $account = Account::find($detail['acc_id']);
@@ -1220,6 +1238,11 @@ class JournalVoucherController extends Controller
                     return "Line " . ($index + 1) . ": Adjustment cannot be made for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to adjust.";
                 }
 
+                if (in_array($doId, $seenDoIds)) {
+                    return "Line " . ($index + 1) . ": Delivery Order {$do->reference_no} cannot be selected multiple times.";
+                }
+                $seenDoIds[] = $doId;
+
                 $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
                 if (!$customer) {
                     $account = Account::find($detail['acc_id']);
@@ -1245,6 +1268,12 @@ class JournalVoucherController extends Controller
                 if (!$refJv) {
                     return "Line " . ($index + 1) . ": Journal Voucher was not found.";
                 }
+
+                if (in_array($refJvId, $seenRefJvIds)) {
+                    return "Line " . ($index + 1) . ": Journal Voucher {$refJv->jv_no} cannot be selected multiple times.";
+                }
+                $seenRefJvIds[] = $refJvId;
+
                 if ($debitAmount > 0) {
                     $jvTotalUsage[$refJvId] = ($jvTotalUsage[$refJvId] ?? 0) + $debitAmount;
                 }
@@ -1256,6 +1285,11 @@ class JournalVoucherController extends Controller
                 if (!$so) {
                     return "Line " . ($index + 1) . ": Sales Order was not found.";
                 }
+
+                if (in_array($soId, $seenSoIds)) {
+                    return "Line " . ($index + 1) . ": Sales Order {$so->reference_no} cannot be selected multiple times.";
+                }
+                $seenSoIds[] = $soId;
 
                 $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
                 if (!$customer) {
@@ -1274,6 +1308,14 @@ class JournalVoucherController extends Controller
                 } elseif ($creditAmount > 0) {
                     $soCreditUsage[$soId] = ($soCreditUsage[$soId] ?? 0) + $creditAmount;
                 }
+            }
+
+            $rawOrderId = $detail['order_id'] ?? null;
+            if (!empty($rawOrderId)) {
+                if (in_array($rawOrderId, $seenOrderIds)) {
+                    return "Line " . ($index + 1) . ": The selected Order/GRN cannot be selected multiple times.";
+                }
+                $seenOrderIds[] = $rawOrderId;
             }
         }
 

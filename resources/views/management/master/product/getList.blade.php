@@ -27,10 +27,15 @@
                             <small>{{ $parent->product_category_flags }}</small>
                         </label>
                     </td>
-                    <td style="background: #f7f7f7; font-weight: bold;">{{ $parent->name }}</td>
+                    <td style="background: #f7f7f7; font-weight: bold;">
+                        {{ $parent->name }}
+                        @if(!empty($parent->unique_no))
+                            <br><small class="text-muted"><i class="ft-tag"></i> {{ $parent->unique_no }}</small>
+                        @endif
+                    </td>
                     <td>—</td>
                     <td><small>{{ formatEnumValue($parent->product_type) ?? '--' }}</small></td>
-                    <td><small>{{ get_category_name($parent->category_id) }}</small></td>
+                    <td><small>{{ $parent->category?->name ?? (function_exists('get_category_name') && $parent->category_id ? get_category_name($parent->category_id) : '--') }}</small></td>
                     <td><label
                             class="badge bg-light-{{ $parent->status == 'inactive' ? 'danger' : 'success' }}">{{ $parent->status }}</label>
                     </td>
@@ -43,13 +48,13 @@
                         @can('role-edit')
                             <a onclick="openModal(this,'{{ route('product.edit', $parent->id) }}','Edit Product')"
                                 class="info p-1 mr-2 position-relative" title="Edit Product"><i class="ft-edit"></i></a>
-                        @endcan
-                        @can('role-delete')
+                        @endcanany
+                        @canany(['product-delete', 'role-delete'])
                             <a onclick="deletemodal('{{ route('product.destroy', $parent->id) }}','{{ route('get.product') }}')"
                                 class="danger p-1 mr-2 position-relative">
                                 <i class="ft-x"></i>
                             </a>
-                        @endcan
+                        @endcanany
                     </td>
                 </tr>
                 {{-- ==== Child Products Under Same Parent ==== --}}
@@ -65,10 +70,15 @@
                                 <small>——{{ $child->product_category_flags }}</small>
                             </label>
                         </td>
-                        <td>—— {{ $child->name }}</td>
+                        <td>
+                            —— {{ $child->name }}
+                            @if(!empty($child->unique_no))
+                                <br><small class="text-muted pl-3"><i class="ft-tag"></i> {{ $child->unique_no }}</small>
+                            @endif
+                        </td>
                         <td>{{ $parent->name }}</td>
                         <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
-                        <td><small>{{ get_category_name($parent->category_id) }}</small></td>
+                        <td><small>{{ $child->category?->name ?? $parent->category?->name ?? (function_exists('get_category_name') && $child->category_id ? get_category_name($child->category_id) : '--') }}</small></td>
                         <td><label
                                 class="badge bg-light-{{ $child->status == 'inactive' ? 'danger' : 'success' }}">{{ $child->status }}</label>
                         </td>
@@ -78,16 +88,16 @@
                                 class="primary p-1 mr-2 position-relative" title="View Audit Logs" style="cursor: pointer;">
                                 <i class="fa fa-history font-medium-3"></i>
                             </a>
-                            @can('role-edit')
+                            @canany(['product-edit', 'role-edit'])
                                 <a onclick="openModal(this,'{{ route('product.edit', $child->id) }}','Edit Product')"
                                     class="info p-1 mr-2 position-relative" title="Edit Product"><i class="ft-edit"></i></a>
-                            @endcan
-                            @can('role-delete')
+                            @endcanany
+                            @canany(['product-delete', 'role-delete'])
                                 <a onclick="deletemodal('{{ route('product.destroy', $child->id) }}','{{ route('get.product') }}')"
                                     class="danger p-1 mr-2 position-relative">
                                     <i class="ft-x"></i>
                                 </a>
-                            @endcan
+                            @endcanany
                         </td>
                     </tr>
                 @endforeach
@@ -122,6 +132,8 @@
 </div> --}}
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
-        {{ $products->links() }}
+        @if(method_exists($products, 'links'))
+            {{ $products->links() }}
+        @endif
     </div>
 </div>

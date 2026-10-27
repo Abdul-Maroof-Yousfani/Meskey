@@ -21,9 +21,16 @@ class ProductController extends Controller
         $this->middleware('check.company:product-edit', ['only' => ['edit', 'update']]);
         $this->middleware('check.company:product-delete', ['only' => ['destroy']]);
     }
-    public function index()
+    public function index(Request $request)
     {
-        return view('management.master.product.index');
+        $company_id = $request->company_id ?? (auth()->check() ? auth()->user()->current_company_id : null);
+        $categories = Category::when($company_id, fn($q) => $q->where('company_id', $company_id))->orderBy('name')->get();
+        $parentProducts = Product::when($company_id, fn($q) => $q->where('company_id', $company_id))
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get();
+
+        return view('management.master.product.index', compact('categories', 'parentProducts'));
     }
 
     /**
@@ -53,38 +60,106 @@ class ProductController extends Controller
 
     public function getList(Request $request)
     {
-        $products = Product::with([
-            'children' => function ($q) {
-                $q->orderByRaw("
+        $companyId = $request->company_id ?? (auth()->check() ? auth()->user()->current_company_id : null);
+
+        $hasCategoryFilter = $request->filled('category_id') && $request->category_id !== 'all';
+        $hasParentFilter = $request->filled('parent_id') && $request->parent_id !== 'all';
+
+        $query = Product::with([
+            'category',
+            'children' => function ($cq) use ($request, $hasCategoryFilter) {
+                $cq->with('category')
+                    ->when($hasCategoryFilter, function ($q) use ($request) {
+                        $categoryId = $request->category_id;
+                        $q->where(function ($sub) use ($categoryId) {
+                            $sub->where('category_id', $categoryId)
+                                ->orWhere(function ($q2) use ($categoryId) {
+                                    $q2->whereNull('category_id')
+                                        ->whereHas('parent', fn($pq) => $pq->where('category_id', $categoryId));
+                                });
+                        });
+                    })
+                    ->when($request->filled('search'), function ($q) use ($request) {
+                        $searchTerm = '%' . trim($request->search) . '%';
+                        $q->where(function ($sub) use ($searchTerm) {
+                            $sub->where('name', 'like', $searchTerm)
+                                ->orWhere('unique_no', 'like', $searchTerm)
+                                ->orWhere('bardcode', 'like', $searchTerm)
+                                ->orWhere('product_type', 'like', $searchTerm)
+                                ->orWhere('product_category_flags', 'like', $searchTerm)
+                                ->orWhereHas('category', function ($catQ) use ($searchTerm) {
+                                    $catQ->where('name', 'like', $searchTerm);
+                                })
+                                ->orWhereHas('parent', function ($pQ) use ($searchTerm) {
+                                    $pQ->where('name', 'like', $searchTerm)
+                                        ->orWhere('unique_no', 'like', $searchTerm)
+                                        ->orWhere('bardcode', 'like', $searchTerm);
+                                });
+                        });
+                    })
+                    ->orderByRaw("
+                        CASE 
+                            WHEN product_category_flags = 'head' THEN 1
+                            WHEN product_category_flags = 'b2' THEN 2
+                            ELSE 3
+                        END
+                    ")
+                    ->orderBy('created_at', 'desc');
+            }
+        ])
+            ->when($companyId, function ($q) use ($companyId) {
+                return $q->where('company_id', $companyId);
+            })
+            ->whereNull('parent_id')
+            ->when($hasParentFilter, function ($q) use ($request) {
+                return $q->where('id', $request->parent_id);
+            })
+            ->when($hasCategoryFilter, function ($q) use ($request) {
+                $categoryId = $request->category_id;
+                return $q->where(function ($sub) use ($categoryId) {
+                    $sub->where('category_id', $categoryId)
+                        ->orWhereHas('children', function ($cq) use ($categoryId) {
+                            $cq->where('category_id', $categoryId);
+                        });
+                });
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . trim($request->search) . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm)
+                        ->orWhere('unique_no', 'like', $searchTerm)
+                        ->orWhere('bardcode', 'like', $searchTerm)
+                        ->orWhere('product_type', 'like', $searchTerm)
+                        ->orWhere('product_category_flags', 'like', $searchTerm)
+                        ->orWhereHas('category', function ($catQ) use ($searchTerm) {
+                            $catQ->where('name', 'like', $searchTerm);
+                        })
+                        ->orWhereHas('children', function ($cq) use ($searchTerm) {
+                            $cq->where('name', 'like', $searchTerm)
+                                ->orWhere('unique_no', 'like', $searchTerm)
+                                ->orWhere('bardcode', 'like', $searchTerm)
+                                ->orWhere('product_type', 'like', $searchTerm)
+                                ->orWhere('product_category_flags', 'like', $searchTerm)
+                                ->orWhereHas('category', function ($catQ) use ($searchTerm) {
+                                    $catQ->where('name', 'like', $searchTerm);
+                                });
+                        });
+                });
+            })
+            ->orderByRaw("
                 CASE 
                     WHEN product_category_flags = 'head' THEN 1
                     WHEN product_category_flags = 'b2' THEN 2
                     ELSE 3
                 END
             ")
-                    ->orderBy('created_at', 'desc');
-            }
-        ])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . $request->search . '%';
-                return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('name', 'like', $searchTerm)
-                        ->orWhereHas('children', function ($cq) use ($searchTerm) {
-                            $cq->where('name', 'like', $searchTerm);
-                        });
-                });
-            })
-            ->where('company_id', $request->company_id)
-            ->whereNull('parent_id')
-            ->orderByRaw("
-            CASE 
-                WHEN product_category_flags = 'head' THEN 1
-                WHEN product_category_flags = 'b2' THEN 2
-                ELSE 3
-            END
-        ")
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 25));
+            ->orderBy('created_at', 'desc');
+
+        if ($hasCategoryFilter || $hasParentFilter) {
+            $products = $query->get();
+        } else {
+            $products = $query->paginate($request->get('per_page', 25));
+        }
 
         return view('management.master.product.getList', compact('products'));
     }
@@ -121,10 +196,12 @@ class ProductController extends Controller
      */
     public function create(Request $request)
     {
-
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
-        $parentProducts = Product::where('parent_id', null)->get();
+        $parentProducts = Product::where('company_id', $request->company_id)
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get();
         return view('management.master.product.create', [
             'categories' => $categories,
             'units' => $units,
@@ -153,15 +230,16 @@ class ProductController extends Controller
      */
     public function edit(Request $request, $id)
     {
-
-
         $product = Product::findOrFail($id);
 
-        $parentProducts = Product::where('parent_id', null)->get();
+        $parentProducts = Product::where('company_id', $request->company_id)
+            ->whereNull('parent_id')
+            ->where('id', '!=', $id)
+            ->orderBy('name')
+            ->get();
 
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
-
 
         return view('management.master.product.edit', [
             'categories' => $categories,

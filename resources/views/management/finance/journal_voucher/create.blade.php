@@ -418,6 +418,129 @@
                 });
             }
 
+            function syncAllDropdownDisabledStates() {
+                const isReceiving = $('#receivingToggle').is(':checked');
+
+                const selectedRvs = {};
+                const selectedAdvs = {};
+                const selectedSos = {};
+                const selectedDos = {};
+                const selectedJvs = {};
+                const selectedOrders = {};
+
+                $('#journalEntriesBody tr').each(function(idx) {
+                    const lineNo = idx + 1;
+                    const type = $(this).find('.adjustment-type-select').val();
+
+                    if (isReceiving) {
+                        if (type === 'receipt_voucher') {
+                            const id = $(this).find('.receipt-voucher-id-input').val();
+                            if (id) selectedRvs[id] = lineNo;
+                        } else if (type === 'excess_amount') {
+                            const id = $(this).find('.customer-advance-id-input').val();
+                            if (id) selectedAdvs[id] = lineNo;
+                        } else if (type === 'journal_voucher') {
+                            const id = $(this).find('.reference-jv-id-input').val();
+                            if (id) selectedJvs[id] = lineNo;
+                        } else if (type === 'so_do') {
+                            const soId = $(this).find('.sales-order-id-input').val();
+                            if (soId) selectedSos[soId] = lineNo;
+                            const doId = $(this).find('.delivery-order-id-input').val();
+                            if (doId && doId !== 'direct_so') selectedDos[doId] = lineNo;
+                        }
+                    } else {
+                        const orderVal = $(this).find('.order-select').val();
+                        if (orderVal) selectedOrders[orderVal] = lineNo;
+                    }
+                });
+
+                $('#journalEntriesBody tr').each(function(idx) {
+                    const $row = $(this);
+                    const thisLineNo = idx + 1;
+
+                    if (isReceiving) {
+                        const type = $row.find('.adjustment-type-select').val();
+                        const $refSelect = $row.find('.ref-doc-select');
+                        const $doSelect = $row.find('.do-select');
+
+                        if (type === 'receipt_voucher') {
+                            $refSelect.find('option').each(function() {
+                                const optVal = $(this).val();
+                                if (!optVal) return;
+                                const pickedIn = selectedRvs[optVal];
+                                const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
+                                if (pickedIn && pickedIn !== thisLineNo) {
+                                    $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
+                                } else {
+                                    $(this).prop('disabled', false).text(baseText);
+                                }
+                            });
+                        } else if (type === 'excess_amount') {
+                            $refSelect.find('option').each(function() {
+                                const optVal = $(this).val();
+                                if (!optVal) return;
+                                const pickedIn = selectedAdvs[optVal];
+                                const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
+                                if (pickedIn && pickedIn !== thisLineNo) {
+                                    $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
+                                } else {
+                                    $(this).prop('disabled', false).text(baseText);
+                                }
+                            });
+                        } else if (type === 'journal_voucher') {
+                            $refSelect.find('option').each(function() {
+                                const optVal = $(this).val();
+                                if (!optVal) return;
+                                const pickedIn = selectedJvs[optVal];
+                                const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
+                                if (pickedIn && pickedIn !== thisLineNo) {
+                                    $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
+                                } else {
+                                    $(this).prop('disabled', false).text(baseText);
+                                }
+                            });
+                        } else if (type === 'so_do') {
+                            $refSelect.find('option').each(function() {
+                                const optVal = $(this).val();
+                                if (!optVal) return;
+                                const pickedIn = selectedSos[optVal];
+                                const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
+                                if (pickedIn && pickedIn !== thisLineNo) {
+                                    $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
+                                } else {
+                                    $(this).prop('disabled', false).text(baseText);
+                                }
+                            });
+
+                            $doSelect.find('option').each(function() {
+                                const optVal = $(this).val();
+                                if (!optVal || optVal === 'direct_so') return;
+                                const pickedIn = selectedDos[optVal];
+                                const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
+                                if (pickedIn && pickedIn !== thisLineNo) {
+                                    $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
+                                } else {
+                                    $(this).prop('disabled', false).text(baseText);
+                                }
+                            });
+                        }
+                    } else {
+                        const $orderSelect = $row.find('.order-select');
+                        $orderSelect.find('option').each(function() {
+                            const optVal = $(this).val();
+                            if (!optVal) return;
+                            const pickedIn = selectedOrders[optVal];
+                            const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
+                            if (pickedIn && pickedIn !== thisLineNo) {
+                                $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
+                            } else {
+                                $(this).prop('disabled', false).text(baseText);
+                            }
+                        });
+                    }
+                });
+            }
+
             function populateRefDocDropdown($row) {
                 const type = $row.find('.adjustment-type-select').val();
                 const $refSelect = $row.find('.ref-doc-select');
@@ -427,6 +550,7 @@
                 if (!type) {
                     updateSelect2Dropdown($refSelect, [], 'Select Type First', null, true);
                     $doSelect.empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                    syncAllDropdownDisabledStates();
                     return;
                 }
 
@@ -451,10 +575,37 @@
                     updateSelect2Dropdown($refSelect, items, placeholder, null);
                     $doSelect.empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
                 }
+                syncAllDropdownDisabledStates();
             }
 
             function setRowDebitAmount($row, amount) {
                 const num = parseFloat(amount);
+                const type = $row.find('.adjustment-type-select').val();
+                const $allRows = $('#journalEntriesBody tr');
+
+                // Advance withdrawals (RV or Excess payment) must ALWAYS be debited to customer account
+                if (type === 'receipt_voucher' || type === 'excess_amount') {
+                    if (!isNaN(num) && num > 0) {
+                        $row.find('.debit-input').attr('max', num.toFixed(2)).val(num.toFixed(2));
+                        $row.find('.credit-input').val('').removeAttr('max');
+
+                        if ($allRows.length === 2) {
+                            const $otherRow = $allRows.not($row);
+                            const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
+                            const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
+                            if (otherCredit > 0 || otherDebit === 0) {
+                                $otherRow.find('.credit-input').val(num.toFixed(2));
+                                $otherRow.find('.debit-input').val('');
+                            }
+                        }
+                    } else {
+                        $row.find('.debit-input').removeAttr('max').val('');
+                        $row.find('.credit-input').removeAttr('max').val('');
+                    }
+                    calculateTotals();
+                    return;
+                }
+
                 const currentCredit = parseFloat($row.find('.credit-input').val()) || 0;
                 const currentDebit = parseFloat($row.find('.debit-input').val()) || 0;
 
@@ -466,7 +617,6 @@
                 }
 
                 // 2. Check if other rows in the voucher have excess debit (meaning this row is needed as CREDIT)
-                const $allRows = $('#journalEntriesBody tr');
                 let totalOtherDebit = 0;
                 let totalOtherCredit = 0;
                 $allRows.not($row).each(function () {
@@ -520,6 +670,7 @@
                 $row.find('.credit-input').removeAttr('max').val('');
                 populateRefDocDropdown($row);
                 calculateTotals();
+                syncAllDropdownDisabledStates();
             });
 
             $(document).on('change', '.ref-doc-select', function () {
@@ -537,6 +688,49 @@
                         $doSelect.empty().append(new Option('Select SO First', '')).prop('disabled', true).trigger('change.select2');
                     }
                     calculateTotals();
+                    syncAllDropdownDisabledStates();
+                    return;
+                }
+
+                // Check duplicate document selection across other rows
+                let duplicateRowIndex = null;
+                $('#journalEntriesBody tr').not($row).each(function () {
+                    const otherType = $(this).find('.adjustment-type-select').val();
+                    if (otherType === type) {
+                        let otherId = null;
+                        if (type === 'receipt_voucher') otherId = $(this).find('.receipt-voucher-id-input').val();
+                        else if (type === 'excess_amount') otherId = $(this).find('.customer-advance-id-input').val();
+                        else if (type === 'journal_voucher') otherId = $(this).find('.reference-jv-id-input').val();
+                        else if (type === 'so_do') otherId = $(this).find('.sales-order-id-input').val();
+
+                        if (otherId && String(otherId) === String(val)) {
+                            duplicateRowIndex = $(this).index() + 1;
+                            return false;
+                        }
+                    }
+                });
+
+                if (duplicateRowIndex !== null) {
+                    let typeLabel = 'Document';
+                    if (type === 'receipt_voucher') typeLabel = 'Receipt Voucher';
+                    else if (type === 'excess_amount') typeLabel = 'Excess Payment';
+                    else if (type === 'journal_voucher') typeLabel = 'Journal Voucher';
+                    else if (type === 'so_do') typeLabel = 'Sales Order';
+
+                    const docNo = $refSelect.find('option:selected').attr('data-unique-no') || $refSelect.find('option:selected').text();
+
+                    $refSelect.val('').trigger('change.select2');
+                    $row.find('.receipt-voucher-id-input, .customer-advance-id-input, .sales-order-id-input, .delivery-order-id-input, .reference-jv-id-input, .reference-jv-detail-id-input').val('');
+                    $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                    $row.find('.debit-input').removeAttr('max').val('');
+                    $row.find('.credit-input').removeAttr('max').val('');
+                    calculateTotals();
+                    syncAllDropdownDisabledStates();
+
+                    showWarningPopup(
+                        `${typeLabel} Already Selected`,
+                        `${typeLabel} (${docNo}) is already selected in Line ${duplicateRowIndex}. A document cannot be selected multiple times.`
+                    );
                     return;
                 }
 
@@ -550,12 +744,14 @@
                     $row.find('.voucher-no-input').val($selectedOpt.attr('data-unique-no') || $selectedOpt.text());
                     $row.find('.voucher-type-input').val('receipt_voucher');
                     setRowDebitAmount($row, remAmount);
+                    syncAllDropdownDisabledStates();
                 } else if (type === 'excess_amount') {
                     $row.find('.customer-advance-id-input').val(val);
                     $row.find('.voucher-id-input').val(val);
                     $row.find('.voucher-no-input').val($selectedOpt.attr('data-voucher-no') || $selectedOpt.text());
                     $row.find('.voucher-type-input').val('customer_advance');
                     setRowDebitAmount($row, remAmount);
+                    syncAllDropdownDisabledStates();
                 } else if (type === 'journal_voucher') {
                     const detailId = $selectedOpt.attr('data-detail-id') || (window.jvMap && window.jvMap[val] ? window.jvMap[val].detail_id : null);
                     $row.find('.reference-jv-id-input').val(val);
@@ -564,8 +760,10 @@
                     $row.find('.voucher-no-input').val($selectedOpt.attr('data-unique-no') || $selectedOpt.text());
                     $row.find('.voucher-type-input').val('journal_voucher');
                     setRowDebitAmount($row, remAmount);
+                    syncAllDropdownDisabledStates();
                 } else if (type === 'so_do') {
                     $row.find('.sales-order-id-input').val(val);
+                    syncAllDropdownDisabledStates();
                     $doSelect.empty().append(new Option('Loading Delivery Orders...', '')).prop('disabled', true).trigger('change.select2');
 
                     const soDosUrl = '{{ route("journal-voucher.so-dos", ":soId") }}'.replace(':soId', val);
@@ -596,6 +794,7 @@
                                     $doSelect.append(optDirect);
 
                                     $doSelect.prop('disabled', false).trigger('change.select2');
+                                    syncAllDropdownDisabledStates();
                                 } else {
                                     // No DOs created for this SO -> Auto adjust direct SO advance
                                     const directText = res.so_remaining_amount > 0.01
@@ -612,6 +811,7 @@
                                     $row.find('.voucher-type-input').val('sales_order');
 
                                     setRowDebitAmount($row, res.so_remaining_amount);
+                                    syncAllDropdownDisabledStates();
                                 }
                             }
                         },
@@ -632,7 +832,37 @@
                     $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
                     $row.find('.debit-input').removeAttr('max').val('');
                     calculateTotals();
+                    syncAllDropdownDisabledStates();
                     return;
+                }
+
+                // Check duplicate Delivery Order across other rows
+                if (val !== 'direct_so') {
+                    let duplicateRowIndex = null;
+                    $('#journalEntriesBody tr').not($row).each(function () {
+                        const otherDoId = $(this).find('.delivery-order-id-input').val();
+                        if (otherDoId && String(otherDoId) === String(val)) {
+                            duplicateRowIndex = $(this).index() + 1;
+                            return false;
+                        }
+                    });
+
+                    if (duplicateRowIndex !== null) {
+                        const doNo = $doSelect.find('option:selected').attr('data-reference-no') || $doSelect.find('option:selected').text();
+                        $doSelect.val('').trigger('change.select2');
+                        $row.find('.delivery-order-id-input').val('');
+                        $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                        $row.find('.debit-input').removeAttr('max').val('');
+                        $row.find('.credit-input').removeAttr('max').val('');
+                        calculateTotals();
+                        syncAllDropdownDisabledStates();
+
+                        showWarningPopup(
+                            'Delivery Order Already Selected',
+                            `Delivery Order (${doNo}) is already selected in Line ${duplicateRowIndex}. You cannot select the same Delivery Order multiple times.`
+                        );
+                        return;
+                    }
                 }
 
                 const $selectedOpt = $doSelect.find('option:selected');
@@ -654,6 +884,7 @@
                     $row.find('.voucher-type-input').val('delivery_order');
                     setRowDebitAmount($row, remAmount);
                 }
+                syncAllDropdownDisabledStates();
             });
 
             // Listen for order selection change (Toggle OFF mode)
@@ -663,6 +894,31 @@
                 const val = $(this).val();
 
                 if (val) {
+                    // Check duplicate order selection across other rows
+                    let duplicateRowIndex = null;
+                    $('#journalEntriesBody tr').not($row).each(function () {
+                        const otherOrderId = $(this).find('.order-select').val();
+                        if (otherOrderId && String(otherOrderId) === String(val)) {
+                            duplicateRowIndex = $(this).index() + 1;
+                            return false;
+                        }
+                    });
+
+                    if (duplicateRowIndex !== null) {
+                        const orderNo = $selected.attr('data-unique-no') || $selected.text();
+                        $(this).val('').trigger('change.select2');
+                        $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                        $row.find('.debit-input').removeAttr('max');
+                        calculateTotals();
+                        syncAllDropdownDisabledStates();
+
+                        showWarningPopup(
+                            'Order Already Selected',
+                            `Order/GRN (${orderNo}) is already selected in Line ${duplicateRowIndex}. You cannot select the same Order/GRN multiple times.`
+                        );
+                        return;
+                    }
+
                     const uniqueNo = $selected.attr('data-unique-no') || $selected.text() || '';
                     const type = $selected.attr('data-type') || '';
                     $row.find('.voucher-id-input').val(val);
@@ -698,11 +954,14 @@
                     } else {
                         $row.find('.debit-input').removeAttr('max');
                     }
+                    syncAllDropdownDisabledStates();
                 } else {
                     $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
                     $row.find('.debit-input').removeAttr('max');
+                    syncAllDropdownDisabledStates();
                 }
             });
+
 
             function getRowLimit($row) {
                 const isReceiving = $('#receivingToggle').is(':checked');
@@ -838,6 +1097,7 @@
                 rowCount++;
                 updateRemoveButtons();
                 calculateTotals();
+                syncAllDropdownDisabledStates();
             });
 
             // Remove row
@@ -846,6 +1106,7 @@
                     $(this).closest('tr').remove();
                     updateRemoveButtons();
                     calculateTotals();
+                    syncAllDropdownDisabledStates();
                 }
             });
 
@@ -950,12 +1211,92 @@
                     });
                     return false;
                 }
+
+                // Check duplicate document selections across lines
+                const isReceiving = $('#receivingToggle').is(':checked');
+                const seenRvs = {};
+                const seenAdvs = {};
+                const seenDos = {};
+                const seenSos = {};
+                const seenJvs = {};
+                const seenOrders = {};
+                let duplicateError = null;
+
+                $('#journalEntriesBody tr').each(function (index) {
+                    const lineNo = index + 1;
+                    const rvId = $(this).find('.receipt-voucher-id-input').val();
+                    const advId = $(this).find('.customer-advance-id-input').val();
+                    const doId = $(this).find('.delivery-order-id-input').val();
+                    const soId = $(this).find('.sales-order-id-input').val();
+                    const jvId = $(this).find('.reference-jv-id-input').val();
+                    const orderVal = $(this).find('.order-select').val();
+                    const voucherNo = $(this).find('.voucher-no-input').val() || '';
+
+                    if (isReceiving) {
+                        if (rvId) {
+                            if (seenRvs[rvId]) {
+                                duplicateError = `Receipt Voucher (${voucherNo || rvId}) is selected in multiple lines (Line ${seenRvs[rvId]} and Line ${lineNo}). Each Receipt Voucher can only be selected once.`;
+                                return false;
+                            }
+                            seenRvs[rvId] = lineNo;
+                        }
+                        if (advId) {
+                            if (seenAdvs[advId]) {
+                                duplicateError = `Excess Payment (${voucherNo || advId}) is selected in multiple lines (Line ${seenAdvs[advId]} and Line ${lineNo}). Each Excess Payment can only be selected once.`;
+                                return false;
+                            }
+                            seenAdvs[advId] = lineNo;
+                        }
+                        if (doId) {
+                            if (seenDos[doId]) {
+                                duplicateError = `Delivery Order (${voucherNo || doId}) is selected in multiple lines (Line ${seenDos[doId]} and Line ${lineNo}). Each Delivery Order can only be selected once.`;
+                                return false;
+                            }
+                            seenDos[doId] = lineNo;
+                        }
+                        if (soId && !doId) {
+                            if (seenSos[soId]) {
+                                duplicateError = `Sales Order (${voucherNo || soId}) is selected in multiple lines (Line ${seenSos[soId]} and Line ${lineNo}). Each Sales Order can only be selected once.`;
+                                return false;
+                            }
+                            seenSos[soId] = lineNo;
+                        }
+                        if (jvId) {
+                            if (seenJvs[jvId]) {
+                                duplicateError = `Journal Voucher (${voucherNo || jvId}) is selected in multiple lines (Line ${seenJvs[jvId]} and Line ${lineNo}). Each Journal Voucher can only be selected once.`;
+                                return false;
+                            }
+                            seenJvs[jvId] = lineNo;
+                        }
+                    } else {
+                        if (orderVal) {
+                            if (seenOrders[orderVal]) {
+                                duplicateError = `Order/GRN is selected in multiple lines (Line ${seenOrders[orderVal]} and Line ${lineNo}). Each Order/GRN can only be selected once.`;
+                                return false;
+                            }
+                            seenOrders[orderVal] = lineNo;
+                        }
+                    }
+                });
+
+                if (duplicateError) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Duplicate Selection Error',
+                        text: duplicateError,
+                        confirmButtonColor: '#D95000'
+                    });
+                    return false;
+                }
             });
 
             // Set initial state
             toggleReceivingColumns();
             updateRemoveButtons();
             calculateTotals();
+            syncAllDropdownDisabledStates();
         });
     </script>
 @endsection
