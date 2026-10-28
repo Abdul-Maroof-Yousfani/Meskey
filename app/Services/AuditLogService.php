@@ -424,14 +424,16 @@ class AuditLogService
         $logs = $dedupedLogs;
 
         // Title
-        $title = $options['title'] ?? ("Audit Logs: " . ucwords(str_replace('_', ' ', \Illuminate\Support\Str::snake($modelBasename))) . " #" . ($model->unique_no ?? $model->id));
+        $title = isset($options['title'])
+            ? (is_callable($options['title']) ? $options['title']($model) : $options['title'])
+            : ("Audit Logs: " . ucwords(str_replace('_', ' ', \Illuminate\Support\Str::snake($modelBasename))) . " #" . ($model->unique_no ?? $model->reference_no ?? $model->id));
 
         // Subtitle
         $subtitle = null;
         if (isset($options['subtitle'])) {
             $subtitle = is_callable($options['subtitle']) ? $options['subtitle']($model) : $options['subtitle'];
         } else {
-            $parts = [ucwords(str_replace('_', ' ', \Illuminate\Support\Str::snake($modelBasename))) . ' #' . ($model->unique_no ?? $model->id)];
+            $parts = [ucwords(str_replace('_', ' ', \Illuminate\Support\Str::snake($modelBasename))) . ' #' . ($model->unique_no ?? $model->reference_no ?? $model->id)];
             if (isset($model->total_amount)) {
                 $parts[] = 'Rs. ' . number_format((float) $model->total_amount, 2);
             }
@@ -540,6 +542,18 @@ class AuditLogService
             if (class_exists(\App\Models\Master\Transporter::class)) {
                 $trans = \App\Models\Master\Transporter::find($val);
                 $res = $trans ? ($trans->name . ($trans->unique_no ? " ({$trans->unique_no})" : "")) : "Transporter #{$val}";
+                self::$relationCache[$cacheKey] = $res;
+                return $res;
+            }
+        }
+
+        // Vendors
+        if (in_array($key, ['vendor_id', 'labour_vendor_id', 'payment_to']) && (is_numeric($val) || (is_string($val) && ctype_digit((string) $val)))) {
+            $cacheKey = "vendor_{$val}";
+            if (isset(self::$relationCache[$cacheKey])) return self::$relationCache[$cacheKey];
+            if (class_exists(\App\Models\Master\Vendor::class)) {
+                $ven = \App\Models\Master\Vendor::find($val);
+                $res = $ven ? ($ven->name . ($ven->unique_no ? " ({$ven->unique_no})" : "")) : "Vendor #{$val}";
                 self::$relationCache[$cacheKey] = $res;
                 return $res;
             }
@@ -815,6 +829,7 @@ class AuditLogService
             'is_ticket_verified',
             'is_lumpsum_deduction',
             'freight_paid_by_supplier',
+            'is_paid_by_supplier',
             'is_re_sampling',
             'is_done',
             'is_request_by_purchaser',
@@ -965,6 +980,30 @@ class AuditLogService
             'paid_amount'                   => 'Paid Amount',
             'payment_request_amount'        => 'Payment Request Amount',
             'freight_pay_request_amount'    => 'Freight Request Amount',
+            'request_amount'                => 'Freight Request Amount',
+            'vendor_id'                     => 'Vendor',
+            'labour_vendor_id'              => 'Labour Vendor',
+            'is_paid_by_supplier'           => 'Paid By Supplier',
+            'freight_rs'                    => 'Freight Rate (Rs)',
+            'freight_per_ton'               => 'Freight Per Ton',
+            'loading_kanta'                 => 'Loading Kanta Charges',
+            'arrived_kanta'                 => 'Arrived Kanta Charges',
+            'other_plus_labour'             => 'Other + Labour Charges',
+            'dehari_plus_extra'             => 'Dehari + Extra',
+            'market_comm'                   => 'Market Commission',
+            'over_weight_ded'               => 'Overweight Deduction',
+            'godown_penalty'                => 'Godown Penalty',
+            'other_minus_labour'            => 'Other - Labour Charges',
+            'extra_minus_ded'               => 'Extra Deduction (-)',
+            'commission_percent_ded'        => 'Commission % Deduction',
+            'total_deductions'              => 'Total Deductions',
+            'gross_amount'                  => 'Gross Freight Amount',
+            'penalty'                       => 'Penalty',
+            'penalty_adjust_to'             => 'Penalty Adjust To',
+            'exempt'                        => 'Exempted Weight',
+            'net_shortage'                  => 'Net Shortage',
+            'contract_rate'                 => 'Contract Rate',
+            'deduction_contract_rate_for_freight' => 'Deduction Contract Rate (Freight)',
             'advance_freight'               => 'Advance Freight',
             'lumpsum_deduction'             => 'Lump Sum Deduction',
             'lumpsum_deduction_amount'      => 'Lump Sum Deduction Amount',
