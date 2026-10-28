@@ -623,7 +623,7 @@ trait HasApprovalSalesOrder
             $this->am_approval_status = 'pending';
             $this->saveQuietly();
 
-            \App\Services\NotificationService::sendSaleOrderHeadOfficeNotification($this);
+            \App\Services\SaleNotificationService::sendSaleOrderHeadOfficeNotification($this);
 
             return true;
         }

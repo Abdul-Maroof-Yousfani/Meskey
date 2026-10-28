@@ -10,7 +10,14 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Edit Direct Payment Voucher</h4>
+                    <h4 class="mb-0">Edit Direct Payment Voucher - {{ $payment_voucher->unique_no }}</h4>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-info mr-1"
+                            onclick="openModal(this,'{{ route('payment-voucher.audit-logs', $payment_voucher->id) }}','Audit Logs: Payment Voucher #{{ $payment_voucher->unique_no }}', false, '55%')">
+                            <i class="fa fa-history mr-1"></i>Audit Logs
+                        </button>
+                        <a href="{{ route('payment-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form id="ajaxSubmit" action="{{ route('direct.payment-voucher.update', $payment_voucher) }}" method="POST">

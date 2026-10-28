@@ -46,15 +46,32 @@ class UserTestController extends Controller
 
     public function index(Request $request): View
     {
-        $data = User::latest()->paginate(5);
-        $locations = CompanyLocation::orderBy('name')->get();
+        $allowedLocationIds = $this->getAllowedLocationIds();
+
+        $data = User::query()
+            ->tap(function ($q) use ($allowedLocationIds) {
+                $this->applyUserLocationScope($q, $allowedLocationIds);
+            })
+            ->latest()
+            ->paginate(5);
+
+        $locations = CompanyLocation::when($allowedLocationIds !== null, function ($q) use ($allowedLocationIds) {
+                return $q->whereIn('id', $allowedLocationIds);
+            })
+            ->orderBy('name')
+            ->get();
 
         return view('management.acl.users-test.index', compact('data', 'locations'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
     public function create(): View
     {
-        $users = User::get();
+        $allowedLocationIds = $this->getAllowedLocationIds();
+        $users = User::query()
+            ->tap(function ($q) use ($allowedLocationIds) {
+                $this->applyUserLocationScope($q, $allowedLocationIds);
+            })
+            ->get();
         $parentAccount = Account::where('hierarchy_path', '2-9')->first();
 
         return view('management.acl.users-test.create', compact('users', 'parentAccount'));
@@ -63,6 +80,11 @@ class UserTestController extends Controller
     public function store(UserTestStoreRequest $request): JsonResponse
     {
         $data = $request->validated();
+
+        $allowedLocationIds = $this->getAllowedLocationIds();
+        if ($allowedLocationIds !== null) {
+            $data['user_type'] = 'user';
+        }
 
         $data['password'] = Hash::make($data['password']);
 
@@ -95,7 +117,14 @@ class UserTestController extends Controller
 
     public function getCompanyLocations($companyId)
     {
-        $locations = CompanyLocation::where('company_id', $companyId)->with('arrivalLocations')->get();
+        $allowedLocationIds = $this->getAllowedLocationIds($companyId);
+
+        $locations = CompanyLocation::where('company_id', $companyId)
+            ->with('arrivalLocations')
+            ->when($allowedLocationIds !== null, function ($q) use ($allowedLocationIds) {
+                return $q->whereIn('id', $allowedLocationIds);
+            })
+            ->get();
 
         return response()->json($locations);
     }
@@ -139,7 +168,11 @@ class UserTestController extends Controller
 
     public function show($id): View
     {
-        $user = User::find($id);
+        $user = User::findOrFail($id);
+        $allowedLocationIds = $this->getAllowedLocationIds();
+        if (!$this->userBelongsToAllowedLocations($user, $allowedLocationIds)) {
+            abort(403, 'Unauthorized access to user from another location.');
+        }
 
         return view('management.acl.users-test.show', compact('user'));
     }
@@ -147,7 +180,16 @@ class UserTestController extends Controller
     public function edit($id): View
     {
         $user = User::with(['companies', 'roles', 'companyLocation.arrivalLocations', 'account.parent'])->findOrFail($id);
-        $users = User::where('id', '!=', $id)->get();
+        $this->syncUserCompanyLocations($user);
+        $allowedLocationIds = $this->getAllowedLocationIds();
+        if (!$this->userBelongsToAllowedLocations($user, $allowedLocationIds)) {
+            abort(403, 'Unauthorized access to user from another location.');
+        }
+        $users = User::where('id', '!=', $id)
+            ->tap(function ($q) use ($allowedLocationIds) {
+                $this->applyUserLocationScope($q, $allowedLocationIds);
+            })
+            ->get();
         $userRole = $user->roles->pluck('id', 'name')->all();
         $parentAccount = Account::where('hierarchy_path', '2-9')->first();
 
@@ -166,6 +208,10 @@ class UserTestController extends Controller
             }
 
             $user = User::findOrFail($id);
+            $allowedLocationIds = $this->getAllowedLocationIds();
+            if (!$this->userBelongsToAllowedLocations($user, $allowedLocationIds)) {
+                return response()->json(['error' => 'Unauthorized action for this user.'], 403);
+            }
             $oldValues = $this->buildUserAuditValues($user);
             $passwordChanged = !empty($input['password']);
 
@@ -199,6 +245,7 @@ class UserTestController extends Controller
                 }
             }
             $user->update($input);
+            $this->syncUserCompanyLocations($user);
             $user->refresh();
 
             $newValues = $this->buildUserAuditValues($user);
@@ -239,10 +286,21 @@ class UserTestController extends Controller
     public function assignDetails($id)
     {
         $user = User::with('companies')->findOrFail($id);
+        $allowedLocationIds = $this->getAllowedLocationIds();
+        if (!$this->userBelongsToAllowedLocations($user, $allowedLocationIds)) {
+            abort(403, 'Unauthorized access to user from another location.');
+        }
 
         $permission = Permission::get();
         $assignedCompanyIds = $user->companies->pluck('id')->toArray();
-        $companies = Company::whereNotIn('id', $assignedCompanyIds)->get();
+        $authUser = auth()->user();
+
+        if ($allowedLocationIds !== null && $authUser) {
+            $userCompanyIds = $authUser->companies->pluck('id')->toArray();
+            $companies = Company::whereIn('id', $userCompanyIds)->whereNotIn('id', $assignedCompanyIds)->get();
+        } else {
+            $companies = Company::whereNotIn('id', $assignedCompanyIds)->get();
+        }
 
         return view('management.acl.users-test.assign', compact(
             'user',
@@ -293,6 +351,7 @@ class UserTestController extends Controller
         // $request->validate($rules);
 
         $permissions = $request->permission ?? [];
+        $allowedLocationIds = $this->getAllowedLocationIds();
         $existingCompanyLocationIds = $user->company_location_ids ?? [];
         $existingArrivalLocationIds = $user->arrival_location_ids ?? [];
 
@@ -337,6 +396,9 @@ class UserTestController extends Controller
 
             $locations = $request->company_location_id[$i] ?? [];
             $locations = is_array($locations) ? $locations : [];
+            if ($allowedLocationIds !== null) {
+                $locations = array_values(array_intersect($locations, $allowedLocationIds));
+            }
 
             $arrivals = $request->arrival_location_id ?? [];
             $arrivals = is_array($arrivals) ? $arrivals : [];
@@ -401,22 +463,7 @@ class UserTestController extends Controller
             $user->update(['purchase_order_approval' => false]);
         }
 
-        $finalCompanyLocationIds = array_values(array_unique(array_merge(
-            $existingCompanyLocationIds,
-            $newCompanyLocationIds
-        )));
-
-        $finalArrivalLocationMap = $existingArrivalLocationIds;
-
-        foreach ($newArrivalLocationMap as $locId => $arrList) {
-            $old = $finalArrivalLocationMap[$locId] ?? [];
-            $finalArrivalLocationMap[$locId] = array_values(array_unique(array_merge($old, $arrList)));
-        }
-
-        $user->update([
-            'company_location_ids' => $finalCompanyLocationIds,
-            'arrival_location_ids' => $finalArrivalLocationMap,
-        ]);
+        $this->syncUserCompanyLocations($user);
 
         $user->syncRoles(array_unique(array_merge(
             $user->getRoleNames()->toArray(),
@@ -440,9 +487,17 @@ class UserTestController extends Controller
     public function editAssignDetails($userId, $companyId, $roleId)
     {
         $user = User::with('companies')->findOrFail($userId);
+        $allowedLocationIds = $this->getAllowedLocationIds($companyId);
+        if (!$this->userBelongsToAllowedLocations($user, $allowedLocationIds)) {
+            abort(403, 'Unauthorized access to user from another location.');
+        }
 
         $permission = Permission::get();
-        $locations = CompanyLocation::all();
+        $locations = CompanyLocation::where('company_id', $companyId)
+            ->when($allowedLocationIds !== null, function ($q) use ($allowedLocationIds) {
+                return $q->whereIn('id', $allowedLocationIds);
+            })
+            ->get();
         $companies = getAllCompanies();
 
         $selectedLocations = [];
@@ -515,6 +570,22 @@ class UserTestController extends Controller
 
         $permissions = $request->permission ?? [];
         $locations = $request->company_location_id ?? [];
+        $locations = is_array($locations) ? $locations : [];
+
+        $allowedLocationIds = $this->getAllowedLocationIds($companyId);
+        if ($allowedLocationIds !== null) {
+            $existingCompany = DB::table('company_user_role')
+                ->where('user_id', $user->id)
+                ->where('company_id', $companyId)
+                ->first();
+            $currentLocs = $existingCompany && !empty($existingCompany->locations)
+                ? (json_decode($existingCompany->locations, true) ?: [])
+                : [];
+            $outsideScopeLocs = array_values(array_diff($currentLocs, $allowedLocationIds));
+
+            $submittedAllowedLocs = array_values(array_intersect($locations, $allowedLocationIds));
+            $locations = array_values(array_unique(array_merge($outsideScopeLocs, $submittedAllowedLocs)));
+        }
 
         $arrivals = $request->arrival_location_id ?? [];
         $arrivals = is_array($arrivals) ? $arrivals : [];
@@ -570,43 +641,7 @@ class UserTestController extends Controller
 
         $user->update(['purchase_order_approval' => $request->has('purchase_order_approval')]);
 
-        $finalCompanyLocationIds = [];
-        $finalArrivalMap = [];
-
-        $allCompanies = $user->companies()->get();
-
-        foreach ($allCompanies as $comp) {
-
-            if (!empty($comp->pivot->locations)) {
-                $locs = json_decode($comp->pivot->locations, true) ?? [];
-
-                foreach ($locs as $locId) {
-                    $finalCompanyLocationIds[] = $locId;
-                }
-            }
-
-            if (!empty($comp->pivot->arrival_locations)) {
-
-                if ($comp->id == $companyId) {
-                    foreach ($mapArrivalData as $locId => $arrs) {
-                        $finalArrivalMap[$locId] = $arrs;
-                    }
-                }
-            }
-        }
-
-        $existingArrivalMap = is_array($user->arrival_location_ids)
-            ? $user->arrival_location_ids
-            : (json_decode($user->arrival_location_ids, true) ?: []);
-
-        foreach ($locations as $locId) {
-            $existingArrivalMap[(string)$locId] = $mapArrivalData[$locId] ?? [];
-        }
-
-        $user->update([
-            'company_location_ids' => array_values(array_unique($finalCompanyLocationIds)),
-            'arrival_location_ids' => $existingArrivalMap,
-        ]);
+        $this->syncUserCompanyLocations($user);
 
         $user->refresh();
         $newAssignments = $this->buildUserAssignmentAuditValues($user);
@@ -652,31 +687,7 @@ class UserTestController extends Controller
             $role->delete();
         }
 
-        $userLocations = $user->company_location_ids ?? [];
-        $userArrivalMap = $user->arrival_location_ids ?? []; // NOW MAP
-
-        // Remove deleted locations
-        $updatedLocations = array_values(array_diff($userLocations, $deleteLocations));
-
-        // Remove deleted arrivals by location
-        foreach ($deleteLocations as $locId) {
-            if (isset($userArrivalMap[$locId])) {
-                unset($userArrivalMap[$locId]);
-            }
-        }
-
-        foreach ($userArrivalMap as $locId => $arrs) {
-            $userArrivalMap[$locId] = array_values(array_diff($arrs, $deleteArrivalsFlat));
-
-            if (empty($userArrivalMap[$locId])) {
-                unset($userArrivalMap[$locId]);
-            }
-        }
-
-        $user->update([
-            'company_location_ids' => $updatedLocations,
-            'arrival_location_ids' => $userArrivalMap,
-        ]);
+        $this->syncUserCompanyLocations($user);
 
         $user->refresh();
         $newAssignments = $this->buildUserAssignmentAuditValues($user);
@@ -699,6 +710,10 @@ class UserTestController extends Controller
         DB::beginTransaction();
         try {
             $user = User::findOrFail($id);
+            $allowedLocationIds = $this->getAllowedLocationIds();
+            if (!$this->userBelongsToAllowedLocations($user, $allowedLocationIds)) {
+                return response()->json(['error' => 'Unauthorized action for this user.'], 403);
+            }
             $oldValues = $this->buildUserAuditValues($user);
             $oldAssignments = $this->buildUserAssignmentAuditValues($user);
 
@@ -805,21 +820,11 @@ class UserTestController extends Controller
             : ($request->filled('company_location_id') ? [$request->company_location_id] : []);
         $locationIds = array_values(array_filter($locationIds, fn($id) => !empty($id) && $id !== 'all'));
 
+        $allowedLocationIds = $this->getAllowedLocationIds();
+
         $users = User::with(['companies', 'account.parent'])
-            ->when(!empty($locationIds), function ($q) use ($locationIds) {
-                return $q->where(function ($lq) use ($locationIds) {
-                    foreach ($locationIds as $locId) {
-                        $lq->orWhere('company_location_id', $locId)
-                            ->orWhereJsonContains('company_location_ids', (string) $locId)
-                            ->orWhereJsonContains('company_location_ids', (int) $locId)
-                            ->orWhereHas('companies', function ($cq) use ($locId) {
-                                $cq->where(function ($sub) use ($locId) {
-                                    $sub->whereJsonContains('locations', (string) $locId)
-                                        ->orWhereJsonContains('locations', (int) $locId);
-                                });
-                            });
-                    }
-                });
+            ->tap(function ($q) use ($allowedLocationIds, $locationIds) {
+                $this->applyUserLocationScope($q, $allowedLocationIds, $locationIds);
             })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
@@ -849,21 +854,11 @@ class UserTestController extends Controller
             : ($request->filled('company_location_id') ? [$request->company_location_id] : []);
         $locationIds = array_values(array_filter($locationIds, fn($id) => !empty($id) && $id !== 'all'));
 
+        $allowedLocationIds = $this->getAllowedLocationIds();
+
         $users = User::with(['companies', 'account.parent', 'parent'])
-            ->when(!empty($locationIds), function ($q) use ($locationIds) {
-                return $q->where(function ($lq) use ($locationIds) {
-                    foreach ($locationIds as $locId) {
-                        $lq->orWhere('company_location_id', $locId)
-                            ->orWhereJsonContains('company_location_ids', (string) $locId)
-                            ->orWhereJsonContains('company_location_ids', (int) $locId)
-                            ->orWhereHas('companies', function ($cq) use ($locId) {
-                                $cq->where(function ($sub) use ($locId) {
-                                    $sub->whereJsonContains('locations', (string) $locId)
-                                        ->orWhereJsonContains('locations', (int) $locId);
-                                });
-                            });
-                    }
-                });
+            ->tap(function ($q) use ($allowedLocationIds, $locationIds) {
+                $this->applyUserLocationScope($q, $allowedLocationIds, $locationIds);
             })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
@@ -1166,5 +1161,311 @@ class UserTestController extends Controller
         $emptyMessage = "No edits or updates have been recorded for {$company->name} assignment yet.";
 
         return view('components.audit-logs', compact('logs', 'title', 'subtitle', 'emptyMessage'));
+    }
+
+    /**
+     * Get the allowed location IDs for the authenticated user.
+     * Returns null for super-admin (no restrictions).
+     * Returns array of string location IDs for restricted users.
+     */
+    protected function getAllowedLocationIds($companyId = null): ?array
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return [];
+        }
+
+        $isSuperAdmin = $authUser->user_type === 'super-admin'
+            || (method_exists($authUser, 'hasAnyRole') && $authUser->hasAnyRole(['Super Admin', 'super-admin']))
+            || (method_exists($authUser, 'hasRole') && ($authUser->hasRole('Super Admin') || $authUser->hasRole('super-admin')));
+
+        if ($isSuperAdmin) {
+            return null; // null represents no restriction for super-admin
+        }
+
+        $locations = [];
+
+        // 1. If target company is specified, prioritize that company's pivot locations
+        $targetCompanyId = $companyId ?: $authUser->current_company_id;
+        if ($targetCompanyId) {
+            $comp = $authUser->companies->firstWhere('id', $targetCompanyId);
+            if ($comp && !empty($comp->pivot?->locations)) {
+                $pivotLocs = is_array($comp->pivot->locations)
+                    ? $comp->pivot->locations
+                    : json_decode($comp->pivot->locations, true);
+                if (is_array($pivotLocs)) {
+                    $locations = array_merge($locations, $pivotLocs);
+                }
+            }
+        }
+
+        // 2. If no locations found for target company or no companyId specified, check helper
+        if (empty($locations) && function_exists('getUserCurrentCompanyLocations')) {
+            try {
+                $hlpLocs = getUserCurrentCompanyLocations();
+                if (is_array($hlpLocs)) {
+                    $locations = array_merge($locations, $hlpLocs);
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        // 3. If still empty, check all company pivots
+        if (empty($locations)) {
+            foreach ($authUser->companies as $comp) {
+                if (!empty($comp->pivot?->locations)) {
+                    $pivotLocs = is_array($comp->pivot->locations)
+                        ? $comp->pivot->locations
+                        : json_decode($comp->pivot->locations, true);
+                    if (is_array($pivotLocs)) {
+                        $locations = array_merge($locations, $pivotLocs);
+                    }
+                }
+            }
+        }
+
+        // 4. Fallback to company_location_ids attribute on user
+        if (empty($locations) && !empty($authUser->company_location_ids)) {
+            $ids = is_array($authUser->company_location_ids)
+                ? $authUser->company_location_ids
+                : json_decode($authUser->company_location_ids, true);
+            if (is_array($ids)) {
+                $locations = array_merge($locations, $ids);
+            }
+        }
+
+        // 5. Fallback to primary company_location_id attribute
+        if (empty($locations) && !empty($authUser->company_location_id)) {
+            $locations[] = (string) $authUser->company_location_id;
+        }
+
+        return array_values(array_unique(array_filter(array_map('strval', $locations))));
+    }
+
+    /**
+     * Synchronize users.company_location_ids and users.arrival_location_ids
+     * strictly based on the user's active company pivot assignments.
+     */
+    protected function syncUserCompanyLocations(User $user): void
+    {
+        $allCompanies = $user->companies()->get();
+        if ($allCompanies->isEmpty()) {
+            return;
+        }
+
+        $finalCompanyLocationIds = [];
+        $finalArrivalLocationMap = [];
+
+        foreach ($allCompanies as $comp) {
+            $compLocs = [];
+            if (!empty($comp->pivot?->locations)) {
+                $compLocs = is_array($comp->pivot->locations)
+                    ? $comp->pivot->locations
+                    : (json_decode($comp->pivot->locations, true) ?: []);
+                foreach ($compLocs as $lId) {
+                    $finalCompanyLocationIds[] = (string) $lId;
+                }
+            }
+
+            if (!empty($comp->pivot?->arrival_locations)) {
+                $flatArrs = is_array($comp->pivot->arrival_locations)
+                    ? $comp->pivot->arrival_locations
+                    : (json_decode($comp->pivot->arrival_locations, true) ?: []);
+
+                if (!empty($flatArrs) && !empty($compLocs)) {
+                    $arrivalsByLoc = ArrivalLocation::whereIn('id', $flatArrs)
+                        ->whereIn('company_location_id', $compLocs)
+                        ->get()
+                        ->groupBy('company_location_id');
+
+                    foreach ($arrivalsByLoc as $locId => $arrItems) {
+                        $finalArrivalLocationMap[(string) $locId] = $arrItems->pluck('id')->toArray();
+                    }
+                }
+            }
+        }
+
+        $finalCompanyLocationIds = array_values(array_unique($finalCompanyLocationIds));
+
+        $user->update([
+            'company_location_ids' => $finalCompanyLocationIds,
+            'arrival_location_ids' => $finalArrivalLocationMap,
+        ]);
+    }
+
+    /**
+     * Get all assigned location IDs for a user across company pivots and attributes.
+     */
+    protected function getUserAssignedLocationIds(User $user): array
+    {
+        $locations = [];
+
+        foreach ($user->companies as $company) {
+            if (!empty($company->pivot?->locations)) {
+                $pivotLocs = is_array($company->pivot->locations)
+                    ? $company->pivot->locations
+                    : json_decode($company->pivot->locations, true);
+                if (is_array($pivotLocs)) {
+                    $locations = array_merge($locations, $pivotLocs);
+                }
+            }
+        }
+
+        if (empty($locations) && !empty($user->company_location_ids)) {
+            $ids = is_array($user->company_location_ids)
+                ? $user->company_location_ids
+                : json_decode($user->company_location_ids, true);
+            if (is_array($ids)) {
+                $locations = array_merge($locations, $ids);
+            }
+        }
+
+        return array_values(array_unique(array_filter(array_map('strval', $locations))));
+    }
+
+    /**
+     * Apply location filtering to a user query.
+     * When restricted, users only see target users whose assigned locations
+     * are strictly a subset of the allowed locations (cannot have any outside location).
+     */
+    protected function applyUserLocationScope($query, ?array $allowedLocationIds, array $requestedLocationIds = [])
+    {
+        $allLocationIds = CompanyLocation::pluck('id')->map(fn($id) => (string) $id)->toArray();
+
+        if ($allowedLocationIds === null) {
+            // Super-admin: filter only if a specific location was requested
+            if (!empty($requestedLocationIds)) {
+                $query->where(function ($q) use ($requestedLocationIds) {
+                    foreach ($requestedLocationIds as $locId) {
+                        $q->orWhereJsonContains('company_location_ids', (string) $locId)
+                          ->orWhereJsonContains('company_location_ids', (int) $locId)
+                          ->orWhereHas('companies', function ($cq) use ($locId) {
+                              $cq->where(function ($sub) use ($locId) {
+                                  $sub->whereJsonContains('locations', (string) $locId)
+                                      ->orWhereJsonContains('locations', (int) $locId);
+                              });
+                          });
+                    }
+                });
+            }
+            return $query;
+        }
+
+        // Non-super-admin: always restrict to allowed locations
+        if (empty($allowedLocationIds)) {
+            $query->whereRaw('1 = 0');
+            return $query;
+        }
+
+        if (!empty($requestedLocationIds)) {
+            $effectiveAllowed = array_values(array_intersect($requestedLocationIds, $allowedLocationIds));
+            if (empty($effectiveAllowed)) {
+                $query->whereRaw('1 = 0');
+                return $query;
+            }
+            $disallowedLocationIds = array_values(array_diff($allLocationIds, $effectiveAllowed));
+        } else {
+            $effectiveAllowed = $allowedLocationIds;
+            $disallowedLocationIds = array_values(array_diff($allLocationIds, $allowedLocationIds));
+        }
+
+        // 1. Must have at least one allowed location OR be completely unassigned (no location assigned yet)
+        $query->where(function ($q) use ($effectiveAllowed, $requestedLocationIds) {
+            foreach ($effectiveAllowed as $locId) {
+                $q->orWhereJsonContains('company_location_ids', (string) $locId)
+                  ->orWhereJsonContains('company_location_ids', (int) $locId)
+                  ->orWhereHas('companies', function ($cq) use ($locId) {
+                      $cq->where(function ($sub) use ($locId) {
+                          $sub->whereJsonContains('locations', (string) $locId)
+                              ->orWhereJsonContains('locations', (int) $locId);
+                      });
+                  });
+            }
+
+            // Also show users who have not been assigned any location yet (when no specific location is filtered)
+            if (empty($requestedLocationIds)) {
+                $q->orWhere(function ($uq) {
+                    $uq->where(function ($sub) {
+                        $sub->whereNull('company_location_ids')
+                            ->orWhere('company_location_ids', '[]')
+                            ->orWhere('company_location_ids', '""')
+                            ->orWhere('company_location_ids', '')
+                            ->orWhereRaw('JSON_LENGTH(company_location_ids) = 0');
+                    })->whereDoesntHave('companies', function ($cq) {
+                        $cq->whereNotNull('locations')
+                           ->where('locations', '!=', '[]')
+                           ->where('locations', '!=', '""')
+                           ->where('locations', '!=', '')
+                           ->whereRaw('JSON_LENGTH(locations) > 0');
+                    });
+                });
+            }
+        });
+
+        // 2. Must NOT have any disallowed location (strict subset)
+        if (!empty($disallowedLocationIds)) {
+            // Must not contain disallowed location in company_location_ids
+            foreach ($disallowedLocationIds as $disLocId) {
+                $query->where(function ($q) use ($disLocId) {
+                    $q->whereNull('company_location_ids')
+                      ->orWhere(function ($sub) use ($disLocId) {
+                          $sub->whereJsonDoesntContain('company_location_ids', (string) $disLocId)
+                              ->whereJsonDoesntContain('company_location_ids', (int) $disLocId);
+                      });
+                });
+            }
+
+            // Must not contain disallowed location in companies pivot locations
+            $query->whereDoesntHave('companies', function ($cq) use ($disallowedLocationIds) {
+                $cq->where(function ($sub) use ($disallowedLocationIds) {
+                    foreach ($disallowedLocationIds as $disLocId) {
+                        $sub->orWhereJsonContains('locations', (string) $disLocId)
+                            ->orWhereJsonContains('locations', (int) $disLocId);
+                    }
+                });
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * Check if a given user belongs strictly to the allowed locations.
+     */
+    protected function userBelongsToAllowedLocations(User $user, ?array $allowedLocationIds): bool
+    {
+        if ($allowedLocationIds === null) {
+            return true;
+        }
+        if (empty($allowedLocationIds)) {
+            return false;
+        }
+
+        $userLocs = $this->getUserAssignedLocationIds($user);
+        // Users who have not been assigned any location yet are accessible
+        if (empty($userLocs)) {
+            return true;
+        }
+
+        // 1. Must have at least one allowed location
+        $hasAllowed = false;
+        foreach ($userLocs as $loc) {
+            if (in_array((string) $loc, $allowedLocationIds)) {
+                $hasAllowed = true;
+                break;
+            }
+        }
+        if (!$hasAllowed) {
+            return false;
+        }
+
+        // 2. Must NOT have any location outside allowed locations
+        foreach ($userLocs as $loc) {
+            if (!in_array((string) $loc, $allowedLocationIds)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

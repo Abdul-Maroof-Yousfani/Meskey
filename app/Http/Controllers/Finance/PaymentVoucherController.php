@@ -224,7 +224,7 @@ class PaymentVoucherController extends Controller
 
             DB::commit();
 
-            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+            \App\Services\FinanceNotificationService::sendPaymentVoucherNotification($paymentVoucher);
 
             return response()->json([
                 'success' => 'Direct Payment Voucher created successfully!',
@@ -1313,7 +1313,7 @@ class PaymentVoucherController extends Controller
 
             DB::commit();
 
-            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+            \App\Services\FinanceNotificationService::sendPaymentVoucherNotification($paymentVoucher);
 
             return response()->json([
                 'success' => 'Direct Payment Voucher (Sale) created successfully!',
@@ -2881,7 +2881,7 @@ class PaymentVoucherController extends Controller
         });
 
         if ($paymentVoucher) {
-            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+            \App\Services\FinanceNotificationService::sendPaymentVoucherNotification($paymentVoucher);
         }
 
         return response()->json([
@@ -3078,7 +3078,7 @@ class PaymentVoucherController extends Controller
         });
 
         if ($paymentVoucher) {
-            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+            \App\Services\FinanceNotificationService::sendPaymentVoucherNotification($paymentVoucher);
         }
 
         return response()->json([
@@ -3154,7 +3154,7 @@ class PaymentVoucherController extends Controller
         });
 
         if ($paymentVoucher) {
-            \App\Services\NotificationService::sendPaymentVoucherNotification($paymentVoucher);
+            \App\Services\FinanceNotificationService::sendPaymentVoucherNotification($paymentVoucher);
         }
 
         return response()->json([

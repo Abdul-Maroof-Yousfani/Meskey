@@ -67,10 +67,21 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>User Type:</label>
+                @php
+                    $isSuperAdmin = auth()->user()?->user_type === 'super-admin'
+                        || (method_exists(auth()->user(), 'hasAnyRole') && auth()->user()->hasAnyRole(['Super Admin', 'super-admin']))
+                        || (method_exists(auth()->user(), 'hasRole') && (auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('super-admin')));
+                @endphp
+                @if ($isSuperAdmin)
                 <select name="user_type" id="user_type" class="form-control">
                     <option value="user">User</option>
                     <option value="super-admin">Super Admin</option>
                 </select>
+                @else
+                <select name="user_type" id="user_type" class="form-control" readonly>
+                    <option value="user" selected>User</option>
+                </select>
+                @endif
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">

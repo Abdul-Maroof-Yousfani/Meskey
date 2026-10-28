@@ -49,6 +49,11 @@
                 <div class="col-md-12 mt-3">
                     <label>Location:</label>
                     <select name="company_location_id[0][]" class="form-control location-select" multiple>
+                        @foreach ($locations as $loc)
+                            <option value="{{ $loc->id }}" {{ in_array((string)$loc->id, array_map('strval', $selectedLocations)) || in_array((int)$loc->id, $selectedLocations) ? 'selected' : '' }}>
+                                {{ $loc->name }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
 

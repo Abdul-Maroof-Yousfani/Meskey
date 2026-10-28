@@ -490,7 +490,7 @@ class SaleOrderController extends Controller
 
             DB::commit();
 
-            \App\Services\NotificationService::sendSaleOrderCreatedNotification($sales_order);
+            \App\Services\SaleNotificationService::sendSaleOrderCreatedNotification($sales_order);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);

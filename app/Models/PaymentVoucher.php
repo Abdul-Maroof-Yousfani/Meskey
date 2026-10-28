@@ -506,7 +506,7 @@ class PaymentVoucher extends Model
 
         if ($result) {
             try {
-                \App\Services\NotificationService::sendPaymentVoucherApprovalStepNotification($this);
+                \App\Services\FinanceNotificationService::sendPaymentVoucherApprovalStepNotification($this);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('PV Approval Step Notification Error: ' . $e->getMessage());
             }
@@ -521,7 +521,7 @@ class PaymentVoucher extends Model
 
         if ($result) {
             try {
-                \App\Services\NotificationService::sendPaymentVoucherApprovalStatusNotification($this, 'rejected', $comments);
+                \App\Services\FinanceNotificationService::sendPaymentVoucherApprovalStatusNotification($this, 'rejected', $comments);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('PV Approval Reject Notification Error: ' . $e->getMessage());
             }
@@ -536,7 +536,7 @@ class PaymentVoucher extends Model
 
         if ($result) {
             try {
-                \App\Services\NotificationService::sendPaymentVoucherApprovalStatusNotification($this, 'reverted', $comments);
+                \App\Services\FinanceNotificationService::sendPaymentVoucherApprovalStatusNotification($this, 'reverted', $comments);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('PV Approval Revert Notification Error: ' . $e->getMessage());
             }

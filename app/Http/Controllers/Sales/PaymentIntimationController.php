@@ -193,7 +193,7 @@ class PaymentIntimationController extends Controller
         // =========================================================================
         */
 
-        \App\Services\NotificationService::sendPaymentIntimationNotification($payment_intimation);
+        \App\Services\SaleNotificationService::sendPaymentIntimationNotification($payment_intimation);
 
         return response()->json(['success' => 'Payment Intimation has been created successfully']);
     }

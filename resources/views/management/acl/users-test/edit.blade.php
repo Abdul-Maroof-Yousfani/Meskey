@@ -153,13 +153,19 @@
                                             <hr class="mt-2 mb-2">
                                             <div class="form-group mb-1">
                                                 <div class="checkbox">
-                                                    <input type="checkbox" name="has_account" id="has_account" value="1" {{ ($user->account && $user->account->status === 'active') ? 'checked' : '' }}>
-                                                    <label for="has_account" class="font-weight-bold text-primary" style="cursor: pointer;">
-                                                        <span><i class="ft-git-merge mr-1"></i> Chart of Account (Parent: {{ $parentAccount->name ?? 'Seller Commission' }} [{{ $parentAccount->hierarchy_path ?? '2-9' }}])</span>
+                                                    <input type="checkbox" name="has_account" id="has_account"
+                                                        value="1"
+                                                        {{ $user->account && $user->account->status === 'active' ? 'checked' : '' }}>
+                                                    <label for="has_account" class="font-weight-bold text-primary"
+                                                        style="cursor: pointer;">
+                                                        <span><i class="ft-git-merge mr-1"></i> Chart of Account (Parent:
+                                                            {{ $parentAccount->name ?? 'Seller Commission' }}
+                                                            [{{ $parentAccount->hierarchy_path ?? '2-9' }}])</span>
                                                     </label>
                                                 </div>
                                                 <small class="text-muted d-block mt-1">
-                                                    Checking the checkbox will keep the account active, while unchecking it will make the account inactive.
+                                                    Checking the checkbox will keep the account active, while unchecking it
+                                                    will make the account inactive.
                                                 </small>
                                             </div>
 
@@ -168,15 +174,18 @@
                                                     <div class="row align-items-center">
                                                         <div class="col-md-5">
                                                             <strong>Account:</strong> {{ $user->account->name }}
-                                                            <span class="badge badge-{{ $user->account->status === 'active' ? 'success' : 'danger' }} ml-1">
+                                                            <span
+                                                                class="badge badge-{{ $user->account->status === 'active' ? 'success' : 'danger' }} ml-1">
                                                                 {{ ucfirst($user->account->status) }}
                                                             </span>
                                                         </div>
                                                         <div class="col-md-3">
-                                                            <strong>Code:</strong> <span class="badge badge-secondary">{{ $user->account->unique_no }}</span>
+                                                            <strong>Code:</strong> <span
+                                                                class="badge badge-secondary">{{ $user->account->unique_no }}</span>
                                                         </div>
                                                         <div class="col-md-4">
-                                                            <strong>Hierarchy Path:</strong> <span class="badge badge-success font-medium-1">{{ $user->account->hierarchy_path }}</span>
+                                                            <strong>Hierarchy Path:</strong> <span
+                                                                class="badge badge-success font-medium-1">{{ $user->account->hierarchy_path }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -189,13 +198,11 @@
                             <div class="row bottom-button-bar mt-4">
                                 <div class="col-12 text-right">
                                     <button type="submit" class="btn btn-primary submitbutton">Update Info</button>
-                                    @canAccess('assign-company')
                                     <button
                                         onclick="openModal(this,'{{ route('users-test.assign', $user->id) }}','Assign Company')"
                                         type="button" class="btn btn-primary position-relative ">
                                         Assign Companies
                                     </button>
-                                    @endcanAccess
                                 </div>
                             </div>
                             {!! Form::close() !!}
@@ -308,18 +315,19 @@
                                                     <a onclick="openModal(this,'{{ route('users-test.company-audit-logs', ['userId' => $user->id, 'companyId' => $comp->id]) }}','Audit Logs: {{ $comp->name }}', false, '55%')"
                                                         class="info p-1 text-center mr-2 position-relative cursor-pointer"
                                                         title="Audit Logs: {{ $comp->name }}" style="cursor: pointer;">
-                                                        <i class="fa fa-history font-medium-3" style="color: #17a2b8;"></i>
+                                                        <i class="fa fa-history font-medium-3"
+                                                            style="color: #17a2b8;"></i>
                                                     </a>
                                                     @endcanAccess
 
-                                                    @canAccess('edit-assign-company')
+                                                    @canAccess('company-edit')
                                                     <a onclick="openModal(this,'{{ route('users-test.edit-assign', ['userId' => $user->id, 'companyId' => $comp->id, 'roleId' => $role->id]) }}','Edit Company')"
                                                         class="info p-1 text-center mr-2 position-relative ">
                                                         <i class="ft-edit font-medium-3"></i>
                                                     </a>
                                                     @endcanAccess
 
-                                                    @canAccess('delete-assign-company')
+                                                    @canAccess('company-delete')
                                                     <a onclick="deletemodal(
                                                             '{{ route('users-test.delete-assign', ['userId' => $user->id, 'companyId' => $comp->id, 'roleId' => $role->id]) }}',
                                                             '{{ route('get.users.test') }}'
