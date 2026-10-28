@@ -1781,8 +1781,6 @@ class ProductionVoucherController extends Controller
             ->pluck('id')
             ->toArray();
 
-
-
         $product = Product::find($productionVoucher->product_id);
 
         $parentId = $product ? ($product->parent_id ? $product->parent_id : $product->id) : null;
