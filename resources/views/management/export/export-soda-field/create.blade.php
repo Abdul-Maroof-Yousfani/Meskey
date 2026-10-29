@@ -6,16 +6,34 @@
         <div class="col-8">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Quotation#:</label>
+                        <select name="quotation_id" class="form-control select2">
+                            <option value="">Select Quotation</option>
+                            @foreach ($quotations as $quotation)
+                                <option value="{{ $quotation->id }}">{{ $quotation->id }} -
+                                    {{ $quotation->buyer->name ?? 'N/A' }}
+                                    ({{ $quotation->product->name ?? '' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Reference #:</label>
-                        <input type="text" name="reference_display" class="form-control" placeholder="Select date to generate..." readonly>
+                        <input type="text" name="reference_display" class="form-control"
+                            placeholder="Select date to generate..." readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Voucher Date:</label>
-                        <input type="date" name="voucher_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        <input type="date" name="voucher_date" class="form-control" value="{{ date('Y-m-d') }}"
+                            required>
                     </div>
                 </div>
 
@@ -23,9 +41,11 @@
                     <div class="form-group">
                         <label>Party Name (Buyer):</label>
                         <div class="buyer-type-filter mb-1" style="font-size: 12px;">
-                            <label class="mr-2"><input type="radio" name="buyer_type" value="all" checked> All</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="all" checked>
+                                All</label>
                             <label class="mr-2"><input type="radio" name="buyer_type" value="local"> Local</label>
-                            <label class="mr-2"><input type="radio" name="buyer_type" value="international"> International</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="international">
+                                International</label>
                         </div>
                         <select name="buyer_id" id="buyer_id" class="form-control select2" required>
                             <option value="">Select Buyer</option>
@@ -78,8 +98,8 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Amt/Ton:</label>
-                            <input type="number" id="commission_amount_per_ton" min="0" name="commission_amount_per_ton"
-                                class="form-control" step="0.01">
+                            <input type="number" id="commission_amount_per_ton" min="0"
+                                name="commission_amount_per_ton" class="form-control" step="0.01">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -176,28 +196,36 @@
                                 </select>
                             </td> --}}
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
+                                <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size"
+                                    step="0.01" value="0" min="0">
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
+                                <input type="number" name="packing_items[0][metric_tons]"
+                                    class="form-control metric-tons" value="0" step="0.001" min="0">
                             </td>
                             <td class="p-2" style="display: none;">
-                                <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
+                                <input type="number" name="packing_items[0][maunds]" class="form-control maunds"
+                                    value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2" style="display: none;">
-                                <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
+                                <input type="number" name="packing_items[0][total_kgs]"
+                                    class="form-control total-kgs" value="0" readonly>
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags" value="0" readonly>
+                                <input type="number" name="packing_items[0][no_of_bags]"
+                                    class="form-control no_of_bags" value="0" readonly>
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
+                                <input type="number" name="packing_items[0][rate]" class="form-control rates"
+                                    value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2" style="display: none;">
-                                <input type="number" name="packing_items[0][rate_per_maund]" class="form-control rates_mnd" value="0" step="0.01" min="0">
+                                <input type="number" name="packing_items[0][rate_per_maund]"
+                                    class="form-control rates_mnd" value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][amount]" class="form-control amount" value="0" min="0" readonly>
+                                <input type="number" name="packing_items[0][amount]" class="form-control amount"
+                                    value="0" min="0" readonly>
                             </td>
                             <td class="text-center p-2">
                                 <button type="button" class="btn btn-sm btn-danger remove-packing-item">
@@ -219,7 +247,8 @@
         <div class="col-md-12 mt-3">
             <h6 class="header-heading-sepration">Additional Information</h6>
             <div class="form-group">
-                <textarea name="additional_info" class="form-control" rows="4" placeholder="Enter any additional details here..."></textarea>
+                <textarea name="additional_info" class="form-control" rows="4"
+                    placeholder="Enter any additional details here..."></textarea>
             </div>
         </div>
     </div>
@@ -233,220 +262,381 @@
 </form>
 
 <script>
-$(document).ready(function() {
-    $('.select2').select2({ width: '100%'});
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%'
+        });
 
-    // ---- BUYER FILTER LOGIC ----
-    const allBuyerOptions = $('#buyer_id option').clone();
-    
-    $('input[name="buyer_type"]').on('change', function() {
-        let selectedType = $(this).val();
-        let buyerSelect = $('#buyer_id');
-        let currentVal = buyerSelect.val();
-        
-        buyerSelect.empty().append('<option value="">Select Buyer</option>');
-        
-        allBuyerOptions.each(function() {
-            let optionType = $(this).data('type');
-            if (selectedType === 'all' || optionType === selectedType) {
-                if ($(this).val() !== "") {
-                    buyerSelect.append($(this).clone());
+        // ---- BUYER FILTER LOGIC ----
+        const allBuyerOptions = $('#buyer_id option').clone();
+
+        $('input[name="buyer_type"]').on('change', function() {
+            let selectedType = $(this).val();
+            let buyerSelect = $('#buyer_id');
+            let currentVal = buyerSelect.val();
+
+            buyerSelect.empty().append('<option value="">Select Buyer</option>');
+
+            allBuyerOptions.each(function() {
+                let optionType = $(this).data('type');
+                if (selectedType === 'all' || optionType === selectedType) {
+                    if ($(this).val() !== "") {
+                        buyerSelect.append($(this).clone());
+                    }
                 }
-            }
+            });
+
+            buyerSelect.val(currentVal).trigger('change.select2');
+
+            // Dropdown ko dubara kholna taake user ko asani ho
+            setTimeout(() => {
+                buyerSelect.select2('open');
+            }, 100);
         });
-        
-        buyerSelect.val(currentVal).trigger('change.select2');
-        
-        // Dropdown ko dubara kholna taake user ko asani ho
-        setTimeout(() => {
-            buyerSelect.select2('open');
-        }, 100);
-    });
 
-    // ---- ROW LEVEL CALCULATIONS ----
-    $(document).on('input', '.metric-tons, .bag-size', function() {
-        let row = $(this).closest('tr');
-        calculateRowFromMT(row);
-        calculateOverallTotals();
-    });
-
-    $(document).on('input', '.maunds', function() {
-        let row = $(this).closest('tr');
-        calculateRowFromMaunds(row);
-        calculateOverallTotals();
-    });
-
-    $(document).on('input', '.rates', function() {
-        let row = $(this).closest('tr');
-        calculateRowFromRate(row);
-    });
-
-    $(document).on('input', '.rates_mnd', function() {
-        let row = $(this).closest('tr');
-        calculateRowFromRateMnd(row);
-    });
-
-    function calculateRowFromMT(row) {
-        let mt = parseFloat(row.find('.metric-tons').val()) || 0;
-        let totalKgs = mt * 1000;
-        let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
-        let bags = bagSize > 0 ? (totalKgs / bagSize) : 0;
-        row.find('.maunds').val((mt * 25).toFixed(2));
-        row.find('.total-kgs').val(totalKgs.toFixed(2));
-        row.find('.no_of_bags').val(Math.ceil(bags));
-        calculateRowAmount(row);
-    }
-
-    function calculateRowFromMaunds(row) {
-        let maunds = parseFloat(row.find('.maunds').val()) || 0;
-        let mt = maunds / 25;
-        let totalKgs = mt * 1000;
-        let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
-        let bags = bagSize > 0 ? (totalKgs / bagSize) : 0;
-        row.find('.metric-tons').val(mt.toFixed(3));
-        row.find('.total-kgs').val(totalKgs.toFixed(2));
-        row.find('.no_of_bags').val(Math.ceil(bags));
-        calculateRowAmount(row);
-    }
-
-    function calculateRowFromRate(row) {
-        let rateMt = parseFloat(row.find('.rates').val()) || 0;
-        row.find('.rates_mnd').val((rateMt / 25).toFixed(2));
-        calculateRowAmount(row);
-    }
-
-    function calculateRowFromRateMnd(row) {
-        let rateMnd = parseFloat(row.find('.rates_mnd').val()) || 0;
-        row.find('.rates').val((rateMnd * 25).toFixed(2));
-        calculateRowAmount(row);
-    }
-
-    function calculateRowAmount(row) {
-        let mt = parseFloat(row.find('.metric-tons').val()) || 0;
-        let rateMt = parseFloat(row.find('.rates').val()) || 0;
-        let amount = mt * rateMt;
-        row.find('.amount').val(amount.toFixed(2));
-        
-        // Trigger commission recalculation
-        calculateOverallTotals();
-    }
-
-    function calculateOverallTotals() {
-        let totalMt = 0;
-        let totalAmount = 0;
-        $('#packingItems tr.packing-item').each(function() {
-            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
-            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+        // ---- ROW LEVEL CALCULATIONS ----
+        $(document).on('input', '.metric-tons, .bag-size', function() {
+            let row = $(this).closest('tr');
+            calculateRowFromMT(row);
+            calculateOverallTotals();
         });
-        $('#display_total_mt').text(totalMt.toFixed(3));
-        
-        // Recalculate commission if percentage or amt/ton is present
-        calculateCommissionFields(totalAmount, totalMt);
-    }
 
-    // ---- COMMISSION CALCULATIONS ----
-    $(document).on('input', '#commission_percentage', function() {
-        let totalAmount = 0;
-        let totalMt = 0;
-        $('#packingItems tr.packing-item').each(function() {
-            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
-            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+        $(document).on('input', '.maunds', function() {
+            let row = $(this).closest('tr');
+            calculateRowFromMaunds(row);
+            calculateOverallTotals();
         });
-        
-        let percentage = parseFloat($(this).val()) || 0;
-        let commission = (totalAmount * percentage) / 100;
-        let amtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
-        
-        $('#commission').val(commission.toFixed(2));
-        $('#commission_amount_per_ton').val(amtPerTon.toFixed(2));
-    });
 
-    $(document).on('input', '#commission_amount_per_ton', function() {
-        let totalAmount = 0;
-        let totalMt = 0;
-        $('#packingItems tr.packing-item').each(function() {
-            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
-            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+        $(document).on('input', '.rates', function() {
+            let row = $(this).closest('tr');
+            calculateRowFromRate(row);
         });
-        
-        let amtPerTon = parseFloat($(this).val()) || 0;
-        let commission = totalMt * amtPerTon;
-        let percentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
-        
-        $('#commission').val(commission.toFixed(2));
-        $('#commission_percentage').val(percentage.toFixed(2));
-    });
 
-    function calculateCommissionFields(totalAmount, totalMt) {
-        let percentage = parseFloat($('#commission_percentage').val());
-        let amtPerTon = parseFloat($('#commission_amount_per_ton').val());
-        
-        if (!isNaN(percentage) && percentage > 0) {
-            let commission = (totalAmount * percentage) / 100;
-            let calculatedAmtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
-            $('#commission').val(commission.toFixed(2));
-            $('#commission_amount_per_ton').val(calculatedAmtPerTon.toFixed(2));
-        } else if (!isNaN(amtPerTon) && amtPerTon > 0) {
-            let commission = totalMt * amtPerTon;
-            let calculatedPercentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
-            $('#commission').val(commission.toFixed(2));
-            $('#commission_percentage').val(calculatedPercentage.toFixed(2));
+        $(document).on('input', '.rates_mnd', function() {
+            let row = $(this).closest('tr');
+            calculateRowFromRateMnd(row);
+        });
+
+        function calculateRowFromMT(row) {
+            let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            let totalKgs = mt * 1000;
+            let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
+            let bags = bagSize > 0 ? (totalKgs / bagSize) : 0;
+            row.find('.maunds').val((mt * 25).toFixed(2));
+            row.find('.total-kgs').val(totalKgs.toFixed(2));
+            row.find('.no_of_bags').val(Math.ceil(bags));
+            calculateRowAmount(row);
         }
-    }
+
+        function calculateRowFromMaunds(row) {
+            let maunds = parseFloat(row.find('.maunds').val()) || 0;
+            let mt = maunds / 25;
+            let totalKgs = mt * 1000;
+            let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
+            let bags = bagSize > 0 ? (totalKgs / bagSize) : 0;
+            row.find('.metric-tons').val(mt.toFixed(3));
+            row.find('.total-kgs').val(totalKgs.toFixed(2));
+            row.find('.no_of_bags').val(Math.ceil(bags));
+            calculateRowAmount(row);
+        }
+
+        function calculateRowFromRate(row) {
+            let rateMt = parseFloat(row.find('.rates').val()) || 0;
+            row.find('.rates_mnd').val((rateMt / 25).toFixed(2));
+            calculateRowAmount(row);
+        }
+
+        function calculateRowFromRateMnd(row) {
+            let rateMnd = parseFloat(row.find('.rates_mnd').val()) || 0;
+            row.find('.rates').val((rateMnd * 25).toFixed(2));
+            calculateRowAmount(row);
+        }
+
+        function calculateRowAmount(row) {
+            let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            let rateMt = parseFloat(row.find('.rates').val()) || 0;
+            let amount = mt * rateMt;
+            row.find('.amount').val(amount.toFixed(2));
+
+            // Trigger commission recalculation
+            calculateOverallTotals();
+        }
+
+        function calculateOverallTotals() {
+            let totalMt = 0;
+            let totalAmount = 0;
+            $('#packingItems tr.packing-item').each(function() {
+                totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+                totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+            });
+            $('#display_total_mt').text(totalMt.toFixed(3));
+
+            // Recalculate commission if percentage or amt/ton is present
+            calculateCommissionFields(totalAmount, totalMt);
+        }
+
+        // ---- COMMISSION CALCULATIONS ----
+        $(document).on('input', '#commission_percentage', function() {
+            let totalAmount = 0;
+            let totalMt = 0;
+            $('#packingItems tr.packing-item').each(function() {
+                totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+                totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            });
+
+            let percentage = parseFloat($(this).val()) || 0;
+            let commission = (totalAmount * percentage) / 100;
+            let amtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
+
+            $('#commission').val(commission.toFixed(2));
+            $('#commission_amount_per_ton').val(amtPerTon.toFixed(2));
+        });
+
+        $(document).on('input', '#commission_amount_per_ton', function() {
+            let totalAmount = 0;
+            let totalMt = 0;
+            $('#packingItems tr.packing-item').each(function() {
+                totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+                totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            });
+
+            let amtPerTon = parseFloat($(this).val()) || 0;
+            let commission = totalMt * amtPerTon;
+            let percentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
+
+            $('#commission').val(commission.toFixed(2));
+            $('#commission_percentage').val(percentage.toFixed(2));
+        });
+
+        function calculateCommissionFields(totalAmount, totalMt) {
+            let percentage = parseFloat($('#commission_percentage').val());
+            let amtPerTon = parseFloat($('#commission_amount_per_ton').val());
+
+            if (!isNaN(percentage) && percentage > 0) {
+                let commission = (totalAmount * percentage) / 100;
+                let calculatedAmtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
+                $('#commission').val(commission.toFixed(2));
+                $('#commission_amount_per_ton').val(calculatedAmtPerTon.toFixed(2));
+            } else if (!isNaN(amtPerTon) && amtPerTon > 0) {
+                let commission = totalMt * amtPerTon;
+                let calculatedPercentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
+                $('#commission').val(commission.toFixed(2));
+                $('#commission_percentage').val(calculatedPercentage.toFixed(2));
+            }
+        }
 
 
-    // Packing items dynamic rows
-    $('#addPackingItem').click(function() { addNewPackingItem(); });
-    function addNewPackingItem() {
-        var firstRow = $('#packingItems tr.packing-item').first();
-        var newRow = firstRow.clone();
-        newRow.find('.select2-container').remove();
-        newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
-        newRow.find('input').val('0');
-        newRow.find('select').val('').trigger('change');
-        $('#packingItems').append(newRow);
-        $('.select2').select2({ width: '100%'});
-        reindexPackingItems();
-    }
-    $(document).on('click', '.remove-packing-item', function() {
-        if ($('#packingItems tr.packing-item').length > 1) {
-            $(this).closest('tr').remove();
+        function triggerAutofill() {
+            let quotationId = $('select[name="quotation_id"]').val();
+
+            if (quotationId) {
+                let url = "{{ route('exportsodafield.getquotation-details', ':id') }}".replace(':id', quotationId);
+                $.get(url, function(data) {
+                    fillFormFromData(data);
+                }).fail(function(xhr) {
+                    console.error("Error fetching quotation details:", xhr);
+                });
+            } else {
+                clearFormFields();
+            }
+        }
+
+        function clearFormFields() {
+            $('#buyer_id').val('').trigger('change.select2');
+            $('select[name="product_id"]').val('').trigger('change.select2');
+            $('input[name="shipment_date_from"]').val('');
+            $('input[name="shipment_date_to"]').val('');
+            $('select[name="incoterm_id"]').val('').trigger('change.select2');
+            $('select[name="mode_of_term_id"]').val('').trigger('change.select2');
+            $('#commission_percentage').val('');
+            $('#commission_amount_per_ton').val('');
+            $('#commission').val('');
+            $('textarea[name="additional_info"]').val('');
+
+            // Reset packing rows to 1 empty row
+            let tbody = $('#packingItems');
+            tbody.find('tr.packing-item').not(':first').remove();
+            let firstRow = tbody.find('tr.packing-item').first();
+            firstRow.find('select').val('').trigger('change.select2');
+            firstRow.find('input').val('0');
             reindexPackingItems();
             calculateOverallTotals();
         }
-    });
-    function reindexPackingItems() {
-        $('#packingItems tr.packing-item').each(function(i) {
-            $(this).find('select, input').each(function() {
-                var name = $(this).attr('name');
-                if (name) { $(this).attr('name', name.replace(/\[\d+\]/, '[' + i + ']')); }
+
+        function fillFormFromData(data) {
+            // Buyer
+            if (data.buyer_id) {
+                if ($('#buyer_id option[value="' + data.buyer_id + '"]').length === 0) {
+                    $('input[name="buyer_type"][value="all"]').prop('checked', true);
+                    let buyerSelect = $('#buyer_id');
+                    buyerSelect.empty().append('<option value="">Select Buyer</option>');
+                    allBuyerOptions.each(function() {
+                        if ($(this).val() !== "") {
+                            buyerSelect.append($(this).clone());
+                        }
+                    });
+                }
+                $('#buyer_id').val(data.buyer_id).trigger('change.select2');
+            }
+
+            // Commodity / Product
+            if (data.product_id) {
+                $('select[name="product_id"]').val(data.product_id).trigger('change.select2');
+            }
+
+            // Shipment Dates
+            let dateFrom = data.shipment_date_from || data.shipment_delivery_date_from;
+            if (dateFrom) {
+                $('input[name="shipment_date_from"]').val(dateFrom);
+            }
+            let dateTo = data.shipment_date_to || data.shipment_delivery_date_to;
+            if (dateTo) {
+                $('input[name="shipment_date_to"]').val(dateTo);
+            }
+
+            // Export Details (Incoterm & Payment Term)
+            if (data.incoterm_id) {
+                $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change.select2');
+            }
+            if (data.mode_of_term_id) {
+                $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change.select2');
+            }
+
+            // Commission
+            if (data.commission_percentage !== undefined && data.commission_percentage !== null) {
+                $('#commission_percentage').val(data.commission_percentage);
+            }
+            if (data.commission_amount_per_ton !== undefined && data.commission_amount_per_ton !== null) {
+                $('#commission_amount_per_ton').val(data.commission_amount_per_ton);
+            }
+            if (data.commission !== undefined && data.commission !== null) {
+                $('#commission').val(data.commission);
+            }
+
+            // Additional Info
+            if (data.additional_info) {
+                $('textarea[name="additional_info"]').val(data.additional_info);
+            }
+
+            // Packing rows
+            if (data.packing_items && data.packing_items.length > 0) {
+                addPackingRowsFromData(data.packing_items);
+            } else {
+                calculateOverallTotals();
+            }
+        }
+
+        function addPackingRowsFromData(items) {
+            let tbody = $('#packingItems');
+            let firstRow = tbody.find('tr.packing-item').first();
+
+            let rowTemplate = firstRow.clone();
+            rowTemplate.find('.select2-container').remove();
+            rowTemplate.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+
+            tbody.find('tr.packing-item').not(':first').remove();
+
+            items.forEach(function(item, index) {
+                let row;
+                if (index === 0) {
+                    row = firstRow;
+                } else {
+                    row = rowTemplate.clone();
+                    tbody.append(row);
+                    row.find('.select2').select2({ width: '100%' });
+                }
+
+                if (item.bag_type_id) {
+                    row.find('select[name*="[bag_type_id]"]').val(item.bag_type_id).trigger('change.select2');
+                }
+                if (item.bag_packing_id) {
+                    row.find('select[name*="[bag_packing_id]"]').val(item.bag_packing_id).trigger('change.select2');
+                }
+
+                row.find('.bag-size').val(item.bag_size || 0);
+                row.find('.metric-tons').val(item.metric_tons || 0);
+                row.find('.maunds').val(item.maunds || 0);
+                row.find('.total-kgs').val(item.total_kgs || 0);
+                row.find('.no_of_bags').val(item.no_of_bags || 0);
+                row.find('.rates').val(item.rate || 0);
+                row.find('.rates_mnd').val(item.rate_per_maund || 0);
+                row.find('.amount').val(item.amount || 0);
+
+                calculateRowFromMT(row);
+                if (item.rate) {
+                    row.find('.rates').val(item.rate);
+                    calculateRowFromRate(row);
+                }
+            });
+
+            reindexPackingItems();
+            calculateOverallTotals();
+        }
+
+        $('select[name="quotation_id"]').on('change', function() {
+            triggerAutofill();
+        });
+
+        // Packing items dynamic rows
+        $('#addPackingItem').click(function() {
+            addNewPackingItem();
+        });
+
+        function addNewPackingItem() {
+            var firstRow = $('#packingItems tr.packing-item').first();
+            var newRow = firstRow.clone();
+            newRow.find('.select2-container').remove();
+            newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+            newRow.find('input').val('0');
+            newRow.find('select').val('').trigger('change');
+            $('#packingItems').append(newRow);
+            $('.select2').select2({
+                width: '100%'
+            });
+            reindexPackingItems();
+        }
+        $(document).on('click', '.remove-packing-item', function() {
+            if ($('#packingItems tr.packing-item').length > 1) {
+                $(this).closest('tr').remove();
+                reindexPackingItems();
+                calculateOverallTotals();
+            }
+        });
+
+        function reindexPackingItems() {
+            $('#packingItems tr.packing-item').each(function(i) {
+                $(this).find('select, input').each(function() {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        $(this).attr('name', name.replace(/\[\d+\]/, '[' + i + ']'));
+                    }
+                });
+            });
+        }
+
+        // ---- AUTO-GENERATE REFERENCE ----
+        $('input[name="voucher_date"]').on('change', function() {
+            let selectedDate = $(this).val();
+            if (!selectedDate) {
+                $('input[name="reference_display"]').val('');
+                return;
+            }
+            getUniversalNumber({
+                table: 'export_soda_fields',
+                prefix: 'SAUDA',
+                column: 'reference',
+                with_date: 1,
+                custom_date: selectedDate,
+                date_format: 'm-Y',
+                serial_at_end: 1,
+            }, function(no) {
+                $('input[name="reference_display"]').val(no);
             });
         });
-    }
 
-    // ---- AUTO-GENERATE REFERENCE ----
-    $('input[name="voucher_date"]').on('change', function() {
-        let selectedDate = $(this).val();
-        if (!selectedDate) {
-            $('input[name="reference_display"]').val('');
-            return;
+        // Trigger on load if date exists
+        if ($('input[name="voucher_date"]').val()) {
+            $('input[name="voucher_date"]').trigger('change');
         }
-        getUniversalNumber({
-            table: 'export_soda_fields',
-            prefix: 'SAUDA',
-            column: 'reference',
-            with_date: 1,
-            custom_date: selectedDate,
-            date_format: 'm-Y',
-            serial_at_end: 1,
-        }, function(no) {
-            $('input[name="reference_display"]').val(no);
-        });
     });
-
-    // Trigger on load if date exists
-    if ($('input[name="voucher_date"]').val()) {
-        $('input[name="voucher_date"]').trigger('change');
-    }
-});
 </script>

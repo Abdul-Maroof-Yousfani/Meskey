@@ -47,6 +47,16 @@ class Quotation extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function sodaByQuotation()
+    {
+        return $this->hasOne(\App\Models\Export\ExportSodaField::class, 'quotation_id');
+    }
+
+    public function getLinkedSodaIdAttribute()
+    {
+        return $this->export_soda_id ?? $this->sodaByQuotation?->id;
+    }
+
     public function exportSoda()
     {
         return $this->belongsTo(\App\Models\Export\ExportSodaField::class, 'export_soda_id');

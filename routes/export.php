@@ -89,6 +89,7 @@ Route::get('/get-orders-by-buyer/{buyerId}', [ExportDeliveryOrderController::cla
 Route::get('/get-arrival-locations', [ExportDeliveryOrderController::class, 'getArrivalLocations'])->name('export.get-arrival-locations');
 Route::get('/get-sub-arrival-locations', [ExportDeliveryOrderController::class, 'getSubArrivalLocations'])->name('export.get-sub-arrival-locations');
 Route::get('/export-order/get-quotation-details/{id}', [ExportOrderController::class, 'getQuotationDetails'])->name('export-order.get-quotation-details');
+Route::get('/export-order/get-exportsouda-details/{id}', [ExportOrderController::class, 'getExportSodaDetails'])->name('export-order.get-exportsoda-details');
 
 // export loading program (Request Stage 1)
 Route::resource('export-loading-program', ExportLoadingProgramController::class);
@@ -221,6 +222,7 @@ Route::get('/get-shipment-advise-packing-lists', [ShipmentAdviseController::clas
 
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);
+Route::get('/export-soda-field/get-quotation-details/{id}', [ExportSodaFieldController::class, 'getQuotationDetails'])->name('exportsodafield.getquotation-details');
 Route::post('/get-export-soda-field', [ExportSodaFieldController::class, 'getExportSodaFieldTable'])->name('get.export-soda-field');
 Route::post('/export-soda-field/update-status/{id}', [ExportSodaFieldController::class, 'updateStatus'])->name('export-soda-field.update-status');
 

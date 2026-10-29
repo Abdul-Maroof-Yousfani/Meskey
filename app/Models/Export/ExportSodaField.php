@@ -35,6 +35,21 @@ class ExportSodaField extends Model
         return $this->belongsTo(\App\Models\Product::class , 'product_id');
     }
 
+    public function quotation()
+    {
+        return $this->belongsTo(\App\Models\Export\Quotation::class, 'quotation_id');
+    }
+
+    public function quotationBySoda()
+    {
+        return $this->hasOne(\App\Models\Export\Quotation::class, 'export_soda_id');
+    }
+
+    public function getLinkedQuotationIdAttribute()
+    {
+        return $this->quotation_id ?? $this->quotationBySoda?->id;
+    }
+
     public function packingItems()
     {
         return $this->hasMany(ExportSodaPackingItem::class , 'export_soda_id');
