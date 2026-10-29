@@ -1055,17 +1055,6 @@
                         </li>
                         @endcanAccess
 
-                        {{-- @canAccess('quotation') --}}
-                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('quotation.index') }}"
-                                onclick="loadPageContent('{{ route('quotation.index') }}')"
-                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                <span data-i18n="Task Board">Quotation</span>
-                            </a>
-                        </li>
-                        {{-- @endcanAccess --}}
-
-
                         <!-- @canAccess('export-soda-field') -->
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-soda-field.index') }}"
@@ -1075,6 +1064,16 @@
                             </a>
                         </li>
                         <!-- @endcanAccess -->
+
+                        {{-- @canAccess('quotation') --}}
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('quotation.index') }}"
+                                onclick="loadPageContent('{{ route('quotation.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Quotation</span>
+                            </a>
+                        </li>
+                        {{-- @endcanAccess --}}
 
                         {{-- @canAccess('export-order') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -1782,14 +1781,14 @@
                                         data-i18n="Extended">Plant Breakdown Type</span></a>
                             </li>
                             @endcanAccess
-                            {{-- @canAccess('manage-production')
+                            @canAccess('manage-production')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('production-settings.index') }}"
                                     onclick="loadPageContent('{{ route('production-settings.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                         data-i18n="Extended">Production Settings</span></a>
                             </li>
-                            @endcanAccess --}}
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess
