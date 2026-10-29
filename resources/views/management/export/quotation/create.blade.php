@@ -16,7 +16,7 @@
             <div class="col-md-12">
                 <h6 class="header-heading-sepration">Buyer & Information</h6>
                 <div class="row">
-                    <div class="col-md-4">
+                    {{-- <div class="col-md-4">
                         <div class="form-group">
                             <label>Export Sauda</label>
                             <select name="export_soda_id" class="form-control select2">
@@ -26,7 +26,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
+                    </div> --}}
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Buyer's Name <span class="text-danger">*</span></label>

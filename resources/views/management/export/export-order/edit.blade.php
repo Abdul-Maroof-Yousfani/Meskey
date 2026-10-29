@@ -15,28 +15,67 @@
         padding-top: 15px !important;
         padding-bottom: 15px !important;
     }
+
+    .readonly-select {
+        background-color: #e9ecef !important;
+        cursor: not-allowed;
+    }
 </style>
 
 <form action="{{ route('export-order.update', $exportOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-order') }}" />
-    <input type="hidden" name="company_id" id="companyId" value="{{ old('company_id', $exportOrder->company_id ?: auth()->user()->current_company_id) }}">
+    <input type="hidden" name="company_id" id="companyId"
+        value="{{ old('company_id', $exportOrder->company_id ?: auth()->user()->current_company_id) }}">
 
     <div class="row form-mar">
         <div class="col-8">
             <!-- Basic Information -->
             <div class="col-md-12">
                 <h6 class="header-heading-sepration">Basic Information</h6>
+                @php
+                    $selectedQuotationId = old(
+                        'quotation_id',
+                        $exportOrder->quotation_id ?? ($exportOrder->exportSoda?->linked_quotation_id ?? ''),
+                    );
+                    $selectedSodaId = old(
+                        'export_soda_id',
+                        $exportOrder->export_soda_id ?? ($exportOrder->quotation?->linked_soda_id ?? ''),
+                    );
+                @endphp
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Quotation#:</label>
-                            <select name="quotation_id" class="form-control select2">
+                            <select name="quotation_id" id="quotationSelect" class="form-control select2" disabled>
                                 <option value="">Select Quotation</option>
                                 @foreach ($quotations as $quotation)
-                                    <option value="{{ $quotation->id }}" {{ old('quotation_id', $exportOrder->quotation_id) == $quotation->id ? 'selected' : '' }}>
-                                        {{ $quotation->id }} - {{ $quotation->buyer->name ?? 'N/A' }} ({{ $quotation->product->name ?? '' }})
+                                    @php
+                                        $linkedSodaId = $quotation->linked_soda_id ?? '';
+                                    @endphp
+                                    <option value="{{ $quotation->id }}" data-soda-id="{{ $linkedSodaId }}"
+                                        {{ (string) $selectedQuotationId === (string) $quotation->id ? 'selected' : '' }}>
+                                        {{ $quotation->id }} - {{ $quotation->buyer->name ?? 'N/A' }}
+                                        ({{ $quotation->product->name ?? '' }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Export Soda#:</label>
+                            <select name="export_soda_id" id="exportSodaSelect" class="form-control select2" disabled>
+                                <option value="">Select Export Soda</option>
+                                @foreach ($exportSodas as $soda)
+                                    @php
+                                        $linkedQuotationId = $soda->linked_quotation_id ?? '';
+                                    @endphp
+                                    <option value="{{ $soda->id }}" data-quotation-id="{{ $linkedQuotationId }}"
+                                        {{ (string) $selectedSodaId === (string) $soda->id ? 'selected' : '' }}>
+                                        {{ $soda->id }} - {{ $soda->buyer->name ?? 'N/A' }}
+                                        ({{ $soda->product->name ?? '' }})
                                     </option>
                                 @endforeach
                             </select>
@@ -71,7 +110,25 @@
                         <div class="form-group">
                             <label>Reference Date:</label>
                             <input type="date" name="voucher_heading" class="form-control"
-                                value="{{ old('voucher_heading', (is_string($exportOrder->voucher_heading) && strtotime($exportOrder->voucher_heading)) ? date('Y-m-d', strtotime($exportOrder->voucher_heading)) : $exportOrder->voucher_heading) }}">
+                                value="{{ old('voucher_heading', is_string($exportOrder->voucher_heading) && strtotime($exportOrder->voucher_heading) ? date('Y-m-d', strtotime($exportOrder->voucher_heading)) : $exportOrder->voucher_heading) }}">
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Positive Tolerance:</label>
+                            <input type="number" name="positive_tolerance" class="form-control"
+                                value="{{ old('positive_tolerance', $exportOrder->positive_tolerance) }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Negative Tolerance:</label>
+                            <input type="number" name="negative_tolerance" class="form-control"
+                                value="{{ old('negative_tolerance', $exportOrder->negative_tolerance) }}">
                         </div>
                     </div>
                 </div>
@@ -84,7 +141,8 @@
                             <select name="buyer_id" class="form-control select2">
                                 <option value="">Select Buyer</option>
                                 @foreach ($users as $user)
-                                    <option value="{{ $user->id }}" {{ old('buyer_id', $exportOrder->buyer_id) == $user->id ? 'selected' : '' }}>
+                                    <option value="{{ $user->id }}"
+                                        {{ old('buyer_id', $exportOrder->buyer_id) == $user->id ? 'selected' : '' }}>
                                         {{ $user->name }}
                                     </option>
                                 @endforeach
@@ -122,25 +180,34 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Discharge Rate:</label>
-                                <input type="text" name="discharge_rate" class="form-control" value="{{ old('discharge_rate', $exportOrder->discharge_rate) }}" required>
+                                <input type="text" name="discharge_rate" class="form-control"
+                                    value="{{ old('discharge_rate', $exportOrder->discharge_rate) }}" required>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Discharge Term Type:</label>
                                 @php $currentDischargeShexType = old('discharge_term_type', $exportOrder->discharge_term_type); @endphp
-                                <select name="discharge_term_type" class="form-control" required onchange="document.getElementById('edit_discharge_value_label').innerText = this.value ? this.value + ' Value:' : 'Term Value:'">
+                                <select name="discharge_term_type" class="form-control" required
+                                    onchange="document.getElementById('edit_discharge_value_label').innerText = this.value ? this.value + ' Value:' : 'Term Value:'">
                                     <option value="">Select Term</option>
-                                    <option value="SHEX EIU" {{ $currentDischargeShexType == 'SHEX EIU' ? 'selected' : '' }}>SHEX EIU</option>
-                                    <option value="SHEX UU" {{ $currentDischargeShexType == 'SHEX UU' ? 'selected' : '' }}>SHEX UU</option>
-                                    <option value="SHINC" {{ $currentDischargeShexType == 'SHINC' ? 'selected' : '' }}>SHINC</option>
+                                    <option value="SHEX EIU"
+                                        {{ $currentDischargeShexType == 'SHEX EIU' ? 'selected' : '' }}>SHEX EIU
+                                    </option>
+                                    <option value="SHEX UU"
+                                        {{ $currentDischargeShexType == 'SHEX UU' ? 'selected' : '' }}>SHEX UU</option>
+                                    <option value="SHINC"
+                                        {{ $currentDischargeShexType == 'SHINC' ? 'selected' : '' }}>SHINC</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label id="edit_discharge_value_label">{{ $currentDischargeShexType ? $currentDischargeShexType . ' Value:' : 'Term Value:' }}</label>
-                                <input type="text" name="discharge_shex_eiu" class="form-control" value="{{ old('discharge_shex_eiu', $exportOrder->discharge_shex_eiu) }}" required>
+                                <label
+                                    id="edit_discharge_value_label">{{ $currentDischargeShexType ? $currentDischargeShexType . ' Value:' : 'Term Value:' }}</label>
+                                <input type="text" name="discharge_shex_eiu" class="form-control"
+                                    value="{{ old('discharge_shex_eiu', $exportOrder->discharge_shex_eiu) }}"
+                                    required>
                             </div>
                         </div>
                     </div>
@@ -152,25 +219,35 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Minimum Daily Rate:</label>
-                                <input type="text" name="minimum_daily_rate" class="form-control" value="{{ old('minimum_daily_rate', $exportOrder->minimum_daily_rate) }}" required>
+                                <input type="text" name="minimum_daily_rate" class="form-control"
+                                    value="{{ old('minimum_daily_rate', $exportOrder->minimum_daily_rate) }}"
+                                    required>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Load Term Type:</label>
                                 @php $currentMinDailyShexType = old('load_term_type', $exportOrder->load_term_type); @endphp
-                                <select name="load_term_type" class="form-control" required onchange="document.getElementById('edit_load_value_label').innerText = this.value ? this.value + ' Value:' : 'Term Value:'">
+                                <select name="load_term_type" class="form-control" required
+                                    onchange="document.getElementById('edit_load_value_label').innerText = this.value ? this.value + ' Value:' : 'Term Value:'">
                                     <option value="">Select Term</option>
-                                    <option value="SHEX EIU" {{ $currentMinDailyShexType == 'SHEX EIU' ? 'selected' : '' }}>SHEX EIU</option>
-                                    <option value="SHEX UU" {{ $currentMinDailyShexType == 'SHEX UU' ? 'selected' : '' }}>SHEX UU</option>
-                                    <option value="SHINC" {{ $currentMinDailyShexType == 'SHINC' ? 'selected' : '' }}>SHINC</option>
+                                    <option value="SHEX EIU"
+                                        {{ $currentMinDailyShexType == 'SHEX EIU' ? 'selected' : '' }}>SHEX EIU
+                                    </option>
+                                    <option value="SHEX UU"
+                                        {{ $currentMinDailyShexType == 'SHEX UU' ? 'selected' : '' }}>SHEX UU</option>
+                                    <option value="SHINC"
+                                        {{ $currentMinDailyShexType == 'SHINC' ? 'selected' : '' }}>SHINC</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label id="edit_load_value_label">{{ $currentMinDailyShexType ? $currentMinDailyShexType . ' Value:' : 'Term Value:' }}</label>
-                                <input type="text" name="minimum_daily_shex_eiu" class="form-control" value="{{ old('minimum_daily_shex_eiu', $exportOrder->minimum_daily_shex_eiu) }}" required>
+                                <label
+                                    id="edit_load_value_label">{{ $currentMinDailyShexType ? $currentMinDailyShexType . ' Value:' : 'Term Value:' }}</label>
+                                <input type="text" name="minimum_daily_shex_eiu" class="form-control"
+                                    value="{{ old('minimum_daily_shex_eiu', $exportOrder->minimum_daily_shex_eiu) }}"
+                                    required>
                             </div>
                         </div>
                     </div>
@@ -184,7 +261,9 @@
                                 <label>Fumigation By:</label>
                                 <select name="fumigation_by[]" class="form-control select2" multiple required>
                                     @foreach ($fumigationCompanies as $company)
-                                        <option value="{{ $company->id }}" {{ in_array($company->id, (array)old('fumigation_by', $exportOrder->fumigation_by ?? [])) ? 'selected' : '' }}>{{ $company->name }}</option>
+                                        <option value="{{ $company->id }}"
+                                            {{ in_array($company->id, (array) old('fumigation_by', $exportOrder->fumigation_by ?? [])) ? 'selected' : '' }}>
+                                            {{ $company->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -194,7 +273,9 @@
                                 <label>Inspection By:</label>
                                 <select name="inspection_by[]" class="form-control select2" multiple required>
                                     @foreach ($inspectionCompanies as $company)
-                                        <option value="{{ $company->id }}" {{ in_array($company->id, (array)old('inspection_by', $exportOrder->inspection_by ?? [])) ? 'selected' : '' }}>{{ $company->name }}</option>
+                                        <option value="{{ $company->id }}"
+                                            {{ in_array($company->id, (array) old('inspection_by', $exportOrder->inspection_by ?? [])) ? 'selected' : '' }}>
+                                            {{ $company->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -205,7 +286,9 @@
                                 <select name="gafta_id" class="form-control select2">
                                     <option value="">Select Gafta</option>
                                     @foreach ($gaftas as $gafta)
-                                        <option value="{{ $gafta->id }}" {{ old('gafta_id', $exportOrder->gafta_id) == $gafta->id ? 'selected' : '' }}>{{ $gafta->name }}</option>
+                                        <option value="{{ $gafta->id }}"
+                                            {{ old('gafta_id', $exportOrder->gafta_id) == $gafta->id ? 'selected' : '' }}>
+                                            {{ $gafta->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -214,11 +297,16 @@
                             <div class="form-group">
                                 <label>Arbitration Country</label>
                                 @php
-                                    $scArray = is_array($exportOrder->shipment_country) ? $exportOrder->shipment_country : [];
+                                    $scArray = is_array($exportOrder->shipment_country)
+                                        ? $exportOrder->shipment_country
+                                        : [];
                                 @endphp
-                                <select class="form-control select2" name="shipment_country[]" multiple style="width: 100%;">
+                                <select class="form-control select2" name="shipment_country[]" multiple
+                                    style="width: 100%;">
                                     @foreach ($shipmentCountries as $country)
-                                        <option value="{{ $country->id }}" {{ in_array($country->id, $scArray) ? 'selected' : '' }}>{{ $country->name }}</option>
+                                        <option value="{{ $country->id }}"
+                                            {{ in_array($country->id, $scArray) ? 'selected' : '' }}>
+                                            {{ $country->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -236,13 +324,16 @@
                             <label>Select Consignee:</label>
                             <select name="consignee_id" id="consigneeSelect" class="form-control select2">
                                 <option value="">-- Select Consignee --</option>
-                                @if($exportOrder->buyer_id)
+                                @if ($exportOrder->buyer_id)
                                     @php
                                         $buyer = \App\Models\Master\Customer::find($exportOrder->buyer_id);
                                         $consignees = $buyer ? $buyer->consignees : [];
                                     @endphp
-                                    @foreach($consignees as $cons)
-                                        <option value="{{ $cons->id }}" {{ $exportOrder->consignee_id == $cons->id ? 'selected' : '' }} data-name="{{ $cons->name }}" data-person="{{ $cons->contact_person }}"
+                                    @foreach ($consignees as $cons)
+                                        <option value="{{ $cons->id }}"
+                                            {{ $exportOrder->consignee_id == $cons->id ? 'selected' : '' }}
+                                            data-name="{{ $cons->name }}"
+                                            data-person="{{ $cons->contact_person }}"
                                             data-contact="{{ $cons->contact }}" data-email="{{ $cons->email }}"
                                             data-address="{{ $cons->address }}">
                                             {{ $cons->name }} ({{ $cons->contact_person }})
@@ -262,7 +353,8 @@
                                                 id="cons_name">{{ $exportOrder->consignee?->name }}</strong></p>
                                     </div>
                                     <div class="col-md-4">
-                                        <p class="mb-1"><small class="text-black-50 d-block">Contact Person</small><strong
+                                        <p class="mb-1"><small class="text-black-50 d-block">Contact
+                                                Person</small><strong
                                                 id="cons_person">{{ $exportOrder->consignee?->contact_person }}</strong>
                                         </p>
                                     </div>
@@ -297,7 +389,8 @@
                     <select name="product_id" class="form-control select2" id="productSelect">
                         <option value="">Select Product</option>
                         @foreach ($products as $product)
-                            <option value="{{ $product->id }}" {{ old('product_id', $exportOrder->product_id) == $product->id ? 'selected' : '' }}>
+                            <option value="{{ $product->id }}"
+                                {{ old('product_id', $exportOrder->product_id) == $product->id ? 'selected' : '' }}>
                                 {{ $product->name }}
                             </option>
                         @endforeach
@@ -336,15 +429,18 @@
                                                     <input type="hidden"
                                                         name="specifications[{{ $index }}][product_slab_type_id]"
                                                         value="{{ $spec->product_slab_type_id }}">
-                                                    <input type="hidden" name="specifications[{{ $index }}][spec_name]"
+                                                    <input type="hidden"
+                                                        name="specifications[{{ $index }}][spec_name]"
                                                         value="{{ $spec->spec_name }}">
-                                                    <input type="hidden" name="specifications[{{ $index }}][uom]"
+                                                    <input type="hidden"
+                                                        name="specifications[{{ $index }}][uom]"
                                                         value="{{ $spec->uom }}">
                                                 </td>
                                                 <td>
                                                     <fieldset>
                                                         <div class="input-group">
-                                                            <input type="text" name="specifications[{{ $index }}][spec_value]"
+                                                            <input type="text"
+                                                                name="specifications[{{ $index }}][spec_value]"
                                                                 value="{{ $spec->spec_value ?? 0 }}"
                                                                 class="form-control form-control-sm spec-value-input"
                                                                 placeholder="Enter value">
@@ -358,9 +454,11 @@
                                                 <td>
                                                     <select name="specifications[{{ $index }}][value_type]"
                                                         class="form-control">
-                                                        <option {{ $spec->value_type == 'min' ? 'selected' : '' }} value="min">
+                                                        <option {{ $spec->value_type == 'min' ? 'selected' : '' }}
+                                                            value="min">
                                                             Minimum</option>
-                                                        <option {{ $spec->value_type == 'max' ? 'selected' : '' }} value="max">
+                                                        <option {{ $spec->value_type == 'max' ? 'selected' : '' }}
+                                                            value="max">
                                                             Maximum</option>
                                                     </select>
                                                 </td>
@@ -382,8 +480,7 @@
             <div class="col-md-12">
                 <div class="form-group">
                     <label>Other Specification:</label>
-                    <textarea name="other_specifications" class="form-control"
-                        rows="4">{{ old('other_specifications', $exportOrder->other_specifications) }}</textarea>
+                    <textarea name="other_specifications" class="form-control" rows="4">{{ old('other_specifications', $exportOrder->other_specifications) }}</textarea>
                 </div>
             </div>
 
@@ -403,7 +500,8 @@
                                 <select name="bank_id" id="bankSelect" class="form-control select2">
                                     <option value="">-- Select Bank --</option>
                                 </select>
-                                <small class="text-muted">Shipper/company bank details will be auto-selected here.</small>
+                                <small class="text-muted">Shipper/company bank details will be auto-selected
+                                    here.</small>
                             </div>
 
                             <div class="col-md-6 mt-2">
@@ -420,7 +518,7 @@
                                 <label>IBAN:</label>
                                 <input type="text" id="ben_iban" class="form-control" disabled>
                             </div>
-                            
+
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
                                 <input type="text" id="account_no" class="form-control" disabled>
@@ -458,7 +556,8 @@
                                     class="form-control select2">
                                     <option value="">-- Select Bank --</option>
                                 </select>
-                                <small class="text-muted">Shipper/company bank details will be auto-selected here as well.</small>
+                                <small class="text-muted">Shipper/company bank details will be auto-selected here as
+                                    well.</small>
                             </div>
 
                             {{-- Auto Filled Fields --}}
@@ -505,55 +604,52 @@
             {{-- shipping instructions --}}
             <div class="col-md-12 mb-4">
                 <label>Shipping Instruction:</label>
-                <textarea name="shipping_instructions" id="shipping_instructions"
-                    class="form-control">{{ old('shipping_instructions', $exportOrder->shipping_instructions) }}</textarea>
+                <textarea name="shipping_instructions" id="shipping_instructions" class="form-control">{{ old('shipping_instructions', $exportOrder->shipping_instructions) }}</textarea>
             </div>
 
 
             {{-- doucments to be povided --}}
             <div class="col-md-12 mb-3">
                 <label>Documents to be provided:</label>
-                <div class="documents-checklist" style="max-height: 200px; overflow-y: auto; border: 1px solid #d9d9d9; padding: 10px; border-radius: 4px;">
+                <div class="documents-checklist"
+                    style="max-height: 200px; overflow-y: auto; border: 1px solid #d9d9d9; padding: 10px; border-radius: 4px;">
                     @php
                         $existingDocs = $exportOrder->documents_to_be_provided ?? '';
                     @endphp
-                    @foreach($documentLists as $doc)
+                    @foreach ($documentLists as $doc)
                         @php
                             $isChecked = strpos($existingDocs, $doc->name) !== false || $doc->is_required;
                         @endphp
                         <div class="custom-control custom-checkbox mb-1">
-                            <input type="checkbox" class="custom-control-input document-checkbox" 
-                                id="doc_{{ $doc->id }}" 
-                                value="{{ $doc->name }}" 
-                                {{ $isChecked ? 'checked' : '' }}
-                                {{ $doc->is_required ? 'disabled' : '' }}>
-                            <label class="custom-control-label" for="doc_{{ $doc->id }}">{{ $doc->name }}</label>
+                            <input type="checkbox" class="custom-control-input document-checkbox"
+                                id="doc_{{ $doc->id }}" value="{{ $doc->name }}"
+                                {{ $isChecked ? 'checked' : '' }} {{ $doc->is_required ? 'disabled' : '' }}>
+                            <label class="custom-control-label"
+                                for="doc_{{ $doc->id }}">{{ $doc->name }}</label>
                         </div>
                     @endforeach
                 </div>
-                <input type="hidden" name="documents_to_be_provided" id="documents_to_be_provided" value="{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided) }}">
+                <input type="hidden" name="documents_to_be_provided" id="documents_to_be_provided"
+                    value="{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided) }}">
             </div>
 
             <div class="row p-2">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Other Condition:</label>
-                        <textarea name="other_condition" id="other_condition" class="form-control"
-                            rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
+                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Force Majure:</label>
-                        <textarea name="force_majure" id="force_majure" class="form-control"
-                            rows="3">{{ old('force_majure', $exportOrder->force_majure ?? '<ol><li>Dummy text for Force Majure</li></ol>') }}</textarea>
+                        <textarea name="force_majure" id="force_majure" class="form-control" rows="3">{{ old('force_majure', $exportOrder->force_majure ?? '<ol><li>Dummy text for Force Majure</li></ol>') }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Governing Law:</label>
-                        <textarea name="application_law" id="application_law" class="form-control"
-                            rows="3">{{ old('application_law', $exportOrder->application_law ?? '<ol><li>Dummy text for Governing Law</li></ol>') }}</textarea>
+                        <textarea name="application_law" id="application_law" class="form-control" rows="3">{{ old('application_law', $exportOrder->application_law ?? '<ol><li>Dummy text for Governing Law</li></ol>') }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -565,8 +661,7 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <label>Additional Info:</label>
-                        <textarea name="additional_info" id="additional_info"
-                            class="form-control">{{ old('additional_info', $exportOrder->additional_info) }}</textarea>
+                        <textarea name="additional_info" id="additional_info" class="form-control">{{ old('additional_info', $exportOrder->additional_info) }}</textarea>
                     </div>
                 </div>
             </div>
@@ -579,7 +674,8 @@
                             <select name="broker_id" class="form-control select2">
                                 <option value="">Select Broker</option>
                                 @foreach ($brokers as $broker)
-                                    <option value="{{ $broker->id }}" {{ old('broker_id', $exportOrder->broker_id) == $broker->id ? 'selected' : '' }}>
+                                    <option value="{{ $broker->id }}"
+                                        {{ old('broker_id', $exportOrder->broker_id) == $broker->id ? 'selected' : '' }}>
                                         {{ $broker->name }}
                                     </option>
                                 @endforeach
@@ -605,8 +701,8 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>Total Commission:</label>
-                            <input type="number" id="commission" name="commission" class="form-control" step="0.01"
-                                value="{{ old('commission', $exportOrder->commission) }}" readonly>
+                            <input type="number" id="commission" name="commission" class="form-control"
+                                step="0.01" value="{{ old('commission', $exportOrder->commission) }}" readonly>
                         </div>
                     </div>
                 </div>
@@ -623,23 +719,29 @@
                             <select name="incoterm_id" id="incoterm_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($incoterms as $incoterm)
-                                    <option value="{{ $incoterm->id }}" data-name="{{ $incoterm->name }}" {{ old('incoterm_id', $exportOrder->incoterm_id) == $incoterm->id ? 'selected' : '' }}>
+                                    <option value="{{ $incoterm->id }}" data-name="{{ $incoterm->name }}"
+                                        {{ old('incoterm_id', $exportOrder->incoterm_id) == $incoterm->id ? 'selected' : '' }}>
                                         {{ $incoterm->name }}
                                     </option>
                                 @endforeach
                             </select>
                         </td>
                     </tr>
-                    <tr id="fob_account_tr" style="display: {{ (str_contains(strtoupper(optional($exportOrder->incoterm)->name), 'FOB')) ? 'table-row' : 'none' }};">
+                    <tr id="fob_account_tr"
+                        style="display: {{ str_contains(strtoupper(optional($exportOrder->incoterm)->name), 'FOB') ? 'table-row' : 'none' }};">
                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">THC</td>
                         <td style="width: 70%;">
                             <div class="d-flex">
                                 <div class="custom-control custom-radio mr-2">
-                                    <input type="radio" id="fob_buyer" name="fob_account" value="ON BUYER ACCOUNT" class="custom-control-input" {{ old('fob_account', $exportOrder->fob_account) == 'ON BUYER ACCOUNT' ? 'checked' : '' }}>
+                                    <input type="radio" id="fob_buyer" name="fob_account" value="ON BUYER ACCOUNT"
+                                        class="custom-control-input"
+                                        {{ old('fob_account', $exportOrder->fob_account) == 'ON BUYER ACCOUNT' ? 'checked' : '' }}>
                                     <label class="custom-control-label" for="fob_buyer">ON BUYER ACCOUNT</label>
                                 </div>
                                 <div class="custom-control custom-radio">
-                                    <input type="radio" id="fob_seller" name="fob_account" value="ON SELLER ACCOUNT" class="custom-control-input" {{ old('fob_account', $exportOrder->fob_account) == 'ON SELLER ACCOUNT' ? 'checked' : '' }}>
+                                    <input type="radio" id="fob_seller" name="fob_account"
+                                        value="ON SELLER ACCOUNT" class="custom-control-input"
+                                        {{ old('fob_account', $exportOrder->fob_account) == 'ON SELLER ACCOUNT' ? 'checked' : '' }}>
                                     <label class="custom-control-label" for="fob_seller">ON SELLER ACCOUNT</label>
                                 </div>
                             </div>
@@ -650,9 +752,11 @@
                         <td style="width: 70%;">
                             <select name="packing_type" class="form-control select2">
                                 <option value="">Select</option>
-                                <option value="In Conatiner" {{ old('packing_type', $exportOrder->packing_type) == 'In Conatiner' ? 'selected' : '' }}>
+                                <option value="In Conatiner"
+                                    {{ old('packing_type', $exportOrder->packing_type) == 'In Conatiner' ? 'selected' : '' }}>
                                     IN CONTAINER</option>
-                                <option value="In Bulk" {{ old('packing_type', $exportOrder->packing_type) == 'In Bulk' ? 'selected' : '' }}>
+                                <option value="In Bulk"
+                                    {{ old('packing_type', $exportOrder->packing_type) == 'In Bulk' ? 'selected' : '' }}>
                                     IN BULK</option>
                             </select>
                         </td>
@@ -663,7 +767,8 @@
                             <select name="mode_of_term_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($modeofterms as $term)
-                                    <option value="{{ $term->id }}" {{ old('mode_of_term_id', $exportOrder->mode_of_term_id) == $term->id ? 'selected' : '' }}>
+                                    <option value="{{ $term->id }}"
+                                        {{ old('mode_of_term_id', $exportOrder->mode_of_term_id) == $term->id ? 'selected' : '' }}>
                                         {{ $term->name }}
                                     </option>
                                 @endforeach
@@ -676,7 +781,8 @@
                             <select name="mode_of_transport_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($modeoftransport as $transport)
-                                    <option value="{{ $transport->id }}" {{ old('mode_of_transport_id', $exportOrder->mode_of_transport_id) == $transport->id ? 'selected' : '' }}>
+                                    <option value="{{ $transport->id }}"
+                                        {{ old('mode_of_transport_id', $exportOrder->mode_of_transport_id) == $transport->id ? 'selected' : '' }}>
                                         {{ $transport->name }}
                                     </option>
                                 @endforeach
@@ -689,7 +795,8 @@
                             <select name="origin_country_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($countries as $country)
-                                    <option value="{{ $country->id }}" {{ old('origin_country_id', $exportOrder->origin_country_id) == $country->id ? 'selected' : '' }}>
+                                    <option value="{{ $country->id }}"
+                                        {{ old('origin_country_id', $exportOrder->origin_country_id) == $country->id ? 'selected' : '' }}>
                                         {{ $country->name }}
                                     </option>
                                 @endforeach
@@ -702,7 +809,8 @@
                             <select name="port_of_discharge_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($ports as $port)
-                                    <option value="{{ $port->id }}" {{ old('port_of_discharge_id', $exportOrder->port_of_discharge_id) == $port->id ? 'selected' : '' }}>
+                                    <option value="{{ $port->id }}"
+                                        {{ old('port_of_discharge_id', $exportOrder->port_of_discharge_id) == $port->id ? 'selected' : '' }}>
                                         {{ $port->name }},
                                         {{ $port->country?->name ?? '' }}
                                     </option>
@@ -716,7 +824,8 @@
                             <select name="port_of_loading_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($ports as $port)
-                                    <option value="{{ $port->id }}" {{ old('port_of_loading_id', $exportOrder->port_of_loading_id) == $port->id ? 'selected' : '' }}>
+                                    <option value="{{ $port->id }}"
+                                        {{ old('port_of_loading_id', $exportOrder->port_of_loading_id) == $port->id ? 'selected' : '' }}>
                                         {{ $port->name }},
                                         {{ $port->country?->name ?? '' }}
                                     </option>
@@ -730,7 +839,8 @@
                             <select name="hs_code_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($hscodes as $hs)
-                                    <option value="{{ $hs->id }}" {{ old('hs_code_id', $exportOrder->hs_code_id) == $hs->id ? 'selected' : '' }}>
+                                    <option value="{{ $hs->id }}"
+                                        {{ old('hs_code_id', $exportOrder->hs_code_id) == $hs->id ? 'selected' : '' }}>
                                         {{ $hs->code }}
                                     </option>
                                 @endforeach
@@ -742,9 +852,11 @@
                         <td style="width: 70%;">
                             <select name="partial_payment" class="form-control select2">
                                 <option value="">Select</option>
-                                <option value="Yes" {{ old('partial_payment', $exportOrder->partial_payment) == 'Yes' ? 'selected' : '' }}>
+                                <option value="Yes"
+                                    {{ old('partial_payment', $exportOrder->partial_payment) == 'Yes' ? 'selected' : '' }}>
                                     YES</option>
-                                <option value="No" {{ old('partial_payment', $exportOrder->partial_payment) == 'No' ? 'selected' : '' }}>
+                                <option value="No"
+                                    {{ old('partial_payment', $exportOrder->partial_payment) == 'No' ? 'selected' : '' }}>
                                     NO</option>
                             </select>
                         </td>
@@ -754,9 +866,11 @@
                         <td style="width: 70%;">
                             <select name="transhipment" class="form-control select2">
                                 <option value="">Select</option>
-                                <option value="shall be permitted" {{ old('transhipment', $exportOrder->transhipment) == 'shall be permitted' ? 'selected' : '' }}>
+                                <option value="shall be permitted"
+                                    {{ old('transhipment', $exportOrder->transhipment) == 'shall be permitted' ? 'selected' : '' }}>
                                     SHALL BE PERMITTED</option>
-                                <option value="shall not be permitted" {{ old('transhipment', $exportOrder->transhipment) == 'shall not be permitted' ? 'selected' : '' }}>
+                                <option value="shall not be permitted"
+                                    {{ old('transhipment', $exportOrder->transhipment) == 'shall not be permitted' ? 'selected' : '' }}>
                                     SHALL NOT BE PERMITTED</option>
                             </select>
                         </td>
@@ -766,9 +880,11 @@
                         <td style="width: 70%;">
                             <select name="part_shipment" class="form-control select2">
                                 <option value="">Select</option>
-                                <option value="shall be permitted" {{ old('part_shipment', $exportOrder->part_shipment) == 'shall be permitted' ? 'selected' : '' }}>
+                                <option value="shall be permitted"
+                                    {{ old('part_shipment', $exportOrder->part_shipment) == 'shall be permitted' ? 'selected' : '' }}>
                                     SHALL BE PERMITTED</option>
-                                <option value="shall not be permitted" {{ old('part_shipment', $exportOrder->part_shipment) == 'shall not be permitted' ? 'selected' : '' }}>
+                                <option value="shall not be permitted"
+                                    {{ old('part_shipment', $exportOrder->part_shipment) == 'shall not be permitted' ? 'selected' : '' }}>
                                     SHALL NOT BE PERMITTED</option>
                             </select>
                         </td>
@@ -778,9 +894,11 @@
                         <td style="width: 70%;">
                             <select name="insurance_covered_by" class="form-control select2">
                                 <option value="">Select</option>
-                                <option value="Buyer" {{ old('insurance_covered_by', $exportOrder->insurance_covered_by) == 'Buyer' ? 'selected' : '' }}>
+                                <option value="Buyer"
+                                    {{ old('insurance_covered_by', $exportOrder->insurance_covered_by) == 'Buyer' ? 'selected' : '' }}>
                                     BUYER</option>
-                                <option value="Supplier" {{ old('insurance_covered_by', $exportOrder->insurance_covered_by) == 'Supplier' ? 'selected' : '' }}>
+                                <option value="Supplier"
+                                    {{ old('insurance_covered_by', $exportOrder->insurance_covered_by) == 'Supplier' ? 'selected' : '' }}>
                                     SELLER</option>
                             </select>
                         </td>
@@ -788,8 +906,9 @@
                     <tr>
                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">ADVANCE PAYMENT(%)</td>
                         <td style="width: 70%;">
-                            <input type="number" name="advance_payment" class="form-control no-spin" max="100" min="0"
-                                step="0.01" value="{{ old('advance_payment', $exportOrder->advance_payment) }}">
+                            <input type="number" name="advance_payment" class="form-control no-spin" max="100"
+                                min="0" step="0.01"
+                                value="{{ old('advance_payment', $exportOrder->advance_payment) }}">
                         </td>
                     </tr>
                     <tr>
@@ -806,12 +925,14 @@
                             <select name="currency_id" id="currencySelect" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($currencies as $currency)
-                                    <option value="{{ $currency->id }}" data-rate="{{ $currency->rate }}" {{ old('currency_id', $exportOrder->currency_id) == $currency->id ? 'selected' : '' }}>
+                                    <option value="{{ $currency->id }}" data-rate="{{ $currency->rate }}"
+                                        {{ old('currency_id', $exportOrder->currency_id) == $currency->id ? 'selected' : '' }}>
                                         {{ $currency->currency_name }}
                                     </option>
                                 @endforeach
                             </select>
-                            <input type="hidden" name="currency_rate" id="currencyRate" value="{{ old('currency_rate', $exportOrder->currency_rate) }}">
+                            <input type="hidden" name="currency_rate" id="currencyRate"
+                                value="{{ old('currency_rate', $exportOrder->currency_rate) }}">
                         </td>
                     </tr>
                 </table>
@@ -828,350 +949,403 @@
 
             <div id="packingItemsContainer">
                 @foreach ($exportOrder->packingItems as $pIdx => $item)
-                        <div class="packing-item border rounded bg-white mb-3 p-3" data-index="{{ $pIdx }}">
-                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                <h6 class="mb-0 font-weight-bold grey packing-row-title">Packing Row #{{ $pIdx + 1 }}</h6>
-                                <button type="button" class="btn btn-sm btn-danger remove-packing-item"><i
-                                        class="ft-trash-2"></i> Remove Row</button>
-                            </div>
-                                <div class="row">
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Brand:</label>
-                                            <select name="packing_items[{{ $pIdx }}][brand_id]" class="form-control select2" required>
-                                                <option value="">Select Brand</option>
-                                                @foreach ($brands as $brand)
-                                                    <option value="{{ $brand->id }}" {{ $item->brand_id == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Bag Type:</label>
-                                            <select name="packing_items[{{ $pIdx }}][bag_type_id]" class="form-control select2" required>
-                                                <option value="">Select Bag Type</option>
-                                                @foreach ($bagTypes as $bt)
-                                                    <option value="{{ $bt->id }}" {{ $item->bag_type_id == $bt->id ? 'selected' : '' }}>{{ $bt->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Packing Type:</label>
-                                            <select name="packing_items[{{ $pIdx }}][bag_packing_id]"
-                                                class="form-control select2 bag-packing-id" required>
-                                                <option value="">Select Packing</option>
-                                                @foreach ($bagPackings as $packing)
-                                                    <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }} data-size="{{ preg_replace('/[^0-9.]/', '', $packing->name) }}">{{ $packing->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Bag Condition:</label>
-                                            <select name="packing_items[{{ $pIdx }}][bag_condition_id]"
-                                                class="form-control select2" required>
-                                                <option value="">Select Condition</option>
-                                                @foreach ($bagConditions as $cond)
-                                                    <option value="{{ $cond->id }}" {{ $item->bag_condition_id == $cond->id ? 'selected' : '' }}>{{ $cond->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Bag Color:</label>
-                                            <select name="packing_items[{{ $pIdx }}][bag_color_id]"
-                                                class="form-control select2" required>
-                                                <option value="">Select Color</option>
-                                                @foreach ($bagColors as $color)
-                                                    <option value="{{ $color->id }}" {{ $item->bag_color_id == $color->id ? 'selected' : '' }}>{{ $color->color }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Thread Color:</label>
-                                            <select name="packing_items[{{ $pIdx }}][thread_color_id]"
-                                                class="form-control select2" required>
-                                                <option value="">Select Color</option>
-                                                @foreach ($threadColors as $color)
-                                                    <option value="{{ $color->id }}" {{ $item->thread_color_id == $color->id ? 'selected' : '' }}>{{ $color->color }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Stitching:</label>
-                                            <select name="packing_items[{{ $pIdx }}][stitching_id]"
-                                                class="form-control select2" required>
-                                                <option value="">Select Stitching</option>
-                                                @foreach ($stitchings as $stitching)
-                                                    <option value="{{ $stitching->id }}" {{ $item->stitching_id == $stitching->id ? 'selected' : '' }}>{{ $stitching->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Bag Size (kg):</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][bag_size]"
-                                                class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>No. of Bags:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][no_of_bags]"
-                                                class="form-control no_of_bags" value="{{ $item->no_of_bags }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Extra Bags:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][extra_bags]"
-                                                class="form-control extra-bags" value="{{ $item->extra_bags ?? 0 }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Extra Bags %:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][extra_bags_percentage]"
-                                                class="form-control extra-bags-percentage" value="{{ $item->extra_bags_percentage ?? 0 }}" step="0.01">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Empty Bags:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][empty_bags]"
-                                                class="form-control empty-bags" value="{{ $item->empty_bags ?? 0 }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Empty Bags %:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][empty_bags_percentage]"
-                                                class="form-control empty-bags-percentage" value="{{ $item->empty_bags_percentage ?? 0 }}" step="0.01">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Qty (MT):</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][metric_tons]"
-                                                class="form-control metric-tons" step="0.001" value="{{ $item->metric_tons }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Total Bags:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][total_bags]"
-                                                class="form-control total-bags" value="{{ $item->total_bags ?? 0 }}" readonly>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2" style="display:none;">
-                                        <label>Total KGs:</label>
-                                        <input type="number" name="packing_items[{{ $pIdx }}][total_kgs]"
-                                            class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
-                                    </div>
-
-                                    <div class="col-md-2 col-stuffing">
-                                        <div class="form-group">
-                                            <label>Stuffing/Cont (MT):</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][stuffing_in_container]"
-                                                class="form-control stuffing" step="0.001" required
-                                                value="{{ $item->stuffing_in_container }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 col-containers">
-                                        <div class="form-group">
-                                            <label>Containers:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][no_of_containers]"
-                                                class="form-control containers" value="{{ $item->no_of_containers }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Rate/Ton:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][rate]"
-                                                class="form-control rate-per-ton" step="0.01" value="{{ $item->rate }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Amount:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][amount]"
-                                                class="form-control item-amount" value="{{ $item->amount }}" readonly>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label>Min Weight Empty Bags:</label>
-                                            <input type="number" name="packing_items[{{ $pIdx }}][min_weight_empty_bags]"
-                                                class="form-control" step="0.01" required
-                                                value="{{ $item->min_weight_empty_bags ?? 0 }}">
-                                        </div>
-                                    </div>
+                    <div class="packing-item border rounded bg-white mb-3 p-3" data-index="{{ $pIdx }}">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h6 class="mb-0 font-weight-bold grey packing-row-title">Packing Row #{{ $pIdx + 1 }}
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-danger remove-packing-item"><i
+                                    class="ft-trash-2"></i> Remove Row</button>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Brand:</label>
+                                    <select name="packing_items[{{ $pIdx }}][brand_id]"
+                                        class="form-control select2" required>
+                                        <option value="">Select Brand</option>
+                                        @foreach ($brands as $brand)
+                                            <option value="{{ $brand->id }}"
+                                                {{ $item->brand_id == $brand->id ? 'selected' : '' }}>
+                                                {{ $brand->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                            <!-- Master Packing Section -->
-                            <div class="mt-4">
-                                <div class="border rounded master-packing-box">
-                                    <div class="bg-light d-flex justify-content-between align-items-center py-2 px-2 border-bottom">
-                                        <h6 class="mb-0 font-weight-bold">Master Packing #01</h6>
-                                        <button type="button" class="btn btn-sm btn-info add-sub-packing-item"
-                                            data-index="{{ $pIdx }}">
-                                            <i class="ft-plus"></i> Add Master Packing Item
-                                        </button>
-                                    </div>
-                                    <div class="p-0">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-sm mb-0 text-nowrap">
-                                                <thead class="thead-light">
-                                                    <tr>
-                                                        <th style="min-width: 150px;">Bag Type</th>
-                                                        <th style="min-width: 120px;">Bag Size</th>
-                                                        <th style="min-width: 150px;">Primary Bags fit in master bag</th>
-                                                        <th style="min-width: 90px;">No. of Bags</th>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Bag Type:</label>
+                                    <select name="packing_items[{{ $pIdx }}][bag_type_id]"
+                                        class="form-control select2" required>
+                                        <option value="">Select Bag Type</option>
+                                        @foreach ($bagTypes as $bt)
+                                            <option value="{{ $bt->id }}"
+                                                {{ $item->bag_type_id == $bt->id ? 'selected' : '' }}>
+                                                {{ $bt->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Packing Type:</label>
+                                    <select name="packing_items[{{ $pIdx }}][bag_packing_id]"
+                                        class="form-control select2 bag-packing-id" required>
+                                        <option value="">Select Packing</option>
+                                        @foreach ($bagPackings as $packing)
+                                            <option value="{{ $packing->id }}"
+                                                {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}
+                                                data-size="{{ preg_replace('/[^0-9.]/', '', $packing->name) }}">
+                                                {{ $packing->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Bag Condition:</label>
+                                    <select name="packing_items[{{ $pIdx }}][bag_condition_id]"
+                                        class="form-control select2" required>
+                                        <option value="">Select Condition</option>
+                                        @foreach ($bagConditions as $cond)
+                                            <option value="{{ $cond->id }}"
+                                                {{ $item->bag_condition_id == $cond->id ? 'selected' : '' }}>
+                                                {{ $cond->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Bag Color:</label>
+                                    <select name="packing_items[{{ $pIdx }}][bag_color_id]"
+                                        class="form-control select2" required>
+                                        <option value="">Select Color</option>
+                                        @foreach ($bagColors as $color)
+                                            <option value="{{ $color->id }}"
+                                                {{ $item->bag_color_id == $color->id ? 'selected' : '' }}>
+                                                {{ $color->color }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Thread Color:</label>
+                                    <select name="packing_items[{{ $pIdx }}][thread_color_id]"
+                                        class="form-control select2" required>
+                                        <option value="">Select Color</option>
+                                        @foreach ($threadColors as $color)
+                                            <option value="{{ $color->id }}"
+                                                {{ $item->thread_color_id == $color->id ? 'selected' : '' }}>
+                                                {{ $color->color }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Stitching:</label>
+                                    <select name="packing_items[{{ $pIdx }}][stitching_id]"
+                                        class="form-control select2" required>
+                                        <option value="">Select Stitching</option>
+                                        @foreach ($stitchings as $stitching)
+                                            <option value="{{ $stitching->id }}"
+                                                {{ $item->stitching_id == $stitching->id ? 'selected' : '' }}>
+                                                {{ $stitching->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Bag Size (kg):</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][bag_size]"
+                                        class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}"
+                                        required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>No. of Bags:</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][no_of_bags]"
+                                        class="form-control no_of_bags" value="{{ $item->no_of_bags }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Extra Bags:</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][extra_bags]"
+                                        class="form-control extra-bags" value="{{ $item->extra_bags ?? 0 }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Extra Bags %:</label>
+                                    <input type="number"
+                                        name="packing_items[{{ $pIdx }}][extra_bags_percentage]"
+                                        class="form-control extra-bags-percentage"
+                                        value="{{ $item->extra_bags_percentage ?? 0 }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Empty Bags:</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][empty_bags]"
+                                        class="form-control empty-bags" value="{{ $item->empty_bags ?? 0 }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Empty Bags %:</label>
+                                    <input type="number"
+                                        name="packing_items[{{ $pIdx }}][empty_bags_percentage]"
+                                        class="form-control empty-bags-percentage"
+                                        value="{{ $item->empty_bags_percentage ?? 0 }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Qty (MT):</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][metric_tons]"
+                                        class="form-control metric-tons" step="0.001"
+                                        value="{{ $item->metric_tons }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Total Bags:</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][total_bags]"
+                                        class="form-control total-bags" value="{{ $item->total_bags ?? 0 }}"
+                                        readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-2" style="display:none;">
+                                <label>Total KGs:</label>
+                                <input type="number" name="packing_items[{{ $pIdx }}][total_kgs]"
+                                    class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
+                            </div>
+
+                            <div class="col-md-2 col-stuffing">
+                                <div class="form-group">
+                                    <label>Stuffing/Cont (MT):</label>
+                                    <input type="number"
+                                        name="packing_items[{{ $pIdx }}][stuffing_in_container]"
+                                        class="form-control stuffing" step="0.001" required
+                                        value="{{ $item->stuffing_in_container }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-containers">
+                                <div class="form-group">
+                                    <label>Containers:</label>
+                                    <input type="number"
+                                        name="packing_items[{{ $pIdx }}][no_of_containers]"
+                                        class="form-control containers" value="{{ $item->no_of_containers }}"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Rate/Ton:</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][rate]"
+                                        class="form-control rate-per-ton" step="0.01"
+                                        value="{{ $item->rate }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Amount:</label>
+                                    <input type="number" name="packing_items[{{ $pIdx }}][amount]"
+                                        class="form-control item-amount" value="{{ $item->amount }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Min Weight Empty Bags:</label>
+                                    <input type="number"
+                                        name="packing_items[{{ $pIdx }}][min_weight_empty_bags]"
+                                        class="form-control" step="0.01" required
+                                        value="{{ $item->min_weight_empty_bags ?? 0 }}">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Master Packing Section -->
+                        <div class="mt-4">
+                            <div class="border rounded master-packing-box">
+                                <div
+                                    class="bg-light d-flex justify-content-between align-items-center py-2 px-2 border-bottom">
+                                    <h6 class="mb-0 font-weight-bold">Master Packing #01</h6>
+                                    <button type="button" class="btn btn-sm btn-info add-sub-packing-item"
+                                        data-index="{{ $pIdx }}">
+                                        <i class="ft-plus"></i> Add Master Packing Item
+                                    </button>
+                                </div>
+                                <div class="p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm mb-0 text-nowrap">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th style="min-width: 150px;">Bag Type</th>
+                                                    <th style="min-width: 120px;">Bag Size</th>
+                                                    <th style="min-width: 150px;">Primary Bags fit in master bag</th>
+                                                    <th style="min-width: 90px;">No. of Bags</th>
                                                     <th style="min-width: 90px;">Empty Bags</th>
                                                     <th style="min-width: 100px;">Empty Bags %</th>
                                                     <th style="min-width: 90px;">Extra Bags</th>
                                                     <th style="min-width: 100px;">Extra Bags %</th>
                                                     <th style="min-width: 100px;">Empty Bag Weight (g)</th>
-                                                        <th style="min-width: 90px;">Total Bags</th>
-                                                        <th style="min-width: 120px;">Stitching</th>
-                                                        <th style="min-width: 120px;">Bag Color</th>
-                                                        <th style="min-width: 120px;">Brand</th>
-                                                        <th style="min-width: 120px;">Thread Color</th>
-                                                        <th style="min-width: 150px;">Attachment</th>
-                                                        <th style="min-width: 80px;" class="text-center">Action</th>
+                                                    <th style="min-width: 90px;">Total Bags</th>
+                                                    <th style="min-width: 120px;">Stitching</th>
+                                                    <th style="min-width: 120px;">Bag Color</th>
+                                                    <th style="min-width: 120px;">Brand</th>
+                                                    <th style="min-width: 120px;">Thread Color</th>
+                                                    <th style="min-width: 150px;">Attachment</th>
+                                                    <th style="min-width: 80px;" class="text-center">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="sub-packing-items-container"
+                                                data-index="{{ $pIdx }}">
+                                                @foreach ($item->subItems as $sIdx => $sub)
+                                                    <tr class="sub-packing-item">
+                                                        <td>
+                                                            <select
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_type_id]"
+                                                                class="form-control form-control-sm select2">
+                                                                <option value="">Select Bag Type</option>
+                                                                @foreach ($bagTypes as $bt)
+                                                                    <option value="{{ $bt->id }}"
+                                                                        {{ $sub->bag_type_id == $bt->id ? 'selected' : '' }}>
+                                                                        {{ $bt->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_size_id]"
+                                                                class="form-control form-control-sm select2 sub-bag-size-id">
+                                                                <option value="">Select Bag Packing</option>
+                                                                @foreach ($bagSizes as $sz)
+                                                                    <option value="{{ $sz->id }}"
+                                                                        data-size="{{ $sz->size }}"
+                                                                        {{ $sub->bag_size_id == $sz->id ? 'selected' : '' }}>
+                                                                        {{ $sz->size }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][no_of_primary_bags]"
+                                                                class="form-control form-control-sm sub-no-of-primary-bags"
+                                                                value="{{ $sub->no_of_primary_bags }}"></td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][no_of_bags]"
+                                                                class="form-control form-control-sm sub-no-of-bags"
+                                                                value="{{ $sub->no_of_bags }}" readonly></td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bags]"
+                                                                class="form-control form-control-sm sub-empty-bags"
+                                                                value="{{ $sub->empty_bags }}"></td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bags_percentage]"
+                                                                class="form-control form-control-sm sub-empty-bags-percentage"
+                                                                value="{{ $sub->empty_bags_percentage ?? 0 }}"
+                                                                step="0.01"></td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][extra_bags]"
+                                                                class="form-control form-control-sm sub-extra-bags"
+                                                                value="{{ $sub->extra_bags }}"></td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][extra_bags_percentage]"
+                                                                class="form-control form-control-sm sub-extra-bags-percentage"
+                                                                value="{{ $sub->extra_bags_percentage ?? 0 }}"
+                                                                step="0.01"></td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bag_weight]"
+                                                                class="form-control form-control-sm sub-empty-bag-weight"
+                                                                step="0.01" value="{{ $sub->empty_bag_weight }}">
+                                                        </td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][total_bags]"
+                                                                class="form-control form-control-sm sub-total-bags"
+                                                                value="{{ $sub->total_bags }}" readonly></td>
+                                                        <td>
+                                                            <select
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][stitching_id]"
+                                                                class="form-control form-control-sm select2">
+                                                                <option value="">Select</option>
+                                                                @foreach ($stitchings as $st)
+                                                                    <option value="{{ $st->id }}"
+                                                                        {{ $sub->stitching_id == $st->id ? 'selected' : '' }}>
+                                                                        {{ $st->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_color_id]"
+                                                                class="form-control form-control-sm select2">
+                                                                <option value="">Select</option>
+                                                                @foreach ($bagColors as $c)
+                                                                    <option value="{{ $c->id }}"
+                                                                        {{ $sub->bag_color_id == $c->id ? 'selected' : '' }}>
+                                                                        {{ $c->color }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][brand_id]"
+                                                                class="form-control form-control-sm select2">
+                                                                <option value="">Select</option>
+                                                                @foreach ($brands as $b)
+                                                                    <option value="{{ $b->id }}"
+                                                                        {{ $sub->brand_id == $b->id ? 'selected' : '' }}>
+                                                                        {{ $b->name }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][thread_color_id]"
+                                                                class="form-control form-control-sm select2">
+                                                                <option value="">Select</option>
+                                                                @foreach ($threadColors as $tc)
+                                                                    <option value="{{ $tc->id }}"
+                                                                        {{ $sub->thread_color_id == $tc->id ? 'selected' : '' }}>
+                                                                        {{ $tc->color }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <input type="hidden"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][old_attachment]"
+                                                                value="{{ $sub->attachment }}">
+                                                            <input type="file"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][attachment]"
+                                                                class="form-control form-control-sm">
+                                                            @if ($sub->attachment)
+                                                                <small><a
+                                                                        href="{{ asset('storage/' . $sub->attachment) }}"
+                                                                        target="_blank">View File</a></small>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-danger remove-sub-item"><i
+                                                                    class="ft-x"></i></button>
+                                                        </td>
                                                     </tr>
-                                                </thead>
-                                                <tbody class="sub-packing-items-container" data-index="{{ $pIdx }}">
-                                                    @foreach ($item->subItems as $sIdx => $sub)
-                                                        <tr class="sub-packing-item">
-                                                            <td>
-                                                                <select
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_type_id]"
-                                                                    class="form-control form-control-sm select2">
-                                                                    <option value="">Select Bag Type</option>
-                                                                    @foreach ($bagTypes as $bt)
-                                                                        <option value="{{ $bt->id }}" {{ $sub->bag_type_id == $bt->id ? 'selected' : '' }}>{{ $bt->name }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </td>
-                                                            <td>
-                                                                <select
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_size_id]"
-                                                                    class="form-control form-control-sm select2 sub-bag-size-id">
-                                                       <option value="">Select Bag Packing</option>
-                                                                    @foreach ($bagSizes as $sz)
-                                                                        <option value="{{ $sz->id }}" data-size="{{ $sz->size }}" {{ $sub->bag_size_id == $sz->id ? 'selected' : '' }}>
-                                                                            {{ $sz->size }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][no_of_primary_bags]"
-                                                                    class="form-control form-control-sm sub-no-of-primary-bags"
-                                                                    value="{{ $sub->no_of_primary_bags }}"></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][no_of_bags]"
-                                                                    class="form-control form-control-sm sub-no-of-bags"
-                                                                    value="{{ $sub->no_of_bags }}" readonly></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bags]"
-                                                                    class="form-control form-control-sm sub-empty-bags"
-                                                                    value="{{ $sub->empty_bags }}"></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bags_percentage]"
-                                                                    class="form-control form-control-sm sub-empty-bags-percentage"
-                                                                    value="{{ $sub->empty_bags_percentage ?? 0 }}" step="0.01"></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][extra_bags]"
-                                                                    class="form-control form-control-sm sub-extra-bags"
-                                                                    value="{{ $sub->extra_bags }}"></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][extra_bags_percentage]"
-                                                                    class="form-control form-control-sm sub-extra-bags-percentage"
-                                                                    value="{{ $sub->extra_bags_percentage ?? 0 }}" step="0.01"></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bag_weight]"
-                                                                    class="form-control form-control-sm sub-empty-bag-weight"
-                                                                    step="0.01" value="{{ $sub->empty_bag_weight }}"></td>
-                                                            <td><input type="number"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][total_bags]"
-                                                                    class="form-control form-control-sm sub-total-bags"
-                                                                    value="{{ $sub->total_bags }}" readonly></td>
-                                                            <td>
-                                                                <select
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][stitching_id]"
-                                                                    class="form-control form-control-sm select2">
-                                                                    <option value="">Select</option>
-                                                                    @foreach ($stitchings as $st) <option value="{{ $st->id }}" {{ $sub->stitching_id == $st->id ? 'selected' : '' }}>
-                                                                    {{ $st->name }}</option> @endforeach
-                                                                </select>
-                                                            </td>
-                                                            <td>
-                                                                <select
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_color_id]"
-                                                                    class="form-control form-control-sm select2">
-                                                                    <option value="">Select</option>
-                                                                    @foreach ($bagColors as $c) <option value="{{ $c->id }}" {{ $sub->bag_color_id == $c->id ? 'selected' : '' }}>
-                                                                    {{ $c->color }}</option> @endforeach
-                                                                </select>
-                                                            </td>
-                                                            <td>
-                                                                <select
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][brand_id]"
-                                                                    class="form-control form-control-sm select2">
-                                                                    <option value="">Select</option>
-                                                                    @foreach ($brands as $b) <option value="{{ $b->id }}" {{ $sub->brand_id == $b->id ? 'selected' : '' }}>{{ $b->name }}
-                                                                    </option> @endforeach
-                                                                </select>
-                                                            </td>
-                                                            <td>
-                                                                <select
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][thread_color_id]"
-                                                                    class="form-control form-control-sm select2">
-                                                                    <option value="">Select</option>
-                                                                    @foreach ($threadColors as $tc) <option value="{{ $tc->id }}" {{ $sub->thread_color_id == $tc->id ? 'selected' : '' }}>
-                                                                    {{ $tc->color }}</option> @endforeach
-                                                                </select>
-                                                            </td>
-                                                            <td>
-                                                                <input type="hidden"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][old_attachment]"
-                                                                    value="{{ $sub->attachment }}">
-                                                                <input type="file"
-                                                                    name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][attachment]"
-                                                                    class="form-control form-control-sm">
-                                                                @if($sub->attachment)
-                                                                    <small><a href="{{ asset('storage/' . $sub->attachment) }}"
-                                                                            target="_blank">View File</a></small>
-                                                                @endif
-                                                            </td>
-                                                            <td class="text-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-danger remove-sub-item"><i
-                                                                        class="ft-x"></i></button>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 @endforeach
+            </div>
         </div>
-    </div>
 
     </div>
     </div>
@@ -1209,7 +1383,7 @@
             $('.document-checkbox:checked').each(function() {
                 items.push('<li>' + $(this).val() + '</li>');
             });
-            
+
             if (items.length > 0) {
                 $('#documents_to_be_provided').val('<ol>' + items.join('') + '</ol>');
             } else {
@@ -1225,7 +1399,8 @@
         updateDocumentsList();
 
         const defaultCompanyId = '{{ auth()->user()->current_company_id }}';
-        const savedBeneficiaryBankId = '{{ $exportOrder->customer_bank_type && $exportOrder->customer_bank_id ? $exportOrder->customer_bank_type . "_" . $exportOrder->customer_bank_id : "" }}';
+        const savedBeneficiaryBankId =
+            '{{ $exportOrder->customer_bank_type && $exportOrder->customer_bank_id ? $exportOrder->customer_bank_type . '_' . $exportOrder->customer_bank_id : '' }}';
         const savedCorrespondentBankId = '{{ old('correspondent_bank_id', $exportOrder->correspondent_bank_id) }}';
 
         $('#packingDetailsSection').insertAfter('#packingDetailsAnchor');
@@ -1245,63 +1420,136 @@
             ]
         };
 
-        $('#shipping_instructions, #other_condition, #force_majure, #application_law, #additional_info, #confidentiality').summernote(summernoteOptions);
+        $('#shipping_instructions, #other_condition, #force_majure, #application_law, #additional_info, #confidentiality')
+            .summernote(summernoteOptions);
 
         // Initialize Select2
-        $('.select2').select2({ width: '100%' });
+        $('.select2').select2({
+            width: '100%'
+        });
 
-        // Lock fields if quotation is already selected (on load)
-        if ($('select[name="quotation_id"]').val()) {
+        // Lock fields if quotation or export soda is already selected (on load)
+        if ($('#quotationSelect').val() || $('#exportSodaSelect').val()) {
             $('select[name="buyer_id"], select[name="product_id"]').prop('disabled', true).addClass('readonly-select');
         }
 
+        function renderSpecificationsTable(specs) {
+            if (!specs || specs.length === 0) {
+                $('#productSpecs').html(
+                    '<div class="alert bg-light-warning mb-2 alert-light-warning" role="alert"><i class="ft-info mr-1"></i><strong>No specifications found!</strong> No product specifications available for the selected product.</div>'
+                );
+                $('#specificationsSection').show();
+                return;
+            }
+
+            let rows = '';
+            specs.forEach(function(spec, index) {
+                let typeId = spec.product_slab_type_id || spec.id || '';
+                let specName = spec.spec_name || '';
+                let uom = spec.uom || '';
+                let val = (spec.spec_value !== undefined && spec.spec_value !== null) ? spec.spec_value : 0;
+                let vType = (spec.value_type === 'max') ? 'max' : 'min';
+
+                rows += `
+                    <tr>
+                        <td>
+                            <strong>${specName}</strong>
+                            <input type="hidden" name="specifications[${index}][product_slab_type_id]" value="${typeId}">
+                            <input type="hidden" name="specifications[${index}][spec_name]" value="${specName}">
+                            <input type="hidden" name="specifications[${index}][uom]" value="${uom}">
+                        </td>
+                        <td>
+                            <fieldset>
+                                <div class="input-group">
+                                    <input type="text" name="specifications[${index}][spec_value]" value="${val}"
+                                        class="form-control form-control-sm spec-value-input" placeholder="Enter value">
+                                    <div class="input-group-prepend">
+                                        <button class="btn btn-secondary" type="button">${uom || '-'}</button>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </td>
+                        <td>
+                            <select name="specifications[${index}][value_type]" class="form-control">
+                                <option value="min" ${vType === 'min' ? 'selected' : ''}>Minimum</option>
+                                <option value="max" ${vType === 'max' ? 'selected' : ''}>Maximum</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            let html = `
+                <div class="specifications-table">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th width="50%">Specification Name</th>
+                                    <th width="20%">Value</th>
+                                    <th width="30%">UOM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <style>
+                    .specifications-table { margin-top: 15px; }
+                    .specifications-table .table { font-size: 14px; }
+                    .specifications-table .table td { vertical-align: middle; padding: 10px 8px; }
+                    .spec-value-input { min-width: 120px; text-align: center; font-weight: 500; }
+                </style>
+            `;
+
+            $('#productSpecs').html(html);
+            $('#specificationsSection').show();
+        }
+
         // Product selection
-        $('#productSelect').on('change', function () {
+        $('#productSelect').on('change', function() {
             var productId = $(this).val();
             var productName = $(this).find(':selected').text();
             if (productId) {
                 $('#visualName').val(productName);
-                $.get("{{ route('get.product_specs.export', '') }}/" + productId, function (data) {
-                    $('#productSpecs').html(data);
-                    $('#specificationsSection').show();
-
-                    // Apply pending specs if any (from Quotation/Sauda autofill)
-                    if (window.pendingSpecs && window.pendingSpecs.length > 0) {
-                        window.pendingSpecs.forEach(function (spec) {
-                            let typeId = spec.product_slab_type_id;
-                            let val = spec.spec_value;
-                            let vType = spec.value_type;
-
-                            let row = $('#productSpecs').find(`input[name*="[product_slab_type_id]"][value="${typeId}"]`).closest('tr');
-                            if (row.length) {
-                                row.find('input[name*="[spec_value]"]').val(val);
-                                if (vType) row.find('select[name*="[value_type]"]').val(vType);
-                            }
-                        });
-                        window.pendingSpecs = null; // Clear after applying
-                    }
-                });
+                if (window.pendingSpecs && window.pendingSpecs.length > 0) {
+                    renderSpecificationsTable(window.pendingSpecs);
+                    window.pendingSpecs = null;
+                } else {
+                    $.get("{{ route('get.product_specs.export', '') }}/" + productId, function(data) {
+                        $('#productSpecs').html(data);
+                        $('#specificationsSection').show();
+                    });
+                }
             } else {
                 $('#visualName').val('');
                 $('#specificationsSection').hide();
             }
         });
 
-        function triggerAutofill() {
-            let quotationId = $('select[name="quotation_id"]').val();
-
-            if (quotationId) {
-                $.get("{{ route('export-order.get-quotation-details', '') }}/" + quotationId, function (data) {
-                    clearFormFields();
-                    fillFormFromData(data);
-                });
-            } else {
+        function loadSodaDetails(sodaId) {
+            if (!sodaId) return;
+            $.get("{{ route('export-order.get-quotation-details', '') }}/" + sodaId, function(data) {
                 clearFormFields();
-            }
+
+                // Ensure quotation is selected from response if available
+                if (data.quotation_id && $('#quotationSelect').val() != data.quotation_id) {
+                    isFiltering = true;
+                    $('#quotationSelect').val(data.quotation_id).trigger('change.select2');
+                    isFiltering = false;
+                }
+
+                fillFormFromData(data);
+            }).fail(function(xhr) {
+                console.error("Error loading export soda details:", xhr);
+            });
         }
 
         function clearFormFields() {
-            $('select[name="buyer_id"]').val('').trigger('change').prop('disabled', false).removeClass('readonly-select');
+            $('select[name="buyer_id"]').val('').trigger('change').prop('disabled', false).removeClass(
+                'readonly-select');
             $('#productSelect').val('').trigger('change').prop('disabled', false).removeClass('readonly-select');
             $('#visualName').val('');
             $('#companyId').val(defaultCompanyId);
@@ -1310,9 +1558,11 @@
             $('input[name="shipment_delivery_date_from"]').val('');
             $('input[name="shipment_delivery_date_to"]').val('');
 
-            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="hs_code_id"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]').val('').trigger('change');
+            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="hs_code_id"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]')
+                .val('').trigger('change');
 
-            $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate').val('');
+            $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate')
+                .val('');
             $('#commission_percentage, #commission_amount_per_ton, #commission').val('');
 
             let container = $('#packingItemsContainer');
@@ -1326,7 +1576,9 @@
             calculateGrandTotals();
             togglePackingTypeColumns();
 
-            $('#productSpecs').html('<div class="alert bg-light-warning mb-2 alert-light-warning" role="alert"><i class="ft-info mr-1"></i><strong>No specifications found!</strong> Please select a commodity/product first!</div>');
+            $('#productSpecs').html(
+                '<div class="alert bg-light-warning mb-2 alert-light-warning" role="alert"><i class="ft-info mr-1"></i><strong>No specifications found!</strong> Please select a commodity/product first!</div>'
+            );
             $('#specificationsSection').hide();
         }
 
@@ -1337,7 +1589,7 @@
             // Remove all rows except the first
             container.find('.packing-item').not(':first').remove();
 
-            items.forEach(function (item, index) {
+            items.forEach(function(item, index) {
                 let row;
                 if (index === 0) {
                     row = firstRow;
@@ -1346,14 +1598,17 @@
                     row.attr('data-index', index);
                     row.find('.packing-row-title').text('Packing Row #' + (index + 1));
                     row.find('.select2-container').remove();
-                    row.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+                    row.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id')
+                        .show();
                     row.find('input').val(0);
                     row.find('input[type="date"]').val('');
                     row.find('select').val('');
                     row.find('.sub-packing-items-container').empty().attr('data-index', index);
                     row.find('.add-sub-packing-item').attr('data-index', index);
                     row.appendTo(container);
-                    row.find('.select2').select2({ width: '100%' });
+                    row.find('.select2').select2({
+                        width: '100%'
+                    });
                 }
 
                 row.find('input[type="number"]').val(0);
@@ -1362,19 +1617,25 @@
 
                 // Set select dropdowns
                 if (item.brand_id)
-                    row.find('select[name*="][brand_id]"]').first().val(item.brand_id).trigger('change.select2');
+                    row.find('select[name*="][brand_id]"]').first().val(item.brand_id).trigger(
+                        'change.select2');
                 if (item.bag_type_id)
                     row.find('select[name*="bag_type_id"]').val(item.bag_type_id).trigger('change.select2');
                 if (item.bag_packing_id)
-                    row.find('select[name*="bag_packing_id"]').val(item.bag_packing_id).trigger('change.select2');
+                    row.find('select[name*="bag_packing_id"]').val(item.bag_packing_id).trigger(
+                        'change.select2');
                 if (item.bag_condition_id)
-                    row.find('select[name*="bag_condition_id"]').val(item.bag_condition_id).trigger('change.select2');
+                    row.find('select[name*="bag_condition_id"]').val(item.bag_condition_id).trigger(
+                        'change.select2');
                 if (item.bag_color_id)
-                    row.find('select[name*="bag_color_id"]').first().val(item.bag_color_id).trigger('change.select2');
+                    row.find('select[name*="bag_color_id"]').first().val(item.bag_color_id).trigger(
+                        'change.select2');
                 if (item.thread_color_id)
-                    row.find('select[name*="thread_color_id"]').first().val(item.thread_color_id).trigger('change.select2');
+                    row.find('select[name*="thread_color_id"]').first().val(item.thread_color_id).trigger(
+                        'change.select2');
                 if (item.stitching_id)
-                    row.find('select[name*="stitching_id"]').first().val(item.stitching_id).trigger('change.select2');
+                    row.find('select[name*="stitching_id"]').first().val(item.stitching_id).trigger(
+                        'change.select2');
 
                 // Set numeric inputs
                 if (item.bag_size) row.find('input.bag-size').val(item.bag_size);
@@ -1382,14 +1643,19 @@
                 if (item.no_of_bags) row.find('input.no_of_bags').val(item.no_of_bags);
                 if (item.extra_bags) row.find('input.extra-bags').val(item.extra_bags);
                 if (item.empty_bags) row.find('input.empty-bags').val(item.empty_bags);
-                if (item.extra_bags_percentage) row.find('input.extra-bags-percentage').val(item.extra_bags_percentage);
-                if (item.empty_bags_percentage) row.find('input.empty-bags-percentage').val(item.empty_bags_percentage);
+                if (item.extra_bags_percentage) row.find('input.extra-bags-percentage').val(item
+                    .extra_bags_percentage);
+                if (item.empty_bags_percentage) row.find('input.empty-bags-percentage').val(item
+                    .empty_bags_percentage);
                 if (item.stuffing_in_container) row.find('input.stuffing').val(item.stuffing_in_container);
                 if (item.no_of_containers) row.find('input.containers').val(item.no_of_containers);
                 if (item.rate) row.find('input.rate-per-ton').val(item.rate);
-                if (item.min_weight_empty_bags) row.find('input[name*="[min_weight_empty_bags]"]').val(item.min_weight_empty_bags);
+                if (item.min_weight_empty_bags) row.find('input[name*="[min_weight_empty_bags]"]').val(item
+                    .min_weight_empty_bags);
 
-                row.find('input.metric-tons, input.bag-size, input.no_of_bags, .extra-bags, .empty-bags, .extra-bags-percentage, .empty-bags-percentage').trigger('input');
+                row.find(
+                    'input.metric-tons, input.bag-size, input.no_of_bags, .extra-bags, .empty-bags, .extra-bags-percentage, .empty-bags-percentage'
+                ).trigger('input');
             });
 
             reindexAll();
@@ -1400,27 +1666,47 @@
             // Basic fields
             $('#companyId').val(data.company_id || defaultCompanyId);
             loadCompanyBanks($('#companyId').val(), '', '');
-            if (data.buyer_id) $('select[name="buyer_id"]').val(data.buyer_id).trigger('change').prop('disabled', true).addClass('readonly-select');
-            if (data.product_id) $('select[name="product_id"]').val(data.product_id).trigger('change').prop('disabled', true).addClass('readonly-select');
+
+            // Specifications set upfront so product change handler has access or renders directly
+            if (data.specifications && data.specifications.length > 0) {
+                window.pendingSpecs = data.specifications;
+                renderSpecificationsTable(data.specifications);
+            } else {
+                window.pendingSpecs = null;
+            }
+
+            if (data.buyer_id) $('select[name="buyer_id"]').val(data.buyer_id).trigger('change').prop('disabled', true)
+                .addClass('readonly-select');
+            if (data.product_id) $('select[name="product_id"]').val(data.product_id).trigger('change').prop('disabled',
+                true).addClass('readonly-select');
             if (data.visual_name) $('input[name="visual_name"], #visualName').val(data.visual_name);
 
             // Dates
-            if (data.shipment_delivery_date_from) $('input[name="shipment_delivery_date_from"]').val(data.shipment_delivery_date_from);
-            if (data.shipment_delivery_date_to) $('input[name="shipment_delivery_date_to"]').val(data.shipment_delivery_date_to);
+            if (data.shipment_delivery_date_from) $('input[name="shipment_delivery_date_from"]').val(data
+                .shipment_delivery_date_from);
+            if (data.shipment_delivery_date_to) $('input[name="shipment_delivery_date_to"]').val(data
+                .shipment_delivery_date_to);
 
             // Export sidebar dropdowns
             if (data.incoterm_id) $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change');
             if (data.packing_type) $('select[name="packing_type"]').val(data.packing_type).trigger('change');
-            if (data.mode_of_term_id) $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change.select2');
-            if (data.mode_of_transport_id) $('select[name="mode_of_transport_id"]').val(data.mode_of_transport_id).trigger('change.select2');
-            if (data.origin_country_id) $('select[name="origin_country_id"]').val(data.origin_country_id).trigger('change.select2');
-            if (data.port_of_discharge_id) $('select[name="port_of_discharge_id"]').val(data.port_of_discharge_id).trigger('change.select2');
-            if (data.port_of_loading_id) $('select[name="port_of_loading_id"]').val(data.port_of_loading_id).trigger('change.select2');
+            if (data.mode_of_term_id) $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger(
+                'change.select2');
+            if (data.mode_of_transport_id) $('select[name="mode_of_transport_id"]').val(data.mode_of_transport_id)
+                .trigger('change.select2');
+            if (data.origin_country_id) $('select[name="origin_country_id"]').val(data.origin_country_id).trigger(
+                'change.select2');
+            if (data.port_of_discharge_id) $('select[name="port_of_discharge_id"]').val(data.port_of_discharge_id)
+                .trigger('change.select2');
+            if (data.port_of_loading_id) $('select[name="port_of_loading_id"]').val(data.port_of_loading_id).trigger(
+                'change.select2');
             if (data.hs_code_id) $('select[name="hs_code_id"]').val(data.hs_code_id).trigger('change.select2');
-            if (data.partial_payment) $('select[name="partial_payment"]').val(data.partial_payment).trigger('change.select2');
+            if (data.partial_payment) $('select[name="partial_payment"]').val(data.partial_payment).trigger(
+                'change.select2');
             if (data.transhipment) $('select[name="transhipment"]').val(data.transhipment).trigger('change.select2');
             if (data.part_shipment) $('select[name="part_shipment"]').val(data.part_shipment).trigger('change.select2');
-            if (data.insurance_covered_by) $('select[name="insurance_covered_by"]').val(data.insurance_covered_by).trigger('change.select2');
+            if (data.insurance_covered_by) $('select[name="insurance_covered_by"]').val(data.insurance_covered_by)
+                .trigger('change.select2');
 
             // Export sidebar numeric fields
             if (data.advance_payment) $('input[name="advance_payment"]').val(data.advance_payment);
@@ -1445,12 +1731,100 @@
             }
         }
 
-        $('select[name="quotation_id"]').on('change', function () {
-            triggerAutofill();
+        // Clone all Export Soda options on load for filtering
+        const allExportSodaOptions = $('#exportSodaSelect option').clone();
+        let isFiltering = false;
+
+        function filterSodaOptions(preserveSelection = false) {
+            let selectedQuotationId = $('#quotationSelect').val();
+            let exportSodaSelect = $('#exportSodaSelect');
+            let currentSodaVal = exportSodaSelect.val();
+
+            isFiltering = true;
+            exportSodaSelect.empty().append('<option value="">Select Export Soda</option>');
+
+            if (!selectedQuotationId) {
+                // Show ALL export sodas when no quotation is selected
+                allExportSodaOptions.each(function() {
+                    if ($(this).val() !== "") {
+                        exportSodaSelect.append($(this).clone());
+                    }
+                });
+                exportSodaSelect.val(currentSodaVal).trigger('change.select2');
+            } else {
+                // Filter export sodas belonging to this quotation
+                let matchingCount = 0;
+                let singleSodaVal = null;
+
+                allExportSodaOptions.each(function() {
+                    let qId = $(this).data('quotation-id');
+                    if ($(this).val() !== "" && qId == selectedQuotationId) {
+                        exportSodaSelect.append($(this).clone());
+                        matchingCount++;
+                        if (!singleSodaVal) singleSodaVal = $(this).val();
+                    }
+                });
+
+                // Check if quotation directly points to soda via data-soda-id
+                let directSodaId = $('#quotationSelect option:selected').data('soda-id');
+                if (directSodaId && exportSodaSelect.find(`option[value="${directSodaId}"]`).length === 0) {
+                    allExportSodaOptions.each(function() {
+                        if ($(this).val() == directSodaId) {
+                            exportSodaSelect.append($(this).clone());
+                            matchingCount++;
+                            if (!singleSodaVal) singleSodaVal = directSodaId;
+                        }
+                    });
+                }
+
+                if (currentSodaVal && exportSodaSelect.find(`option[value="${currentSodaVal}"]`).length > 0) {
+                    exportSodaSelect.val(currentSodaVal).trigger('change.select2');
+                } else if (!preserveSelection && matchingCount === 1) {
+                    // Auto-select the only matching soda and load details
+                    exportSodaSelect.val(singleSodaVal).trigger('change.select2');
+                    loadSodaDetails(singleSodaVal);
+                } else {
+                    exportSodaSelect.val('').trigger('change.select2');
+                }
+            }
+            isFiltering = false;
+        }
+
+        // When Quotation is selected, filter Export Soda dropdown
+        $('#quotationSelect').on('change', function() {
+            if (isFiltering) return;
+            filterSodaOptions(false);
         });
 
+        // When Export Soda is selected, auto-select Quotation if needed, and fill form details
+        $('#exportSodaSelect').on('change', function() {
+            if (isFiltering) return;
+            let sodaId = $(this).val();
+            if (!sodaId) {
+                clearFormFields();
+                return;
+            }
+
+            // Auto-select linked Quotation if not selected or different
+            let linkedQuotationId = $(this).find(':selected').data('quotation-id');
+            let currentQuotationVal = $('#quotationSelect').val();
+
+            if (linkedQuotationId && linkedQuotationId != currentQuotationVal) {
+                isFiltering = true;
+                $('#quotationSelect').val(linkedQuotationId).trigger('change.select2');
+                isFiltering = false;
+            }
+
+            loadSodaDetails(sodaId);
+        });
+
+        // If quotation was selected on initial load, filter the soda options without wiping the loaded form
+        if ($('#quotationSelect').val()) {
+            filterSodaOptions(true);
+        }
+
         // Packing Row Management
-        $('#addPackingItem').click(function () {
+        $('#addPackingItem').click(function() {
             const container = $('#packingItemsContainer');
             const rowCount = container.find('.packing-item').length;
             const newRow = container.find('.packing-item').first().clone();
@@ -1460,7 +1834,7 @@
 
             // Thorough Select2 Cleanup
             newRow.find('.select2-container').remove();
-            newRow.find('select').each(function () {
+            newRow.find('select').each(function() {
                 $(this).removeClass('select2-hidden-accessible');
                 $(this).removeAttr('data-select2-id');
                 $(this).removeAttr('aria-hidden');
@@ -1484,11 +1858,13 @@
             reindexAll();
 
             // Initialize Select2 on the new row AFTER re-indexing to ensure correct internal mapping
-            newRow.find('.select2').select2({ width: '100%' });
+            newRow.find('.select2').select2({
+                width: '100%'
+            });
             togglePackingTypeColumns();
         });
 
-        $(document).off('click', '.remove-packing-item').on('click', '.remove-packing-item', function () {
+        $(document).off('click', '.remove-packing-item').on('click', '.remove-packing-item', function() {
             if ($('.packing-item').length > 1) {
                 $(this).closest('.packing-item').remove();
                 reindexAll();
@@ -1499,7 +1875,7 @@
         });
 
         // Master Packing (Sub-item) Management
-        $(document).off('click', '.add-sub-packing-item').on('click', '.add-sub-packing-item', function () {
+        $(document).off('click', '.add-sub-packing-item').on('click', '.add-sub-packing-item', function() {
             const parentIndex = $(this).attr('data-index');
             const container = $(this).closest('.master-packing-box').find('.sub-packing-items-container');
             const subIndex = container.find('tr').length;
@@ -1563,11 +1939,13 @@
 
             const $html = $(html);
             container.append($html);
-            $html.find('.select2').select2({ width: '100%' });
+            $html.find('.select2').select2({
+                width: '100%'
+            });
             reindexAll();
         });
 
-        $(document).off('click', '.remove-sub-item').on('click', '.remove-sub-item', function () {
+        $(document).off('click', '.remove-sub-item').on('click', '.remove-sub-item', function() {
             const row = $(this).closest('.packing-item');
             $(this).closest('tr').remove();
             reindexAll();
@@ -1575,39 +1953,47 @@
         });
 
         // Calculations (JobOrder Style)
-        $(document).off('input', '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers').on('input', '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers', function() {
-            let sourceField = null;
-            if ($(this).hasClass('no_of_bags')) sourceField = 'no_of_bags';
-            if ($(this).hasClass('bag-size')) sourceField = 'bag-size';
-            if ($(this).hasClass('metric-tons')) sourceField = 'metric-tons';
-            if ($(this).hasClass('stuffing')) sourceField = 'stuffing';
-            if ($(this).hasClass('containers')) sourceField = 'containers';
-            if ($(this).hasClass('empty-bags-percentage')) sourceField = 'empty-bags-percentage';
-            if ($(this).hasClass('extra-bags-percentage')) sourceField = 'extra-bags-percentage';
-            
-            calculateMainRow($(this).closest('.packing-item'), sourceField);
-        });
+        $(document).off('input',
+            '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers'
+        ).on('input',
+            '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers',
+            function() {
+                let sourceField = null;
+                if ($(this).hasClass('no_of_bags')) sourceField = 'no_of_bags';
+                if ($(this).hasClass('bag-size')) sourceField = 'bag-size';
+                if ($(this).hasClass('metric-tons')) sourceField = 'metric-tons';
+                if ($(this).hasClass('stuffing')) sourceField = 'stuffing';
+                if ($(this).hasClass('containers')) sourceField = 'containers';
+                if ($(this).hasClass('empty-bags-percentage')) sourceField = 'empty-bags-percentage';
+                if ($(this).hasClass('extra-bags-percentage')) sourceField = 'extra-bags-percentage';
 
-        $(document).off('input', '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage').on('input', '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage', function() {
-            const subRow = $(this).closest('tr');
-            const mainRow = $(this).closest('.packing-item');
-            let source = 'manual';
-            if ($(this).hasClass('sub-empty-bags-percentage')) source = 'empty-percentage';
-            if ($(this).hasClass('sub-extra-bags-percentage')) source = 'extra-percentage';
-            if ($(this).hasClass('sub-empty-bags')) source = 'empty-bags';
-            if ($(this).hasClass('sub-extra-bags')) source = 'extra-bags';
-            calculateSubItemNoOfBags(subRow, mainRow, source);
-        });
+                calculateMainRow($(this).closest('.packing-item'), sourceField);
+            });
 
-        $(document).off('change', '.sub-bag-size-id').on('change', '.sub-bag-size-id', function () {
+        $(document).off('input',
+            '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage'
+        ).on('input',
+            '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage',
+            function() {
+                const subRow = $(this).closest('tr');
+                const mainRow = $(this).closest('.packing-item');
+                let source = 'manual';
+                if ($(this).hasClass('sub-empty-bags-percentage')) source = 'empty-percentage';
+                if ($(this).hasClass('sub-extra-bags-percentage')) source = 'extra-percentage';
+                if ($(this).hasClass('sub-empty-bags')) source = 'empty-bags';
+                if ($(this).hasClass('sub-extra-bags')) source = 'extra-bags';
+                calculateSubItemNoOfBags(subRow, mainRow, source);
+            });
+
+        $(document).off('change', '.sub-bag-size-id').on('change', '.sub-bag-size-id', function() {
             const subRow = $(this).closest('tr');
             const mainRow = $(this).closest('.packing-item');
             calculateSubItemNoOfBags(subRow, mainRow);
         });
 
-        $(document).on('input', '.no_of_bags, .bag-size', function () {
+        $(document).on('input', '.no_of_bags, .bag-size', function() {
             const mainRow = $(this).closest('.packing-item');
-            mainRow.find('.sub-packing-item').each(function () {
+            mainRow.find('.sub-packing-item').each(function() {
                 calculateSubItemNoOfBags($(this), mainRow);
             });
         });
@@ -1615,14 +2001,14 @@
         function calculateSubItemNoOfBags(subRow, mainRow, source = 'manual') {
             const noOfBagsMain = parseInt(mainRow.find('.no_of_bags').val()) || 0;
             const noOfPrimaryBags = parseInt(subRow.find('.sub-no-of-primary-bags').val()) || 0;
-            
+
             if (noOfPrimaryBags > 0) {
                 // If main no_of_bags exists, suggest a breakdown
                 if (noOfBagsMain > 0) {
                     const suggestedBags = Math.floor(noOfBagsMain / noOfPrimaryBags);
                     subRow.find('.sub-no-of-bags').val(suggestedBags);
                 }
-                
+
                 const noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
                 let emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
                 let emptyPct = parseFloat(subRow.find('.sub-empty-bags-percentage').val()) || 0;
@@ -1733,7 +2119,7 @@
             row.find('.total-kgs').val((metricTons * 1000).toFixed(2));
 
             // Sync with Sub Items
-            row.find('.sub-packing-item').each(function () {
+            row.find('.sub-packing-item').each(function() {
                 calculateSubItemNoOfBags($(this), row);
             });
 
@@ -1752,7 +2138,7 @@
         function calculateGrandTotals() {
             let grandAmount = 0;
             let grandMT = 0;
-            $('.packing-item').each(function () {
+            $('.packing-item').each(function() {
                 grandAmount += parseFloat($(this).find('.item-amount').val()) || 0;
                 grandMT += parseFloat($(this).find('.metric-tons').val()) || 0;
             });
@@ -1771,17 +2157,17 @@
             }
         }
 
-        $(document).on('input', '#commission_percentage, #commission_amount_per_ton', function () {
+        $(document).on('input', '#commission_percentage, #commission_amount_per_ton', function() {
             calculateGrandTotals();
         });
 
         function reindexAll() {
-            $('#packingItemsContainer .packing-item').each(function (pIdx) {
+            $('#packingItemsContainer .packing-item').each(function(pIdx) {
                 $(this).attr('data-index', pIdx);
                 $(this).find('.packing-row-title').text('Packing Row #' + (pIdx + 1));
                 $(this).find('.add-sub-packing-item').attr('data-index', pIdx);
 
-                $(this).find('input, select, textarea').each(function () {
+                $(this).find('input, select, textarea').each(function() {
                     let name = $(this).attr('name');
                     if (name) {
                         if (name.includes('[sub_items]')) {
@@ -1793,8 +2179,8 @@
                     }
                 });
 
-                $(this).find('.sub-packing-items-container tr').each(function (sIdx) {
-                    $(this).find('input, select, textarea').each(function () {
+                $(this).find('.sub-packing-items-container tr').each(function(sIdx) {
+                    $(this).find('input, select, textarea').each(function() {
                         let name = $(this).attr('name');
                         if (name) {
                             name = name.replace(/\[sub_items\]\[\d+\]/, `[sub_items][${sIdx}]`);
@@ -1806,10 +2192,10 @@
         }
 
         // Currency handling
-        $('#currencySelect').on('change', function () {
+        $('#currencySelect').on('change', function() {
             let rate = $(this).find(':selected').data('rate') || '';
             $('#currencyRate').val(rate);
-            $('.packing-item').each(function () {
+            $('.packing-item').each(function() {
                 calculateMainRow($(this));
             });
         });
@@ -1818,7 +2204,7 @@
         $('#incoterm_id').change(function() {
             var selectedOption = $(this).find('option:selected');
             var text = selectedOption.data('name') || '';
-            
+
             if (text.toUpperCase().includes('FOB')) {
                 $('#fob_account_tr').show();
                 $('input[name="fob_account"]').prop('required', true);
@@ -1827,7 +2213,7 @@
                 $('input[name="fob_account"]').prop('required', false).prop('checked', false);
             }
         });
-        
+
         // Initial setup for Incoterm required property
         if ($('#fob_account_tr').is(':visible')) {
             $('input[name="fob_account"]').prop('required', true);
@@ -1852,21 +2238,24 @@
             </option>`;
         }
 
-        function loadCompanyBanks(companyId, beneficiarySelected = savedBeneficiaryBankId, correspondentSelected = savedCorrespondentBankId) {
+        function loadCompanyBanks(companyId, beneficiarySelected = savedBeneficiaryBankId, correspondentSelected =
+            savedCorrespondentBankId) {
             $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
             $('#correspondentBankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
 
             if (!companyId) {
-                $('#acc_title, #bank_name, #account_no, #ben_iban, #ben_swift_code, #ben_bank_address, #ben_description').val('');
-                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
+                $('#acc_title, #bank_name, #account_no, #ben_iban, #ben_swift_code, #ben_bank_address, #ben_description')
+                    .val('');
+                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description')
+                    .val('');
                 return;
             }
 
-            $.get('{{ route('export-order.company-banks', '') }}/' + companyId, function (response) {
+            $.get('{{ route('export-order.company-banks', '') }}/' + companyId, function(response) {
                 let beneficiaryOptions = '<option value="">-- Select Bank --</option>';
                 let correspondentOptions = '<option value="">-- Select Bank --</option>';
 
-                response.forEach(function (bank) {
+                response.forEach(function(bank) {
                     beneficiaryOptions += buildBankOption(bank, beneficiarySelected, true);
                     correspondentOptions += buildBankOption(bank, correspondentSelected, false);
                 });
@@ -1903,10 +2292,10 @@
 
             if (!customerId) return;
 
-            $.get('{{ route('export-order.customer-consignees', '') }}/' + customerId, function (response) {
+            $.get('{{ route('export-order.customer-consignees', '') }}/' + customerId, function(response) {
                 let options = '<option value="">-- Select Consignee --</option>';
                 let selectedId = '{{ $exportOrder->consignee_id }}';
-                response.forEach(function (cons) {
+                response.forEach(function(cons) {
                     let selected = (selectedId == cons.id) ? 'selected' : '';
                     options += `<option value="${cons.id}" ${selected}
                         data-name="${cons.name}"
@@ -1921,12 +2310,12 @@
             });
         }
 
-        $('select[name="buyer_id"]').on('change', function () {
+        $('select[name="buyer_id"]').on('change', function() {
             let customerId = $(this).val();
             loadCustomerConsignees(customerId);
         });
 
-        $('#consigneeSelect').on('change', function () {
+        $('#consigneeSelect').on('change', function() {
             let selected = $(this).find(':selected');
             if (!selected.val()) {
                 $('#consigneeInfoSection').hide();
@@ -1940,10 +2329,11 @@
             $('#consigneeInfoSection').fadeIn(300);
         });
 
-        $('#bankSelect').on('change', function () {
+        $('#bankSelect').on('change', function() {
             let selected = $(this).find(':selected');
             if (!selected.val()) {
-                $('#acc_title, #bank_name, #account_no, #ben_iban, #ben_swift_code, #ben_bank_address, #ben_description').val('');
+                $('#acc_title, #bank_name, #account_no, #ben_iban, #ben_swift_code, #ben_bank_address, #ben_description')
+                    .val('');
                 return;
             }
             $('#acc_title').val(selected.data('title') || '');
@@ -1955,10 +2345,11 @@
             $('#ben_description').val(selected.data('description') || '');
         });
 
-        $('#correspondentBankSelect').on('change', function () {
+        $('#correspondentBankSelect').on('change', function() {
             let selected = $(this).find(':selected');
             if (!selected.val()) {
-                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
+                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description')
+                    .val('');
                 return;
             }
             $('#cor_acc_title').val(selected.data('title') || '');
@@ -1983,11 +2374,12 @@
             $.post('/export/get-arrival-locations', {
                 company_location_ids: companyLocationIds,
                 _token: $('meta[name="csrf-token"]').attr('content')
-            }, function (response) {
+            }, function(response) {
                 let options = '';
-                response.forEach(function (location) {
+                response.forEach(function(location) {
                     let locId = String(location.id);
-                    options += `<option value="${locId}" ${selectedIds.includes(locId) ? 'selected' : ''}>${location.name}</option>`;
+                    options +=
+                        `<option value="${locId}" ${selectedIds.includes(locId) ? 'selected' : ''}>${location.name}</option>`;
                 });
                 $('#arrivalLocationSelect').html(options).trigger('change');
                 if (selectedIds.length > 0) populateArrivalSubLocations(selectedIds, selectedSubIds);
@@ -2000,18 +2392,23 @@
             $.post('/export/get-arrival-sub-locations', {
                 arrival_location_ids: arrivalLocationIds,
                 _token: $('meta[name="csrf-token"]').attr('content')
-            }, function (response) {
+            }, function(response) {
                 let options = '';
-                response.forEach(function (sub) {
+                response.forEach(function(sub) {
                     let subId = String(sub.id);
-                    options += `<option value="${subId}" ${selectedIds.includes(subId) ? 'selected' : ''}>${sub.name}</option>`;
+                    options +=
+                        `<option value="${subId}" ${selectedIds.includes(subId) ? 'selected' : ''}>${sub.name}</option>`;
                 });
                 $('#arrivalSubLocationSelect').html(options).trigger('change');
             });
         }
 
-        $('#companyLocationSelect').on('change', function () { populateArrivalLocations($(this).val(), [], []); });
-        $('#arrivalLocationSelect').on('change', function () { populateArrivalSubLocations($(this).val(), []); });
+        $('#companyLocationSelect').on('change', function() {
+            populateArrivalLocations($(this).val(), [], []);
+        });
+        $('#arrivalLocationSelect').on('change', function() {
+            populateArrivalSubLocations($(this).val(), []);
+        });
 
         $('select[name="incoterm_id"]').on('change', function() {
             var incotermText = $(this).find('option:selected').text().toUpperCase().trim();
@@ -2028,7 +2425,8 @@
                 $('#load_terms_section').hide();
                 $('#load_terms_section input, #load_terms_section select').prop('required', false).val('');
                 $('#discharge_terms_section').hide();
-                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', false).val('');
+                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', false)
+                    .val('');
                 return;
             }
 
@@ -2036,8 +2434,10 @@
                 $('#load_terms_section').show();
                 $('#load_terms_section input, #load_terms_section select').prop('required', true);
                 $('#discharge_terms_section').hide();
-                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', false).val('');
-            } else if (incotermText.includes('CIF') || incotermText.includes('CNF') || incotermText.includes('C&F')) {
+                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', false)
+                    .val('');
+            } else if (incotermText.includes('CIF') || incotermText.includes('CNF') || incotermText.includes(
+                    'C&F')) {
                 $('#discharge_terms_section').show();
                 $('#discharge_terms_section input, #discharge_terms_section select').prop('required', true);
                 $('#load_terms_section').hide();
@@ -2060,7 +2460,7 @@
                 $('.col-stuffing input, .col-containers input').prop('required', true);
             }
         }
-        
+
         // Add event listener for packing_type as well
         $('select[name="packing_type"]').on('change', function() {
             $('select[name="incoterm_id"]').trigger('change');
@@ -2076,14 +2476,19 @@
 
         // Initial Load
         loadCompanyBanks($('#companyId').val());
-        if ($('#companyLocationSelect').val()) populateArrivalLocations($('#companyLocationSelect').val(), selectedArrivalLocations, selectedArrivalSubLocations);
+        if ($('#companyLocationSelect').val()) populateArrivalLocations($('#companyLocationSelect').val(),
+            selectedArrivalLocations, selectedArrivalSubLocations);
 
-        $('.packing-item').each(function () { calculateMainRow($(this)); });
+        $('.packing-item').each(function() {
+            calculateMainRow($(this));
+        });
 
         let initialCommission = parseFloat($('#commission').val()) || 0;
         if (initialCommission > 0) {
             let grandAmount = 0;
-            $('.packing-item').each(function () { grandAmount += parseFloat($(this).find('.item-amount').val()) || 0; });
+            $('.packing-item').each(function() {
+                grandAmount += parseFloat($(this).find('.item-amount').val()) || 0;
+            });
             if (grandAmount > 0) $('#commission_percentage').val(((initialCommission / grandAmount) * 100).toFixed(2));
         }
     }

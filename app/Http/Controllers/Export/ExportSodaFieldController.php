@@ -17,6 +17,7 @@ use Illuminate\View\View;
 use Illuminate\Database\QueryException;
 use App\Models\Master\Customer;
 use App\Models\Master\Brands;
+use App\Models\Export\Quotation;
 // use App\Models\Master\Color;
 
 class ExportSodaFieldController extends Controller
@@ -53,6 +54,7 @@ class ExportSodaFieldController extends Controller
         $incoterms = IncoTerm::where('status', 1)->get();
         $modeofterms = ModeOfTerm::where('status', 1)->get();
         $bagTypes = BagType::where('status', 1)->get();
+        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
 
         return view('management.export.export-soda-field.create', compact(
             'users',
@@ -60,7 +62,8 @@ class ExportSodaFieldController extends Controller
             'bagPackings',
             'incoterms',
             'modeofterms',
-            'bagTypes'
+            'bagTypes',
+            'quotations'
         ));
     }
 
@@ -84,7 +87,8 @@ class ExportSodaFieldController extends Controller
                 'commission_percentage',
                 'commission_amount_per_ton',
                 'commission',
-                'additional_info'
+                'additional_info',
+                'quotation_id'
             ]);
 
             $data['shipment_date_from'] = $request->shipment_date_from ?: null;
@@ -279,4 +283,49 @@ class ExportSodaFieldController extends Controller
             'message' => $message,
         ], 200);
     }
+
+    public function getQuotationDetails($id = null)
+    {
+        $id = $id ?: request('id', request('quotation_id'));
+        $q = Quotation::with(['packingItems', 'buyer', 'product', 'specifications', 'exportSoda'])->findOrFail($id);
+
+        $shipmentDateFrom = $q->exportSoda?->shipment_date_from;
+        $shipmentDateTo = $q->exportSoda?->shipment_date_to;
+        $dateFromFormatted = $shipmentDateFrom ? ($shipmentDateFrom instanceof \Carbon\Carbon ? $shipmentDateFrom->format('Y-m-d') : (string)$shipmentDateFrom) : null;
+        $dateToFormatted = $shipmentDateTo ? ($shipmentDateTo instanceof \Carbon\Carbon ? $shipmentDateTo->format('Y-m-d') : (string)$shipmentDateTo) : null;
+
+        return response()->json([
+            'company_id' => $q->company_id,
+            'buyer_id' => $q->buyer_id,
+            'product_id' => $q->product_id,
+            'visual_name' => $q->product->name ?? null,
+            'currency_id' => $q->currency_id,
+            'currency_rate' => $q->currency_rate,
+            'payment_days' => $q->payment_days,
+            'advance_payment' => $q->advance_payment,
+            'incoterm_id' => $q->incoterm_id,
+            'packing_type' => $q->packing_type,
+            'mode_of_term_id' => $q->mode_of_term_id,
+            'mode_of_transport_id' => $q->mode_of_transport_id,
+            'origin_country_id' => $q->origin_country_id,
+            'port_of_discharge_id' => $q->port_of_discharge_id,
+            'port_of_loading_id' => $q->port_of_loading_id,
+            'hs_code_id' => $q->hs_code_id,
+            'partial_payment' => $q->partial_payment,
+            'transhipment' => $q->transhipment,
+            'part_shipment' => $q->part_shipment,
+            'insurance_covered_by' => $q->insurance_covered_by,
+            'shipment_date_from' => $dateFromFormatted,
+            'shipment_delivery_date_from' => $dateFromFormatted,
+            'shipment_date_to' => $dateToFormatted,
+            'shipment_delivery_date_to' => $dateToFormatted,
+            'commission_percentage' => $q->commission_percentage,
+            'commission_amount_per_ton' => $q->commission_amount_per_ton,
+            'commission' => $q->commission,
+            'additional_info' => $q->additional_info,
+            'packing_items' => $q->packingItems,
+            'specifications' => $q->specifications,
+        ]);
+    }
+    
 }

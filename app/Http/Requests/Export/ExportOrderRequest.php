@@ -36,6 +36,20 @@ class ExportOrderRequest extends FormRequest
             'voucher_date' => ['required', 'date'],
             'voucher_heading' => ['required', 'string', 'max:255'],
 
+            'positive_tolerance' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:100',
+            ],
+
+            'negative_tolerance' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:100',
+            ],
+
             'shipment_delivery_date_from' => ['required', 'date'],
             'shipment_delivery_date_to' => [
                 'required',
@@ -48,6 +62,8 @@ class ExportOrderRequest extends FormRequest
 
             /* ================= FOREIGN KEYS ================= */
 
+            'quotation_id' => ['nullable', 'exists:quotations,id'],
+            'export_soda_id' => ['nullable', 'exists:export_soda_fields,id'],
             'company_id' => ['required', 'exists:companies,id'],
             'buyer_id' => ['required', 'exists:customers,id'],
             'consignee_id' => ['nullable', 'exists:customer_consignees,id'],
@@ -229,6 +245,19 @@ class ExportOrderRequest extends FormRequest
             'contract_no.required' => 'Contract number is required',
             'voucher_date.required' => 'Voucher date is required',
             'voucher_heading.required' => 'Voucher heading is required',
+
+
+            'positive_tolerance.required' => 'Positive Tolerance is required',
+            'positive_tolerance.numaric' => 'Positive Tolerance should be any number between 0 to 100',
+            'positive_tolerance.min' => 'Positive Tolerance should not be less then 0',
+            'positive_tolerance.max' => 'Positive Tolerance should not be greater then 100',
+
+
+            'negative_tolerance.required' => 'Negative Tolerance is required',
+            'negative_tolerance.numaric' => 'Negative Tolerance should be any number between 0 to 100',
+            'negative_tolerance.min' => 'Negative Tolerance should not be less then 0',
+            'negative_tolerance.max' => 'Negative Tolerance should not be greater then 100',
+
 
             'shipment_delivery_date_from.required' => 'Shipment start date is required',
             'shipment_delivery_date_to.required' => 'Shipment end date is required',

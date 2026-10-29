@@ -78,8 +78,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
-        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
+        $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
+        $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = BagPacking::where('status', 1)->get();
@@ -150,6 +150,9 @@ class ExportOrderController extends Controller
 
             if ($request->filled('quotation_id') && empty($exportOrderData['export_soda_id'])) {
                 $exportOrderData['export_soda_id'] = Quotation::whereKey($request->quotation_id)->value('export_soda_id');
+            }
+            if ($request->filled('export_soda_id') && empty($exportOrderData['quotation_id'])) {
+                $exportOrderData['quotation_id'] = ExportSodaField::whereKey($request->export_soda_id)->value('quotation_id');
             }
 
             $exportOrder = null;
@@ -265,7 +268,7 @@ class ExportOrderController extends Controller
 
     public function show($id): View
     {
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product', 'quotation', 'exportSoda'])->findOrFail($id);
 
         $products = Product::where('status', 1)->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -282,8 +285,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
-        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
+        $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
+        $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = BagPacking::where('status', 1)->get();
@@ -329,7 +332,7 @@ class ExportOrderController extends Controller
 
     public function edit($id): View
     {
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product', 'quotation', 'exportSoda'])->findOrFail($id);
 
         $products = Product::where('status', 1)->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -346,8 +349,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
-        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
+        $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
+        $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = BagPacking::where('status', 1)->get();
@@ -438,6 +441,9 @@ class ExportOrderController extends Controller
 
             if ($request->filled('quotation_id') && empty($exportOrderData['export_soda_id'])) {
                 $exportOrderData['export_soda_id'] = Quotation::whereKey($request->quotation_id)->value('export_soda_id');
+            }
+            if ($request->filled('export_soda_id') && empty($exportOrderData['quotation_id'])) {
+                $exportOrderData['quotation_id'] = ExportSodaField::whereKey($request->export_soda_id)->value('quotation_id');
             }
 
             $updateData = array_merge($exportOrderData, [
@@ -672,6 +678,58 @@ class ExportOrderController extends Controller
             ->get();
 
         return response()->json($subLocations);
+    }
+
+    public function getExportSodaDetails($id)
+    {
+        $q = ExportSodaField::with(['packingItems', 'buyer', 'product', 'quotation.specifications.slabType', 'quotationBySoda.specifications.slabType'])->findOrFail($id);
+        $quotation = $q->quotation ?? $q->quotationBySoda ?? Quotation::with('specifications.slabType')->where('export_soda_id', $q->id)->latest()->first();
+        $rawSpecs = $quotation?->specifications ?? collect([]);
+        $specs = $rawSpecs->map(function ($spec) {
+            return [
+                'id' => $spec->id,
+                'product_slab_type_id' => $spec->product_slab_type_id,
+                'spec_name' => $spec->spec_name ?? $spec->slabType?->name ?? '',
+                'spec_value' => $spec->spec_value ?? 0,
+                'uom' => $spec->uom ?: ($spec->slabType?->qc_symbol ?? ''),
+                'value_type' => $spec->value_type ?? 'min',
+            ];
+        })->values();
+
+        $shipmentDateFrom = $q?->shipment_date_from ?? $q->shipment_delivery_date_from;
+        $shipmentDateTo = $q?->shipment_date_to ?? $q->shipment_delivery_date_to;
+
+        return response()->json([
+            'quotation_id' => $quotation?->id,
+            'export_soda_id' => $q->id,
+            'company_id' => $q->company_id,
+            'buyer_id' => $q->buyer_id,
+            'product_id' => $q->product_id,
+            'visual_name' => $q->product->name ?? null,
+            'currency_id' => $q->currency_id,
+            'currency_rate' => $q->currency_rate,
+            'payment_days' => $q->payment_days,
+            'advance_payment' => $q->advance_payment,
+            'incoterm_id' => $q->incoterm_id,
+            'packing_type' => $q->packing_type,
+            'mode_of_term_id' => $q->mode_of_term_id,
+            'mode_of_transport_id' => $q->mode_of_transport_id,
+            'origin_country_id' => $q->origin_country_id,
+            'port_of_discharge_id' => $q->port_of_discharge_id,
+            'port_of_loading_id' => $q->port_of_loading_id,
+            'hs_code_id' => $q->hs_code_id,
+            'partial_payment' => $q->partial_payment,
+            'transhipment' => $q->transhipment,
+            'part_shipment' => $q->part_shipment,
+            'insurance_covered_by' => $q->insurance_covered_by,
+            'shipment_delivery_date_from' => optional($shipmentDateFrom)->format('Y-m-d') ?? $shipmentDateFrom,
+            'shipment_delivery_date_to' => optional($shipmentDateTo)->format('Y-m-d') ?? $shipmentDateTo,
+            'commission_percentage' => $q->commission_percentage,
+            'commission_amount_per_ton' => $q->commission_amount_per_ton,
+            'commission' => $q->commission,
+            'packing_items' => $q->packingItems,
+            'specifications' => $specs,
+        ]);
     }
 
     public function getQuotationDetails($id)
