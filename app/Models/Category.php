@@ -24,4 +24,10 @@ class Category extends Model
     {
         return $this->hasMany(Category::class, 'parent_id');
     }
+
+    // Relationship: Category Heads (Blueprint templates)
+    public function heads()
+    {
+        return $this->hasMany(CategoryHead::class, 'category_id')->orderBy('sort_order');
+    }
 }
