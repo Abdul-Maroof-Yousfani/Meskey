@@ -1319,6 +1319,7 @@ class JournalVoucherController extends Controller
             }
         }
 
+        $rvBases = [];
         foreach ($rvTotalUsage as $rvId => $totalEntered) {
             $rv = ReceiptVoucher::find($rvId);
             $doConsumed = DB::table('delivery_order_receipt_voucher as dorv')
@@ -1360,6 +1361,7 @@ class JournalVoucherController extends Controller
                 ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
                 ->sum('net_amount');
             $baseAmount = $soLinkedAmount > 0 ? $soLinkedAmount : (float) $rv->total_amount;
+            $rvBases[$rvId] = $baseAmount;
 
             $remainingAmount = round(max(0, $baseAmount - ($doConsumed + $jvConsumed + $dpvConsumed)), 2);
             if (round($totalEntered, 2) > round($remainingAmount + 0.01, 2)) {
@@ -1413,6 +1415,63 @@ class JournalVoucherController extends Controller
                     $soRef = SalesOrder::find($do->so_id)->reference_no ?? ("SO #" . $do->so_id);
                     return "The total entered amount for Delivery Order(s) and Sales Order {$soRef} exceeds the net remaining advance balance of Rs. " . number_format($soNetTotal, 2) . ".";
                 }
+            }
+        }
+
+        // 1b. An RV and the SO/DO it was received against share the same advance money.
+        // Debits on the SO, its DOs and its RVs in this JV are allowed together, but their
+        // combined total must not exceed the SO's net remaining advance pool.
+        $poolSoIds = array_keys($soDebitUsage);
+        $doSoDebits = [];
+        foreach ($doDebitUsage as $doId => $totalEntered) {
+            $do = \App\Models\Sales\DeliveryOrder::find($doId);
+            if ($do && $do->so_id) {
+                $doSoDebits[$do->so_id] = ($doSoDebits[$do->so_id] ?? 0) + $totalEntered;
+                $poolSoIds[] = $do->so_id;
+            }
+        }
+
+        $rvSoLinks = [];
+        foreach ($rvTotalUsage as $rvId => $totalEntered) {
+            $links = DB::table('receipt_voucher_items')
+                ->where('receipt_voucher_id', $rvId)
+                ->where('reference_type', 'sale_order')
+                ->groupBy('reference_id')
+                ->select('reference_id', DB::raw('SUM(net_amount) as linked_amount'))
+                ->pluck('linked_amount', 'reference_id')
+                ->map(fn($amt) => (float) $amt)
+                ->all();
+
+            $doLinks = DB::table('delivery_order_receipt_voucher as dorv')
+                ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
+                ->where('do_tbl.am_approval_status', '!=', 'rejected')
+                ->where('dorv.receipt_voucher_id', $rvId)
+                ->whereNotNull('do_tbl.so_id')
+                ->select('do_tbl.so_id', 'dorv.amount')
+                ->get();
+            foreach ($doLinks as $link) {
+                $links[$link->so_id] = max($links[$link->so_id] ?? 0, (float) $link->amount);
+            }
+
+            $rvSoLinks[$rvId] = $links;
+            $poolSoIds = array_merge($poolSoIds, array_keys($links));
+        }
+
+        foreach (array_unique($poolSoIds) as $soId) {
+            $combinedEntered = ($soDebitUsage[$soId] ?? 0) + ($doSoDebits[$soId] ?? 0);
+
+            foreach ($rvSoLinks as $rvId => $links) {
+                if (!isset($links[$soId])) continue;
+                // If an RV also covers other SOs, only the part beyond those other SOs' share
+                // is counted against this SO.
+                $otherPortion = max(0, ($rvBases[$rvId] ?? 0) - $links[$soId]);
+                $combinedEntered += max(0, $rvTotalUsage[$rvId] - $otherPortion);
+            }
+
+            $soNetTotal = $this->getSalesOrderTotalNetAdvance($soId, $excludeJvId);
+            if (round($combinedEntered, 2) > round($soNetTotal + 0.01, 2)) {
+                $soRef = SalesOrder::find($soId)->reference_no ?? ("SO #" . $soId);
+                return "The combined amount (" . number_format($combinedEntered, 2) . ") entered against Sales Order {$soRef} and its Receipt Voucher(s)/Delivery Order(s) exceeds the net remaining advance balance of " . number_format($soNetTotal, 2) . ".";
             }
         }
 
@@ -1586,26 +1645,6 @@ class JournalVoucherController extends Controller
 
         try {
             DB::transaction(function () use ($request, $totalDebits, $totalCredits) {
-                $receipt_vouucher_id = 0;
-                $sale_order_id = 0;
-                foreach ($request->details as $detail) {
-                    if(!empty($detail['receipt_voucher_id']))
-                    {
-                        $receipt_vouucher_id = $detail['receipt_voucher_id'];
-                    }
-                    if(!empty($detail['sales_order_id']))
-                    {
-                        $sale_order_id = $detail['sales_order_id'];
-                    }
-                }
-
-                $recieptVoucher = ReceiptVoucherItem::where('reference_id', $sale_order_id)->where('reference_type', 'sale_order')->first();
-                        
-                if($receipt_vouucher_id != 0 && $recieptVoucher && $recieptVoucher->receipt_voucher_id == $receipt_vouucher_id)
-                {
-                    throw new \Exception("Please select either the Sale Order or its Receipt Voucher not Both.");
-                }
-                
                 // Concurrency safety check: Ensure no other tab has created Receiving for any selected RV
                 foreach ($request->details as $detail) {
                     if (!empty($detail['receipt_voucher_id'])) {
