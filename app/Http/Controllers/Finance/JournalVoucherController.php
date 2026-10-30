@@ -10,6 +10,7 @@ use App\Models\Master\Account\Transaction;
 use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Master\GrnNumber;
 use App\Models\Master\Supplier;
+use App\Models\Master\Vendor;
 use App\Models\Procurement\PaymentRequest;
 use App\Models\ReceiptVoucher;
 use App\Models\ReceiptVoucherItem;
@@ -141,6 +142,7 @@ class JournalVoucherController extends Controller
      */
     public function fetchAccountRelatedData($accountId, $excludeJvId = null)
     {
+        // dd($accountId);
         if (!$accountId) {
             return [
                 'table_name' => null,
@@ -454,8 +456,8 @@ class JournalVoucherController extends Controller
                 })
                 ->latest('id')
                 ->get()
-                ->map(function ($grn) use ($excludeJvId) {
-                    $limitInfo = $this->getGrnAvailableLimit($grn->id, $excludeJvId);
+                ->map(function ($grn) use ($excludeJvId, $accountId) {
+                    $limitInfo = $this->getGrnAvailableLimit($grn->id, $excludeJvId, $accountId);
                     $remaining = $limitInfo['available_amount'] ?? 0;
                     return [
                         'id' => $grn->id,
@@ -481,6 +483,209 @@ class JournalVoucherController extends Controller
                 'sales_orders' => collect([]),
                 'journal_vouchers' => collect([]),
                 'grns' => $data
+            ];
+        }
+
+        if ($tableName === 'vendors' || $tableName === 'vendor') {
+            $vendor = Vendor::where('account_id', $accountId)->first();
+            if (!$vendor && $account) {
+                if ($account->model_id) {
+                    $vendor = Vendor::find($account->model_id);
+                }
+                if (!$vendor) {
+                    $vendor = Vendor::where('name', $account->name)->first();
+                }
+            }
+
+            if (!$vendor) {
+                return [
+                    'table_name' => 'vendors',
+                    'vendor_id' => null,
+                    'vendor_name' => null,
+                    'supplier_id' => null,
+                    'supplier_name' => null,
+                    'customer_id' => null,
+                    'customer_name' => null,
+                    'receipt_vouchers' => collect([]),
+                    'customer_advances' => collect([]),
+                    'sales_orders' => collect([]),
+                    'journal_vouchers' => collect([]),
+                    'grns' => collect([])
+                ];
+            }
+
+            $vendorId = $vendor->id;
+            $vendorAccIds = array_values(array_unique(array_filter([$accountId, $vendor->account_id])));
+
+            $prs = PaymentRequest::where(function($q) use ($vendorAccIds, $vendorId) {
+                    $q->whereIn('account_id', $vendorAccIds)
+                      ->orWhereHas('paymentRequestData', function($prdQ) use ($vendorId, $vendorAccIds) {
+                          $prdQ->where('labour_vendor_id', $vendorId)
+                               ->orWhere(function($sub) use ($vendorId) {
+                                   $sub->where('payment_to_type', 'vendors')->where('payment_to', $vendorId);
+                               })
+                               ->orWhereIn('account_id', $vendorAccIds);
+                      });
+                })
+                ->where('status', 'approved')
+                ->where(function ($q) {
+                    $q->whereDoesntHave('paymentVoucherData')
+                      ->orWhereDoesntHave('paymentVoucherData.paymentVoucher');
+                })
+                ->get();
+
+            $prdIds = $prs->pluck('payment_request_data_id')->filter()->unique();
+            $prds = DB::table('payment_request_datas')->whereIn('id', $prdIds)->get();
+
+            $directGrnNos = $prds->pluck('grn_no')->filter()->unique();
+            $directGrnIds = $prds->pluck('grn_id')->filter()->unique();
+            $ticketIds = $prds->pluck('ticket_id')->merge($prds->pluck('arrival_ticket_id'))->filter()->unique();
+
+            $slips = DB::table('arrival_slips')->whereIn('arrival_ticket_id', $ticketIds)->get();
+            $slipGrnNos = $slips->pluck('unique_no')->filter()->unique();
+            $slipIds = $slips->pluck('id')->filter()->unique();
+
+            $fpTicketIds = DB::table('freight_payments')->where('vendor_id', $vendorId)->pluck('arrival_ticket_id')->filter()->unique();
+            if ($fpTicketIds->isNotEmpty()) {
+                $fpSlips = DB::table('arrival_slips')->whereIn('arrival_ticket_id', $fpTicketIds)->get();
+                $slipGrnNos = $slipGrnNos->merge($fpSlips->pluck('unique_no'))->unique();
+                $slipIds = $slipIds->merge($fpSlips->pluck('id'))->unique();
+            }
+
+            $grns = GrnNumber::whereNotNull('unique_no')
+                ->where(function($q) use ($slipIds, $slipGrnNos, $directGrnNos, $directGrnIds) {
+                    $matched = false;
+                    if ($slipIds->isNotEmpty()) {
+                        $q->orWhere(function ($sub) use ($slipIds) {
+                            $sub->whereIn('model_id', $slipIds)->where('model_type', 'arrival-slip');
+                        });
+                        $matched = true;
+                    }
+                    if ($slipGrnNos->isNotEmpty()) {
+                        $q->orWhereIn('unique_no', $slipGrnNos);
+                        $matched = true;
+                    }
+                    if ($directGrnNos->isNotEmpty()) {
+                        $q->orWhereIn('unique_no', $directGrnNos);
+                        $matched = true;
+                    }
+                    if ($directGrnIds->isNotEmpty()) {
+                        $q->orWhereIn('id', $directGrnIds);
+                        $matched = true;
+                    }
+                    if (!$matched) {
+                        $q->whereRaw('0 = 1');
+                    }
+                })
+                ->latest('id')
+                ->get()
+                ->map(function ($grn) use ($excludeJvId, $accountId) {
+                    $limitInfo = $this->getGrnAvailableLimit($grn->id, $excludeJvId, $accountId);
+                    $remaining = $limitInfo['available_amount'] ?? 0;
+                    return [
+                        'id' => $grn->id,
+                        'unique_no' => $grn->unique_no,
+                        'text' => $grn->unique_no . ($remaining > 0 ? ' (Rem: ' . number_format($remaining, 2) . ')' : ''),
+                        'type' => 'grn',
+                        'remaining_amount' => $remaining
+                    ];
+                })
+                ->filter(function ($grn) {
+                    return ($grn['remaining_amount'] ?? 0) > 0.01;
+                })
+                ->values();
+
+            // Vendor's Approved Credit JVs
+            $excludeJvNo = null;
+            if ($excludeJvId) {
+                $excludeJv = JournalVoucher::find($excludeJvId);
+                $excludeJvNo = $excludeJv ? $excludeJv->jv_no : null;
+            }
+
+            $jvDetails = JournalVoucherDetail::with(['journalVoucher'])
+                ->whereIn('acc_id', $vendorAccIds)
+                ->where('credit_amount', '>', 0)
+                ->whereHas('journalVoucher', function ($q) {
+                    $q->where('am_approval_status', 'approved');
+                })
+                ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                    $q->where('journal_voucher_id', '!=', $excludeJvId);
+                })
+                ->latest('id')
+                ->get();
+
+            $availableJvs = [];
+            foreach ($jvDetails as $detail) {
+                $jv = $detail->journalVoucher;
+                if (!$jv) continue;
+
+                $creditAmount = (float) $detail->credit_amount;
+
+                $spentQuery = DB::table('settlement_adjustments')
+                    ->where('reference_type', 'journal_voucher')
+                    ->where('reference_id', $jv->id);
+
+                if ($excludeJvNo) {
+                    $spentQuery->where('voucher_no', '!=', $excludeJvNo);
+                }
+                $settlementSpent = (float) $spentQuery->sum('amount');
+
+                $refundQuery = DB::table('payment_voucher_data')
+                    ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
+                    ->whereNull('payment_vouchers.deleted_at')
+                    ->whereNull('payment_voucher_data.deleted_at')
+                    ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
+                    ->where(function ($q) use ($detail, $jv) {
+                        $q->where('payment_voucher_data.journal_voucher_detail_id', $detail->id)
+                          ->orWhere('payment_voucher_data.journal_voucher_id', $jv->id);
+                    });
+                $pvDataSpent = (float) $refundQuery->sum('net_amount');
+
+                $otherJvSpentQuery = JournalVoucherDetail::join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                    ->whereNull('journal_vouchers.deleted_at')
+                    ->whereNull('journal_voucher_details.deleted_at')
+                    ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+                    ->where(function ($q) use ($jv, $detail) {
+                        $q->where('journal_voucher_details.reference_jv_id', $jv->id)
+                          ->orWhere('journal_voucher_details.reference_jv_detail_id', $detail->id);
+                    });
+                if ($excludeJvId) {
+                    $otherJvSpentQuery->where('journal_vouchers.id', '!=', $excludeJvId);
+                }
+                $jvSpent = (float) $otherJvSpentQuery->sum('journal_voucher_details.debit_amount');
+
+                $alreadySpent = max($settlementSpent, $pvDataSpent, $jvSpent);
+                $remainingAmount = max(0, $creditAmount - $alreadySpent);
+
+                if ($remainingAmount > 0.01) {
+                    $jvDateFormatted = $jv->jv_date ? $jv->jv_date->format('d-M-Y') : 'N/A';
+                    $availableJvs[] = [
+                        'id' => $jv->id,
+                        'detail_id' => $detail->id,
+                        'jv_no' => $jv->jv_no,
+                        'credit_amount' => $creditAmount,
+                        'remaining_amount' => round($remainingAmount, 2),
+                        'formatted_remaining' => number_format($remainingAmount, 2),
+                        'description' => $detail->description ?: ($jv->description ?: ''),
+                        'text' => "{$jv->jv_no} ({$jvDateFormatted}) - Rem: Rs. " . number_format($remainingAmount, 2),
+                        'type' => 'journal_voucher'
+                    ];
+                }
+            }
+
+            return [
+                'table_name' => 'vendors',
+                'vendor_id' => $vendor->id,
+                'vendor_name' => $vendor->name,
+                'supplier_id' => null,
+                'supplier_name' => null,
+                'customer_id' => null,
+                'customer_name' => null,
+                'receipt_vouchers' => collect([]),
+                'customer_advances' => collect([]),
+                'sales_orders' => collect([]),
+                'journal_vouchers' => $availableJvs,
+                'grns' => $grns
             ];
         }
 
@@ -1028,7 +1233,7 @@ class JournalVoucherController extends Controller
     /**
      * Calculate available approved amount for a GRN after adjusting for Journal Vouchers.
      */
-    public function getGrnAvailableLimit($grnIdOrNo, $excludeJvId = null)
+    public function getGrnAvailableLimit($grnIdOrNo, $excludeJvId = null, $accountId = null)
     {
         $grn = GrnNumber::where('id', $grnIdOrNo)
             ->orWhere('unique_no', $grnIdOrNo)
@@ -1038,9 +1243,74 @@ class JournalVoucherController extends Controller
             return ['success' => false, 'message' => 'GRN was not found.'];
         }
 
+        $ticketId = null;
+        if ($grn->model_type === 'arrival-slip' && $grn->model_id) {
+            $slip = DB::table('arrival_slips')->where('id', $grn->model_id)->first();
+            $ticketId = $slip?->arrival_ticket_id;
+        }
+
+        $accountIds = [];
+        $vendorId = null;
+        $supplierId = null;
+
+        if ($accountId) {
+            $accountIds = [$accountId];
+            $acc = Account::find($accountId);
+            if ($acc) {
+                $tableName = strtolower($acc->table_name ?? '');
+                if ($tableName === 'vendors' || $tableName === 'vendor') {
+                    $v = Vendor::where('account_id', $accountId)->first()
+                        ?? ($acc->model_id ? Vendor::find($acc->model_id) : null)
+                        ?? Vendor::where('name', $acc->name)->first();
+                    if ($v) {
+                        $vendorId = $v->id;
+                        if ($v->account_id && !in_array($v->account_id, $accountIds)) {
+                            $accountIds[] = $v->account_id;
+                        }
+                    }
+                } elseif ($tableName === 'suppliers') {
+                    $s = Supplier::where('account_id', $accountId)->first()
+                        ?? ($acc->model_id ? Supplier::find($acc->model_id) : null)
+                        ?? Supplier::where('name', $acc->name)->first();
+                    if ($s) {
+                        $supplierId = $s->id;
+                        if ($s->account_id && !in_array($s->account_id, $accountIds)) {
+                            $accountIds[] = $s->account_id;
+                        }
+                    }
+                }
+            }
+        }
+
         // 1. Sum of all related payment_requests where status = 'approved' and (payment_vouchers or payment_voucher_data not exists)
-        $totalApprovedPrAmount = (float) PaymentRequest::whereHas('paymentRequestData', function ($q) use ($grn) {
+        $totalApprovedPrAmount = (float) PaymentRequest::whereHas('paymentRequestData', function ($q) use ($grn, $ticketId) {
                 $q->where('grn_no', $grn->unique_no);
+                if ($ticketId) {
+                    $q->orWhere('ticket_id', $ticketId)
+                      ->orWhere('arrival_ticket_id', $ticketId);
+                }
+            })
+            ->when(!empty($accountIds), function ($q) use ($accountIds, $vendorId, $supplierId) {
+                $q->where(function ($sub) use ($accountIds, $vendorId, $supplierId) {
+                    $sub->whereIn('payment_requests.account_id', $accountIds)
+                        ->orWhere(function ($nullAcc) use ($accountIds, $vendorId, $supplierId) {
+                            $nullAcc->whereNull('payment_requests.account_id')
+                                    ->whereHas('paymentRequestData', function ($prd) use ($accountIds, $vendorId, $supplierId) {
+                                        $prd->whereIn('account_id', $accountIds);
+                                        if ($vendorId) {
+                                            $prd->orWhere('labour_vendor_id', $vendorId)
+                                                ->orWhere(function($p) use ($vendorId) {
+                                                    $p->where('payment_to_type', 'vendors')->where('payment_to', $vendorId);
+                                                });
+                                        }
+                                        if ($supplierId) {
+                                            $prd->orWhere(function($p) use ($supplierId) {
+                                                $p->where('payment_to_type', 'suppliers')->where('payment_to', $supplierId);
+                                            });
+                                        }
+                                    });
+                        });
+                });
             })
             ->where('status', 'approved')
             ->where(function ($q) {
@@ -1061,6 +1331,9 @@ class JournalVoucherController extends Controller
             ->where(function ($q) use ($grn) {
                 $q->where('journal_voucher_details.voucher_id', $grn->id)
                   ->orWhere('journal_voucher_details.voucher_no', $grn->unique_no);
+            })
+            ->when(!empty($accountIds), function ($q) use ($accountIds) {
+                $q->whereIn('journal_voucher_details.acc_id', $accountIds);
             });
 
         if ($excludeJvId) {
@@ -1074,6 +1347,7 @@ class JournalVoucherController extends Controller
             'success' => true,
             'grn_id' => $grn->id,
             'unique_no' => $grn->unique_no,
+            'acc_id' => $accountId,
             'total_approved_amount' => $totalApprovedPrAmount,
             'jv_consumed_amount' => $jvConsumedAmount,
             'available_amount' => $availableLimit,
@@ -1088,6 +1362,7 @@ class JournalVoucherController extends Controller
     {
         $grnId = $request->grn_id ?: $request->order_id ?: $request->voucher_no ?: $request->voucher_id;
         $jvId = $request->jv_id;
+        $accId = $request->acc_id ?: $request->account_id;
         $debitAmount = $request->has('debit_amount') && $request->debit_amount !== '' && $request->debit_amount !== null
             ? (float) $request->debit_amount
             : null;
@@ -1099,7 +1374,7 @@ class JournalVoucherController extends Controller
             ], 422);
         }
 
-        $limitInfo = $this->getGrnAvailableLimit($grnId, $jvId);
+        $limitInfo = $this->getGrnAvailableLimit($grnId, $jvId, $accId);
 
         if (!$limitInfo['success']) {
             return response()->json($limitInfo, 404);
@@ -1291,31 +1566,42 @@ class JournalVoucherController extends Controller
                 }
                 $seenSoIds[] = $soId;
 
-                $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
-                if (!$customer) {
-                    $account = Account::find($detail['acc_id']);
-                    if ($account && $account->table_name === 'customers') {
-                        if ($account->model_id) $customer = \App\Models\Master\Customer::find($account->model_id);
-                        if (!$customer) $customer = \App\Models\Master\Customer::where('name', $account->name)->first();
-                    }
-                }
-                if (!$customer || $so->customer_id != $customer->id) {
-                    return "Line " . ($index + 1) . ": Sales Order {$so->reference_no} does not belong to the selected account.";
-                }
+                $account = Account::find($detail['acc_id']);
+                $tableName = strtolower($account->table_name ?? '');
 
-                if ($debitAmount > 0) {
-                    $soDebitUsage[$soId] = ($soDebitUsage[$soId] ?? 0) + $debitAmount;
-                } elseif ($creditAmount > 0) {
-                    $soCreditUsage[$soId] = ($soCreditUsage[$soId] ?? 0) + $creditAmount;
+                if ($tableName === 'vendors' || $tableName === 'vendor') {
+                    $vendorRelated = $this->fetchAccountRelatedData($detail['acc_id'], $excludeJvId);
+                    $vendorSoIds = collect($vendorRelated['sales_orders'] ?? [])->pluck('id')->toArray();
+                    if (!in_array($soId, $vendorSoIds)) {
+                        return "Line " . ($index + 1) . ": Sales Order {$so->reference_no} does not belong to the selected vendor account.";
+                    }
+                } else {
+                    $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
+                    if (!$customer) {
+                        if ($account && $account->table_name === 'customers') {
+                            if ($account->model_id) $customer = \App\Models\Master\Customer::find($account->model_id);
+                            if (!$customer) $customer = \App\Models\Master\Customer::where('name', $account->name)->first();
+                        }
+                    }
+                    if (!$customer || $so->customer_id != $customer->id) {
+                        return "Line " . ($index + 1) . ": Sales Order {$so->reference_no} does not belong to the selected account.";
+                    }
+
+                    if ($debitAmount > 0) {
+                        $soDebitUsage[$soId] = ($soDebitUsage[$soId] ?? 0) + $debitAmount;
+                    } elseif ($creditAmount > 0) {
+                        $soCreditUsage[$soId] = ($soCreditUsage[$soId] ?? 0) + $creditAmount;
+                    }
                 }
             }
 
             $rawOrderId = $detail['order_id'] ?? null;
             if (!empty($rawOrderId)) {
-                if (in_array($rawOrderId, $seenOrderIds)) {
-                    return "Line " . ($index + 1) . ": The selected Order/GRN cannot be selected multiple times.";
+                $orderKey = ($detail['acc_id'] ?? '0') . '_' . $rawOrderId;
+                if (in_array($orderKey, $seenOrderIds)) {
+                    return "Line " . ($index + 1) . ": The selected Order/GRN cannot be selected multiple times for the same account.";
                 }
-                $seenOrderIds[] = $rawOrderId;
+                $seenOrderIds[] = $orderKey;
             }
         }
 
@@ -1529,19 +1815,34 @@ class JournalVoucherController extends Controller
             $orderId = $detail['order_id'] ?? $detail['voucher_id'] ?? $detail['voucher_no'] ?? null;
             $voucherType = strtolower(trim($detail['voucher_type'] ?? ''));
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+            $accId = $detail['acc_id'] ?? null;
+            $account = $accId ? Account::find($accId) : null;
+            $tableName = strtolower($account->table_name ?? '');
 
-            if ($voucherType === 'grn' && !empty($orderId)) {
+            $isGrn = ($voucherType === 'grn') || (in_array($tableName, ['suppliers', 'vendors', 'vendor']) && !empty($orderId));
+            if ($isGrn && !empty($orderId)) {
                 $grn = GrnNumber::where('id', $orderId)->orWhere('unique_no', $orderId)->first();
                 if (!$grn) {
                     return "Line " . ($index + 1) . ": GRN was not found.";
                 }
-                $grnTotalUsage[$grn->id] = ($grnTotalUsage[$grn->id] ?? 0) + $debitAmount;
+                $usageKey = $grn->id . '_' . ($accId ?: '0');
+                if (!isset($grnTotalUsage[$usageKey])) {
+                    $grnTotalUsage[$usageKey] = [
+                        'grn_id' => $grn->id,
+                        'acc_id' => $accId,
+                        'debit' => 0
+                    ];
+                }
+                $grnTotalUsage[$usageKey]['debit'] += $debitAmount;
             }
         }
 
-        foreach ($grnTotalUsage as $grnId => $totalEnteredDebit) {
+        foreach ($grnTotalUsage as $usage) {
+            $grnId = $usage['grn_id'];
+            $accId = $usage['acc_id'];
+            $totalEnteredDebit = $usage['debit'];
             if ($totalEnteredDebit > 0) {
-                $limitInfo = $this->getGrnAvailableLimit($grnId, $excludeJvId);
+                $limitInfo = $this->getGrnAvailableLimit($grnId, $excludeJvId, $accId);
                 if ($limitInfo['success']) {
                     $remaining = $limitInfo['available_amount'];
                     if (round($totalEnteredDebit, 2) > round($remaining + 0.01, 2)) {
@@ -1795,7 +2096,7 @@ class JournalVoucherController extends Controller
                                 $voucherType = 'sales_order';
                                 $salesOrderId = $salesOrderId ?: $so->id;
                             }
-                        } elseif ($tableName === 'suppliers') {
+                        } elseif ($tableName === 'suppliers' || $tableName === 'vendors' || $tableName === 'vendor') {
                             $grn = \App\Models\Master\GrnNumber::where('id', $orderId)
                                 ->orWhere('unique_no', $orderId)
                                 ->first();
@@ -1927,7 +2228,7 @@ class JournalVoucherController extends Controller
                         ]);
                     }
                 }
-            } elseif ($tableName === 'suppliers') {
+            } elseif ($tableName === 'suppliers' || $tableName === 'vendors' || $tableName === 'vendor') {
                 $rowOrders[$index] = collect($related['grns']);
                 $orderId = $detail->voucher_id;
                 if ($orderId && !$rowOrders[$index]->contains('id', $orderId)) {
@@ -1936,7 +2237,7 @@ class JournalVoucherController extends Controller
                         $currGrn = \App\Models\Master\GrnNumber::where('unique_no', $detail->voucher_no)->first();
                     }
                     if ($currGrn) {
-                        $limitInfo = $this->getGrnAvailableLimit($currGrn->id, $id);
+                        $limitInfo = $this->getGrnAvailableLimit($currGrn->id, $id, $detail->acc_id);
                         $remaining = $limitInfo['available_amount'] ?? 0;
                         $rowOrders[$index]->prepend([
                             'id' => $currGrn->id,
@@ -2300,7 +2601,7 @@ class JournalVoucherController extends Controller
                                 $voucherType = 'sales_order';
                                 $salesOrderId = $salesOrderId ?: $so->id;
                             }
-                        } elseif ($tableName === 'suppliers') {
+                        } elseif ($tableName === 'suppliers' || $tableName === 'vendors' || $tableName === 'vendor') {
                             $grn = \App\Models\Master\GrnNumber::where('id', $orderId)
                                 ->orWhere('unique_no', $orderId)
                                 ->first();

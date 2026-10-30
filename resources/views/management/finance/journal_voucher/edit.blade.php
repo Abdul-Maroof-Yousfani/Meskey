@@ -84,19 +84,163 @@
                                                 <label class="custom-control-label" for="receivingToggle">Receiving</label>
                                             </div>
                                         </div>
+                                        <style>
+                                            /* Fixed Table Layout & Container */
+                                            #journalEntriesTable {
+                                                table-layout: fixed !important;
+                                                width: 100% !important;
+                                                margin-bottom: 0;
+                                                border-collapse: collapse;
+                                            }
+
+                                            /* Fixed Min-Widths to avoid unreadable squishing on small screens */
+                                            #journalEntriesTable.receiving-active {
+                                                min-width: 1250px;
+                                            }
+                                            #journalEntriesTable:not(.receiving-active) {
+                                                min-width: 1050px;
+                                            }
+
+                                            /* Column Widths - Standard Mode (Receiving OFF: 6 columns) */
+                                            #journalEntriesTable:not(.receiving-active) th.col-account { width: 26% !important; }
+                                            #journalEntriesTable:not(.receiving-active) th.col-order { width: 22% !important; }
+                                            #journalEntriesTable:not(.receiving-active) th.col-description { width: 26% !important; }
+                                            #journalEntriesTable:not(.receiving-active) th.col-debit { width: 11% !important; }
+                                            #journalEntriesTable:not(.receiving-active) th.col-credit { width: 11% !important; }
+                                            #journalEntriesTable:not(.receiving-active) th.col-action { width: 4% !important; }
+
+                                            /* Column Widths - Receiving Mode (Receiving ON: 8 columns) */
+                                            #journalEntriesTable.receiving-active th.col-account { width: 21% !important; }
+                                            #journalEntriesTable.receiving-active th.col-adj-type { width: 12% !important; }
+                                            #journalEntriesTable.receiving-active th.col-ref-so { width: 18% !important; }
+                                            #journalEntriesTable.receiving-active th.col-do { width: 17% !important; }
+                                            #journalEntriesTable.receiving-active th.col-description { width: 15% !important; }
+                                            #journalEntriesTable.receiving-active th.col-debit { width: 8.5% !important; }
+                                            #journalEntriesTable.receiving-active th.col-credit { width: 8.5% !important; }
+                                            #journalEntriesTable.receiving-active th.col-action { width: 4% !important; }
+
+                                            /* Header styling */
+                                            #journalEntriesTable thead th {
+                                                font-weight: 600;
+                                                font-size: 11.5px;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.5px;
+                                                background-color: #f4f5fa;
+                                                color: #495057;
+                                                vertical-align: middle;
+                                                padding: 10px 8px;
+                                                white-space: nowrap;
+                                                overflow: hidden;
+                                                text-overflow: ellipsis;
+                                                border-bottom: 2px solid #dee2e6;
+                                            }
+
+                                            /* Body cell styling */
+                                            #journalEntriesTable tbody td {
+                                                vertical-align: middle !important;
+                                                padding: 6px 6px !important;
+                                                overflow: hidden;
+                                            }
+
+                                            /* Select2 full-width & text truncation inside fixed cells */
+                                            #journalEntriesTable .select2-container {
+                                                width: 100% !important;
+                                                max-width: 100% !important;
+                                            }
+
+                                            #journalEntriesTable .select2-container .select2-selection--single {
+                                                height: 38px !important;
+                                                border: 1px solid #d9d9d9;
+                                                border-radius: 4px;
+                                                display: flex !important;
+                                                align-items: center;
+                                            }
+
+                                            #journalEntriesTable .select2-container .select2-selection--single .select2-selection__rendered {
+                                                line-height: 36px !important;
+                                                padding-left: 8px !important;
+                                                padding-right: 22px !important;
+                                                text-overflow: ellipsis !important;
+                                                overflow: hidden !important;
+                                                white-space: nowrap !important;
+                                                display: block !important;
+                                                width: 100% !important;
+                                                color: #495057;
+                                                font-size: 13px;
+                                            }
+
+                                            #journalEntriesTable .select2-container .select2-selection--single .select2-selection__arrow {
+                                                height: 36px !important;
+                                                right: 4px !important;
+                                                top: 0 !important;
+                                            }
+
+                                            /* Inputs inside fixed cells */
+                                            #journalEntriesTable .form-control {
+                                                height: 38px !important;
+                                                font-size: 13px;
+                                                padding: 6px 8px;
+                                                border-radius: 4px;
+                                                width: 100% !important;
+                                                box-sizing: border-box;
+                                            }
+
+                                            #journalEntriesTable .debit-input,
+                                            #journalEntriesTable .credit-input {
+                                                text-align: right;
+                                                font-weight: 600;
+                                            }
+
+                                            #journalEntriesTable td:last-child {
+                                                text-align: center;
+                                            }
+
+                                            #journalEntriesTable .remove-row {
+                                                width: 32px;
+                                                height: 32px;
+                                                padding: 0;
+                                                display: inline-flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                            }
+
+                                            /* Summary / Footer styling */
+                                            #journalEntriesTable tfoot td {
+                                                padding: 8px 10px !important;
+                                                font-size: 13px;
+                                                vertical-align: middle;
+                                                background-color: #fafbfe;
+                                            }
+
+                                            #journalEntriesTable tfoot strong {
+                                                font-size: 13.5px;
+                                            }
+
+                                            #journalEntriesTable tfoot td.text-right {
+                                                text-align: right !important;
+                                            }
+
+                                            #journalEntriesTable tfoot #totalDebits,
+                                            #journalEntriesTable tfoot #totalCredits,
+                                            #journalEntriesTable tfoot #difference {
+                                                display: block;
+                                                text-align: right;
+                                                font-weight: 700;
+                                            }
+                                        </style>
                                         <div class="table-responsive">
-                                            <table class="table table-bordered" id="journalEntriesTable">
+                                            <table class="table table-bordered {{ $isReceiving ? 'receiving-active' : '' }}" id="journalEntriesTable">
                                                 <thead>
                                                     <tr>
-                                                        <th>Account</th>
-                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 170px;">Adjustment Type</th>
-                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 220px;">Reference / SO</th>
-                                                        <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 200px;">Delivery Order</th>
-                                                        <th class="order-col" style="{{ $isReceiving ? 'display: none;' : '' }}; width: 200px;">Orders</th>
-                                                        <th>Description</th>
-                                                        <th>Debit</th>
-                                                        <th>Credit</th>
-                                                        <th>Action</th>
+                                                        <th class="col-account">Account</th>
+                                                        <th class="receiving-col col-adj-type" style="{{ $isReceiving ? '' : 'display: none;' }};">Adjustment Type</th>
+                                                        <th class="receiving-col col-ref-so" style="{{ $isReceiving ? '' : 'display: none;' }};">Reference / SO</th>
+                                                        <th class="receiving-col col-do" style="{{ $isReceiving ? '' : 'display: none;' }};">Delivery Order</th>
+                                                        <th class="order-col col-order" style="{{ $isReceiving ? 'display: none;' : '' }};">Orders</th>
+                                                        <th class="col-description">Description</th>
+                                                        <th class="col-debit text-right">Debit</th>
+                                                        <th class="col-credit text-right">Credit</th>
+                                                        <th class="col-action text-center">Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="journalEntriesBody">
@@ -221,7 +365,7 @@
                                                                         $orderCount = isset($rowOrders[$index]) ? count($rowOrders[$index]) : 0;
                                                                         if ($tableName === 'customers') {
                                                                             $orderPlaceholder = $orderCount > 0 ? 'Select Sale Order' : 'No Sale Orders Available';
-                                                                        } elseif ($tableName === 'suppliers') {
+                                                                        } elseif ($tableName === 'suppliers' || $tableName === 'vendors' || $tableName === 'vendor') {
                                                                             $orderPlaceholder = $orderCount > 0 ? 'Select GRN' : 'No GRNs Available';
                                                                         } elseif (!empty($detail->acc_id)) {
                                                                             $orderPlaceholder = 'No Orders Available';
@@ -282,19 +426,19 @@
                                                 <tfoot>
                                                     <tr>
                                                         <td colspan="{{ $isReceiving ? 5 : 3 }}" class="text-right"><strong>Total Debits:</strong></td>
-                                                        <td><strong id="totalDebits">0.00</strong></td>
+                                                        <td class="text-right"><strong id="totalDebits">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
                                                         <td colspan="{{ $isReceiving ? 5 : 3 }}" class="text-right"><strong>Total Credits:</strong></td>
                                                         <td></td>
-                                                        <td><strong id="totalCredits">0.00</strong></td>
+                                                        <td class="text-right"><strong id="totalCredits">0.00</strong></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
                                                         <td colspan="{{ $isReceiving ? 5 : 3 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
-                                                        <td><strong id="difference">0.00</strong></td>
+                                                        <td class="text-right"><strong id="difference">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
@@ -420,12 +564,15 @@
                 });
             });
 
-            function toggleReceivingColumns() {
+            function toggleReceivingColumns(isUserAction = false) {
                 if ($('#receivingToggle').is(':checked')) {
+                    $('#journalEntriesTable').addClass('receiving-active');
                     $('.receiving-col').show();
                     $('.order-col').hide();
-                    $('.order-select').val('').trigger('change.select2');
-                    $('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                    if (isUserAction) {
+                        $('.order-select').val('').trigger('change.select2');
+                        $('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                    }
                     $('#journalEntriesTable tfoot tr td:first-child').attr('colspan', 5);
                     $('#addRow').closest('td').attr('colspan', 8);
                     $('.receiving-col .select2').each(function() {
@@ -435,12 +582,15 @@
                         $(this).select2({ width: '100%' });
                     });
                 } else {
+                    $('#journalEntriesTable').removeClass('receiving-active');
                     $('.receiving-col').hide();
                     $('.order-col').show();
-                    $('.adjustment-type-select').val('').trigger('change.select2');
-                    $('.ref-doc-select').empty().append(new Option('Select Type First', '')).prop('disabled', true).trigger('change.select2');
-                    $('.do-select').empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
-                    $('.receipt-voucher-id-input, .customer-advance-id-input, .sales-order-id-input, .delivery-order-id-input, .reference-jv-id-input, .reference-jv-detail-id-input').val('');
+                    if (isUserAction) {
+                        $('.adjustment-type-select').val('').trigger('change.select2');
+                        $('.ref-doc-select').empty().append(new Option('Select Type First', '')).prop('disabled', true).trigger('change.select2');
+                        $('.do-select').empty().append(new Option('N/A', '')).prop('disabled', true).trigger('change.select2');
+                        $('.receipt-voucher-id-input, .customer-advance-id-input, .sales-order-id-input, .delivery-order-id-input, .reference-jv-id-input, .reference-jv-detail-id-input').val('');
+                    }
                     $('#journalEntriesTable tfoot tr td:first-child').attr('colspan', 3);
                     $('#addRow').closest('td').attr('colspan', 6);
                     $('.order-col .select2').each(function() {
@@ -453,7 +603,7 @@
             }
 
             $('#receivingToggle').change(function () {
-                toggleReceivingColumns();
+                toggleReceivingColumns(true);
             });
 
             function showWarningPopup(title, text) {
@@ -581,7 +731,7 @@
                                 const orders = res.sales_orders || [];
                                 const orderPlaceholder = orders.length > 0 ? 'Select Sale Order' : 'No Sale Orders Available';
                                 updateSelect2Dropdown($orderSelect, orders, orderPlaceholder, null);
-                            } else if (tableName === 'suppliers') {
+                            } else if (tableName === 'suppliers' || tableName === 'vendors' || tableName === 'vendor') {
                                 const grns = res.grns || [];
                                 const grnPlaceholder = grns.length > 0 ? 'Select GRN' : 'No GRNs Available';
                                 updateSelect2Dropdown($orderSelect, grns, grnPlaceholder, null);
@@ -592,6 +742,7 @@
 
                         // If adjustment type is already selected, populate reference dropdown
                         populateRefDocDropdown($row);
+                        syncAllDropdownDisabledStates();
                     },
                     error: function () {
                         if ($orderSelect.length) {
@@ -633,7 +784,8 @@
                         }
                     } else {
                         const orderVal = $(this).find('.order-select').val();
-                        if (orderVal) selectedOrders[orderVal] = lineNo;
+                        const accId = $(this).find('.account-select').val();
+                        if (orderVal && accId) selectedOrders[accId + '_' + orderVal] = lineNo;
                     }
                 });
 
@@ -709,10 +861,11 @@
                         }
                     } else {
                         const $orderSelect = $row.find('.order-select');
+                        const thisAccId = $row.find('.account-select').val();
                         $orderSelect.find('option').each(function() {
                             const optVal = $(this).val();
                             if (!optVal) return;
-                            const pickedIn = selectedOrders[optVal];
+                            const pickedIn = thisAccId ? selectedOrders[thisAccId + '_' + optVal] : null;
                             const baseText = $(this).text().replace(/\s*\[Already Selected in Line \d+\]/, '');
                             if (pickedIn && pickedIn !== thisLineNo) {
                                 $(this).prop('disabled', true).text(baseText + ' [Already Selected in Line ' + pickedIn + ']');
@@ -842,6 +995,9 @@
             $(document).on('change', '.account-select', function () {
                 const $row = $(this).closest('tr');
                 const accId = $(this).val();
+                $row.find('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                $row.find('.debit-input').removeAttr('max');
+                calculateTotals();
                 loadAccountData($row, accId);
             });
 
@@ -1077,11 +1233,13 @@
                 const val = $(this).val();
 
                 if (val) {
-                    // Check duplicate order selection across other rows
+                    // Check duplicate order selection across other rows for the same account
                     let duplicateRowIndex = null;
+                    const thisAccId = $row.find('.account-select').val();
                     $('#journalEntriesBody tr').not($row).each(function () {
+                        const otherAccId = $(this).find('.account-select').val();
                         const otherOrderId = $(this).find('.order-select').val();
-                        if (otherOrderId && String(otherOrderId) === String(val)) {
+                        if (thisAccId && otherAccId && String(thisAccId) === String(otherAccId) && otherOrderId && String(otherOrderId) === String(val)) {
                             duplicateRowIndex = $(this).index() + 1;
                             return false;
                         }
@@ -1097,7 +1255,7 @@
 
                         showWarningPopup(
                             'Order Already Selected',
-                            `Order/GRN (${orderNo}) is already selected in Line ${duplicateRowIndex}. You cannot select the same Order/GRN multiple times.`
+                            `Order/GRN (${orderNo}) is already selected in Line ${duplicateRowIndex} for this account. You cannot select the same Order/GRN multiple times for the same account.`
                         );
                         return;
                     }
@@ -1117,7 +1275,8 @@
                                 _token: '{{ csrf_token() }}',
                                 grn_id: val,
                                 jv_id: currentJvId,
-                                debit_amount: currentDebit
+                                debit_amount: currentDebit,
+                                acc_id: $row.find('.account-select').val()
                             },
                             success: function (res) {
                                 if (res.success) {
@@ -1428,11 +1587,13 @@
                         }
                     } else {
                         if (orderVal) {
-                            if (seenOrders[orderVal]) {
-                                duplicateError = `Order/GRN is selected in multiple lines (Line ${seenOrders[orderVal]} and Line ${lineNo}). Each Order/GRN can only be selected once.`;
+                            const accId = $(this).find('.account-select').val();
+                            const orderKey = (accId ? accId : '0') + '_' + orderVal;
+                            if (seenOrders[orderKey]) {
+                                duplicateError = `Order/GRN is selected in multiple lines for the same account (Line ${seenOrders[orderKey]} and Line ${lineNo}). Each Order/GRN can only be selected once per account.`;
                                 return false;
                             }
-                            seenOrders[orderVal] = lineNo;
+                            seenOrders[orderKey] = lineNo;
                         }
                     }
                 });
