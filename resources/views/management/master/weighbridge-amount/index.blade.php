@@ -26,6 +26,25 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
+                                                <label for="filter_location" class="form-label">Location</label>
+                                                <select class="form-control select2" name="company_location_id"
+                                                    id="filter_location">
+                                                    <option value="">All Locations</option>
+                                                    @foreach ($CompanyLocations as $location)
+                                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="filter_truck_type" class="form-label">Truck Type</label>
+                                                <select class="form-control select2" name="truck_type_id" id="filter_truck_type">
+                                                    <option value="">All Truck Types</option>
+                                                    @foreach ($TruckTypes as $truckType)
+                                                        <option value="{{ $truckType->id }}">{{ $truckType->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -66,6 +85,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
+            $('#filter_location, #filter_truck_type').select2();
             filterationCommon(`{{ route('get.weighbridge-amount') }}`)
         });
     </script>

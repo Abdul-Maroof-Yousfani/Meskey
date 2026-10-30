@@ -53,5 +53,22 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        var usedTruckTypes = @json($UsedTruckTypes);
+        var $truckType = $('#truck_type_id');
+        var $allTruckOptions = $truckType.find('option').clone();
+
+        function filterTruckTypes() {
+            var used = (usedTruckTypes[$('#company_location_id').val()] || []).map(String);
+            var selected = $truckType.val();
+
+            $truckType.empty().append($allTruckOptions.clone().filter(function() {
+                return !this.value || used.indexOf(this.value) === -1;
+            }));
+            $truckType.val(used.indexOf(selected) === -1 ? selected : '').trigger('change');
+        }
+
+        $('#company_location_id').on('change', filterTruckTypes);
+        filterTruckTypes();
     });
 </script>

@@ -8,6 +8,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\ArrivalTruckType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class WeighbridgeAmountController extends Controller
 {
@@ -23,7 +24,12 @@ class WeighbridgeAmountController extends Controller
      */
     public function index()
     {
-        return view('management.master.weighbridge-amount.index');
+        $data = [
+            'CompanyLocations' => CompanyLocation::where('status', 'active')->get(),
+            'TruckTypes' => ArrivalTruckType::where('status', 'active')->get()
+        ];
+
+        return view('management.master.weighbridge-amount.index', $data);
     }
 
     /**
@@ -33,6 +39,12 @@ class WeighbridgeAmountController extends Controller
     {
       
         $WeighbridgeAmounts = WeighbridgeAmount::with(['companyLocation', 'truckType'])
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->where('company_location_id', $request->company_location_id);
+            })
+            ->when($request->filled('truck_type_id'), function ($q) use ($request) {
+                return $q->where('truck_type_id', $request->truck_type_id);
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -57,7 +69,8 @@ class WeighbridgeAmountController extends Controller
         
         $data = [
             'CompanyLocations' => CompanyLocation::where('status', 'active')->get(),
-            'TruckTypes' => ArrivalTruckType::where('status', 'active')->get()
+            'TruckTypes' => ArrivalTruckType::where('status', 'active')->get(),
+            'UsedTruckTypes' => $this->getUsedTruckTypesByLocation()
         ];
 
         return view('management.master.weighbridge-amount.create', $data);
@@ -70,9 +83,15 @@ class WeighbridgeAmountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'company_location_id' => 'required|exists:company_locations,id',
-            'truck_type_id' => 'required|exists:arrival_truck_types,id',
+            'truck_type_id' => [
+                'required',
+                'exists:arrival_truck_types,id',
+                Rule::unique('weighbridge_amounts')->where('company_location_id', $request->company_location_id)
+            ],
             'weighbridge_amount' => 'required|numeric|min:0',
             'description' => 'nullable|string|max:1000'
+        ], [
+            'truck_type_id.unique' => 'Weighbridge amount for this truck type already exists on the selected location.'
         ]);
 
         if ($validator->fails()) {
@@ -95,6 +114,7 @@ class WeighbridgeAmountController extends Controller
         $data['WeighbridgeAmount'] = WeighbridgeAmount::findOrFail($id);
         $data['CompanyLocations'] = CompanyLocation::where('status', 'active')->get();
         $data['TruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
+        $data['UsedTruckTypes'] = $this->getUsedTruckTypesByLocation($id);
 
         return view('management.master.weighbridge-amount.edit', $data);
     }
@@ -106,9 +126,15 @@ class WeighbridgeAmountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'company_location_id' => 'required|exists:company_locations,id',
-            'truck_type_id' => 'required|exists:arrival_truck_types,id',
+            'truck_type_id' => [
+                'required',
+                'exists:arrival_truck_types,id',
+                Rule::unique('weighbridge_amounts')->where('company_location_id', $request->company_location_id)->ignore($id)
+            ],
             'weighbridge_amount' => 'required|numeric|min:0',
             'description' => 'nullable|string|max:1000'
+        ], [
+            'truck_type_id.unique' => 'Weighbridge amount for this truck type already exists on the selected location.'
         ]);
 
         if ($validator->fails()) {
@@ -130,5 +156,16 @@ class WeighbridgeAmountController extends Controller
         $weighbridgeAmount = WeighbridgeAmount::findOrFail($id);
         $weighbridgeAmount->delete();
         return response()->json(['success' => 'Weighbridge Amount deleted successfully.'], 200);
+    }
+
+    /**
+     * Truck type ids already assigned per location, optionally excluding a record.
+     */
+    private function getUsedTruckTypesByLocation($exceptId = null)
+    {
+        return WeighbridgeAmount::when($exceptId, fn($q) => $q->where('id', '!=', $exceptId))
+            ->get(['company_location_id', 'truck_type_id'])
+            ->groupBy('company_location_id')
+            ->map(fn($rows) => $rows->pluck('truck_type_id')->unique()->values());
     }
 }
