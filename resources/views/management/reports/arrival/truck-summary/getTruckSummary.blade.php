@@ -1,65 +1,108 @@
-<x-sticky-table :items="$data" :leftSticky="1" :rightSticky="0" :emptyMessage="'No records found'" :pagination="false">
+<style>
+    /* Commodity Total Row */
+    .sticky-table tbody tr.commodity-total-row td {
+        background-color: #f8f9fa !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid #dee2e6 !important;
+    }
+    .sticky-table tbody tr.commodity-total-row:hover td {
+        background-color: #edf2f7 !important;
+    }
+
+    /* Grand Total Row at bottom */
+    .sticky-table tbody tr.grand-total-row td {
+        background-color: #cbd5e1 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        border-top: 3px solid #64748b !important;
+    }
+    .sticky-table tbody tr.grand-total-row:hover td {
+        background-color: #94a3b8 !important;
+    }
+
+    /* Row-wise Hover Effect */
+    .sticky-table tbody tr td {
+        transition: background-color 0.15s ease-in-out;
+    }
+    .sticky-table tbody tr.data-row:hover td:not([rowspan]) {
+        background-color: #f1f5f9 !important;
+    }
+
+    /* Keep multi-row spanning cells white */
+    .sticky-table tbody td[rowspan] {
+        background-color: #ffffff !important;
+        vertical-align: middle !important;
+    }
+    .sticky-table tbody td[rowspan]:hover {
+        background-color: #f8fafc !important;
+    }
+</style>
+
+<x-sticky-table :items="collect($reportRows ?? $data)" :leftSticky="3" :rightSticky="0" :emptyMessage="'No records found'" :pagination="false">
     @slot('head')
-        <th>Date</th>
-        <th>Commodity</th>
-        <th>Truck Arrived</th>
-        <th>Total Unloaded</th>
-        <th>Full Approved</th>
-        <th>Half Rejected</th>
-        <th>Full rejected</th>
-        <th>In Process</th>
+        <th class="text-left" style="min-width: 140px;">Date</th>
+        <th class="text-left" style="min-width: 180px;">Commodity</th>
+        <th class="text-left" style="min-width: 140px;">Purchaser</th>
+        <th class="text-right" style="min-width: 120px;">Truck Arrived</th>
+        <th class="text-right" style="min-width: 120px;">Total Unloaded</th>
+        <th class="text-right" style="min-width: 120px;">Full Approved</th>
+        <th class="text-right" style="min-width: 120px;">Half Rejected</th>
+        <th class="text-right" style="min-width: 120px;">Full rejected</th>
+        <th class="text-right" style="min-width: 120px;">In Process</th>
     @endslot
 
     @slot('body')
         @php
-            $sumTruckArrived = 0;
-            $sumTotalUnloaded = 0;
-            $sumFully_approved = 0;
-            $sumHalfRejected = 0;
-            $sumFullRejected = 0;
-            $sumInProcess = 0;
+            $rows = $reportRows ?? $data;
         @endphp
-
-        @foreach ($data as $row)
+        @foreach ($rows as $index => $row)
             @php
-                $truckArrived = (int) ($row->truck_arrived ?? 0);
-                $totalUnloaded = (int) ($row->total_unloaded ?? 0);
-                $fully_approved = (int) ($row->fully_approved ?? 0);
-                $halfRejected = (int) ($row->half_rejected ?? 0);
-                $fullRejected = (int) ($row->full_rejected ?? 0);
-                $inProcess = (int) ($row->in_process ?? 0);
-
-                $sumTruckArrived += $truckArrived;
-                $sumTotalUnloaded += $totalUnloaded;
-                $sumHalfRejected += $halfRejected;
-                $sumFullRejected += $fullRejected;
-                $sumInProcess += $inProcess;
-                $sumFully_approved += $fully_approved;
-
-                $displayDate = $row->summary_date ?? 'N/A';
+                $isTotal = $row['is_total'] ?? false;
             @endphp
-            <tr>
-                <td class="font-weight-bold">{{ $displayDate }}</td>
-                <td class="font-weight-bold text-dark">{{ $row->commodity_name ?? 'N/A' }}</td>
-                <td class="font-weight-bold">{{ number_format($truckArrived) }}</td>
-                <td>{{ number_format($totalUnloaded) }}</td>
-                <td>{{ number_format($fully_approved) }}</td>
-                <td>{{ number_format($halfRejected) }}</td>
-                <td>{{ number_format($fullRejected) }}</td>
-                <td>{{ number_format($inProcess) }}</td>
-            </tr>
+            @if ($isTotal)
+                <tr class="commodity-total-row font-weight-bold">
+                    <td class="text-left font-weight-bold text-dark">
+                        {{ $row['purchaser_name'] }}
+                    </td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['truck_arrived']) }}</td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['total_unloaded']) }}</td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['fully_approved']) }}</td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['half_rejected']) }}</td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['full_rejected']) }}</td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['in_process']) }}</td>
+                </tr>
+            @else
+                <tr class="data-row">
+                    @if (isset($commodityRowspans[$index]))
+                        <td rowspan="{{ $commodityRowspans[$index] }}" class="font-weight-bold text-left">
+                            {{ $row['summary_date'] }}
+                        </td>
+                        <td rowspan="{{ $commodityRowspans[$index] }}" class="font-weight-bold text-left text-dark">
+                            {{ $row['commodity_name'] }}
+                        </td>
+                    @endif
+                    <td class="text-left text-dark">
+                        {{ $row['purchaser_name'] }}
+                    </td>
+                    <td class="text-right font-weight-bold">{{ number_format($row['truck_arrived']) }}</td>
+                    <td class="text-right">{{ number_format($row['total_unloaded']) }}</td>
+                    <td class="text-right">{{ number_format($row['fully_approved']) }}</td>
+                    <td class="text-right">{{ number_format($row['half_rejected']) }}</td>
+                    <td class="text-right">{{ number_format($row['full_rejected']) }}</td>
+                    <td class="text-right">{{ number_format($row['in_process']) }}</td>
+                </tr>
+            @endif
         @endforeach
 
-        @if (count($data) > 0)
-            <tr class="font-weight-bold bg-light">
-                <td><strong>Total</strong></td>
-                <td></td>
-                <td><strong>{{ number_format($sumTruckArrived) }}</strong></td>
-                <td><strong>{{ number_format($sumTotalUnloaded) }}</strong></td>
-                <td><strong>{{ number_format($sumFully_approved) }}</strong></td>
-                <td><strong>{{ number_format($sumHalfRejected) }}</strong></td>
-                <td><strong>{{ number_format($sumFullRejected) }}</strong></td>
-                <td><strong>{{ number_format($sumInProcess) }}</strong></td>
+        @if (count($rows) > 0)
+            <tr class="grand-total-row font-weight-bold">
+                <td colspan="3" class="text-left font-weight-bold text-dark">Grand Total</td>
+                <td class="text-right font-weight-bold">{{ number_format($grandTotals['truck_arrived'] ?? 0) }}</td>
+                <td class="text-right font-weight-bold">{{ number_format($grandTotals['total_unloaded'] ?? 0) }}</td>
+                <td class="text-right font-weight-bold">{{ number_format($grandTotals['fully_approved'] ?? 0) }}</td>
+                <td class="text-right font-weight-bold">{{ number_format($grandTotals['half_rejected'] ?? 0) }}</td>
+                <td class="text-right font-weight-bold">{{ number_format($grandTotals['full_rejected'] ?? 0) }}</td>
+                <td class="text-right font-weight-bold">{{ number_format($grandTotals['in_process'] ?? 0) }}</td>
             </tr>
         @endif
     @endslot

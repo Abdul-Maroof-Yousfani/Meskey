@@ -106,8 +106,10 @@ class TruckSummaryReportController extends Controller
         }
 
         $data = ArrivalTicket::leftJoin('products', DB::raw('COALESCE(arrival_tickets.qc_product, arrival_tickets.product_id)'), '=', 'products.id')
+            ->leftJoin('users as purchasers', 'arrival_tickets.decision_id', '=', 'purchasers.id')
             ->select(
                 DB::raw('COALESCE(products.name, "Unknown Commodity") as commodity_name'),
+                DB::raw('COALESCE(purchasers.name, "N/A") as purchaser_name'),
                 DB::raw('COUNT(arrival_tickets.id) as truck_arrived'),
                 DB::raw("COUNT(CASE WHEN arrival_tickets.arrival_slip_status = 'generated' AND arrival_tickets.document_approval_status = 'fully_approved' THEN 1 END) as fully_approved"),
                 DB::raw("COUNT(CASE WHEN arrival_tickets.arrival_slip_status = 'generated' THEN 1 END) as total_unloaded"),
@@ -148,14 +150,99 @@ class TruckSummaryReportController extends Controller
             ->when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
             })
-            ->groupBy(DB::raw('COALESCE(products.name, "Unknown Commodity")'))
+            ->groupBy(
+                DB::raw('COALESCE(products.name, "Unknown Commodity")'),
+                DB::raw('COALESCE(purchasers.name, "N/A")')
+            )
             ->orderByDesc(DB::raw('COUNT(arrival_tickets.id)'))
             ->get();
 
-        foreach ($data as $row) {
-            $row->summary_date = $dateLabel;
+        $grouped = $data->groupBy('commodity_name');
+
+        $sortedCommodityNames = $grouped->keys()->all();
+        usort($sortedCommodityNames, function ($a, $b) use ($grouped) {
+            $sumA = $grouped[$a]->sum('truck_arrived');
+            $sumB = $grouped[$b]->sum('truck_arrived');
+            return $sumB <=> $sumA;
+        });
+
+        $reportRows = [];
+        $commodityRowspans = [];
+
+        $grandTotals = [
+            'truck_arrived' => 0,
+            'total_unloaded' => 0,
+            'fully_approved' => 0,
+            'half_rejected' => 0,
+            'full_rejected' => 0,
+            'in_process' => 0,
+        ];
+
+        foreach ($sortedCommodityNames as $commodityName) {
+            $purchaserRows = $grouped[$commodityName];
+            $startIndex = count($reportRows);
+
+            $commTotals = [
+                'truck_arrived' => 0,
+                'total_unloaded' => 0,
+                'fully_approved' => 0,
+                'half_rejected' => 0,
+                'full_rejected' => 0,
+                'in_process' => 0,
+            ];
+
+            foreach ($purchaserRows as $row) {
+                $tArrived = (int) $row->truck_arrived;
+                $tUnloaded = (int) $row->total_unloaded;
+                $fApproved = (int) $row->fully_approved;
+                $hRejected = (int) $row->half_rejected;
+                $fRejected = (int) $row->full_rejected;
+                $inProc = (int) $row->in_process;
+
+                $commTotals['truck_arrived'] += $tArrived;
+                $commTotals['total_unloaded'] += $tUnloaded;
+                $commTotals['fully_approved'] += $fApproved;
+                $commTotals['half_rejected'] += $hRejected;
+                $commTotals['full_rejected'] += $fRejected;
+                $commTotals['in_process'] += $inProc;
+
+                $reportRows[] = [
+                    'summary_date' => $dateLabel,
+                    'commodity_name' => $commodityName,
+                    'purchaser_name' => $row->purchaser_name,
+                    'truck_arrived' => $tArrived,
+                    'total_unloaded' => $tUnloaded,
+                    'fully_approved' => $fApproved,
+                    'half_rejected' => $hRejected,
+                    'full_rejected' => $fRejected,
+                    'in_process' => $inProc,
+                    'is_total' => false,
+                ];
+            }
+
+            // Commodity Total Row
+            $reportRows[] = [
+                'summary_date' => $dateLabel,
+                'commodity_name' => $commodityName,
+                'purchaser_name' => 'Total',
+                'truck_arrived' => $commTotals['truck_arrived'],
+                'total_unloaded' => $commTotals['total_unloaded'],
+                'fully_approved' => $commTotals['fully_approved'],
+                'half_rejected' => $commTotals['half_rejected'],
+                'full_rejected' => $commTotals['full_rejected'],
+                'in_process' => $commTotals['in_process'],
+                'is_total' => true,
+            ];
+
+            $commodityRowspans[$startIndex] = count($purchaserRows) + 1;
+
+            foreach ($grandTotals as $k => $v) {
+                $grandTotals[$k] += $commTotals[$k];
+            }
         }
 
-        return view('management.reports.arrival.truck-summary.getTruckSummary', compact('data', 'dateLabel'));
+        $data = collect($reportRows);
+
+        return view('management.reports.arrival.truck-summary.getTruckSummary', compact('reportRows', 'commodityRowspans', 'grandTotals', 'data', 'dateLabel'));
     }
 }

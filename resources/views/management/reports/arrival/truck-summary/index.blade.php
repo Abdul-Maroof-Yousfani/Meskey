@@ -163,6 +163,7 @@
                                         <tr>
                                             <th>Date</th>
                                             <th>Commodity</th>
+                                            <th>Purchaser</th>
                                             <th>Truck Arrived</th>
                                             <th>Total Unloaded</th>
                                             <th>Full Approved</th>
