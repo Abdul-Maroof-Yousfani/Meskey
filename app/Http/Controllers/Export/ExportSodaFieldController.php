@@ -108,6 +108,9 @@ class ExportSodaFieldController extends Controller
             $exportSodaField = ExportSodaField::create(array_merge($data, [
                 'created_by' => auth()->user()->id,
                 'company_id' => $company_id,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
+                'status' => 'pending',
             ]));
 
             if ($request->has('packing_items')) {
@@ -189,6 +192,18 @@ class ExportSodaFieldController extends Controller
                 ], 404);
             }
 
+            if (
+                $exportSodaField->am_approval_status === "approved" ||
+                $exportSodaField->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Export Sauda has been approved/rejected and cannot be updated.',
+                ], 400);
+            }
+
             $data = $request->only([
                 'buyer_id',
                 'product_id',
@@ -204,6 +219,11 @@ class ExportSodaFieldController extends Controller
 
             $data['shipment_date_from'] = $request->shipment_date_from ?: null;
             $data['shipment_date_to'] = $request->shipment_date_to ?: null;
+
+            if ($exportSodaField->am_approval_status === 'reverted') {
+                $data['am_approval_status'] = 'pending';
+            }
+            $data['am_change_made'] = 1;
 
             $exportSodaField->update($data);
 
@@ -243,6 +263,18 @@ class ExportSodaFieldController extends Controller
                 return response()->json([
                     'success' => 'Record already deleted or not found.',
                 ], 404);
+            }
+
+            if (
+                $exportSodaField->am_approval_status === "approved" ||
+                $exportSodaField->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Export Sauda has been approved/rejected and cannot be deleted.',
+                ], 400);
             }
 
             $exportSodaField->delete();

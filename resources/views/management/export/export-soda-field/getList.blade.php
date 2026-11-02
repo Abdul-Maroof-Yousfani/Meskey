@@ -40,40 +40,50 @@
                         {{ number_format($exportSoda->packingItems->sum('metric_tons'), 3) }} MT
                     </td>
                     <td>
-                        @if($exportSoda->status == 'approved')
-                            <span class="badge badge-success">Approved</span>
-                        @else
-                            <span class="badge badge-danger">Rejected</span>
-                        @endif
+                        @php
+                            $rawStatus = strtolower($exportSoda->am_approval_status ?? $exportSoda->status ?? 'pending');
+                            $stage = method_exists($exportSoda, 'getCurrentPendingStage') ? $exportSoda->getCurrentPendingStage() : null;
+                            if ($rawStatus === 'approved') {
+                                $displayStatus = 'Approved';
+                                $badge = 'badge-success';
+                            } elseif ($rawStatus === 'rejected') {
+                                $displayStatus = 'Rejected';
+                                $badge = 'badge-danger';
+                            } elseif ($rawStatus === 'reverted') {
+                                $displayStatus = 'Reverted';
+                                $badge = 'badge-info';
+                            } elseif ($stage && $stage > 1) {
+                                $displayStatus = 'Pending Stage ' . $stage;
+                                $badge = 'badge-warning';
+                            } elseif (str_starts_with($rawStatus, 'pending stage')) {
+                                $displayStatus = ucwords($rawStatus);
+                                $badge = 'badge-warning';
+                            } else {
+                                $displayStatus = 'Pending';
+                                $badge = 'badge-warning';
+                            }
+                        @endphp
+                        <span class="badge {{ $badge }}">
+                            {{ $displayStatus }}
+                        </span>
                     </td>
                     <td>
                         <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('export-soda-field.show', $exportSoda->id) }}','Show Export Sauda',false,'90%')">
+                            onclick="openModal(this,'{{ route('export-soda-field.show', $exportSoda->id) }}','Show Export Sauda',false,'90%')" title="Show">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                        <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('export-soda-field.edit', $exportSoda->id) }}','Edit Export Sauda',false,'90%')">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
 
-                        @if(auth()->user()->id == $exportSoda->created_by)
-                            @if($exportSoda->status == 'approved')
-                                <a onclick="updateSaudaStatus('{{ route('export-soda-field.update-status', $exportSoda->id) }}', 'rejected')"
-                                    class="danger p-1 text-center position-relative" title="Reject">
-                                    <i class="ft-slash font-medium-3"></i>
-                                </a>
-                            @else
-                                <a onclick="updateSaudaStatus('{{ route('export-soda-field.update-status', $exportSoda->id) }}', 'approved')"
-                                    class="success p-1 text-center position-relative" title="Revert to Approved">
-                                    <i class="ft-rotate-ccw font-medium-3"></i>
-                                </a>
-                            @endif
+                        @if(in_array(strtolower($exportSoda->am_approval_status ?? 'pending'), ['pending', 'reverted']) || str_starts_with(strtolower($exportSoda->am_approval_status ?? ''), 'pending'))
+                            <a class="info p-1 text-center position-relative"
+                                onclick="openModal(this,'{{ route('export-soda-field.edit', $exportSoda->id) }}','Edit Export Sauda',false,'90%')" title="Edit">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
+
+                            <a onclick="deletemodal('{{ route('export-soda-field.destroy', $exportSoda->id) }}','{{ route('get.export-soda-field') }}')"
+                                class="danger p-1 text-center mr-2 position-relative" title="Delete">
+                                <i class="ft-x font-medium-3"></i>
+                            </a>
                         @endif
-
-                        <a onclick="deletemodal('{{ route('export-soda-field.destroy', $exportSoda->id) }}','{{ route('get.export-soda-field') }}')"
-                            class="danger p-1 text-center mr-2 position-relative">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
                     </td>
                 </tr>
             @endforeach

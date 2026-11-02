@@ -143,6 +143,10 @@ class ApprovalModuleController extends Controller
                 'label' => 'Quotation'
             ],
             [
+                'value' => 'App\Models\Export\ExportSodaField',
+                'label' => 'Export Sauda'
+            ],
+            [
                 'value' => 'App\Models\ReceiptVoucher',
                 'label' => 'Receipt Voucher'
             ],

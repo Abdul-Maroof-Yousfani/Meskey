@@ -89,7 +89,7 @@ class ExportOrderController extends Controller
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
         $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
-        $documentLists = \App\Models\Export\DocumentList::where('status', 1)->get();
+        $documentLists = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])->with('port')->get();
 
         return view('management.export.export-order.create', compact(
             'products',
@@ -127,7 +127,15 @@ class ExportOrderController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items']);
+            $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items', 'attachment']);
+
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = 'uploads/export-orders';
+                $file->move(public_path($path), $filename);
+                $exportOrderData['attachment'] = $path . '/' . $filename;
+            }
 
             // Re-generate voucher_no to ensure uniqueness and prevent race conditions
             $exportOrderData['voucher_no'] = generateUniversalUniqueNo('export_orders', [
@@ -296,7 +304,7 @@ class ExportOrderController extends Controller
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
         $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
-        $documentLists = \App\Models\Export\DocumentList::where('status', 1)->get();
+        $documentLists = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])->with('port')->get();
 
         return view('management.export.export-order.show', compact(
             'exportOrder',
@@ -360,7 +368,7 @@ class ExportOrderController extends Controller
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
         $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
-        $documentLists = \App\Models\Export\DocumentList::where('status', 1)->get();
+        $documentLists = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])->with('port')->get();
 
         return view('management.export.export-order.edit', compact(
             'exportOrder',
@@ -421,11 +429,29 @@ class ExportOrderController extends Controller
                 DB::rollBack();
 
                 return response()->json([
-                    'success' => 'Export Order has been approved/rejected and cannot be updated.',
+                    'success' => 'Export Order has been approved/rejected and cannot be updated.', // update_export_order_marker
                 ], 400);
             }
 
-            $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items']);
+            $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items', 'attachment']);
+
+            if ($request->hasFile('attachment')) {
+                // Delete old file if exists
+                if ($exportOrder->attachment) {
+                    $oldPath = public_path($exportOrder->attachment);
+                    if (file_exists($oldPath)) {
+                        @unlink($oldPath);
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($exportOrder->attachment)) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($exportOrder->attachment);
+                    }
+                }
+
+                $file = $request->file('attachment');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = 'uploads/export-orders';
+                $file->move(public_path($path), $filename);
+                $exportOrderData['attachment'] = $path . '/' . $filename;
+            }
 
             // Parse bank_id (e.g., owner_1, company_2)
             if ($request->bank_id) {
@@ -830,6 +856,33 @@ class ExportOrderController extends Controller
     {
         $customer = Customer::with(['consignees'])->findOrFail($customerId);
         return response()->json($customer->consignees);
+    }
+
+    public function getDocumentsByCountry(Request $request, $countryId = null)
+    {
+        $countryId = $countryId ?: $request->get('country_id');
+
+        if (!$countryId) {
+            return response()->json([
+                'success' => true,
+                'documents' => [],
+            ]);
+        }
+
+        $documents = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])
+            ->whereHas('port', function ($query) use ($countryId) {
+                $query->where('country_id', $countryId);
+            })
+            ->orderBy('is_required', 'desc')
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name', 'is_required', 'port_id'])
+            ->unique('name')
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'documents' => $documents,
+        ]);
     }
 
     private function numberToWords($number, $appendCurrency = true)

@@ -401,6 +401,14 @@ trait HasApproval
 
         if ($this->getApprovalStatus() === 'approved') {
             $this->onApprovalComplete();
+        } else {
+            if ($module && $module->requires_sequential_approval) {
+                $nextStage = $this->getCurrentPendingStage();
+                if ($nextStage && $nextStage > 1 && !empty($module->approval_column)) {
+                    $this->update([$module->approval_column => "pending stage {$nextStage}"]);
+                    $this->setAttribute($module->approval_column, "pending stage {$nextStage}");
+                }
+            }
         }
 
         return true;
@@ -589,20 +597,23 @@ trait HasApproval
      */
     public function getCurrentPendingStage(): ?int
     {
-        $status = strtolower($this->am_approval_status ?? '');
-        if (in_array($status, ['approved', 'rejected', 'reverted'])) {
-            return null;
-        }
-
         $module = $this->getApprovalModule();
         if (!$module) {
             return null;
         }
 
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        $status = strtolower($this->$statusCol ?? '');
+        if (in_array($status, ['approved', 'rejected', 'reverted'])) {
+            return null;
+        }
+
         $currentCycle = $this->getCurrentApprovalCycle();
-        $rows = $this->relationLoaded('approvalRows')
-            ? $this->approvalRows->where('module_id', $module->id)->where('approval_cycle', $currentCycle)->sortBy('id')->values()
-            : $this->approvalRows()->where('module_id', $module->id)->where('approval_cycle', $currentCycle)->orderBy('id')->get();
+        $rows = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->orderBy('id')
+            ->get();
 
         if ($rows->isEmpty()) {
             return null;

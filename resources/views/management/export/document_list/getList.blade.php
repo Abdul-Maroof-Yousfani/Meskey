@@ -5,6 +5,7 @@
             <th class="col-sm-3">Name</th>
             {{-- <th class="col-sm-3">Feature</th> --}}
             <th class="col-sm-1">Required</th>
+            <th class="col-sm-1">Port</th>
             <th class="col-sm-2">Status</th>
             <th class="col-sm-2">Action</th>
         </tr>
@@ -26,14 +27,17 @@
                         </label>
                     </td>
                     <td>
+                        {{ $document->port ? ($document->port->name . ($document->port->country ? ', ' . $document->port->country->name : '')) : '-' }}
+                    </td>
+                    <td>
                         <label class="badge bg-light-{{ $document->status == 'inactive' ? 'primary' : 'danger' }}">
                             {{ $document->status }}
                         </label>
                     </td>
                     <td>
                         <a class="info p-1 text-center position-relative "
-                            onclick="openModal(this,'{{ route('document-list.edit', $document->id) }}','Edit Document List')"> <i
-                                class="ft-edit font-medium-3"></i></a>
+                            onclick="openModal(this,'{{ route('document-list.edit', $document->id) }}','Edit Document List')">
+                            <i class="ft-edit font-medium-3"></i></a>
                         <a onclick="deletemodal('{{ route('document-list.destroy', $document->id) }}','{{ route('get.document-list') }}')"
                             class="danger p-1 text-center mr-2 position-relative ">
 

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
+use App\Models\Master\Port;
 
 class DocumentListController extends Controller
 {
@@ -27,7 +28,8 @@ class DocumentListController extends Controller
 
     public function create(): View
     {
-        return view('management.export.document_list.create');
+        $ports = Port::where('status', 1)->get();
+        return view('management.export.document_list.create',compact('ports'));
     }
 
     public function store(Request $request): JsonResponse
@@ -37,6 +39,7 @@ class DocumentListController extends Controller
             'feature' => 'nullable|string|max:255',
             'is_required' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
+            'port_of_discharge_id' => 'nullable|exists:ports,id',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -50,7 +53,8 @@ class DocumentListController extends Controller
 
         $document = DocumentList::create([
             'name' => $request->input('name'),
-            'feature' => $request->input('feature'),
+            'feature' => $request->input('feature'),    
+            'port_id' => $request->port_of_discharge_id,
             'is_required' => $request->has('is_required') ? $request->input('is_required') : false,
             'status' => $request->input('status'),
         ]);
@@ -71,8 +75,9 @@ class DocumentListController extends Controller
     public function edit(int $id)
     {
         $document = DocumentList::findOrFail($id);
+        $ports = Port::where('status', 1)->get();
 
-        return view('management.export.document_list.edit', compact('document'));
+        return view('management.export.document_list.edit', compact('document', 'ports'));
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -84,6 +89,7 @@ class DocumentListController extends Controller
             'feature' => 'nullable|string|max:255',
             'is_required' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
+            'port_of_discharge_id' => 'nullable|exists:ports,id',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -98,6 +104,7 @@ class DocumentListController extends Controller
         $document->update([
             'name' => $request->input('name'),
             'feature' => $request->input('feature'),
+            'port_id' => $request->port_of_discharge_id,
             'is_required' => $request->has('is_required') ? $request->input('is_required') : false,
             'status' => $request->input('status'),
         ]);
@@ -139,7 +146,7 @@ class DocumentListController extends Controller
 
     public function getList(Request $request)
     {
-        $documents = DocumentList::when($request->filled('search'), function ($q) use ($request) {
+        $documents = DocumentList::with('port.country')->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%'.$request->search.'%';
 
             return $q->where(function ($sq) use ($searchTerm) {

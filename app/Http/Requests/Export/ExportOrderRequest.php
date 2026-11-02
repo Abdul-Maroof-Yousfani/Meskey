@@ -95,6 +95,7 @@ class ExportOrderRequest extends FormRequest
             /* ================= TEXT AREAS ================= */
 
             'marking_labeling' => ['nullable', 'string'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,csv,txt,jpg,jpeg,png,webp', 'max:20480'],
             'shipping_instructions' => ['nullable', 'string'],
             'documents_to_be_provided' => ['required', 'string'],
             'other_condition' => ['required', 'string'],

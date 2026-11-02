@@ -22,7 +22,8 @@
     }
 </style>
 
-<form action="{{ route('export-order.update', $exportOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('export-order.update', $exportOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-order') }}" />
@@ -153,8 +154,43 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Marking/labeling:</label>
-                            <input type="text" name="marking_labeling" class="form-control"
-                                value="{{ old('marking_labeling', $exportOrder->marking_labeling) }}">
+                            <div class="input-group">
+                                <input type="text" name="marking_labeling" class="form-control"
+                                    placeholder="Marking / labeling"
+                                    value="{{ old('marking_labeling', $exportOrder->marking_labeling) }}">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-primary" id="btn_marking_attachment"
+                                        title="Attach file (PDF, Docs, Excel, Pictures, TXT)">
+                                        <i class="ft-paperclip"></i> Attach
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" name="attachment" id="marking_attachment_input" class="d-none"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp,image/*">
+
+                            @if ($exportOrder->attachment)
+                                <div id="current_attachment_preview" class="mt-1">
+                                    <span class="badge badge-secondary py-1 px-2 d-inline-flex align-items-center">
+                                        <i class="ft-paperclip mr-1"></i> Current:
+                                        <a href="{{ asset($exportOrder->attachment) }}" target="_blank"
+                                            class="text-white ml-1 text-truncate" style="max-width: 200px;"
+                                            title="View Current File">
+                                            {{ basename($exportOrder->attachment) }}
+                                        </a>
+                                    </span>
+                                </div>
+                            @endif
+
+                            <div id="attachment_file_preview" class="mt-1" style="display: none;">
+                                <span class="badge badge-info py-1 px-2 d-inline-flex align-items-center">
+                                    <i class="ft-file mr-1"></i>
+                                    <span id="attachment_file_name" class="text-truncate"
+                                        style="max-width: 250px;"></span>
+                                    <a href="javascript:void(0)" class="text-white ml-2 font-weight-bold"
+                                        id="btn_remove_attachment" title="Remove attachment"
+                                        style="font-size: 15px; text-decoration: none; line-height: 1;">&times;</a>
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -1395,6 +1431,72 @@
             updateDocumentsList();
         });
 
+        var currentEditDocCountryId = $('select[name="origin_country_id"]').val();
+
+        function loadDocumentsByCountryEdit(countryId) {
+            if (countryId && countryId === currentEditDocCountryId) {
+                return;
+            }
+            currentEditDocCountryId = countryId;
+
+            var $checklist = $('.documents-checklist');
+            if (!countryId) {
+                $checklist.html(
+                    '<p class="text-muted mb-0 small p-1">Please select an Origin Country to view required documents.</p>'
+                    );
+                updateDocumentsList();
+                return;
+            }
+
+            $checklist.html(
+                '<div class="text-center p-2 text-muted small"><i class="fa fa-spinner fa-spin"></i> Loading documents...</div>'
+                );
+
+            $.ajax({
+                url: "{{ route('export-order.documents-by-country') }}",
+                type: 'GET',
+                data: {
+                    country_id: countryId
+                },
+                success: function(response) {
+                    if (response.success && response.documents && response.documents.length > 0) {
+                        var html = '';
+                        $.each(response.documents, function(index, doc) {
+                            var isReq = doc.is_required ? true : false;
+                            var checkedAttr = isReq ? 'checked' : '';
+                            var disabledAttr = isReq ? 'disabled' : '';
+                            var reqBadge = isReq ?
+                                '<small class="text-danger font-weight-bold ml-1"></small>' :
+                                '<small class="text-muted ml-1"></small>';
+
+                            html += '<div class="custom-control custom-checkbox mb-1">';
+                            html +=
+                                '  <input type="checkbox" class="custom-control-input document-checkbox"';
+                            html += '    id="doc_' + doc.id + '" value="' + doc.name + '" ' +
+                                checkedAttr + ' ' + disabledAttr + '>';
+                            html += '  <label class="custom-control-label" for="doc_' + doc.id +
+                                '">' + doc.name + ' ' + reqBadge + '</label>';
+                            html += '</div>';
+                        });
+                        $checklist.html(html);
+                    } else {
+                        $checklist.html(
+                            '<p class="text-muted mb-0 small p-1">No documents configured for this country.</p>'
+                            );
+                    }
+                    updateDocumentsList();
+                },
+                error: function() {
+                    $checklist.html('<p class="text-danger mb-0 small p-1">Failed to load documents.</p>');
+                    updateDocumentsList();
+                }
+            });
+        }
+
+        $(document).on('change change.select2', 'select[name="origin_country_id"]', function() {
+            loadDocumentsByCountryEdit($(this).val());
+        });
+
         // Initialize on load to ensure hidden input matches checked boxes
         updateDocumentsList();
 
@@ -2492,6 +2594,26 @@
             if (grandAmount > 0) $('#commission_percentage').val(((initialCommission / grandAmount) * 100).toFixed(2));
         }
     }
+
+    $(document).off('click', '#btn_marking_attachment').on('click', '#btn_marking_attachment', function() {
+        $('#marking_attachment_input').trigger('click');
+    });
+
+    $(document).off('change', '#marking_attachment_input').on('change', '#marking_attachment_input', function() {
+        if (this.files && this.files[0]) {
+            var file = this.files[0];
+            $('#attachment_file_name').text(file.name);
+            $('#attachment_file_preview').show();
+        } else {
+            $('#attachment_file_preview').hide();
+        }
+    });
+
+    $(document).off('click', '#btn_remove_attachment').on('click', '#btn_remove_attachment', function(e) {
+        e.preventDefault();
+        $('#marking_attachment_input').val('');
+        $('#attachment_file_preview').hide();
+    });
 
     initializeExportOrderEditForm();
 </script>
