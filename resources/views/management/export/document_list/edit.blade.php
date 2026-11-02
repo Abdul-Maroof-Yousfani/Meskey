@@ -19,6 +19,20 @@
             </div>
         </div> --}}
 
+        <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
+            <div class="form-group">
+                <label class="form-label">PORT OF DISCHARGE:</label>
+                <select name="port_of_discharge_id" class="form-control">
+                    <option value="">Select</option>
+                    @foreach ($ports as $port)
+                        <option value="{{ $port->id }}" {{ $document->port_id == $port->id ? 'selected' : '' }}>
+                            {{ $port->name }}, {{ $port->country?->name ?? '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12 mt-2">
             <div class="form-group">
                 <div class="custom-control custom-checkbox">

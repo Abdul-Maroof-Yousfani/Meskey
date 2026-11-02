@@ -152,7 +152,8 @@
                                         </div>
                                         <div class="mt-2">
                                             <div class="form-group mb-0">
-                                                <input type="submit" class="btn btn-primary" name="generatebtn" value="Generate">
+                                                <input type="submit" class="btn btn-primary" name="generatebtn"
+                                                    value="Generate">
                                             </div>
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
@@ -191,28 +192,47 @@
                                             {{-- <th>GRN #</th> --}}
                                             {{-- <th>Sauda Type</th>
                                             <th>Station</th> --}}
-                                            <th>Bag Type</th>
+                                            {{-- <th>Bag Type</th>
                                             <th>Bag Condition</th>
                                             <th>Bag Packing</th>
-                                            <th>No. Bag</th>
+                                            <th>No. Bag</th> --}}
                                             <!-- @foreach (getTableData('product_slab_types') as $slab)
     <th>{{ $slab->name }}</th>
     @endforeach
-                                                @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
+                                                                            @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
     <th>{{ $compulsory_slab_type->name }}</th>
     @endforeach -->
-                                            <th>Warehouse</th>
-                                            <th>Gala</th>
+                                            {{-- <th>Warehouse</th>
+                                            <th>Gala</th> --}}
                                             {{-- <th>Tabaar Remarks</th> --}}
 
                                             {{-- <th>Contract</th> --}}
-                                            <th>Final QC Report</th>
+                                            {{-- <th>Final QC Report</th>
                                             <th>Bilty</th>
                                             <th>Loading Weight</th>
-                                            <th>Arrival Slip</th>
+                                            <th>Arrival Slip</th> --}}
                                             {{-- <th>Action</th> --}}
                                         </tr>
                                     </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="100%" class="text-center py-5">
+                                                <div class="my-4">
+                                                    <div class="mb-3">
+                                                        <i class="ft-search text-primary"
+                                                            style="font-size: 3rem; opacity: 0.7;"></i>
+                                                    </div>
+                                                    <h5 class="font-weight-bold text-dark mb-1">No Data Displayed Yet</h5>
+                                                    <p class="text-muted mb-0" style="font-size: 0.95rem;">
+                                                        Please apply your filters and click on the
+                                                        Generate
+
+                                                        button to load the report.
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -224,8 +244,7 @@
 @endsection
 @section('script')
     <script>
-
-        $(document).ready(function () {
+        $(document).ready(function() {
             const runFilter = filterationCommon_withbtn(
                 `{{ route('reports.arrival.get.arrival-history') }}`
             );
@@ -251,7 +270,7 @@
             );
 
 
-            $('#filterForm').on('submit', function (e) {
+            $('#filterForm').on('submit', function(e) {
 
                 e.preventDefault();
 
@@ -262,7 +281,8 @@
                 // Dependent supplier request
                 fetchSuppliers();
             });
-            runFilter();
+            // runFilter();
+            $(".selectWithoutAjax").select2();
         });
     </script>
 @endsection

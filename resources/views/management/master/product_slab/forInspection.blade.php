@@ -20,7 +20,7 @@
                             data-max-range="{{ $slab->max_range }}" name="checklist_value[]"
                             placeholder="{{ $slab->slabType->qc_symbol }}" min="0" step="0.01"
                             data-is-percentage="{{ $slab->slabType->qc_symbol == '%' }}"
-                            value="{{ $isInner ? $slab->checklist_value : null }}">
+                            value="{{ $isInner ? $slab->actual_checklist_value : null }}">
                         <div class="input-group-append">
                             <span class="input-group-text">{{ $slab->slabType->qc_symbol }}</span>
                         </div>

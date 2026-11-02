@@ -183,18 +183,43 @@ class ExportFormEController extends Controller
                 $totalQuantity += (float) ($item->metric_tons ?? 0);
             }
 
+            $posTol = (float) ($exportOrder->positive_tolerance ?? 0);
+            $negTol = (float) ($exportOrder->negative_tolerance ?? 0);
+
+            $maxAllowed = $totalQuantity + ($totalQuantity * ($posTol / 100));
+            $minAllowed = $totalQuantity - ($totalQuantity * ($negTol / 100));
+
             $usedQuantity = 0;
             try {
-                $usedQuantity = ExportFormE::where('export_order_id', $exportOrder->id)->sum('input_quantity');
+                $usedQuantity = (float) ExportFormE::where('export_order_id', $exportOrder->id)->sum('input_quantity');
             } catch (\Exception $e) {
                 $usedQuantity = 0;
             }
-            $remainingQuantity = $totalQuantity - $usedQuantity;
 
-            if ($request->input_quantity > $remainingQuantity) {
+            $inputQty = (float) $request->input_quantity;
+            $totalWithCurrent = $usedQuantity + $inputQty;
+
+            // If the export order was already closed prior to this session, prevent creating new Form-E
+            if (!empty($exportOrder->close_order_reason)) {
+                $hasClosingCache = cache()->has("closing_export_order_{$exportOrder->id}");
+                $alreadySavedClosedFormE = ExportFormE::where('export_order_id', $exportOrder->id)
+                    ->where('created_at', '>=', $exportOrder->closed_at ?? $exportOrder->updated_at)
+                    ->exists();
+
+                if ($alreadySavedClosedFormE && !$hasClosingCache) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'This Export Order is already closed. No further Form-E can be created for it.',
+                    ], 422);
+                }
+            }
+
+            // Input quantity cannot exceed remaining allowed quantity (total + positive tolerance - used)
+            $maxRemainingAllowed = $maxAllowed - $usedQuantity;
+            if ($inputQty > ($maxRemainingAllowed + 0.0001)) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Input quantity cannot exceed remaining quantity (' . $remainingQuantity . ')',
+                    'error' => 'Input quantity cannot exceed remaining allowed quantity (' . number_format($maxRemainingAllowed, 2) . ' MT).',
                 ], 422);
             }
 
@@ -202,6 +227,12 @@ class ExportFormEController extends Controller
             if ($request->hasFile('attachment')) {
                 $attachmentPath = $request->file('attachment')->store('export/form_e', 'public');
             }
+
+            $exportOrder->refresh();
+            $isClosingFormE = !empty($exportOrder->close_order_reason);
+
+            $exportSnapshot = $exportOrder->toArray();
+            $exportSnapshot['is_closing_form_e'] = $isClosingFormE;
 
             $formE = ExportFormE::create([
                 'export_order_id' => $request->export_order_id,
@@ -211,11 +242,13 @@ class ExportFormEController extends Controller
                 'form_e_date' => $request->form_e_date,
                 'attachment' => $attachmentPath,
                 'total_quantity' => $totalQuantity,
-                'remaining_quantity' => $remainingQuantity - $request->input_quantity,
+                'remaining_quantity' => max(0, $totalQuantity - $totalWithCurrent),
                 'input_quantity' => $request->input_quantity,
-                'export_snapshot' => $exportOrder->toArray(),
+                'export_snapshot' => $exportSnapshot,
                 'created_by' => auth()->user() ? auth()->user()->id : null,
             ]);
+
+            cache()->forget("closing_export_order_{$exportOrder->id}");
 
             DB::commit();
 
@@ -295,6 +328,8 @@ class ExportFormEController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            DB::beginTransaction();
+
             $formE = ExportFormE::lockForUpdate()->find($id);
 
             if (!$formE) {
@@ -382,6 +417,8 @@ class ExportFormEController extends Controller
     public function destroy($id)
     {
         try {
+            DB::beginTransaction();
+
             $formE = ExportFormE::lockForUpdate()->find($id);
 
             if (!$formE) {
@@ -393,7 +430,45 @@ class ExportFormEController extends Controller
                 ], 404);
             }
 
+            $exportOrder = null;
+            if ($formE->export_order_id) {
+                $exportOrder = ExportOrder::lockForUpdate()->find($formE->export_order_id);
+            }
+
+            // Only reset export order close columns if THIS specific Form-E was the closing Form-E
+            if ($exportOrder && !empty($exportOrder->close_order_reason)) {
+                $snapshot = is_array($formE->export_snapshot)
+                    ? $formE->export_snapshot
+                    : json_decode($formE->export_snapshot ?? '[]', true);
+
+                $isClosingFormE = false;
+                if (!empty($snapshot['is_closing_form_e'])) {
+                    $isClosingFormE = true;
+                } elseif (!empty($snapshot['close_order_reason'])) {
+                    $isClosingFormE = true;
+                }
+
+                if ($isClosingFormE) {
+                    $exportOrder->update([
+                        'close_order_reason' => null,
+                        'closed_by' => null,
+                        'closed_at' => null,
+                    ]);
+                }
+            }
+
+            if ($formE->attachment) {
+                Storage::disk('public')->delete($formE->attachment);
+            }
+
+            $orderId = $formE->export_order_id;
+
             $formE->delete();
+
+            if ($orderId) {
+                cache()->forget("closing_export_order_{$orderId}");
+            }
+
             DB::commit();
 
             return response()->json([
@@ -421,9 +496,14 @@ class ExportFormEController extends Controller
                 ->whereNotIn('id', function($q) {
                     $q->select('export_order_id')->from('export_order_addendums');
                 })
+                ->whereNull('close_order_reason')
                 ->latest()->get();
 
             $filtered_orders = $export_orders->filter(function ($order) {
+                if (!empty($order->close_order_reason)) {
+                    return false;
+                }
+
                 // Total quantity of all packing items
                 $totalQuantity = 0;
                 foreach ($order->packingItems as $item) {
@@ -483,5 +563,83 @@ class ExportFormEController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getTollrangeById(Request $request)
+    {
+        $order_id = $request->order_id;
+        $qty = $request->qty;
+
+        $exportOrder = ExportOrder::with('packingItems')->findOrFail($order_id);
+
+        $totalMetricTon = (float) $exportOrder->packingItems->sum('metric_tons');
+
+        $positive_tolleranfe_qty = $totalMetricTon * (($exportOrder->positive_tolerance ?? 0) / 100);
+        $negative_tolleranfe_qty = $totalMetricTon * (($exportOrder->negative_tolerance ?? 0) / 100);
+
+        $maxAllowed = $positive_tolleranfe_qty + $totalMetricTon;
+        $minAllowed = $totalMetricTon - $negative_tolleranfe_qty;
+
+        $usedQuantity = (float) ExportFormE::where('export_order_id', $order_id)->sum('input_quantity');
+        $minRemaining = max(0, $minAllowed - $usedQuantity);
+        $maxRemaining = max(0, $maxAllowed - $usedQuantity);
+
+        return [
+            $maxRemaining,
+            $minRemaining,
+            'min' => $minRemaining,
+            'max' => $maxRemaining,
+            'min_remaining' => $minRemaining,
+            'max_remaining' => $maxRemaining,
+            'overall_min' => $minAllowed,
+            'overall_max' => $maxAllowed,
+            'used_quantity' => $usedQuantity
+        ];
+    }
+
+    public function closeExportOrder(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|exists:export_orders,id',
+            'reason' => 'required|string',
+            'input_quantity' => 'required|numeric|min:0.01',
+        ]);
+
+        $exportOrder = ExportOrder::with('packingItems')->findOrFail($request->order_id);
+
+        $totalMetricTon = (float) $exportOrder->packingItems->sum('metric_tons');
+        $posTol = (float) ($exportOrder->positive_tolerance ?? 0);
+        $negTol = (float) ($exportOrder->negative_tolerance ?? 0);
+
+        $maxAllowed = $totalMetricTon + ($totalMetricTon * ($posTol / 100));
+        $minAllowed = $totalMetricTon - ($totalMetricTon * ($negTol / 100));
+
+        $inputQty = (float) $request->input_quantity;
+        $usedQuantity = (float) ExportFormE::where('export_order_id', $exportOrder->id)->sum('input_quantity');
+
+        // Remaining tolerance range for current input quantity:
+        $minRemaining = max(0, $minAllowed - $usedQuantity);
+        $maxRemaining = max(0, $maxAllowed - $usedQuantity);
+
+        if ($inputQty < $minRemaining || $inputQty > $maxRemaining) {
+            return response()->json([
+                'success' => false,
+                'message' => "Input quantity ({$inputQty} MT) does not fall within the allowed closing tolerance range (" . number_format($minRemaining, 2) . " MT - " . number_format($maxRemaining, 2) . " MT).",
+            ], 422);
+        }
+
+        $exportOrder->update([
+            'close_order_reason' => $request->reason,
+            'closed_by' => auth()->user()->id,
+            'closed_at' => now()->toDateString(),
+        ]);
+
+        // Cache marker for currently closing order session
+        cache()->put("closing_export_order_{$exportOrder->id}", auth()->user()->id ?? 1, now()->addMinutes(15));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Export Order #' . $exportOrder->voucher_no . ' closed successfully.',
+        ]);
     }
 }

@@ -248,7 +248,8 @@ class InitialSamplingController extends Controller
                     'company_id' => $request->company_id,
                     'arrival_sampling_request_id' => $request->arrival_sampling_request_id,
                     'product_slab_type_id' => $slabTypeId,
-                    'checklist_value' => $checklistValue,
+                    'checklist_value' => $checklistValue - ($reliefDeduction ?? 0),
+                    'actual_checklist_value' => $checklistValue,
                     'relief_deduction' => $reliefDeduction,
                 ]);
             }

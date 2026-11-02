@@ -447,6 +447,8 @@ class SamplingMonitoringController extends Controller
                         'arrival_sampling_request_id' => $id,
                         'product_slab_type_id' => $slabTypeId,
                         'checklist_value' => $request->checklist_value[$key] ?? null,
+                        'actual_checklist_value' => $request->actual_checklist_value[$key] ?? null,
+                        'relief_deduction' => $request->relief_deduction[$key] ?? null,
                         'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
                         'applied_deduction' => $request->applied_deduction[$key] ?? null,
                     ]);
@@ -608,6 +610,8 @@ class SamplingMonitoringController extends Controller
                         'arrival_sampling_request_id' => $id,
                         'product_slab_type_id' => $slabTypeId,
                         'checklist_value' => $request->checklist_value[$key] ?? null,
+                        'actual_checklist_value' => $request->actual_checklist_value[$key] ?? null,
+                        'relief_deduction' => $request->relief_deduction[$key] ?? null,
                         'suggested_deduction' => $request->suggested_deduction[$key] ?? null,
                         'applied_deduction' => $request->applied_deduction[$key] ?? null,
                         'applied_deduction_maund' => (float) ($request->applied_deduction_maund[$key] ?? 0),

@@ -51,7 +51,7 @@ class ApprovalController extends Controller
             ], 422);
         }
 
-        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', ''])) {
+        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', '']) && !str_starts_with($currentStatus, 'pending')) {
             return response()->json([
                 'error' => "This record cannot be approved or rejected because its status is '{$currentStatus}'. It must be in pending status.",
                 'message' => "This record cannot be approved or rejected because its status is '{$currentStatus}'. It must be in pending status."
@@ -151,6 +151,12 @@ class ApprovalController extends Controller
         $approved = $record->approve($request->comments);
 
         if ($approved) {
+            $nextStage = method_exists($record, 'getCurrentPendingStage') ? $record->getCurrentPendingStage() : null;
+            if ($nextStage && $nextStage > 1) {
+                return response()->json([
+                    'success' => "Approved successfully. Forwarded to Stage {$nextStage} for approval."
+                ]);
+            }
             if ($record instanceof \App\Models\Sales\SalesOrder && $record->so_approval_stage === 'headoffice_pending') {
                 return response()->json([
                     'success' => 'Stage 1 approved successfully. Forwarded to Head Office for final approval.'
@@ -483,7 +489,7 @@ class ApprovalController extends Controller
             ], 422);
         }
 
-        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', ''])) {
+        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', '']) && !str_starts_with($currentStatus, 'pending')) {
             return response()->json([
                 'error' => "This record cannot be rejected because its status is '{$currentStatus}'. It must be in pending status.",
                 'message' => "This record cannot be rejected because its status is '{$currentStatus}'. It must be in pending status."

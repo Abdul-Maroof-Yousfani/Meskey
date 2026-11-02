@@ -88,73 +88,73 @@
                         </div>
                     </div>
                     @if (canAccess('arrival-stats-show-confidential'))
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Miller:</label>
-                            <input type="text" placeholder="Miller" class="form-control" disabled autocomplete="off"
-                                value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" />
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Miller:</label>
+                                <input type="text" placeholder="Miller" class="form-control" disabled autocomplete="off"
+                                    value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" />
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Broker:</label>
-                            <input type="text" placeholder="Broker" class="form-control" disabled autocomplete="off"
-                                value="{{ $arrivalTicket->broker_name }}" />
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Broker:</label>
+                                <input type="text" placeholder="Broker" class="form-control" disabled autocomplete="off"
+                                    value="{{ $arrivalTicket->broker_name }}" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Accounts Of:</label>
-                            <input type="text" placeholder="Accounts Of" class="form-control" disabled autocomplete="off"
-                                value="{{ $arrivalTicket->accounts_of_name ?? 'N/A' }}" />
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Accounts Of:</label>
+                                <input type="text" placeholder="Accounts Of" class="form-control" disabled
+                                    autocomplete="off" value="{{ $arrivalTicket->accounts_of_name ?? 'N/A' }}" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Decision Of:</label>
-                            <input type="text" placeholder="Decision Of" class="form-control" disabled autocomplete="off"
-                                value="{{ $arrivalTicket->decisionBy->name ?? 'N/A' }}" />
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Decision Of:</label>
+                                <input type="text" placeholder="Decision Of" class="form-control" disabled
+                                    autocomplete="off" value="{{ $arrivalTicket->decisionBy->name ?? 'N/A' }}" />
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Station:</label>
-                            <input type="text" name="station_id" placeholder="Station" class="form-control" disabled
-                                autocomplete="off" value="{{ $arrivalTicket->station_name ?? 'N/A' }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Truck Type:</label>
-                            <input type="text" name="station_id" placeholder="Truck Type" class="form-control" disabled
-                                autocomplete="off" value="{{ $arrivalTicket->truckType->name ?? 'N/A' }}" />
-                        </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Sample Money Type:</label>
-                            <input type="text" name="station_id" placeholder="Product Name" class="form-control" disabled
-                                autocomplete="off"
-                                value="{{ isset($arrivalTicket->sample_money_type) ? ucwords($arrivalTicket->sample_money_type) : 'N/A' }}" />
-                        </div>
-                    </div>
 
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Truck No:</label>
-                            <input type="text" name="truck_no" value="{{ $arrivalTicket->truck_no }}" disabled
-                                placeholder="Truck No" class="form-control" autocomplete="off" />
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Station:</label>
+                                <input type="text" name="station_id" placeholder="Station" class="form-control" disabled
+                                    autocomplete="off" value="{{ $arrivalTicket->station_name ?? 'N/A' }}" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-xs-4 col-sm-4 col-md-4">
-                        <div class="form-group">
-                            <label>Bilty No: </label>
-                            <input type="text" name="bilty_no" value="{{ $arrivalTicket->bilty_no }}" disabled
-                                placeholder="Bilty No" class="form-control" autocomplete="off" />
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Truck Type:</label>
+                                <input type="text" name="station_id" placeholder="Truck Type" class="form-control"
+                                    disabled autocomplete="off" value="{{ $arrivalTicket->truckType->name ?? 'N/A' }}" />
+                            </div>
                         </div>
-                    </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Sample Money Type:</label>
+                                <input type="text" name="station_id" placeholder="Product Name" class="form-control"
+                                    disabled autocomplete="off"
+                                    value="{{ isset($arrivalTicket->sample_money_type) ? ucwords($arrivalTicket->sample_money_type) : 'N/A' }}" />
+                            </div>
+                        </div>
+
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Truck No:</label>
+                                <input type="text" name="truck_no" value="{{ $arrivalTicket->truck_no }}" disabled
+                                    placeholder="Truck No" class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Bilty No: </label>
+                                <input type="text" name="bilty_no" value="{{ $arrivalTicket->bilty_no }}" disabled
+                                    placeholder="Bilty No" class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
                     @endif
                     <div class="col-xs-4 col-sm-4 col-md-4">
                         <div class="form-group">
@@ -199,14 +199,16 @@
                             <div class="form-group">
                                 <label>First Weighbridge Weight:</label>
                                 <input type="text" name="first_weight" disabled placeholder="First Weight"
-                                    class="form-control" autocomplete="off" value="{{ $arrivalTicket->first_weight }}" />
+                                    class="form-control" autocomplete="off"
+                                    value="{{ $arrivalTicket->first_weight }}" />
                             </div>
                         </div>
                         <div class="col-xs-4 col-sm-4 col-md-4">
                             <div class="form-group">
                                 <label>2nd Weighbridge Weight: </label>
                                 <input type="text" name="second_weight" disabled placeholder="Second Weight"
-                                    class="form-control" autocomplete="off" value="{{ $arrivalTicket->second_weight }}" />
+                                    class="form-control" autocomplete="off"
+                                    value="{{ $arrivalTicket->second_weight }}" />
                             </div>
                         </div>
                         <div class="col-xs-4 col-sm-4 col-md-4">
@@ -256,7 +258,8 @@
                                                 Difference</button>
                                         </div>
                                         <input type="text" id="weight_difference" name="weight_difference"
-                                            placeholder="Weight Difference" readonly class="form-control" autocomplete="off"
+                                            placeholder="Weight Difference" readonly class="form-control"
+                                            autocomplete="off"
                                             value="{{ $arrivalTicket->firstWeighbridge->weight - $arrivalTicket->SecondWeighbridge->weight - $arrivalTicket->net_weight }}" />
                                     </div>
                                 </fieldset>
@@ -283,7 +286,8 @@
                                 <div class="form-group">
                                     <label>Loaded Weight</label>
                                     <input type="number" name="loaded_weight" class="form-control"
-                                        value="{{ $arrivalTicket->freight->arrivalTicket->net_weight ?? 'N/A' }}" disabled />
+                                        value="{{ $arrivalTicket->freight->arrivalTicket->net_weight ?? 'N/A' }}"
+                                        disabled />
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -319,15 +323,16 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Freight per Ton</label>
-                                    <input type="number" step="0.01" name="freight_per_ton"disabled class="form-control"
-                                        value="{{ $arrivalTicket->freight->freight_per_ton }}" />
+                                    <input type="number" step="0.01" name="freight_per_ton"disabled
+                                        class="form-control" value="{{ $arrivalTicket->freight->freight_per_ton }}" />
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Kanta Loading Charges</label>
                                     <input type="number" step="0.01"disabled name="kanta_golarchi_charges"
-                                        class="form-control" value="{{ $arrivalTicket->freight->kanta_golarchi_charges }}" />
+                                        class="form-control"
+                                        value="{{ $arrivalTicket->freight->kanta_golarchi_charges }}" />
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -350,7 +355,8 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Other Deduction</label>
-                                    <input type="number" step="0.01" name="other_deduction" class="form-control"disabled
+                                    <input type="number" step="0.01" name="other_deduction"
+                                        class="form-control"disabled
                                         value="{{ $arrivalTicket->freight->other_deduction }}" />
                                 </div>
                             </div>
@@ -397,7 +403,8 @@
                                     <label>Attach Bilty</label>
                                     <br />
                                     @if ($arrivalTicket->freight->bilty_document)
-                                        <a href="{{ asset($arrivalTicket->freight->bilty_document) }}" target="_blank">View
+                                        <a href="{{ asset($arrivalTicket->freight->bilty_document) }}"
+                                            target="_blank">View
                                             Current File</a>
                                     @else
                                         <small class="text-danger">No file found</small>
@@ -422,7 +429,8 @@
                                     <label>Other Document (Optional)</label>
                                     <br />
                                     @if ($arrivalTicket->freight->other_document)
-                                        <a href="{{ asset($arrivalTicket->freight->other_document) }}" target="_blank">View
+                                        <a href="{{ asset($arrivalTicket->freight->other_document) }}"
+                                            target="_blank">View
                                             Current File</a>
                                     @else
                                         <small class="text-danger">No file found</small>
@@ -434,7 +442,8 @@
                                     <label>Other Document 2 (Optional)</label>
                                     <br />
                                     @if ($arrivalTicket->freight->other_document_2)
-                                        <a href="{{ asset($arrivalTicket->freight->other_document_2) }}" target="_blank">View
+                                        <a href="{{ asset($arrivalTicket->freight->other_document_2) }}"
+                                            target="_blank">View
                                             Current File</a>
                                     @else
                                         <small class="text-danger">No file found</small>
@@ -544,7 +553,8 @@
                                     aria-labelledby="initial-{{ $index }}-tab">
                                     <div class="row w-100 mx-auto">
                                         <div class="col-md-4"></div>
-                                        <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
+                                        <div
+                                            class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
                                             <h6>Result</h6>
                                         </div>
                                         @if (canAccess('arrival-stats-show-confidential'))
@@ -614,12 +624,13 @@
                                                 <div class="form-group row checklist-box">
                                                     <label
                                                         class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                    <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
+                                                    <div
+                                                        class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
                                                         <div class="input-group mb-0">
                                                             <input type="text" readonly
                                                                 class="form-control {{ $comparisonClass }}"
-                                                                value="{{ $slab->checklist_value }}" placeholder="%"
-                                                                disabled>
+                                                                value="{{ canAccess('arrival-stats-show-confidential') ? $slab->checklist_value : $slab->actual_checklist_value }}"
+                                                                placeholder="%" disabled>
                                                             <div class="input-group-append">
                                                                 <span
                                                                     class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
@@ -801,7 +812,8 @@
                                 aria-labelledby="inner-{{ $index }}-tab">
                                 <div class="row w-100 mx-auto">
                                     <div class="col-md-4"></div>
-                                    <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
+                                    <div
+                                        class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
                                         <h6>Result</h6>
                                     </div>
                                     @if (canAccess('arrival-stats-show-confidential'))
@@ -861,11 +873,12 @@
                                             <div class="form-group row checklist-box">
                                                 <label
                                                     class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
+                                                <div
+                                                    class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
                                                     <div class="input-group mb-0">
                                                         <input type="text" readonly
                                                             class="form-control {{ $comparisonClass }}"
-                                                            value="{{ $slab->checklist_value }}">
+                                                            value="{{ canAccess('arrival-stats-show-confidential') ? $slab->checklist_value : $slab->actual_checklist_value }}">
                                                         <div class="input-group-append">
                                                             <span
                                                                 class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
@@ -939,7 +952,8 @@
                                                 <div
                                                     class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                                     @if ($slab->qcParam->type == 'dropdown')
-                                                        <input type="text" class="form-control {{ $compulsaryClass }}"
+                                                        <input type="text"
+                                                            class="form-control {{ $compulsaryClass }}"
                                                             value="{{ $slab->compulsory_checklist_value }}" readonly>
                                                     @else
                                                         <textarea class="form-control {{ $compulsaryClass }}" readonly>{{ $slab->compulsory_checklist_value }}</textarea>
@@ -1009,7 +1023,8 @@
                                 aria-labelledby="current-inner-tab">
                                 <div class="row w-100 mx-auto">
                                     <div class="col-md-4"></div>
-                                    <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
+                                    <div
+                                        class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} py-2 QcResult">
                                         <h6>Result</h6>
                                     </div>
                                     @if (canAccess('arrival-stats-show-confidential'))
@@ -1133,11 +1148,13 @@
                                                     value="{{ $slab->slabType->id }}">
                                                 <label
                                                     class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
-                                                <div class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
+                                                <div
+                                                    class="{{ canAccess('arrival-stats-show-confidential') ? 'col-md-3' : 'col-md-8' }} QcResult">
                                                     <div class="input-group mb-0">
                                                         <input type="text"
                                                             class="form-control {{ $comparisonClass }}"
-                                                            name="checklist_value[]" value="{{ $displayValue }}"
+                                                            name="checklist_value[]"
+                                                            value="{{ canAccess('arrival-stats-show-confidential') ? $slab->checklist_value : $slab->actual_checklist_value }}"
                                                             placeholder="%" readonly>
                                                         <div class="input-group-append">
                                                             <span
@@ -1167,10 +1184,12 @@
                                                     </div>
                                                     <div class="col-md-2 QcResult">
                                                         <div class="input-group mb-0">
-                                                            <input type="text" id="deduction-{{ $slab->slabType->id }}"
+                                                            <input type="text"
+                                                                id="deduction-{{ $slab->slabType->id }}"
                                                                 class="form-control bg-white deduction-field"
                                                                 name="applied_deduction[]"
-                                                                value="{{ $innerDeductionValue }}" placeholder="Deduction"
+                                                                value="{{ $innerDeductionValue }}"
+                                                                placeholder="Deduction"
                                                                 data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
                                                                 data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                                                 data-slab-id="{{ $slab->slabType->id }}"

@@ -25,7 +25,8 @@
                     }
                 </style>
 
-                <form action="{{ route('export-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+                <form action="{{ route('export-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+                    enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" id="listRefresh" value="{{ route('get.export-order') }}" />
                     <input type="hidden" name="company_id" id="companyId"
@@ -147,7 +148,32 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Marking/labeling:</label>
-                                            <input type="text" name="marking_labeling" class="form-control">
+                                            <div class="input-group">
+                                                <input type="text" name="marking_labeling" class="form-control"
+                                                    placeholder="Marking / labeling">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-outline-primary"
+                                                        id="btn_marking_attachment"
+                                                        title="Attach file (PDF, Docs, Excel, Pictures, TXT)">
+                                                        <i class="ft-paperclip"></i> Attach
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input type="file" name="attachment" id="marking_attachment_input"
+                                                class="d-none"
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp,image/*">
+                                            <div id="attachment_file_preview" class="mt-1" style="display: none;">
+                                                <span
+                                                    class="badge badge-info py-1 px-2 d-inline-flex align-items-center">
+                                                    <i class="ft-file mr-1"></i>
+                                                    <span id="attachment_file_name" class="text-truncate"
+                                                        style="max-width: 250px;"></span>
+                                                    <a href="javascript:void(0)"
+                                                        class="text-white ml-2 font-weight-bold"
+                                                        id="btn_remove_attachment" title="Remove attachment"
+                                                        style="font-size: 15px; text-decoration: none; line-height: 1;">&times;</a>
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -161,7 +187,8 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label> Shipment DeliveryDate To:</label>
-                                            <input type="date" name="shipment_delivery_date_to" class="form-control">
+                                            <input type="date" name="shipment_delivery_date_to"
+                                                class="form-control">
                                         </div>
                                     </div>
                                 </div>
@@ -513,15 +540,35 @@
                                 <label>Documents to be provided:</label>
                                 <div class="documents-checklist"
                                     style="max-height: 200px; overflow-y: auto; border: 1px solid #d9d9d9; padding: 10px; border-radius: 4px;">
-                                    @foreach ($documentLists as $doc)
-                                        <div class="custom-control custom-checkbox mb-1">
-                                            <input type="checkbox" class="custom-control-input document-checkbox"
-                                                id="doc_{{ $doc->id }}" value="{{ $doc->name }}" checked
-                                                {{ $doc->is_required ? 'disabled' : '' }}>
-                                            <label class="custom-control-label"
-                                                for="doc_{{ $doc->id }}">{{ $doc->name }}</label>
-                                        </div>
-                                    @endforeach
+                                    @php
+                                        $selectedOriginCountry = old('origin_country_id');
+                                        $initialDocs = $selectedOriginCountry
+                                            ? $documentLists->filter(function ($doc) use ($selectedOriginCountry) {
+                                                return $doc->port && $doc->port->country_id == $selectedOriginCountry;
+                                            })
+                                            : collect();
+                                    @endphp
+                                    @if ($initialDocs->isNotEmpty())
+                                        @foreach ($initialDocs as $doc)
+                                            <div class="custom-control custom-checkbox mb-1">
+                                                <input type="checkbox" class="custom-control-input document-checkbox"
+                                                    id="doc_{{ $doc->id }}" value="{{ $doc->name }}"
+                                                    {{ $doc->is_required ? 'checked disabled' : '' }}>
+                                                <label class="custom-control-label" for="doc_{{ $doc->id }}">
+                                                    {{ $doc->name }}
+                                                    @if ($doc->is_required)
+                                                        <small
+                                                            class="text-danger font-weight-bold ml-1">(Required)</small>
+                                                    @else
+                                                        <small class="text-muted ml-1">(Optional)</small>
+                                                    @endif
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <p class="text-muted mb-0 small p-1">Please select an Origin Country to view
+                                            required documents.</p>
+                                    @endif
                                 </div>
                                 <input type="hidden" name="documents_to_be_provided" id="documents_to_be_provided"
                                     value="">
@@ -676,10 +723,13 @@
                                     <tr>
                                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">ORIGIN</td>
                                         <td style="width: 70%;">
-                                            <select name="origin_country_id" class="form-control select2">
+                                            <select name="origin_country_id" id="origin_country_id"
+                                                class="form-control select2">
                                                 <option value="">Select</option>
                                                 @foreach ($countries as $country)
-                                                    <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                                    <option value="{{ $country->id }}"
+                                                        {{ old('origin_country_id') == $country->id ? 'selected' : '' }}>
+                                                        {{ $country->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -1108,8 +1158,81 @@
                                 updateDocumentsList();
                             });
 
+                            var currentDocCountryId = null;
+
+                            function loadDocumentsByCountry(countryId) {
+                                if (countryId && countryId === currentDocCountryId) {
+                                    return;
+                                }
+                                currentDocCountryId = countryId;
+
+                                var $checklist = $('.documents-checklist');
+                                if (!countryId) {
+                                    $checklist.html(
+                                        '<p class="text-muted mb-0 small p-1">Please select an Origin Country to view required documents.</p>'
+                                        );
+                                    updateDocumentsList();
+                                    return;
+                                }
+
+                                $checklist.html(
+                                    '<div class="text-center p-2 text-muted small"><i class="fa fa-spinner fa-spin"></i> Loading documents...</div>'
+                                    );
+
+                                $.ajax({
+                                    url: "{{ route('export-order.documents-by-country') }}",
+                                    type: 'GET',
+                                    data: {
+                                        country_id: countryId
+                                    },
+                                    success: function(response) {
+                                        if (response.success && response.documents && response.documents.length >
+                                            0) {
+                                            var html = '';
+                                            $.each(response.documents, function(index, doc) {
+                                                var isReq = doc.is_required ? true : false;
+                                                var checkedAttr = isReq ? 'checked' : '';
+                                                var disabledAttr = isReq ? 'disabled' : '';
+                                                var reqBadge = isReq ?
+                                                    '<small class="text-danger font-weight-bold ml-1"></small>' :
+                                                    '<small class="text-muted ml-1"></small>';
+
+                                                html += '<div class="custom-control custom-checkbox mb-1">';
+                                                html +=
+                                                    '  <input type="checkbox" class="custom-control-input document-checkbox"';
+                                                html += '    id="doc_' + doc.id + '" value="' + doc.name +
+                                                    '" ' + checkedAttr + ' ' + disabledAttr + '>';
+                                                html += '  <label class="custom-control-label" for="doc_' +
+                                                    doc.id + '">' + doc.name + ' ' + reqBadge + '</label>';
+                                                html += '</div>';
+                                            });
+                                            $checklist.html(html);
+                                        } else {
+                                            $checklist.html(
+                                                '<p class="text-muted mb-0 small p-1">No documents configured for this country.</p>'
+                                                );
+                                        }
+                                        updateDocumentsList();
+                                    },
+                                    error: function() {
+                                        $checklist.html(
+                                            '<p class="text-danger mb-0 small p-1">Failed to load documents.</p>'
+                                            );
+                                        updateDocumentsList();
+                                    }
+                                });
+                            }
+
+                            $(document).on('change change.select2', 'select[name="origin_country_id"]', function() {
+                                loadDocumentsByCountry($(this).val());
+                            });
+
                             // Initialize on load
                             updateDocumentsList();
+                            var initialOriginCountry = $('select[name="origin_country_id"]').val();
+                            if (initialOriginCountry) {
+                                loadDocumentsByCountry(initialOriginCountry);
+                            }
                             const defaultCompanyId = $('#companyId').val();
 
                             $('#packingDetailsSection').insertAfter('#packingDetailsAnchor');
@@ -2174,6 +2297,26 @@
 
                     $('#ajaxSubmit').on('submit', function() {
                         $('select[name="buyer_id"], select[name="product_id"]').prop('disabled', false);
+                    });
+
+                    $(document).on('click', '#btn_marking_attachment', function() {
+                        $('#marking_attachment_input').trigger('click');
+                    });
+
+                    $(document).on('change', '#marking_attachment_input', function() {
+                        if (this.files && this.files[0]) {
+                            var file = this.files[0];
+                            $('#attachment_file_name').text(file.name);
+                            $('#attachment_file_preview').show();
+                        } else {
+                            $('#attachment_file_preview').hide();
+                        }
+                    });
+
+                    $(document).on('click', '#btn_remove_attachment', function(e) {
+                        e.preventDefault();
+                        $('#marking_attachment_input').val('');
+                        $('#attachment_file_preview').hide();
                     });
 
                     // Direct call and ready call to ensure initialization in all scenarios (AJAX/Normal)

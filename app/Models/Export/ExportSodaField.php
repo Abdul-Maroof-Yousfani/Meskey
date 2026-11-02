@@ -2,13 +2,44 @@
 
 namespace App\Models\Export;
 
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ExportSodaField extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
     protected $guarded = ['id'];
+
+    protected static function booted()
+    {
+        static::updating(function ($model) {
+            $originalStatus = strtolower($model->getOriginal('am_approval_status') ?? '');
+            $newStatus = strtolower($model->am_approval_status ?? '');
+            if ($model->isDirty('am_approval_status')) {
+                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                    throw new \Exception("Export Sauda is already {$originalStatus} and status cannot be changed.");
+                }
+                if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
+                    throw new \Exception("Export Sauda is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+
+            $changes = $model->getDirty();
+            if (!empty($changes) && !isset($changes['am_change_made'])) {
+                if ($model->getAttribute('am_change_made') !== null) {
+                    $model->am_change_made = 1;
+                }
+            }
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->am_approval_status ?? '');
+            if (in_array($status, ['approved', 'rejected'])) {
+                throw new \Exception("Export Sauda is already {$status} and cannot be deleted.");
+            }
+        });
+    }
 
     protected $casts = [
         'commission_percentage' => 'float',

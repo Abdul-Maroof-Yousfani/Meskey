@@ -17,6 +17,40 @@
     }
 </style>
 
+<input type="hidden" id="listRefresh" value="{{ route('get.export-soda-field') }}" />
+
+@if(in_array(strtolower($exportSodaField->am_approval_status ?? ''), ['approved', 'rejected']))
+    @php
+        $isApproved = strtolower($exportSodaField->am_approval_status) === 'approved';
+        $alertClass = $isApproved ? 'alert-success' : 'alert-danger';
+        $iconClass = $isApproved ? 'fa-check-circle' : 'fa-times-circle';
+    @endphp
+    <div class="alert {{ $alertClass }} px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+        <div>
+            <i class="fa {{ $iconClass }} me-2"></i>
+            <strong>Status: {{ ucfirst($exportSodaField->am_approval_status) }}</strong> - This Export Sauda has been finalized. Its status cannot be changed.
+        </div>
+    </div>
+@elseif(strtolower($exportSodaField->am_approval_status ?? '') === 'reverted')
+    <div class="alert alert-warning px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+        <div>
+            <i class="fa fa-undo me-2"></i>
+            <strong>Status: Reverted</strong> - This Export Sauda has been reverted. Please edit and update it to return to pending status.
+        </div>
+    </div>
+@elseif(str_starts_with(strtolower($exportSodaField->am_approval_status ?? ''), 'pending stage'))
+    @php
+        $stageNum = trim(str_ireplace('pending stage', '', $exportSodaField->am_approval_status));
+        $prevStage = is_numeric($stageNum) && (int)$stageNum > 1 ? ((int)$stageNum - 1) : 1;
+    @endphp
+    <div class="alert alert-warning px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+        <div>
+            <i class="fa fa-clock-o me-2"></i>
+            <strong>Status: {{ ucwords($exportSodaField->am_approval_status) }}</strong> - Stage {{ $prevStage }} approved. Awaiting {{ ucwords($exportSodaField->am_approval_status) }} review.
+        </div>
+    </div>
+@endif
+
 <div class="row form-mar">
     <div class="col-8">
         {{-- ====== BUYER & INFO ====== --}}
@@ -166,6 +200,72 @@
         </div>
     </div>
 </div>
+
+<div class="approval-view-wrapper mt-3">
+    <div class="row">
+        <div class="col-12">
+            <x-approval-status :model="$exportSodaField" :list-refresh="route('get.export-soda-field')" />
+        </div>
+    </div>
+</div>
+
+@php
+    $module = $exportSodaField->getApprovalModule();
+    $approvalLogs = $module ? \App\Models\ApprovalsModule\ApprovalLog::where('record_id', $exportSodaField->id)->where('module_id', $module->id)->with(['user', 'role'])->orderBy('created_at', 'desc')->get() : collect();
+@endphp
+
+@if ($approvalLogs->isNotEmpty())
+    <div class="approval-table-wrapper" style="margin-top: 25px; padding-bottom: 10px !important;">
+        <div class="card border" style="box-shadow: none; margin-bottom: 0 !important;">
+            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 text-dark fw-bold" style="font-size: 14px;">
+                    Approval History & Comments
+                </h6>
+                <span class="badge badge-info">{{ $approvalLogs->count() }} {{ \Illuminate\Support\Str::plural('Action', $approvalLogs->count()) }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped mb-0" style="font-size: 13px;">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 20%;">User</th>
+                                <th style="width: 20%;">Role</th>
+                                <th style="width: 15%;">Action</th>
+                                <th style="width: 25%;">Comments</th>
+                                <th style="width: 15%;">Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($approvalLogs as $index => $log)
+                                @php
+                                    $badgeClass = match($log->action) {
+                                        'approved' => 'badge-success',
+                                        'rejected' => 'badge-danger',
+                                        'reverted' => 'badge-warning',
+                                        default => 'badge-secondary'
+                                    };
+                                @endphp
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $log->user->name ?? 'N/A' }}</td>
+                                    <td>{{ $log->role->name ?? 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge {{ $badgeClass }} text-uppercase">
+                                            {{ $log->action }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $log->comments ?: '-' }}</td>
+                                    <td>{{ $log->created_at ? $log->created_at->format('d M, Y h:i A') : 'N/A' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 
 <div class="row bottom-button-bar">
     <div class="col-12 mb-3 text-right">

@@ -116,12 +116,12 @@
                                 $badge = match (strtolower($status)) {
                                     'approved' => 'badge-success',
                                     'rejected' => 'badge-danger',
-                                    'pending' => 'badge-warning',
                                     'reverted' => 'badge-secondary',
+                                    default => 'badge-warning',
                                 };
                             @endphp
                             <span class="badge {{ $badge }} ">
-                                {{ ucfirst($status) }}
+                                {{ ucwords($status) }}
                             </span>
                         </td>
 

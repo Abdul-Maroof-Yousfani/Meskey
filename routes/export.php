@@ -67,6 +67,7 @@ Route::resource('working-days', WorkingDayController::class);
 Route::post('/get-working-days', [WorkingDayController::class, 'getTable'])->name('get.working-days');
 
 // export order
+Route::get('/export-order/documents-by-country', [ExportOrderController::class, 'getDocumentsByCountry'])->name('export-order.documents-by-country');
 Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
 Route::get('/export-order/{id}/print', [ExportOrderController::class, 'print'])->name('export-order.print');
@@ -172,6 +173,8 @@ Route::get('/get-export-order-details-form-e/{id}', [App\Http\Controllers\Export
 Route::get('/get-orders-by-buyer-form-e/{buyerId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer-form-e');
 Route::get('/get-form-es-by-order/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getFormEsByOrder'])->name('export.get-form-es-by-order');
 Route::get('/get-job-orders-by-order-form-e/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getJobOrdersByOrder'])->name('export.get-job-orders-by-order-form-e');
+Route::post('/get-tollqty-range-by-order-id',[App\Http\Controllers\Export\ExportFormEController::class,'getTollrangeById'])->name('get.toll-range-by-order-id');
+Route::post('/export-order/close', [App\Http\Controllers\Export\ExportFormEController::class, 'closeExportOrder'])->name('export-order.close');
 
 
 // quotation

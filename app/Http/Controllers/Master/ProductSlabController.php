@@ -309,6 +309,7 @@ class ProductSlabController extends Controller
                     $matchingResult = $initialRequestResults->firstWhere('product_slab_type_id', $slab->product_slab_type_id);
                     if ($matchingResult) {
                         $slab->checklist_value = $matchingResult->checklist_value;
+                        $slab->actual_checklist_value = $matchingResult->actual_checklist_value;
                     }
                 }
 

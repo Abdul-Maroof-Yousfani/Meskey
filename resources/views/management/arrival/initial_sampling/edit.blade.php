@@ -60,7 +60,7 @@
                         <div class="col-md-9">
                             <div class="input-group">
                                 <input type="number" id="slab-input-{{ $loop->index }}"
-                                    value="{{ $slab->checklist_value }}" class="form-control slab-input"
+                                    value="{{ $slab->actual_checklist_value }}" class="form-control slab-input"
                                     data-max-range="{{ $slab->max_range }}" name="checklist_value[]" placeholder="%"
                                     min="0" step="0.01">
                                 <div class="input-group-append">
