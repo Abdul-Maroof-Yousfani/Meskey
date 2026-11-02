@@ -1153,7 +1153,8 @@
                                                     <div class="input-group mb-0">
                                                         <input type="text"
                                                             class="form-control {{ $comparisonClass }}"
-                                                            name="checklist_value[]" value="{{ $displayValue }}"
+                                                            name="checklist_value[]"
+                                                            value="{{ canAccess('arrival-stats-show-confidential') ? $slab->checklist_value : $slab->actual_checklist_value }}"
                                                             placeholder="%" readonly>
                                                         <div class="input-group-append">
                                                             <span
