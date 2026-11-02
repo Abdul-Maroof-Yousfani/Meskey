@@ -49,7 +49,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Job Order:</label>
-                        <select name="job_order_id" id="job_order_id" class="form-control select2">
+                        <select name="job_order_id" id="job_order_id" class="form-control select2" required>
                             <option value="">Select Job Order</option>
                             @foreach ($job_orders as $jo)
                                 <option value="{{ $jo->id }}">{{ $jo->job_order_no }}</option>
@@ -366,7 +366,8 @@
                     $btn.prop('disabled', false).html(
                         '<i class="ft-x-circle mr-1"></i> Close Export Order');
                     var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr
-                        .responseJSON.message : (xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Error closing order.');
+                        .responseJSON.message : (xhr.responseJSON && xhr.responseJSON
+                            .error ? xhr.responseJSON.error : 'Error closing order.');
                     if (typeof toastr !== 'undefined') {
                         toastr.error(msg);
                     } else {

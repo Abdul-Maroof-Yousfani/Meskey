@@ -146,7 +146,7 @@ class ExportFormEController extends Controller
         $request->validate([
             'export_order_id' => 'required|exists:export_orders,id',
             'buyer_id' => 'required|exists:customers,id',
-            'job_order_id' => 'nullable|exists:job_orders,id',
+            'job_order_id' => 'required|exists:job_orders,id',
             'form_e_no' => 'required|string|unique:export_form_es,form_e_no',
             'form_e_date' => 'required|date',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
