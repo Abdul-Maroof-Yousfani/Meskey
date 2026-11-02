@@ -274,6 +274,19 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
+                                                <label>Fumigation Type:</label>
+                                                <select name="fumigation_type" class="form-control select2">
+                                                    <option value="">Select Fumigation Type</option>
+                                                    @foreach ($fumigationTypes as $fType)
+                                                        <option value="{{ $fType }}" {{ old('fumigation_type') == $fType ? 'selected' : '' }}>
+                                                            {{ ucfirst($fType) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
                                                 <label>Inspection By:</label>
                                                 <select name="inspection_by[]" class="form-control select2" multiple
                                                     required>
@@ -542,36 +555,59 @@
                                     style="max-height: 200px; overflow-y: auto; border: 1px solid #d9d9d9; padding: 10px; border-radius: 4px;">
                                     @php
                                         $selectedOriginCountry = old('origin_country_id');
-                                        $initialDocs = $selectedOriginCountry
+                                        $initialReqDocs = $selectedOriginCountry
                                             ? $documentLists->filter(function ($doc) use ($selectedOriginCountry) {
-                                                return $doc->port && $doc->port->country_id == $selectedOriginCountry;
-                                            })
+                                                return $doc->port && $doc->port->country_id == $selectedOriginCountry && $doc->is_required;
+                                            })->unique('name')
                                             : collect();
+                                        $reqNames = $initialReqDocs->pluck('name')->toArray();
+                                        $initialOptDocs = $selectedOriginCountry
+                                            ? $documentLists->filter(function ($doc) use ($reqNames) {
+                                                return !in_array($doc->name, $reqNames);
+                                            })->unique('name')
+                                            : collect();
+                                        $oldDocsVal = old('documents_to_be_provided', '');
                                     @endphp
-                                    @if ($initialDocs->isNotEmpty())
-                                        @foreach ($initialDocs as $doc)
-                                            <div class="custom-control custom-checkbox mb-1">
-                                                <input type="checkbox" class="custom-control-input document-checkbox"
-                                                    id="doc_{{ $doc->id }}" value="{{ $doc->name }}"
-                                                    {{ $doc->is_required ? 'checked disabled' : '' }}>
-                                                <label class="custom-control-label" for="doc_{{ $doc->id }}">
-                                                    {{ $doc->name }}
-                                                    @if ($doc->is_required)
-                                                        <small
-                                                            class="text-danger font-weight-bold ml-1">(Required)</small>
-                                                    @else
+                                    @if ($selectedOriginCountry && ($initialReqDocs->isNotEmpty() || $initialOptDocs->isNotEmpty()))
+                                        @if ($initialReqDocs->isNotEmpty())
+                                            <div class="text-muted font-weight-bold small text-uppercase mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Required Documents:</div>
+                                            @foreach ($initialReqDocs as $doc)
+                                                <div class="custom-control custom-checkbox mb-1">
+                                                    <input type="checkbox" class="custom-control-input document-checkbox"
+                                                        id="doc_{{ $doc->id }}" value="{{ $doc->name }}" checked disabled>
+                                                    <label class="custom-control-label" for="doc_{{ $doc->id }}">
+                                                        {{ $doc->name }}
+                                                        <small class="text-danger font-weight-bold ml-1">(Required)</small>
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        @endif
+                                        @if ($initialOptDocs->isNotEmpty())
+                                            @if ($initialReqDocs->isNotEmpty())
+                                                <hr class="my-2">
+                                            @endif
+                                            <div class="text-muted font-weight-bold small text-uppercase mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Optional Documents:</div>
+                                            @foreach ($initialOptDocs as $doc)
+                                                @php
+                                                    $isOptChecked = strpos($oldDocsVal, $doc->name) !== false;
+                                                @endphp
+                                                <div class="custom-control custom-checkbox mb-1">
+                                                    <input type="checkbox" class="custom-control-input document-checkbox"
+                                                        id="doc_{{ $doc->id }}" value="{{ $doc->name }}"
+                                                        {{ $isOptChecked ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="doc_{{ $doc->id }}">
+                                                        {{ $doc->name }}
                                                         <small class="text-muted ml-1">(Optional)</small>
-                                                    @endif
-                                                </label>
-                                            </div>
-                                        @endforeach
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        @endif
                                     @else
-                                        <p class="text-muted mb-0 small p-1">Please select an Origin Country to view
-                                            required documents.</p>
+                                        <p class="text-muted mb-0 small p-1">Please select an Origin Country to view required documents.</p>
                                     @endif
                                 </div>
                                 <input type="hidden" name="documents_to_be_provided" id="documents_to_be_provided"
-                                    value="">
+                                    value="{{ old('documents_to_be_provided', '') }}">
                             </div>
 
                             <div class="row p-2">
@@ -1186,31 +1222,44 @@
                                         country_id: countryId
                                     },
                                     success: function(response) {
-                                        if (response.success && response.documents && response.documents.length >
-                                            0) {
-                                            var html = '';
-                                            $.each(response.documents, function(index, doc) {
-                                                var isReq = doc.is_required ? true : false;
-                                                var checkedAttr = isReq ? 'checked' : '';
-                                                var disabledAttr = isReq ? 'disabled' : '';
-                                                var reqBadge = isReq ?
-                                                    '<small class="text-danger font-weight-bold ml-1"></small>' :
-                                                    '<small class="text-muted ml-1"></small>';
+                                        var hasReq = response.re_documents && response.re_documents.length > 0;
+                                        var hasOpt = response.opt_documents && response.opt_documents.length > 0;
 
-                                                html += '<div class="custom-control custom-checkbox mb-1">';
-                                                html +=
-                                                    '  <input type="checkbox" class="custom-control-input document-checkbox"';
-                                                html += '    id="doc_' + doc.id + '" value="' + doc.name +
-                                                    '" ' + checkedAttr + ' ' + disabledAttr + '>';
-                                                html += '  <label class="custom-control-label" for="doc_' +
-                                                    doc.id + '">' + doc.name + ' ' + reqBadge + '</label>';
-                                                html += '</div>';
-                                            });
+                                        if (response.success && (hasReq || hasOpt)) {
+                                            var html = '';
+
+                                            // Required Documents
+                                            if (hasReq) {
+                                                html += '<div class="text-muted font-weight-bold small text-uppercase mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Required Documents:</div>';
+                                                $.each(response.re_documents, function(index, doc) {
+                                                    html += '<div class="custom-control custom-checkbox mb-1">';
+                                                    html += '  <input type="checkbox" class="custom-control-input document-checkbox"';
+                                                    html += '    id="doc_' + doc.id + '" value="' + doc.name + '" checked disabled>';
+                                                    html += '  <label class="custom-control-label" for="doc_' + doc.id + '">' + doc.name + ' <small class="text-danger font-weight-bold ml-1">(Required)</small></label>';
+                                                    html += '</div>';
+                                                });
+                                            }
+
+                                            // Optional Documents (uncheck by default on origin change)
+                                            if (hasOpt) {
+                                                if (hasReq) {
+                                                    html += '<hr class="my-2">';
+                                                }
+                                                html += '<div class="text-muted font-weight-bold small text-uppercase mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Optional Documents:</div>';
+                                                $.each(response.opt_documents, function(index, doc) {
+                                                    html += '<div class="custom-control custom-checkbox mb-1">';
+                                                    html += '  <input type="checkbox" class="custom-control-input document-checkbox"';
+                                                    html += '    id="doc_' + doc.id + '" value="' + doc.name + '">';
+                                                    html += '  <label class="custom-control-label" for="doc_' + doc.id + '">' + doc.name + ' <small class="text-muted ml-1">(Optional)</small></label>';
+                                                    html += '</div>';
+                                                });
+                                            }
+
                                             $checklist.html(html);
                                         } else {
                                             $checklist.html(
                                                 '<p class="text-muted mb-0 small p-1">No documents configured for this country.</p>'
-                                                );
+                                            );
                                         }
                                         updateDocumentsList();
                                     },
@@ -1803,7 +1852,7 @@
                     </td>
                     <td>
                         <select name="packing_items[${parentIndex}][sub_items][${subIndex}][bag_size_id]" class="form-control form-control-sm select2 sub-bag-size-id">
-                            <option value="">Select Bag Packing</option>
+                            <option value="">Select Bag Size</option>
                             @foreach ($bagSizes as $sz)
                                 <option value="{{ $sz->id }}" data-size="{{ $sz->size }}">{{ $sz->size }}</option>
                             @endforeach

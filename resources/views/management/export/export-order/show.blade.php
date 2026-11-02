@@ -201,6 +201,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label>Fumigation Type:</label>
+                        <input type="text" class="form-control"
+                            value="{{ $exportOrder->fumigation_type ? ucfirst($exportOrder->fumigation_type) : '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label>Inspection By:</label>
                         @php
                             $iNames = [];

@@ -806,6 +806,33 @@
 
                 // Rebuild packing rows
                 addPackingRowsFromExportOrder(data.packing_items);
+                if (!data.packing_items || data.packing_items.length === 0) {
+                    let fumigationVal = data.fumigation_company_id || data.fumigation_by;
+                    if (fumigationVal) {
+                        if (typeof fumigationVal === 'string') {
+                            try { fumigationVal = JSON.parse(fumigationVal); } catch(e) { fumigationVal = [fumigationVal]; }
+                        }
+                        if (Array.isArray(fumigationVal)) {
+                            fumigationVal = fumigationVal.map(String);
+                        } else {
+                            fumigationVal = [String(fumigationVal)];
+                        }
+                        $('select[name="packing_items[0][fumigation_company_id][]"]').val(fumigationVal).trigger('change');
+                    }
+                    if (data.fumigation_type) {
+                        let fTypeSelect = $('select[name="packing_items[0][fumigation_type]"]');
+                        fTypeSelect.val(data.fumigation_type).trigger('change');
+                        if (!fTypeSelect.val()) {
+                            let lowerVal = String(data.fumigation_type).toLowerCase().trim();
+                            fTypeSelect.find('option').each(function() {
+                                if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                    fTypeSelect.val($(this).val()).trigger('change');
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+                }
                 updateFumigationRequirement();
             }).fail(function(xhr) {
                 console.error('Export Order Details Error:', xhr.status, xhr.responseText);
@@ -1190,13 +1217,32 @@
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
                 
                 // Fumigation sync
-                if (item.fumigation_company_id) {
+                let fumigationVal = item.fumigation_company_id || item.fumigation_by;
+                if (fumigationVal) {
                     let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
-                    fumigationSelect.val(item.fumigation_company_id);
+                    let fVal = fumigationVal;
+                    if (typeof fVal === 'string') {
+                        try { fVal = JSON.parse(fVal); } catch(e) { fVal = [fVal]; }
+                    }
+                    if (Array.isArray(fVal)) {
+                        fVal = fVal.map(String);
+                    } else if (fVal) {
+                        fVal = [String(fVal)];
+                    }
+                    fumigationSelect.val(fVal);
                 }
                 if (item.fumigation_type) {
                     let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
                     fumigationTypeSelect.val(item.fumigation_type);
+                    if (!fumigationTypeSelect.val()) {
+                        let lowerVal = String(item.fumigation_type).toLowerCase().trim();
+                        fumigationTypeSelect.find('option').each(function() {
+                            if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                fumigationTypeSelect.val($(this).val());
+                                return false;
+                            }
+                        });
+                    }
                 }
                 
                 // Clear sub items container
@@ -1339,13 +1385,32 @@
                 }
 
                 // Fumigation sync
-                if (item.fumigation_company_id) {
+                let fumigationVal = item.fumigation_company_id || item.fumigation_by;
+                if (fumigationVal) {
                     let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
-                    fumigationSelect.val(item.fumigation_company_id);
+                    let fVal = fumigationVal;
+                    if (typeof fVal === 'string') {
+                        try { fVal = JSON.parse(fVal); } catch(e) { fVal = [fVal]; }
+                    }
+                    if (Array.isArray(fVal)) {
+                        fVal = fVal.map(String);
+                    } else if (fVal) {
+                        fVal = [String(fVal)];
+                    }
+                    fumigationSelect.val(fVal);
                 }
                 if (item.fumigation_type) {
                     let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
                     fumigationTypeSelect.val(item.fumigation_type);
+                    if (!fumigationTypeSelect.val()) {
+                        let lowerVal = String(item.fumigation_type).toLowerCase().trim();
+                        fumigationTypeSelect.find('option').each(function() {
+                            if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                fumigationTypeSelect.val($(this).val());
+                                return false;
+                            }
+                        });
+                    }
                 }
 
                 // Attachment sync

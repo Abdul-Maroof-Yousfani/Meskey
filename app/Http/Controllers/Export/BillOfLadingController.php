@@ -257,7 +257,7 @@ class BillOfLadingController extends Controller
     public function getNumber(Request $request): JsonResponse
     {
         $date = Carbon::parse($request->get('bill_date', now()->toDateString()));
-        $prefix = 'BOL-' . $date->format('Y-m-d');
+        $prefix = 'BL-' . $date->format('Y-m-d');
         $latest = BillOfLading::where('bill_no', 'like', $prefix . '-%')->latest('id')->first();
         $next = 1;
 

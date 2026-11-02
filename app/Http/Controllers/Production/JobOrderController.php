@@ -1107,7 +1107,7 @@ class JobOrderController extends Controller
         // Track how much "consumed" quantity is left to subtract from items sequentially
         $tempConsumed = $consumedMt;
 
-        $packingItems = $exportOrder->packingItems->sortBy('id')->map(function ($item) use (&$tempConsumed) {
+        $packingItems = $exportOrder->packingItems->sortBy('id')->map(function ($item) use (&$tempConsumed, $exportOrder) {
             $originalMt = (float) $item->metric_tons;
             $originalBags = (int) $item->no_of_bags;
             
@@ -1164,7 +1164,9 @@ class JobOrderController extends Controller
                 'stuffing_in_container' => $item->stuffing_in_container,
                 'no_of_containers'  => $item->no_of_containers,
                 'min_weight_empty_bags' => $item->min_weight_empty_bags,
-                'fumigation_company_id' => $item->fumigation_company_id,
+                'fumigation_company_id' => $exportOrder->fumigation_by,
+                'fumigation_by'     => $exportOrder->fumigation_by,
+                'fumigation_type'   => $exportOrder->fumigation_type,
                 'sub_items'         => $subItems,
             ];
         })->values();
@@ -1173,6 +1175,9 @@ class JobOrderController extends Controller
             'ref_no'              => $exportOrder->contract_no ?? $exportOrder->voucher_no,
             'product_id'          => $exportOrder->product_id,
             'other_specifications' => $exportOrder->other_specifications,
+            'fumigation_company_id' => $exportOrder->fumigation_by,
+            'fumigation_by'       => $exportOrder->fumigation_by,
+            'fumigation_type'     => $exportOrder->fumigation_type,
             'specifications'      => $exportOrder->specifications->map(function ($s) {
                 return [
                     'product_slab_type_id' => $s->product_slab_type_id,

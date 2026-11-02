@@ -5,6 +5,7 @@ namespace App\Models\Export;
 use App\Models\Master\Brands;
 use App\Models\Master\Color;
 use App\Models\Master\Stitching;
+use App\Models\Master\Size;
 use App\Models\BagPacking;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -58,12 +59,12 @@ class ExportOrderPackingSubItem extends Model
 
     public function bagSize()
     {
-        return $this->belongsTo(BagPacking::class, 'bag_size_id');
+        return $this->belongsTo(Size::class, 'bag_size_id');
     }
 
     public function bagPacking()
     {
-        return $this->belongsTo(BagPacking::class, 'bag_size_id');
+        return $this->belongsTo(Size::class, 'bag_size_id');
     }
 
     public function stitching()

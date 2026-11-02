@@ -162,6 +162,7 @@ class ExportOrderRequest extends FormRequest
             ],
             'fumigation_by' => ['required', 'array', 'min:1'],
             'fumigation_by.*' => ['required', 'exists:fumigation_companies,id'],
+            'fumigation_type' => ['nullable', 'string', 'max:100'],
             'inspection_by' => ['required', 'array', 'min:1'],
             'inspection_by.*' => ['required', 'exists:inspection_companies,id'],
 
@@ -218,7 +219,7 @@ class ExportOrderRequest extends FormRequest
             'packing_items.*.total_kgs' => ['required', 'numeric', 'min:0'],
             'packing_items.*.sub_items' => ['nullable', 'array'],
             'packing_items.*.sub_items.*.bag_type_id' => ['nullable', 'exists:bag_types,id'],
-            'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:bag_packings,id'],
+            'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:sizes,id'],
             'packing_items.*.sub_items.*.no_of_primary_bags' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.no_of_bags' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.empty_bags' => ['nullable', 'numeric', 'min:0'],

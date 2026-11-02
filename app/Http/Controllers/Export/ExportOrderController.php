@@ -34,6 +34,7 @@ use App\Models\Master\Customer;
 use App\Models\Master\FumigationCompany;
 use App\Models\Export\ExportSodaField;
 use App\Models\Export\Quotation;
+use App\Models\Master\Size;
 
 class ExportOrderController extends Controller
 {
@@ -82,10 +83,11 @@ class ExportOrderController extends Controller
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
-        $bagSizes = BagPacking::where('status', 1)->get();
+        $bagSizes = Size::where('status', 1)->get();
         $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors = Color::where('status', 1)->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $fumigationTypes = \App\Models\Setting::getFumigationTypes();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
         $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
@@ -118,7 +120,8 @@ class ExportOrderController extends Controller
             'inspectionCompanies',
             'gaftas',
             'shipmentCountries',
-            'documentLists'
+            'documentLists',
+            'fumigationTypes'
         ));
     }
 
@@ -297,10 +300,11 @@ class ExportOrderController extends Controller
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
-        $bagSizes = BagPacking::where('status', 1)->get();
+        $bagSizes = Size::where('status', 1)->get();
         $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors = Color::where('status', 1)->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $fumigationTypes = \App\Models\Setting::getFumigationTypes();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
         $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
@@ -334,7 +338,8 @@ class ExportOrderController extends Controller
             'inspectionCompanies',
             'gaftas',
             'shipmentCountries',
-            'documentLists'
+            'documentLists',
+            'fumigationTypes'
         ));
     }
 
@@ -361,10 +366,11 @@ class ExportOrderController extends Controller
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
-        $bagSizes = BagPacking::where('status', 1)->get();
+        $bagSizes = Size::where('status', 1)->get();
         $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors = Color::where('status', 1)->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $fumigationTypes = \App\Models\Setting::getFumigationTypes();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
         $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
@@ -398,7 +404,8 @@ class ExportOrderController extends Controller
             'inspectionCompanies',
             'gaftas',
             'shipmentCountries',
-            'documentLists'
+            'documentLists',
+            'fumigationTypes'
         ));
     }
 
@@ -865,15 +872,29 @@ class ExportOrderController extends Controller
         if (!$countryId) {
             return response()->json([
                 'success' => true,
+                're_documents' => [],
+                'opt_documents' => [],
                 'documents' => [],
             ]);
         }
 
-        $documents = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])
+        $re_documents = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])
             ->whereHas('port', function ($query) use ($countryId) {
                 $query->where('country_id', $countryId);
             })
-            ->orderBy('is_required', 'desc')
+            ->where('is_required',1)
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name', 'is_required', 'port_id'])
+            ->unique('name')
+            ->values();
+
+        $excludedNames = $re_documents->pluck('name')->filter()->toArray();
+
+        $opt_documents = \App\Models\Export\DocumentList::whereIn('status', ['active', 1, '1'])
+            ->when(!empty($excludedNames), function ($q) use ($excludedNames) {
+                $q->whereNotIn('name', $excludedNames);
+            })
+
             ->orderBy('name', 'asc')
             ->get(['id', 'name', 'is_required', 'port_id'])
             ->unique('name')
@@ -881,7 +902,9 @@ class ExportOrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'documents' => $documents,
+            're_documents' => $re_documents,
+            'opt_documents' => $opt_documents,
+            'documents' => $re_documents->concat($opt_documents)->values(),
         ]);
     }
 

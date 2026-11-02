@@ -26,13 +26,14 @@
                     <div class="col-12">
                         <h6 class="header-heading-sepration text-uppercase">Document Information</h6>
                     </div>
-                
+
                     <div class="col-md-4" id="customer_container" style="display: none;">
                         <div class="form-group">
                             <label for="customer_id" class="text-uppercase">Customer (Buyer)</label>
-                            <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
+                            <select name="customer_id" id="customer_id" class="form-control select2"
+                                style="width: 100%;">
                                 <option value="">Select Customer</option>
-                                @foreach($customers as $customer)
+                                @foreach ($customers as $customer)
                                     <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                                 @endforeach
                             </select>
@@ -42,13 +43,16 @@
                     <!-- Row 1: Loading Request, Date, SO # -->
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="sale_order_id" class="text-uppercase" id="document_select_label">Loading Request (Sale Order)</label>
-                            <select name="sale_order_id" id="sale_order_id" class="form-control select2 document-select" style="width: 100%;">
+                            <label for="sale_order_id" class="text-uppercase" id="document_select_label">Loading Request
+                                (Sale Order)</label>
+                            <select name="sale_order_id" id="sale_order_id" class="form-control select2 document-select"
+                                style="width: 100%;">
                                 <option value="">Select Sale Order</option>
                             </select>
-                            <select name="export_order_id" id="export_order_id" class="form-control select2 document-select" style="width: 100%; display: none;">
+                            <select name="export_order_id" id="export_order_id"
+                                class="form-control select2 document-select" style="width: 100%; display: none;">
                                 <option value="">Select Export Order</option>
-                                @foreach($exportOrders as $order)
+                                @foreach ($exportOrders as $order)
                                     <option value="{{ $order->id }}">
                                         {{ $order->voucher_no }}
                                     </option>
@@ -77,7 +81,8 @@
                     <!-- Row 2: Order Qty, Commodity, Trade Term -->
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="so_qty" class="text-uppercase" id="order_qty_label">Sales Order Qty (kg)</label>
+                            <label for="so_qty" class="text-uppercase" id="order_qty_label">Sales Order Qty
+                                (kg)</label>
                             <input type="number" name="so_qty" id="so_qty" class="form-control" readonly>
                         </div>
                     </div>
@@ -100,7 +105,8 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="location" class="text-uppercase">From Location</label>
-                            <select name="location" id="location" class="form-control select2" required style="width: 100%;">
+                            <select name="location" id="location" class="form-control select2" required
+                                style="width: 100%;">
                                 <option value="">Select From Location</option>
                             </select>
                             <input type="hidden" name="hidden_location" id="hidden_location">
@@ -110,19 +116,23 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="factory" class="text-uppercase">Factory</label>
-                            <select name="factory[]" id="factory" class="form-control select2" multiple style="width: 100%;">
+                            <select name="factory[]" id="factory" class="form-control select2" multiple
+                                style="width: 100%;">
                             </select>
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="to_location" class="text-uppercase" id="to_location_label">To Location</label>
+                            <label for="to_location" class="text-uppercase" id="to_location_label">To
+                                Location</label>
                             <div id="to_location_input_wrapper">
-                                <input type="text" name="to_location" id="to_location_input" class="form-control" placeholder="Enter To Location" required>
+                                <input type="text" name="to_location" id="to_location_input" class="form-control"
+                                    placeholder="Enter To Location" required>
                             </div>
                             <div id="to_location_select_wrapper" style="display: none;">
-                                <select id="to_location_select" class="form-control select2" style="width: 100%;" disabled>
+                                <select id="to_location_select" class="form-control select2" style="width: 100%;"
+                                    disabled>
                                     <option value="">Select Port of Loading</option>
                                 </select>
                             </div>
@@ -140,7 +150,8 @@
                     <div class="col-md-4" style="display: none;">
                         <div class="form-group">
                             <label for="delivery_address" class="text-uppercase">Delivery Address</label>
-                            <input type="text" name="delivery_address" id="delivery_address" class="form-control" readonly>
+                            <input type="text" name="delivery_address" id="delivery_address" class="form-control"
+                                readonly>
                         </div>
                     </div>
                 </div>
@@ -167,7 +178,8 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="shipping_line" class="text-uppercase">Shipping Line</label>
-                            <input type="text" name="shipping_line" id="shipping_line" class="form-control" readonly>
+                            <input type="text" name="shipping_line" id="shipping_line" class="form-control"
+                                readonly>
                         </div>
                     </div>
                 </div>
@@ -175,72 +187,73 @@
                 <div class="row mt-4">
                     <div class="col-12">
                         <h6 class="header-heading-sepration text-uppercase">Logistics Items</h6>
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="itemsTable">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Rate Type</th>
-                                    <th>Rate</th>
-                                    <th id="partner_column_label">Transporter</th>
-                                    <th id="qty_column_label">Qty</th>
-                                    <th class="export-only-fields" style="display: none;">Brand</th>
-                                    <th class="export-only-fields" style="display: none;">Packing Size</th>
-                                    <th width="50">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemsBody">
-                                <tr class="item-row">
-                                    <td>
-                                        <select name="items[0][rate_type]" class="form-control" required>
-                                            <option value="">Select Type</option>
-                                            <option value="Per MT">Per MT</option>
-                                            <option value="Per KG">Per KG</option>
-                                            <option value="Per Truck" selected>Per Truck</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="number" name="items[0][rate]" class="form-control"
-                                            step="0.01" required>
-                                    </td>
-                                    <td>
-                                        <select name="items[0][transporter]" class="form-control transporter-select" required>
-                                            <option value="">Select Transporter</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="number" name="items[0][qty]" class="form-control"
-                                            step="0.01" required>
-                                    </td>
-                                    <td class="export-only-fields" style="display: none;">
-                                        <select name="items[0][brand]" class="form-control brand-select">
-                                            <option value="">Select Brand</option>
-                                        </select>
-                                    </td>
-                                    <td class="export-only-fields" style="display: none;">
-                                        <select name="items[0][packing_size]" class="form-control packing-size-select">
-                                            <option value="">Select Size</option>
-                                        </select>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger remove-row"
-                                            disabled>
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="7">
-                                        <button type="button" class="btn btn-sm btn-info" id="addRow">
-                                            <i class="fa fa-plus"></i> Add row
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="itemsTable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Rate Type</th>
+                                        <th>Rate</th>
+                                        <th id="partner_column_label">Transporter</th>
+                                        <th id="qty_column_label">Qty</th>
+                                        <th class="export-only-fields" style="display: none;">Brand</th>
+                                        <th class="export-only-fields" style="display: none;">Packing Size</th>
+                                        <th width="50">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsBody">
+                                    <tr class="item-row">
+                                        <td>
+                                            <select name="items[0][rate_type]" class="form-control" required>
+                                                <option value="">Select Type</option>
+                                                <option value="Per MT">Per MT</option>
+                                                <option value="Per KG">Per KG</option>
+                                                <option value="Per Truck" selected>Per Truck</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="items[0][rate]" class="form-control"
+                                                step="0.01" required>
+                                        </td>
+                                        <td>
+                                            <select name="items[0][transporter]"
+                                                class="form-control transporter-select" required>
+                                                <option value="">Select Transporter</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="items[0][qty]" class="form-control"
+                                                step="0.01" required>
+                                        </td>
+                                        <td class="export-only-fields" style="display: none;">
+                                            <select name="items[0][brand]" class="form-control brand-select">
+                                                <option value="">Select Brand</option>
+                                            </select>
+                                        </td>
+                                        <td class="export-only-fields" style="display: none;">
+                                            <select name="items[0][packing_size]"
+                                                class="form-control packing-size-select">
+                                                <option value="">Select Size</option>
+                                            </select>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-danger remove-row" disabled>
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="7">
+                                            <button type="button" class="btn btn-sm btn-info" id="addRow">
+                                                <i class="fa fa-plus"></i> Add row
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -294,7 +307,7 @@
                 placeholder: 'Select Transporter'
             };
 
-            $(selector).each(function () {
+            $(selector).each(function() {
                 const $select = $(this);
                 if ($select.hasClass('select2-hidden-accessible')) {
                     $select.select2('destroy');
@@ -303,13 +316,15 @@
                 const selectedValue = $select.val();
                 const selectedText = $select.find('option:selected').text();
 
-                $select.empty().append(new Option(config.placeholder, '', !selectedValue, !selectedValue));
+                $select.empty().append(new Option(config.placeholder, '', !selectedValue, !
+                    selectedValue));
 
                 if (selectedValue) {
                     $select.append(new Option(selectedText, selectedValue, true, true));
                 }
 
-                initializeDynamicSelect2($select, config.table, config.column, config.idColumn, false, false);
+                initializeDynamicSelect2($select, config.table, config.column, config.idColumn, false,
+                    false);
             });
         }
 
@@ -321,9 +336,9 @@
             let rateType = data ? data.rate_type : 'Per Truck';
             let rate = data ? data.rate : '';
             let transporterId = data ? data.transporter_id : '';
-            let transporterName = data
-                ? (data.transporter_name || data.transporter?.company_name || data.transporter?.name)
-                : '';
+            let transporterName = data ?
+                (data.transporter_name || data.transporter?.company_name || data.transporter?.name) :
+                '';
             let qty = data ? data.qty : '';
             let brand = data ? data.brand : '';
             let packingSize = data ? data.packing_size : '';
@@ -333,12 +348,14 @@
 
             let brandOptionsHtml = '<option value="">Select Brand</option>';
             currentBrands.forEach(b => {
-                brandOptionsHtml += `<option value="${b}" ${brand === b ? 'selected' : ''}>${b}</option>`;
+                brandOptionsHtml +=
+                    `<option value="${b}" ${brand === b ? 'selected' : ''}>${b}</option>`;
             });
 
             let packingSizeOptionsHtml = '<option value="">Select Size</option>';
             currentPackingSizes.forEach(p => {
-                packingSizeOptionsHtml += `<option value="${p}" ${packingSize === p ? 'selected' : ''}>${p}</option>`;
+                packingSizeOptionsHtml +=
+                    `<option value="${p}" ${packingSize === p ? 'selected' : ''}>${p}</option>`;
             });
 
             let isExport = $('#type').val() === 'export_order';
@@ -384,7 +401,7 @@
                 </tr>
             `;
             $('#itemsBody').append(newRow);
-            
+
             // Re-initialize Select2 for the new row
             if ($.fn.select2) {
                 initTransporterSelect('#itemsBody tr:last .transporter-select');
@@ -412,9 +429,10 @@
             }
 
             (options || []).forEach(function(option) {
-                const isSelected = isMultiple
-                    ? (selectedArray.includes(option.id.toString()) || selectedArray.includes(option.name.toString()))
-                    : (selectedValue && option.id.toString() === selectedValue.toString());
+                const isSelected = isMultiple ?
+                    (selectedArray.includes(option.id.toString()) || selectedArray.includes(option.name
+                        .toString())) :
+                    (selectedValue && option.id.toString() === selectedValue.toString());
                 $select.append(new Option(option.name, option.id, isSelected, isSelected));
             });
 
@@ -423,12 +441,18 @@
 
         function updateLocationFields(type, data, selectedLogistics = null) {
             const isExport = type === 'export_order';
-            const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics.location : '';
-            const savedToLocation = selectedLogistics && selectedLogistics.to_location ? selectedLogistics.to_location : '';
-            const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : (data.default_factories || []);
-            let fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
-            const toLocationValue = /^\d+$/.test(String(savedToLocation)) ? savedToLocation : (data.to_location_id || '');
-            const fromLocationOptions = data.from_location_options && data.from_location_options.length > 0 ? data.from_location_options : (saleToLocationOptions || []);
+            const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics
+                .location : '';
+            const savedToLocation = selectedLogistics && selectedLogistics.to_location ? selectedLogistics
+                .to_location : '';
+            const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : (
+                data.default_factories || []);
+            let fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data
+                .from_location_id || '');
+            const toLocationValue = /^\d+$/.test(String(savedToLocation)) ? savedToLocation : (data
+                .to_location_id || '');
+            const fromLocationOptions = data.from_location_options && data.from_location_options.length > 0 ?
+                data.from_location_options : (saleToLocationOptions || []);
             if (!fromLocationValue && fromLocationOptions.length > 0) {
                 fromLocationValue = fromLocationOptions[0].id;
             }
@@ -438,7 +462,8 @@
                 $('#to_location_input_wrapper').hide();
                 $('#to_location_input').prop('disabled', true).removeAttr('name').prop('required', false);
                 $('#to_location_select_wrapper').show();
-                $('#to_location_select').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                $('#to_location_select').prop('disabled', false).attr('name', 'to_location').prop('required',
+                    true);
                 populateSelectOptions(
                     $('#to_location_select'),
                     data.to_location_options || [],
@@ -450,7 +475,8 @@
                 $('#to_location_select_wrapper').hide();
                 $('#to_location_select').prop('disabled', true).removeAttr('name').prop('required', false);
                 $('#to_location_input_wrapper').show();
-                $('#to_location_input').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                $('#to_location_input').prop('disabled', false).attr('name', 'to_location').prop('required',
+                    true);
                 if (savedToLocation) {
                     $('#to_location_input').val(savedToLocation);
                 }
@@ -471,12 +497,12 @@
         function updateTypeUI(type) {
             const isExport = type === 'export_order';
 
-            $('#document_select_label').text(isExport ? 'Loading Request (Export Order)' : 'Loading Request (Sale Order)');
+            $('#document_select_label').text(isExport ? 'Export Order' : 'Loading Request (Sale Order)');
             $('#document_no_label').text(isExport ? 'EO #' : 'SO #');
             $('#order_qty_label').text(isExport ? 'Export Order Qty (MT)' : 'Sales Order Qty (kg)');
             $('#trade_term_label').text(isExport ? 'Inco Term' : 'Sauda Type');
             $('#partner_column_label').text('Transporter');
-            $('#qty_column_label').text(isExport ? 'No. of containers' : 'Qty');
+            $('#qty_column_label').text(isExport ? 'No. of Truck' : 'Qty');
 
             if (isExport) {
                 $('.export-only-fields').show();
@@ -484,7 +510,8 @@
                 $('#to_location_input_wrapper').hide();
                 $('#to_location_input').prop('disabled', true).removeAttr('name').prop('required', false);
                 $('#to_location_select_wrapper').show();
-                $('#to_location_select').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                $('#to_location_select').prop('disabled', false).attr('name', 'to_location').prop('required',
+                    true);
                 populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
             } else {
                 $('.export-only-fields').hide();
@@ -492,20 +519,21 @@
                 $('#to_location_select_wrapper').hide();
                 $('#to_location_select').prop('disabled', true).removeAttr('name').prop('required', false);
                 $('#to_location_input_wrapper').show();
-                $('#to_location_input').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                $('#to_location_input').prop('disabled', false).attr('name', 'to_location').prop('required',
+                    true);
             }
 
             $('#sale_order_id').prop('required', !isExport).toggle(!isExport);
             $('#export_order_id').prop('required', isExport).toggle(isExport);
             $('#sale_order_id').next('.select2-container').toggle(!isExport);
             $('#export_order_id').next('.select2-container').toggle(isExport);
-            
+
             $('#customer_container').toggle(!isExport);
             $('#customer_id').prop('required', !isExport);
-            
+
             $('#to_location_label').text(isExport ? 'Port of Loading' : 'To Location');
 
-            $('#itemsBody .transporter-select').each(function () {
+            $('#itemsBody .transporter-select').each(function() {
                 const currentText = $(this).find('option:selected').text();
                 if (!$(this).val() || currentText === 'Select Transporter') {
                     $(this).empty().append(new Option(getPartnerPlaceholder(), '', true, true));
@@ -523,7 +551,7 @@
             if (type === 'sale_order' || type === 'export_order') {
                 $('#document_info_container').show();
                 updateTypeUI(type);
-                
+
                 $('#customer_id').val('').trigger('change');
                 $('#sale_order_id, #export_order_id').val('').trigger('change');
 
@@ -570,7 +598,8 @@
                         $saleOrderSelect.append(new Option(item.text, item.id));
                     });
 
-                    if (currentValue && $saleOrderSelect.find('option[value="' + currentValue + '"]').length > 0) {
+                    if (currentValue && $saleOrderSelect.find('option[value="' + currentValue +
+                            '"]').length > 0) {
                         $saleOrderSelect.val(currentValue);
                     }
                     $saleOrderSelect.trigger('change');
@@ -590,7 +619,9 @@
                 $.ajax({
                     url: url,
                     method: 'GET',
-                    data: { type: type },
+                    data: {
+                        type: type
+                    },
                     success: function(data) {
                         $('#date').val(data.date);
                         $('#so_no').val(data.so_no);
@@ -621,15 +652,20 @@
                                 $('#type').val(data.logistics.type).trigger('change');
                             }
                             $('#date').val(data.logistics.date);
-                            if(data.logistics.delivery_address) $('#delivery_address').val(data.logistics.delivery_address);
+                            if (data.logistics.delivery_address) $('#delivery_address').val(data
+                                .logistics.delivery_address);
                             if (data.logistics.type === 'export_order') {
-                                $('#job_order').val(data.logistics.job_order || data.job_order || '');
-                                $('#return_port').val(data.logistics.return_port || data.return_port || '');
-                                $('#booking_no').val(data.logistics.booking_no || data.booking_no || '');
-                                $('#shipping_line').val(data.logistics.shipping_line || data.shipping_line || '');
+                                $('#job_order').val(data.logistics.job_order || data.job_order ||
+                                    '');
+                                $('#return_port').val(data.logistics.return_port || data
+                                    .return_port || '');
+                                $('#booking_no').val(data.logistics.booking_no || data.booking_no ||
+                                    '');
+                                $('#shipping_line').val(data.logistics.shipping_line || data
+                                    .shipping_line || '');
                             }
                             updateLocationFields(type, data, data.logistics);
-                            
+
                             $('#itemsBody').empty();
                             rowCount = 0;
                             if (data.logistics.items && data.logistics.items.length > 0) {
@@ -655,7 +691,8 @@
                 });
             } else {
                 // Clear fields if no order selected
-                $('#date, #so_no, #so_qty, #commodity, #sauda_type, #customer, #delivery_address, #loading_request').val('');
+                $('#date, #so_no, #so_qty, #commodity, #sauda_type, #customer, #delivery_address, #loading_request')
+                    .val('');
                 $('#job_order, #return_port, #booking_no, #shipping_line').val('');
                 currentBrands = [];
                 currentPackingSizes = [];
@@ -672,12 +709,14 @@
 
         $('#sale_order_id').on('change', function() {
             if ($('#type').val() !== 'sale_order') return;
-            fetchOrderDetails($(this).val(), 'sale_order', $('#sale_order_id option:selected').text().trim());
+            fetchOrderDetails($(this).val(), 'sale_order', $('#sale_order_id option:selected').text()
+                .trim());
         });
 
         $('#export_order_id').on('change', function() {
             if ($('#type').val() !== 'export_order') return;
-            fetchOrderDetails($(this).val(), 'export_order', $('#export_order_id option:selected').text().trim());
+            fetchOrderDetails($(this).val(), 'export_order', $('#export_order_id option:selected')
+            .text().trim());
         });
 
         $('#addRow').off('click').on('click', function() {

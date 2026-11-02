@@ -1251,13 +1251,32 @@
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
                 
                 // Fumigation sync
-                if (item.fumigation_company_id) {
+                let fumigationVal = item.fumigation_company_id || item.fumigation_by;
+                if (fumigationVal) {
                     let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
-                    fumigationSelect.val(item.fumigation_company_id);
+                    let fVal = fumigationVal;
+                    if (typeof fVal === 'string') {
+                        try { fVal = JSON.parse(fVal); } catch(e) { fVal = [fVal]; }
+                    }
+                    if (Array.isArray(fVal)) {
+                        fVal = fVal.map(String);
+                    } else if (fVal) {
+                        fVal = [String(fVal)];
+                    }
+                    fumigationSelect.val(fVal);
                 }
                 if (item.fumigation_type) {
                     let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
                     fumigationTypeSelect.val(item.fumigation_type);
+                    if (!fumigationTypeSelect.val()) {
+                        let lowerVal = String(item.fumigation_type).toLowerCase().trim();
+                        fumigationTypeSelect.find('option').each(function() {
+                            if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                fumigationTypeSelect.val($(this).val());
+                                return false;
+                            }
+                        });
+                    }
                 }
                 
                 // Clear sub items container
@@ -1271,7 +1290,12 @@
                 // Clean up any select2 leftovers and re-initialize
                 row.find('.select2-container').remove();
                 row.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
-                row.find('select.select2').select2({width: '100%'});
+                row.find('select.select2').each(function() {
+                    $(this).select2({width: '100%'});
+                    if ($(this).val()) {
+                        $(this).trigger('change');
+                    }
+                });
 
                 // Trigger percentage calculation manually
                 if (item.no_of_bags > 0 && item.extra_bags > 0) {
@@ -1382,13 +1406,32 @@
                 }
 
                 // Fumigation sync
-                if (item.fumigation_company_id) {
+                let fumigationVal = item.fumigation_company_id || item.fumigation_by;
+                if (fumigationVal) {
                     let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
-                    fumigationSelect.val(item.fumigation_company_id);
+                    let fVal = fumigationVal;
+                    if (typeof fVal === 'string') {
+                        try { fVal = JSON.parse(fVal); } catch(e) { fVal = [fVal]; }
+                    }
+                    if (Array.isArray(fVal)) {
+                        fVal = fVal.map(String);
+                    } else if (fVal) {
+                        fVal = [String(fVal)];
+                    }
+                    fumigationSelect.val(fVal);
                 }
                 if (item.fumigation_type) {
                     let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
                     fumigationTypeSelect.val(item.fumigation_type);
+                    if (!fumigationTypeSelect.val()) {
+                        let lowerVal = String(item.fumigation_type).toLowerCase().trim();
+                        fumigationTypeSelect.find('option').each(function() {
+                            if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                fumigationTypeSelect.val($(this).val());
+                                return false;
+                            }
+                        });
+                    }
                 }
 
                 // Attachment sync
