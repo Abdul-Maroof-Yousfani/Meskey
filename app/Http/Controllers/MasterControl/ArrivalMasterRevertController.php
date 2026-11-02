@@ -37,12 +37,22 @@ class ArrivalMasterRevertController extends Controller
 
 
 
+        $arrivalTicket = ArrivalTicket::findOrFail($id);
+
+        $targetLocationId = $arrivalTicket->location_id ?? $userLocation?->id;
 
 
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+            ->where("am_approval_status", "approved")
+
             ->where('purchase_type', 'regular')
-            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
-                $q->where('company_location_id', $userLocation?->id);
+            ->where(function ($q) use ($targetLocationId, $arrivalTicket) {
+                if ($targetLocationId) {
+                    $q->where('company_location_id', $targetLocationId);
+                }
+                if ($arrivalTicket->arrival_purchase_order_id) {
+                    $q->orWhere('id', $arrivalTicket->arrival_purchase_order_id);
+                }
             })
             ->orderByDesc('id')
             ->get();
@@ -61,7 +71,6 @@ class ArrivalMasterRevertController extends Controller
             })
             ->get();
 
-        $arrivalTicket = ArrivalTicket::findOrFail($id);
 
 
         $ArrivalLocations = ArrivalLocation::where('status', 'active')
