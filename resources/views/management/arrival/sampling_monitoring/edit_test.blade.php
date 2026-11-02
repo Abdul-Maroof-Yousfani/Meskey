@@ -1009,8 +1009,10 @@
                                             }
                                         }
 
+                                        // $displayValue =
+                                        //     ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
                                         $displayValue =
-                                            ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
+                                            ($previousValue ?? ($slab->checklist_value ?? 0));
 
                                         $getDeductionSuggestion = getDeductionSuggestion(
                                             $slab->slabType->id,
@@ -1064,8 +1066,10 @@
                                             }
                                         }
 
+                                        // $displayValue =
+                                        //     ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
                                         $displayValue =
-                                            ($previousValue ?? ($slab->checklist_value ?? 0)) - ($slab->relief_deduction ?? 0);
+                                            ($previousValue ?? ($slab->checklist_value ?? 0));
 
                                         $comparisonClass = '';
                                         if ($previousChecklistValue !== null) {
@@ -1091,6 +1095,10 @@
                                                 <input type="text" class="form-control {{ $comparisonClass }}"
                                                     name="checklist_value[]" value="{{ $displayValue }}" placeholder="%"
                                                     readonly>
+                                                <input type="hidden" name="actual_checklist_value[]"
+                                                    value="{{ $slab->checklist_value ?? 0 }}">
+                                                <input type="hidden" name="relief_deduction[]"
+                                                    value="{{ $slab->relief_deduction ?? 0 }}">
                                                 <div class="input-group-append">
                                                     <span
                                                         class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
