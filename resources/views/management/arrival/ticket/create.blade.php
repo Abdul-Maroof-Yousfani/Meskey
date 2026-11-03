@@ -641,7 +641,7 @@
                         $('#arrival_purchase_order_id').append(
                             `<option value="${contract.id}"
                                                         data-product-id="${contract.product_id}"
-                                                        data-supplier-id="${contract.supplier.company_name}"
+                                                        data-supplier-id="${contract.supplier?.company_name ?? ''}"
                                                         data-decision-id="${contract.decision_of_id}"
                                                         data-sauda-type-id="${contract.sauda_type_id}"
                                                         data-sauda-type-name="${contract.sauda_type?.name ?? 'N/A'}"

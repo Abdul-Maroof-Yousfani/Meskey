@@ -432,4 +432,116 @@ class ArrivalPurchaseOrder extends Model
             ]
         ];
     }
+
+    /**
+     * Determine if this purchase order/contract can accept another arrival ticket
+     * based on calculation type (quantity or trucks) and QC/approval status.
+     *
+     * @param int|null $excludeTicketId
+     * @return bool
+     */
+    public function canAcceptArrivalTicket($excludeTicketId = null): bool
+    {
+        if ($this->status === 'completed' || $this->status === 'cancelled') {
+            return false;
+        }
+
+        if (in_array($this->contract_status, ['close-contract-due-to-market-down', 'close-with-market-rate-penalty'])) {
+            return false;
+        }
+
+        // Gate buying contracts only allow 1 ticket
+        if ($this->purchase_type === 'gate_buying') {
+            $tickets = $this->relationLoaded('arrivalTickets')
+                ? $this->arrivalTickets
+                : $this->arrivalTickets()->get();
+
+            if ($excludeTicketId) {
+                $tickets = $tickets->where('id', '!=', $excludeTicketId);
+            }
+            return $tickets->count() === 0;
+        }
+
+        $tickets = $this->relationLoaded('arrivalTickets')
+            ? $this->arrivalTickets
+            : $this->arrivalTickets()->get();
+
+        if ($excludeTicketId) {
+            $tickets = $tickets->where('id', '!=', $excludeTicketId);
+        }
+
+        $calcType = strtolower($this->calculation_type ?? '');
+
+        // 1. Quantity-wise contract
+        if ($calcType === 'quantity') {
+            $contractQty = (float) ($this->max_quantity ?: ($this->min_quantity ?? 0));
+            if ($contractQty <= 0) {
+                return true;
+            }
+
+            $totalUsedQty = 0.0;
+            foreach ($tickets as $ticket) {
+                // Ignore tickets rejected/cancelled in first QC
+                if ($ticket->first_qc_status === 'rejected') {
+                    continue;
+                }
+
+                // If approved (arrival slip generated or has arrived_net_weight), take arrived_net_weight
+                $isApproved = ($ticket->arrival_slip_status === 'generated' || (!is_null($ticket->arrived_net_weight) && (float) $ticket->arrived_net_weight > 0));
+
+                if ($isApproved) {
+                    $totalUsedQty += (float) ($ticket->arrived_net_weight ?: $ticket->net_weight);
+                } else {
+                    // In-process tickets: take net_weight
+                    $totalUsedQty += (float) ($ticket->net_weight ?: 0);
+                }
+            }
+
+            // Hide if total used quantity is equal to or exceeds contract quantity
+            if (round($totalUsedQty, 2) >= round($contractQty, 2)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        // 2. Trucks-based contract (calculation_type == 'trucks' or default)
+        $orderedTrucks = (float) ($this->no_of_trucks ?? 0);
+        if ($orderedTrucks <= 0) {
+            return true;
+        }
+
+        $rejectedCount = 0;
+        $activeTrucksUsed = 0.0;
+
+        foreach ($tickets as $ticket) {
+            if ($ticket->first_qc_status === 'rejected') {
+                $rejectedCount++;
+                continue;
+            }
+
+            // Condition 1: If truck was half rejected, it only counts as 0.5 truck
+            if ($ticket->document_approval_status === 'half_approved' || (float) $ticket->closing_trucks_qty === 0.5) {
+                $activeTrucksUsed += 0.5;
+            } else {
+                $truckWeight = (float) ($ticket->closing_trucks_qty ?: 1.0);
+                $activeTrucksUsed += ($truckWeight > 0 ? $truckWeight : 1.0);
+            }
+        }
+
+        // Condition 2: If cancelled in first QC:
+        // If is_replacement == 1, cancelled trucks are replaced (effective ordered trucks remains orderedTrucks)
+        // If is_replacement == 0, cancelled trucks reduce the allowed capacity (orderedTrucks - rejectedCount)
+        $isReplacement = ($this->is_replacement == 1 || $this->is_replacement === true || $this->is_replacement === '1');
+        $effectiveOrderedTrucks = $isReplacement ? $orderedTrucks : ($orderedTrucks - $rejectedCount);
+        $remainingTrucks = $effectiveOrderedTrucks - $activeTrucksUsed;
+
+        // Hide if tickets made reach or exceed available trucks
+        if (round($remainingTrucks, 2) <= 0) {
+            return false;
+        }
+
+        return true;
+    }
 }
+

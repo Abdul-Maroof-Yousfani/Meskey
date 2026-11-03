@@ -441,7 +441,9 @@
                 $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
                 return;
             }
-            $.get(`/arrival/get-contracts/${locationId}`, function (data) {
+            var ticketId = '{{ $arrivalTicket->id ?? "" }}';
+            var url = `/arrival/get-contracts/${locationId}` + (ticketId ? `?ticket_id=${ticketId}` : '');
+            $.get(url, function (data) {
                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
                 $.each(data.contracts, function (index, contract) {
                     $('#arrival_purchase_order_id').append(

@@ -141,7 +141,7 @@ class TicketController extends Controller
 
         $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
 
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType', 'arrivalTickets'])
             ->where('purchase_type', 'regular')
             ->where("am_approval_status", "approved")
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
@@ -149,7 +149,11 @@ class TicketController extends Controller
             })
             ->whereIn('company_location_id', getUserCurrentCompanyLocations())
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->filter(function ($order) {
+                return $order->canAcceptArrivalTicket();
+            })
+            ->values();
 
         $suppliers = Supplier::where('status', 'active')->get();
         $products = Product::where('status', 'active')->get();
@@ -182,10 +186,12 @@ class TicketController extends Controller
         ]);
     }
 
-    public function getContractsByLocation($locationId)
+    public function getContractsByLocation(Request $request, $locationId)
     {
+        $excludeTicketId = $request->ticket_id ?? null;
+
         // Contracts filtering: for gate_buying, skip those with tickets; for regular, include all
-        $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+        $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType', 'arrivalTickets'])
             ->where('company_location_id', $locationId)
             ->where("am_approval_status", "approved")
             ->where("status", '!=', "completed")
@@ -198,6 +204,9 @@ class TicketController extends Controller
             })
             ->get();
 
+        $contracts = $contracts->filter(function ($contract) use ($excludeTicketId) {
+            return $contract->canAcceptArrivalTicket($excludeTicketId);
+        })->values();
 
         return response()->json([
             'contracts' => $contracts
@@ -345,7 +354,7 @@ class TicketController extends Controller
         }
 
         $targetLocationId = $arrivalTicket->location_id ?? $userLocation?->id;
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
+        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType', 'arrivalTickets'])
             ->where("am_approval_status", "approved")
             ->where(function ($q) use ($targetLocationId, $arrivalTicket) {
                 if ($targetLocationId) {
@@ -356,7 +365,14 @@ class TicketController extends Controller
                 }
             })
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->filter(function ($order) use ($arrivalTicket) {
+                if ($arrivalTicket->arrival_purchase_order_id && $order->id == $arrivalTicket->arrival_purchase_order_id) {
+                    return true;
+                }
+                return $order->canAcceptArrivalTicket($arrivalTicket->id);
+            })
+            ->values();
 
         $suppliers = Supplier::where('status', 'active')->get();
         $products = Product::where('status', 'active')->get();
