@@ -47,6 +47,8 @@ class UpdateProductRequest extends FormRequest
             'product_type' => 'required',
             'bag_weight_for_purchasing' => 'required',
             'status' => 'required|in:active,inactive',
+            'selected_heads' => 'nullable|array',
+            'selected_heads.*' => 'nullable|integer',
         ];
     }
 

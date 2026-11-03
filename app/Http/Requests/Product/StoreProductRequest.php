@@ -38,7 +38,9 @@ class StoreProductRequest extends FormRequest
             'product_category_flags' => 'nullable|in:head,by,b2',
             // 'is_child_product' => 'nullable|in:yes,no',
             // 'is_by_product' => 'nullable|in:yes,no',
-            'status' => 'required|in:active,inactive'
+            'status' => 'required|in:active,inactive',
+            'selected_heads' => 'nullable|array',
+            'selected_heads.*' => 'nullable|integer',
         ];
     }
 

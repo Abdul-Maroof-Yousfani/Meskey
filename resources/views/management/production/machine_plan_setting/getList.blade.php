@@ -4,6 +4,7 @@
     <thead>
         <tr>
             <th>Date</th>
+            <th>Location</th>
             <th>Plant</th>
             <th>Production Voucher</th>
             <th>User</th>
@@ -20,6 +21,11 @@
                     <td>
                         <p class="m-0">
                             {{ $row->date->format('Y-m-d') }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->companyLocation->name ?? ($row->plant->companyLocation->name ?? '--') }}
                         </p>
                     </td>
                     <td>
@@ -50,6 +56,11 @@
                                                     <span class="badge badge-secondary">OFF</span>
                                                 @endif
                                                 <strong>{{ $item->machine->name ?? '--' }}</strong>
+                                                @foreach($item->job_order_id_list as $joId)
+                                                    @if(isset($jobOrderNos[$joId]))
+                                                        <span class="badge badge-info">{{ $jobOrderNos[$joId] }}</span>
+                                                    @endif
+                                                @endforeach
                                                 @if($item->start_time && $item->end_time)
                                                     <span class="text-muted">({{ date('H:i', strtotime($item->start_time)) }}-{{ date('H:i', strtotime($item->end_time)) }})</span>
                                                 @endif
@@ -112,7 +123,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="8" class="ant-table-cell text-center">
+                <td colspan="9" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

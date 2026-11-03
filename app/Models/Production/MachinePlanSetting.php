@@ -17,6 +17,7 @@ class MachinePlanSetting extends Model
 
     protected $fillable = [
         'company_id',
+        'company_location_id',
         'date',
         'plant_id',
         'production_voucher_id',
@@ -31,6 +32,11 @@ class MachinePlanSetting extends Model
     public function plant()
     {
         return $this->belongsTo(Plant::class);
+    }
+
+    public function companyLocation()
+    {
+        return $this->belongsTo(\App\Models\Master\CompanyLocation::class, 'company_location_id');
     }
 
     public function productionVoucher()

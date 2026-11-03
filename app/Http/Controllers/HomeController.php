@@ -939,11 +939,22 @@ class HomeController extends Controller
             }
 
             if ($sourceId) {
-                $query->where(function ($q) use ($targetTable, $targetColumn, $sourceId) {
-                    $q->where("{$targetTable}.{$targetColumn}", $sourceId)
-                        ->orWhereRaw("FIND_IN_SET(?, {$targetTable}.{$targetColumn}) > 0", [$sourceId])
-                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", $sourceId)
-                        ->orWhereJsonContains("{$targetTable}.{$targetColumn}", (string) $sourceId);
+                $targetColType = Schema::hasColumn($targetTable, $targetColumn)
+                    ? Schema::getColumnType($targetTable, $targetColumn)
+                    : null;
+
+                $query->where(function ($q) use ($targetTable, $targetColumn, $sourceId, $targetColType) {
+                    $column = "{$targetTable}.{$targetColumn}";
+                    if (in_array($targetColType, ['integer', 'bigint', 'smallint', 'tinyint', 'int'])) {
+                        $q->where($column, $sourceId);
+                    } elseif ($targetColType === 'json') {
+                        $q->whereJsonContains($column, $sourceId)
+                            ->orWhereJsonContains($column, (string) $sourceId);
+                    } else {
+                        $q->where($column, $sourceId)
+                            ->orWhereRaw("FIND_IN_SET(?, {$column}) > 0", [$sourceId])
+                            ->orWhereRaw("CASE WHEN JSON_VALID({$column}) THEN JSON_CONTAINS({$column}, ?) ELSE 0 END", [json_encode($sourceId)]);
+                    }
                 });
             }
 
@@ -1047,11 +1058,21 @@ class HomeController extends Controller
             }
 
             if ($sourceId) {
-                $query->where(function ($q) use ($targetColumn, $sourceId) {
-                    $q->where($targetColumn, $sourceId)
-                        ->orWhereRaw("FIND_IN_SET(?, $targetColumn) > 0", [$sourceId])
-                        ->orWhereJsonContains($targetColumn, $sourceId)
-                        ->orWhereJsonContains($targetColumn, (string) $sourceId);
+                $targetColType = Schema::hasColumn($targetTable, $targetColumn)
+                    ? Schema::getColumnType($targetTable, $targetColumn)
+                    : null;
+
+                $query->where(function ($q) use ($targetColumn, $sourceId, $targetColType) {
+                    if (in_array($targetColType, ['integer', 'bigint', 'smallint', 'tinyint', 'int'])) {
+                        $q->where($targetColumn, $sourceId);
+                    } elseif ($targetColType === 'json') {
+                        $q->whereJsonContains($targetColumn, $sourceId)
+                            ->orWhereJsonContains($targetColumn, (string) $sourceId);
+                    } else {
+                        $q->where($targetColumn, $sourceId)
+                            ->orWhereRaw("FIND_IN_SET(?, {$targetColumn}) > 0", [$sourceId])
+                            ->orWhereRaw("CASE WHEN JSON_VALID({$targetColumn}) THEN JSON_CONTAINS({$targetColumn}, ?) ELSE 0 END", [json_encode($sourceId)]);
+                    }
                 });
             }
 

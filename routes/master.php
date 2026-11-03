@@ -73,6 +73,9 @@ Route::post("/get-pay-type", [PayTypeController::class, "getList"])->name("get.p
 Route::resource('category', CategoryController::class);
 Route::post('/get-category', [CategoryController::class, 'getList'])->name('get.category');
 Route::get('/get-categories', [CategoryController::class, 'getCategories'])->name('get.categories');
+Route::get('/category/{category}/heads', [CategoryController::class, 'heads'])->name('category.heads.create');
+Route::post('/category/{category}/heads', [CategoryController::class, 'storeHeads'])->name('category.heads.store');
+Route::get('/category/{category}/get-heads', [CategoryController::class, 'getCategoryHeads'])->name('category.heads.get');
 
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
@@ -89,6 +92,13 @@ Route::prefix('production-settings')->group(function () {
     Route::get('/fumigation-types/{index}/edit', [\App\Http\Controllers\Master\ProductionSettingController::class, 'editFumigationType'])->name('production-settings.fumigation-types.edit');
     Route::put('/fumigation-types/{index}', [\App\Http\Controllers\Master\ProductionSettingController::class, 'updateFumigationType'])->name('production-settings.fumigation-types.update');
     Route::delete('/fumigation-types/{index}', [\App\Http\Controllers\Master\ProductionSettingController::class, 'destroyFumigationType'])->name('production-settings.fumigation-types.destroy');
+
+    // Plant Auto Analysis Settings
+    Route::get('/plant-analysis/table', [\App\Http\Controllers\Master\ProductionSettingController::class, 'getPlantAnalysisSettingsTable'])->name('production-settings.plant-analysis.table');
+    Route::post('/plant-analysis/{plant}', [\App\Http\Controllers\Master\ProductionSettingController::class, 'updatePlantAnalysisSetting'])->name('production-settings.plant-analysis.update');
+    Route::post('/plant-analysis-settings/bulk-update', [\App\Http\Controllers\Master\ProductionSettingController::class, 'bulkUpdatePlantAnalysisSettings'])->name('production-settings.plant-analysis.bulk-update');
+    Route::post('/plant-analysis-settings/trigger-check', [\App\Http\Controllers\Master\ProductionSettingController::class, 'triggerAutoCheck'])->name('production-settings.plant-analysis.trigger-check');
+    Route::get('/auto-history', [\App\Http\Controllers\Master\ProductionSettingController::class, 'getAutoAnalysisHistory'])->name('production-settings.auto-history');
 });
 
 Route::resource('truck-size-ranges', TruckSizeRangeController::class);

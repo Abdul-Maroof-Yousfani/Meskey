@@ -181,7 +181,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Location:</label>
-                                <select name="location_id" id="location_id" class="form-control select2" required onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();filterAllInputLocations();loadJobOrdersByLocation();">
+                                <select name="location_id" id="location_id" class="form-control select2" required onchange="onLocationChanged();">
                                     <option value="">Select Location</option>
                                     @foreach($companyLocations as $location)
                                         <option value="{{ $location->id }}" {{ $productionVoucher->location_id == $location->id ? 'selected' : '' }}>
@@ -227,7 +227,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Head Product:</label>
-                                <select name="product_id" id="product_id" class="form-control select2" required onchange="loadJobOrdersByLocation();loadHeadProductsData();loadB2ProductsData();autoSelectByProduct();">
+                                <select name="product_id" id="product_id" class="form-control select2" required onchange="onProductChanged();">
                                     <option value="">Select Commodity</option>
                                     @php
                                         $currentProductId = $productionVoucher->product_id ?? null;
@@ -251,7 +251,7 @@
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label>By Product:</label>
-                                <select name="by_product_id" id="by_product_id" onchange="loadData();loadJobOrdersByLocation();" class="form-control select2">
+                                <select name="by_product_id" id="by_product_id" onchange="onByProductChanged();" class="form-control select2">
                                     <option value="">Select By Product</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}" {{ $productionVoucher->by_product_id == $product->id ? 'selected' : '' }}>
@@ -652,8 +652,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center" style="background-color: #93c3f2;">
-                        <div class="col-md-12">
+                        <div class="col-md-12 d-flex justify-content-between align-items-center">
                             <h6 class="m-0">Head Products</h6>
+                            <button type="button" class="btn btn-sm btn-primary add-more-head-product py-0 px-2" style="font-size: 11px; height: 26px;"><i class="fa fa-plus mr-1"></i> Add More</button>
                         </div>
                     </div>
                     <div id="productionHeadProductsTable">
@@ -680,8 +681,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center" style="background-color: #93c3f2;">
-                        <div class="col-md-12">
+                        <div class="col-md-12 d-flex justify-content-between align-items-center">
                             <h6 class="m-0">B2 Products</h6>
+                            <button type="button" class="btn btn-sm btn-primary add-more-b2-product py-0 px-2" style="font-size: 11px; height: 26px;"><i class="fa fa-plus mr-1"></i> Add More</button>
                         </div>
                     </div>
                     <div id="productionB2ProductsTable">
@@ -708,8 +710,9 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center" style="background-color: #93c3f2;">
-                        <div class="col-md-12">
+                        <div class="col-md-12 d-flex justify-content-between align-items-center">
                             <h6 class="m-0">By Products</h6>
+                            <button type="button" class="btn btn-sm btn-primary add-more-by-product py-0 px-2" style="font-size: 11px; height: 26px;"><i class="fa fa-plus mr-1"></i> Add More</button>
                         </div>
                     </div>
                     <div id="productionByProductsTable">
@@ -1308,10 +1311,6 @@
             filterAllInputLocations();
         }
 
-        $('#location_id').on('change', function() {
-            filterAllInputLocations();
-        });
-
         $('#sub_location_id').on('change', function() {
             var subLoc = $(this).val();
             if (subLoc) {
@@ -1333,6 +1332,57 @@
         }, 300);
     });
 
+    function onLocationChanged() {
+        var locationId = $('#location_id').val();
+        filterAllInputLocations();
+        loadSubLocationByLocation(false);
+
+        // Clear previous job orders silently without firing individual reload cascades
+        isPopulatingJobOrders = true;
+        try {
+            $('select.job-order-select').val('').trigger('change.select2');
+        } finally {
+            isPopulatingJobOrders = false;
+        }
+        $('#packingItemsSection').hide();
+        $('#packingItemsContainer').empty();
+
+        // Load job orders for new location, then reload output tables once
+        var joPromise = loadJobOrdersByLocation();
+        if (joPromise && typeof joPromise.always === 'function') {
+            joPromise.always(function() {
+                triggerOutputTablesReload(50);
+            });
+        } else {
+            triggerOutputTablesReload(50);
+        }
+
+        loadCostingPreview();
+    }
+
+    function onProductChanged() {
+        autoSelectByProduct();
+        var joPromise = loadJobOrdersByLocation();
+        if (joPromise && typeof joPromise.always === 'function') {
+            joPromise.always(function() {
+                triggerOutputTablesReload(50);
+            });
+        } else {
+            triggerOutputTablesReload(50);
+        }
+    }
+
+    function onByProductChanged() {
+        var joPromise = loadJobOrdersByLocation();
+        if (joPromise && typeof joPromise.always === 'function') {
+            joPromise.always(function() {
+                triggerOutputTablesReload(50);
+            });
+        } else {
+            triggerOutputTablesReload(50);
+        }
+    }
+
     function loadCommoditiesByLocation() {
         const locationId = $('#location_id').val();
         const commoditySelect = $('#product_id');
@@ -1348,9 +1398,9 @@
         $('#packingItemsBody').empty();
 
         if (!locationId) {
-            commoditySelect.trigger('change');
-            jobOrderSelects.trigger('change');
-            plantSelect.trigger('change');
+            commoditySelect.trigger('change.select2');
+            jobOrderSelects.trigger('change.select2');
+            plantSelect.trigger('change.select2');
             return;
         }
 
@@ -1381,7 +1431,7 @@
                 } else {
                     commoditySelect.append('<option value="">No Commodities Found</option>');
                 }
-                commoditySelect.trigger('change');
+                commoditySelect.trigger('change.select2');
             },
             error: function (xhr) {
                 console.error('Error loading commodities:', xhr);
@@ -1400,7 +1450,7 @@
         $('#production_labour_charges_per_kg').val(productionLabourChargesPerKg);
     }
 
-    function loadSubLocationByLocation() {
+    function loadSubLocationByLocation(triggerCascade) {
         const locationId = $('#location_id').val();
         const subLocationSelect = $('#sub_location_id');
         const plantSelect = $('#plant_id');
@@ -1408,16 +1458,18 @@
         // Clear sublocation and plant dropdowns
         subLocationSelect.empty().append('<option value="">Select Sub Location</option>');
         plantSelect.empty().append('<option value="">Select Plant</option>');
+        $('#productionMachinesContainer').empty();
+        $('#productionMachinesSection').hide();
 
         if (!locationId) {
-            subLocationSelect.trigger('change');
-            plantSelect.trigger('change');
+            subLocationSelect.trigger('change.select2');
+            plantSelect.trigger('change.select2');
             return;
         }
 
         subLocationSelect.prop('disabled', true);
 
-        $.ajax({
+        return $.ajax({
             url: '{{ route("production-voucher.get-sublocations-by-location") }}',
             method: 'POST',
             data: {
@@ -1437,7 +1489,10 @@
                 } else {
                     subLocationSelect.append('<option value="">No Sub Location Found</option>');
                 }
-                subLocationSelect.trigger('change');
+                subLocationSelect.trigger('change.select2');
+                if (triggerCascade === true) {
+                    subLocationSelect.trigger('change');
+                }
             },
             error: function (xhr) {
                 console.error('Error loading sublocations:', xhr);
@@ -1712,9 +1767,9 @@
                 $('#by_product_id').append(new Option(pName || 'Parent Product', pId, true, true));
             }
 
-            // Auto select the parent product and trigger change to load by-product table
+            // Auto select the parent product without re-triggering cascade
             if ($('#by_product_id').val() != pId) {
-                $('#by_product_id').val(pId).trigger('change');
+                $('#by_product_id').val(pId).trigger('change.select2');
             }
         }
 
@@ -1750,11 +1805,25 @@
         return ids;
     }
 
+    var isPopulatingJobOrders = false;
+    var outputTablesReloadTimer = null;
+
+    function triggerOutputTablesReload(delay) {
+        if (delay === undefined) delay = 100;
+        clearTimeout(outputTablesReloadTimer);
+        outputTablesReloadTimer = setTimeout(function() {
+            loadPackingItems();
+            loadHeadProductsData();
+            loadB2ProductsData();
+            loadData();
+        }, delay);
+    }
+
     function onJobOrderChanged() {
-        loadPackingItems();
-        loadHeadProductsData();
-        loadB2ProductsData();
-        loadData();
+        if (isPopulatingJobOrders) {
+            return;
+        }
+        triggerOutputTablesReload(100);
     }
 
     function populateJobOrderSelect($select, list, prevVal) {
@@ -1775,6 +1844,7 @@
         $select.trigger('change.select2');
     }
 
+    var currentJobOrdersAjax = null;
     function loadJobOrdersByLocation() {
         const locationId = $('#location_id').val();
         const productId = $('#product_id').val();
@@ -1788,10 +1858,29 @@
             currentSelected[id] = $(this).val() || '';
         });
 
+        // If location or head product is not selected, clear job orders and do not request
+        if (!locationId || !productId) {
+            isPopulatingJobOrders = true;
+            try {
+                jobOrderSelects.each(function() {
+                    populateJobOrderSelect($(this), [], '');
+                });
+            } finally {
+                isPopulatingJobOrders = false;
+            }
+            return null;
+        }
+
         // Show loading
         jobOrderSelects.prop('disabled', true);
 
-        return $.ajax({
+        if (currentJobOrdersAjax && typeof currentJobOrdersAjax.abort === 'function') {
+            try {
+                currentJobOrdersAjax.abort();
+            } catch(e) {}
+        }
+
+        currentJobOrdersAjax = $.ajax({
             url: '{{ route("production-voucher.get-job-orders-by-location") }}',
             method: 'POST',
             data: {
@@ -1805,57 +1894,70 @@
                 var b2List = response.b2JobOrders || [];
                 var byList = response.byJobOrders || [];
 
-                $('select.job-order-head').each(function() {
-                    var id = $(this).attr('id');
-                    populateJobOrderSelect($(this), headList, currentSelected[id]);
-                });
+                isPopulatingJobOrders = true;
+                try {
+                    $('select.job-order-head').each(function() {
+                        var id = $(this).attr('id');
+                        populateJobOrderSelect($(this), headList, currentSelected[id]);
+                    });
 
-                $('select.job-order-b2').each(function() {
-                    var id = $(this).attr('id');
-                    populateJobOrderSelect($(this), b2List, currentSelected[id]);
-                });
+                    $('select.job-order-b2').each(function() {
+                        var id = $(this).attr('id');
+                        populateJobOrderSelect($(this), b2List, currentSelected[id]);
+                    });
 
-                $('select.job-order-by').each(function() {
-                    var id = $(this).attr('id');
-                    populateJobOrderSelect($(this), byList, currentSelected[id]);
-                });
+                    $('select.job-order-by').each(function() {
+                        var id = $(this).attr('id');
+                        populateJobOrderSelect($(this), byList, currentSelected[id]);
+                    });
+                } finally {
+                    isPopulatingJobOrders = false;
+                }
             },
-            error: function(xhr) {
-                console.error('Error loading job orders:', xhr);
+            error: function(xhr, textStatus) {
+                if (textStatus !== 'abort') {
+                    console.error('Error loading job orders:', xhr);
+                }
             },
             complete: function() {
                 jobOrderSelects.prop('disabled', false);
             }
         });
+
+        return currentJobOrdersAjax;
     }
 
+    var loadPackingItemsTimer = null;
     function loadPackingItems() {
-        const jobOrderIds = getSelectedJobOrderIds();
-        const locationId = $('#location_id').val();
+        clearTimeout(loadPackingItemsTimer);
+        loadPackingItemsTimer = setTimeout(function() {
+            const jobOrderIds = getSelectedJobOrderIds();
+            const locationId = $('#location_id').val();
 
-        if (!jobOrderIds || !locationId || jobOrderIds.length === 0) {
-            $('#packingItemsSection').hide();
-            $('#packingItemsContainer').empty();
-            return;
-        }
-
-        $('#packingItemsSection').show();
-
-        // Use fetchDynamicHTML to load packing items with produced quantity
-        fetchDynamicHTML(
-            '{{ route("production-voucher.get-packing-items-with-produced") }}',
-            'packingItemsContainer',
-            {
-                job_order_ids: jobOrderIds,
-                location_id: locationId,
-                current_production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
-            },
-            {
-                method: 'POST',
-                loader: true,
-                loadingText: 'Loading packing items...'
+            if (!jobOrderIds || !locationId || jobOrderIds.length === 0) {
+                $('#packingItemsSection').hide();
+                $('#packingItemsContainer').empty();
+                return;
             }
-        );
+
+            $('#packingItemsSection').show();
+
+            // Use fetchDynamicHTML to load packing items with produced quantity
+            fetchDynamicHTML(
+                '{{ route("production-voucher.get-packing-items-with-produced") }}',
+                'packingItemsContainer',
+                {
+                    job_order_ids: jobOrderIds,
+                    location_id: locationId,
+                    current_production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
+                },
+                {
+                    method: 'POST',
+                    loader: true,
+                    loadingText: 'Loading packing items...'
+                }
+            );
+        }, 50);
     }
 
     $(document).on('click', '.copythis', function (e) {
@@ -2081,31 +2183,38 @@
             return;
         }
 
+        var isHeadTable = ($container.attr('id') === 'productionHeadProductsTable' || $table.closest('#productionHeadProductsTable').length > 0);
+        var isB2Table = ($container.attr('id') === 'productionB2ProductsTable' || $table.closest('#productionB2ProductsTable').length > 0);
+        var isByTable = ($container.attr('id') === 'productionByProductsTable' || $table.closest('#productionByProductsTable').length > 0);
+        var isOutputRow = (isHeadTable || isB2Table || isByTable);
+
+        if (isOutputRow) {
+            $row.remove();
+
+            var remainingRows = $tbody.find('tr').not('.commodity-total-row, .table-success, .ant-table-placeholder').length;
+            if (remainingRows === 0) {
+                $tbody.find('.ant-table-placeholder').removeClass('d-none');
+                $tbody.find('.commodity-total-row, .table-success').addClass('d-none');
+            }
+
+            setTimeout(function() {
+                calculateHeadProducts();
+                calculateB2Products();
+                calculateByProducts();
+                calculateNetTotalInput();
+            }, 50);
+            return;
+        }
+
         if ($tbody.find('tr').length > 1) {
             $row.remove();
             
             // Immediately trigger calculations after removing row
             setTimeout(function() {
-                var containerId = $container.attr('id');
-                
-                if (containerId === 'productionHeadProductsTable' || $container.find('#productionHeadProductsTable').length > 0) {
-                    calculateHeadProducts();
-                    calculateB2Products();
-                    calculateByProducts();
-                } else if (containerId === 'productionB2ProductsTable' || $container.find('#productionB2ProductsTable').length > 0) {
-                    calculateHeadProducts();
-                    calculateB2Products();
-                    calculateByProducts();
-                } else if (containerId === 'productionByProductsTable' || $container.find('#productionByProductsTable').length > 0) {
-                    calculateHeadProducts();
-                    calculateB2Products();
-                    calculateByProducts();
-                } else {
-                    calculateProductionInputs();
-                    calculateHeadProducts();
-                    calculateB2Products();
-                    calculateByProducts();
-                }
+                calculateProductionInputs();
+                calculateHeadProducts();
+                calculateB2Products();
+                calculateByProducts();
             }, 50);
         } else {
             toastr.error('You cannot remove the last row');
@@ -2113,79 +2222,164 @@
         }
     });
 
-    function loadData() {
-        const byProductId = $('[name="by_product_id"]').val();
-        const locationId = $('[name="location_id"]').val();
-        const jobOrderIds = getSelectedJobOrderIds();
-        const headProductId = $('[name="product_id"]').val();
-        console.log(jobOrderIds);
-        if (byProductId && locationId) {
-            fetchDynamicHTML('{{ route('production-voucher.get-by-product-table') }}', 'productionByProductsTable', {
-                by_product_id: byProductId,
-                location_id: locationId,
-                job_order_ids: jobOrderIds,
-                production_voucher_id: {{ $productionVoucher->id ?? 'null' }},
-                head_product_id: headProductId
-            }, { 
-                method: 'POST',
-                onSuccess: function(response, target) {
-                    target.html(response);
-                    // Reinitialize calculations after table loads
-                    setTimeout(function() {
-                        initializeCalculations();
-                    }, 300);
-                }
-            });
+    function addNewOutputRow(type) {
+        var templateId = '';
+        var containerSelector = '';
+        var calcFn = null;
+
+        if (type === 'head') {
+            templateId = '#headProductRowTemplate';
+            containerSelector = '#productionHeadProductsTable';
+            calcFn = calculateHeadProducts;
+        } else if (type === 'b2') {
+            templateId = '#b2ProductRowTemplate';
+            containerSelector = '#productionB2ProductsTable';
+            calcFn = calculateB2Products;
+        } else if (type === 'by') {
+            templateId = '#byProductRowTemplate';
+            containerSelector = '#productionByProductsTable';
+            calcFn = calculateByProducts;
         }
+
+        var $template = $(templateId);
+        if ($template.length === 0) {
+            console.error('Template not found:', templateId);
+            return;
+        }
+
+        var $container = $(containerSelector);
+        var $tbody = $container.find('tbody').first();
+        var $newRow = $($template.html().trim());
+
+        var $totalRow = $tbody.find('tr.commodity-total-row, tr.table-success');
+        var $placeholder = $tbody.find('tr.ant-table-placeholder');
+
+        if ($totalRow.length > 0) {
+            $totalRow.before($newRow);
+        } else if ($placeholder.length > 0) {
+            $placeholder.before($newRow);
+        } else {
+            $tbody.append($newRow);
+        }
+
+        $placeholder.addClass('d-none');
+        $totalRow.removeClass('d-none');
+
+        $newRow.find('select.select2, select').each(function() {
+            if ($(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2('destroy');
+            }
+            $(this).select2({
+                width: '100%',
+                dropdownAutoWidth: true
+            });
+        });
+
+        $newRow.find('select.output-commodity-select, select[name="output_product_id[]"]').trigger('change');
+
+        if (typeof calcFn === 'function') {
+            calcFn();
+        }
+        calculateNetTotalInput();
+    }
+
+    $(document).on('click', '.add-more-head-product', function(e) {
+        e.preventDefault();
+        addNewOutputRow('head');
+    });
+
+    $(document).on('click', '.add-more-b2-product', function(e) {
+        e.preventDefault();
+        addNewOutputRow('b2');
+    });
+
+    $(document).on('click', '.add-more-by-product', function(e) {
+        e.preventDefault();
+        addNewOutputRow('by');
+    });
+
+    var loadDataTimer = null;
+    function loadData() {
+        clearTimeout(loadDataTimer);
+        loadDataTimer = setTimeout(function() {
+            const byProductId = $('[name="by_product_id"]').val();
+            const locationId = $('[name="location_id"]').val();
+            const jobOrderIds = getSelectedJobOrderIds();
+            const headProductId = $('[name="product_id"]').val();
+            if (byProductId && locationId) {
+                fetchDynamicHTML('{{ route('production-voucher.get-by-product-table') }}', 'productionByProductsTable', {
+                    by_product_id: byProductId,
+                    location_id: locationId,
+                    job_order_ids: jobOrderIds,
+                    production_voucher_id: {{ $productionVoucher->id ?? 'null' }},
+                    head_product_id: headProductId
+                }, { 
+                    method: 'POST',
+                    onSuccess: function(response, target) {
+                        target.html(response);
+                        // Reinitialize calculations after table loads
+                        setTimeout(function() {
+                            initializeCalculations();
+                        }, 200);
+                    }
+                });
+            }
+        }, 50);
     }
     
+    var loadHeadProductsTimer = null;
     function loadHeadProductsData() {
-        const productId = $('[name="product_id"]').val();
-        const locationId = $('[name="location_id"]').val();
-        const jobOrderIds = getSelectedJobOrderIds();
-        console.log(jobOrderIds);
-        if (productId && locationId) {
-            fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}', 'productionHeadProductsTable', {
-                product_id: productId,
-                location_id: locationId,
-                job_order_ids: jobOrderIds,
-                company_id: '{{ auth()->user()->company_id ?? 1 }}',
-                production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
-
-            }, { 
-                method: 'POST',
-                onSuccess: function(response, target) {
-                    target.html(response);
-                    // Reinitialize calculations after table loads
-                    setTimeout(function() {
-                        initializeCalculations();
-                    }, 300);
-                }
-            });
-        }
+        clearTimeout(loadHeadProductsTimer);
+        loadHeadProductsTimer = setTimeout(function() {
+            const productId = $('[name="product_id"]').val();
+            const locationId = $('[name="location_id"]').val();
+            const jobOrderIds = getSelectedJobOrderIds();
+            if (productId && locationId) {
+                fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}', 'productionHeadProductsTable', {
+                    product_id: productId,
+                    location_id: locationId,
+                    job_order_ids: jobOrderIds,
+                    company_id: '{{ auth()->user()->company_id ?? 1 }}',
+                    production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
+                }, { 
+                    method: 'POST',
+                    onSuccess: function(response, target) {
+                        target.html(response);
+                        // Reinitialize calculations after table loads
+                        setTimeout(function() {
+                            initializeCalculations();
+                        }, 200);
+                    }
+                });
+            }
+        }, 50);
     }
 
+    var loadB2ProductsTimer = null;
     function loadB2ProductsData() {
-        const productId = $('[name="product_id"]').val();
-        const locationId = $('[name="location_id"]').val();
-        const jobOrderIds = getSelectedJobOrderIds();
-        if (productId && locationId) {
-            fetchDynamicHTML('{{ route('production-voucher.get-b2-products-data') }}', 'productionB2ProductsTable', {
-                product_id: productId,
-                location_id: locationId,
-                job_order_ids: jobOrderIds,
-                company_id: '{{ auth()->user()->company_id ?? 1 }}',
-                production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
-            }, { 
-                method: 'POST',
-                onSuccess: function(response, target) {
-                    target.html(response);
-                    setTimeout(function() {
-                        initializeCalculations();
-                    }, 300);
-                }
-            });
-        }
+        clearTimeout(loadB2ProductsTimer);
+        loadB2ProductsTimer = setTimeout(function() {
+            const productId = $('[name="product_id"]').val();
+            const locationId = $('[name="location_id"]').val();
+            const jobOrderIds = getSelectedJobOrderIds();
+            if (productId && locationId) {
+                fetchDynamicHTML('{{ route('production-voucher.get-b2-products-data') }}', 'productionB2ProductsTable', {
+                    product_id: productId,
+                    location_id: locationId,
+                    job_order_ids: jobOrderIds,
+                    company_id: '{{ auth()->user()->company_id ?? 1 }}',
+                    production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
+                }, { 
+                    method: 'POST',
+                    onSuccess: function(response, target) {
+                        target.html(response);
+                        setTimeout(function() {
+                            initializeCalculations();
+                        }, 200);
+                    }
+                });
+            }
+        }, 50);
     }
 
     // ========== REAL-TIME CALCULATIONS ==========
@@ -2254,19 +2448,19 @@
         let totalOutputs = 0;
         
         // Sum all head products qty
-        $('#productionHeadProductsTable tbody tr').not(':last').each(function() {
+        $('#productionHeadProductsTable tbody tr').not('.commodity-total-row, .table-success, .ant-table-placeholder').each(function() {
             const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
             totalOutputs += qty;
         });
 
         // Sum all B2 products qty
-        $('#productionB2ProductsTable tbody tr').not(':last').each(function() {
+        $('#productionB2ProductsTable tbody tr').not('.commodity-total-row, .b2-total-row, .table-success, .ant-table-placeholder').each(function() {
             const qty = parseFloat($(this).find('input[name="output_qty[]"]').val()) || 0;
             totalOutputs += qty;
         });
         
         // Sum all by products qty
-        $('#productionByProductsTable tbody tr').each(function() {
+        $('#productionByProductsTable tbody tr').not('.commodity-total-row, .table-success, .ant-table-placeholder').each(function() {
             const row = $(this);
             // Skip total rows
             if (!row.find('strong').text().includes('Total') && !row.find('strong').text().includes('Commodity Total')) {
@@ -2290,8 +2484,8 @@
         let totalQty = 0;
         let totalNoOfBags = 0;
         
-        // Calculate for each product row (excluding total row)
-        tbody.find('tr').not(':last').each(function() {
+        // Calculate for each product row (excluding total row and placeholder)
+        tbody.find('tr').not('.commodity-total-row, .table-success, .ant-table-placeholder').each(function() {
             const qtyInput = $(this).find('input[name="output_qty[]"]');
             const noOfBagsInput = $(this).find('input[name="output_no_of_bags[]"]');
             const bagSizeInput = $(this).find('input[name="output_bag_size[]"]');
@@ -2335,7 +2529,7 @@
         });
         
         // Update total row - handle both input name variations
-        const totalRow = tbody.find('tr:last');
+        const totalRow = tbody.find('tr.commodity-total-row, tr.table-success');
         const totalQtyInput = totalRow.find('input[name="commodity_total_qty[]"], input[name="total_qty[]"]');
         const totalBagsInput = totalRow.find('input[name="commodity_total_no_of_bags[]"]');
         const totalYieldInput = totalRow.find('input[name="total_yield[]"]');
@@ -2371,8 +2565,8 @@
         let totalQty = 0;
         let totalNoOfBags = 0;
 
-        // Calculate for each product row (excluding total row)
-        tbody.find('tr').not(':last').not('.b2-total-row').each(function() {
+        // Calculate for each product row (excluding total row and placeholder)
+        tbody.find('tr').not('.b2-total-row, .commodity-total-row, .table-success, .ant-table-placeholder').each(function() {
             const qtyInput = $(this).find('input[name="output_qty[]"]');
             const noOfBagsInput = $(this).find('input[name="output_no_of_bags[]"]');
             const bagSizeInput = $(this).find('input[name="output_bag_size[]"]');
@@ -2417,7 +2611,7 @@
         });
 
         // Update total row
-        const totalRow = tbody.find('tr.b2-total-row, tr:last');
+        const totalRow = tbody.find('tr.b2-total-row, tr.commodity-total-row, tr.table-success');
         if (totalRow.length > 0 && totalRow.find('strong').text().includes('Total')) {
             const totalQtyInput = totalRow.find('input[name="commodity_total_qty[]"], input[name="total_qty[]"]');
             const totalBagsInput = totalRow.find('input[name="commodity_total_no_of_bags[]"]');
@@ -2460,6 +2654,11 @@
         
         tbody.find('tr').each(function() {
             const row = $(this);
+
+            // Skip placeholder row
+            if (row.hasClass('ant-table-placeholder')) {
+                return;
+            }
             
             // Check if it's a commodity total row
             if (row.find('strong').text().includes('Commodity Total')) {
@@ -2491,7 +2690,7 @@
                 currentCommodityRows = [];
             } 
             // Check if it's grand total row
-            else if (row.hasClass('table-success') || row.find('strong').text().includes('Total')) {
+            else if (row.hasClass('table-success') || row.hasClass('commodity-total-row') || row.find('strong').text().includes('Total')) {
                 // This will be handled after the loop
             }
             // Regular product row
@@ -2538,8 +2737,20 @@
             }
         });
         
+        // If there were rows without an intermediate Commodity Total row
+        if (currentCommodityRows.length > 0) {
+            let leftoverQty = 0;
+            let leftoverBags = 0;
+            currentCommodityRows.forEach(function(commodityRow) {
+                leftoverQty += parseFloat(commodityRow.find('input[name="output_qty[]"]').val()) || 0;
+                leftoverBags += parseFloat(commodityRow.find('input[name="output_no_of_bags[]"]').val()) || 0;
+            });
+            grandTotalQty += leftoverQty;
+            grandTotalBags += leftoverBags;
+        }
+
         // Update grand total row
-        const grandTotalRow = tbody.find('tr.table-success, tr:last');
+        const grandTotalRow = tbody.find('tr.table-success, tr.commodity-total-row');
         if (grandTotalRow.length > 0 && grandTotalRow.find('strong').text().includes('Total')) {
             grandTotalRow.find('input[name="commodity_total_qty[]"]').val(roundToTwo(grandTotalQty));
             grandTotalRow.find('input[name="commodity_total_no_of_bags[]"]').val(Math.round(grandTotalBags));
@@ -2575,10 +2786,10 @@
         $('input[name="labour_net_amount"]').val(netAmount);
     }
 
-    // Initialize all calculations
+    var initCalculationsTimer = null;
     function initializeCalculations() {
-        // Reinitialize Select2 for dynamically loaded selects - properly destroy and reinitialize
-        setTimeout(function() {
+        clearTimeout(initCalculationsTimer);
+        initCalculationsTimer = setTimeout(function() {
             // Destroy existing select2 instances first
             $('#productionInputsTable select, #productionHeadProductsTable select, #productionB2ProductsTable select, #productionByProductsTable select').each(function() {
                 var $select = $(this);
@@ -2957,14 +3168,7 @@
             }
         });
 
-        // Reinitialize after dynamic content loads
-        $(document).on('DOMNodeInserted', function(e) {
-            if ($(e.target).find('#productionInputsTable, #productionHeadProductsTable, #productionB2ProductsTable, #productionByProductsTable').length > 0) {
-                setTimeout(function() {
-                    initializeCalculations();
-                }, 100);
-            }
-        });
+        // Dynamic content loads trigger initializeCalculations from table callbacks
     });
 
     function deleteProductionInput(voucherId, inputId) {

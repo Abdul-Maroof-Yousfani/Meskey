@@ -61,7 +61,11 @@
                 <label>Category:</label>
                 <select class="form-control" name="category_id" id="category_id">
                     <option value="">Select Category</option>
-
+                    @if (isset($categories))
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    @endif
                 </select>
             </div>
         </div>
@@ -72,10 +76,7 @@
                     <option value="">Select Parent Product</option>
                     @foreach ($parentProducts as $parentProduct)
                         <option value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
-
                     @endforeach
-
-
                 </select>
             </div>
         </div>
@@ -151,6 +152,9 @@
                 </select>
             </div>
         </div>
+
+        {{-- Type-Wise Category Heads --}}
+        @include('management.master.product.partials.category_heads')
     </div>
 
     <div class="row bottom-button-bar">

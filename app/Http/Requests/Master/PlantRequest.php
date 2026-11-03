@@ -37,6 +37,13 @@ class PlantRequest extends FormRequest
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'auto_analysis_enabled' => 'nullable|boolean',
+            'input_min_interval' => 'nullable|integer|min:1|max:1440',
+            'input_max_interval' => 'nullable|integer|min:1|max:1440',
+            'output_min_interval' => 'nullable|integer|min:1|max:1440',
+            'output_max_interval' => 'nullable|integer|min:1|max:1440',
+            'min_analysis_interval' => 'nullable|integer|min:1|max:1440',
+            'max_analysis_interval' => 'nullable|integer|min:1|max:1440',
         ];
     }
 

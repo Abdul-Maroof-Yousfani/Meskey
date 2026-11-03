@@ -12,12 +12,23 @@ class MachinePlanSettingRequest extends FormRequest
         return true;
     }
 
+    public function messages(): array
+    {
+        return [
+            'company_location_id.required' => 'Please select a location.',
+        ];
+    }
+
     public function rules(): array
     {
         return [
             'company_id' => 'required|exists:companies,id',
             'date' => 'required|date',
+            'company_location_id' => 'required|exists:company_locations,id',
             'plant_id' => 'required|exists:plants,id',
+            'machine_job_order_id' => 'nullable|array',
+            'machine_job_order_id.*' => 'nullable|array',
+            'machine_job_order_id.*.*' => 'nullable|exists:job_orders,id',
             'production_voucher_id' => 'nullable|exists:production_vouchers,id',
             'remarks' => 'nullable|string',
             'production_machine_id' => 'nullable|array',
@@ -53,6 +64,26 @@ class MachinePlanSettingRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            // Plant must belong to the selected location
+            if ($this->filled('plant_id') && $this->filled('company_location_id')) {
+                $plant = \App\Models\Master\Plant::find($this->plant_id);
+                if ($plant && $plant->company_location_id && $plant->company_location_id != $this->company_location_id) {
+                    $validator->errors()->add('plant_id', 'Selected plant does not belong to the selected location.');
+                }
+            }
+
+            // Every active machine must be created against a job order
+            $enabledMachineIds = (array) $this->input('production_machine_id', []);
+            if (!empty($enabledMachineIds)) {
+                $machineNames = \App\Models\Master\ProductionMachine::whereIn('id', $enabledMachineIds)->pluck('name', 'id');
+                foreach ($enabledMachineIds as $machineId) {
+                    if (empty(array_filter((array) $this->input("machine_job_order_id.{$machineId}", [])))) {
+                        $name = $machineNames[$machineId] ?? "#{$machineId}";
+                        $validator->errors()->add("machine_job_order_id.{$machineId}", "Please select at least one job order for machine '{$name}'.");
+                    }
+                }
+            }
+
             // Overall plant breakdown validation
             if ($this->has('breakdown_type_id') && is_array($this->breakdown_type_id)) {
                 $intervals = [];

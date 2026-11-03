@@ -102,6 +102,7 @@ Route::post('get-machine-plan-setting', [MachinePlanSettingController::class, 'g
 Route::get('/machines-by-plant', [MachinePlanSettingController::class, 'getMachinesByPlant'])->name('getMachinesByPlant');
 Route::get('/vouchers-by-date', [MachinePlanSettingController::class, 'getProductionVouchersByDate'])->name('getProductionVouchersByDate');
 Route::get('/breakdowns-by-plant-date', [MachinePlanSettingController::class, 'getBreakdownsByPlantAndDate'])->name('getBreakdownsByPlantAndDate');
+Route::get('/machine-plan-setting-job-orders-by-location', [MachinePlanSettingController::class, 'getJobOrdersByLocation'])->name('machine-plan-setting.job-orders-by-location');
 
 // Production Quality Check Routes
 Route::resource('production-quality-check', ProductionQualityCheckController::class);

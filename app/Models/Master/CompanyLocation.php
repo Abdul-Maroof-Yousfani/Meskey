@@ -220,4 +220,9 @@ class CompanyLocation extends Model
         $phase = ProductionPhase::findByKey($key);
         return $phase ? $phase->name : ($default ?: $key);
     }
+
+    public function plants()
+    {
+        return $this->hasMany(Plant::class, 'company_location_id');
+    }
 }

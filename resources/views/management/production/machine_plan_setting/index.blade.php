@@ -26,6 +26,15 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
+                                                <label for="company_location_id" class="form-label">Location</label>
+                                                <select name="company_location_id" id="company_location_id" class="form-control">
+                                                    <option value="">All Locations</option>
+                                                    @foreach ($companyLocations as $location)
+                                                        <option value="{{ $location->id }}" {{ request('company_location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
                                                 <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -44,6 +53,7 @@
                                     <thead>
                                         <tr>
                                             <th>Date</th>
+                                            <th>Location</th>
                                             <th>Plant</th>
                                             <th>Production Voucher</th>
                                             <th>User</th>

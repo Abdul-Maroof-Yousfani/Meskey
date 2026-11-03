@@ -184,6 +184,13 @@ class ProductionInputAnalysisController extends Controller
             }
 
             DB::commit();
+
+            try {
+                app(\App\Services\AutoAnalysisRequestService::class)->onAnalysisCompleted($analysis);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('AutoAnalysis onAnalysisCompleted (input) error: ' . $e->getMessage());
+            }
+
             return response()->json(['status' => 'success', 'message' => 'Analysis stored successfully']);
         } catch (\Exception $e) {
             DB::rollBack();

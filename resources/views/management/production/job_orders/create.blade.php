@@ -371,7 +371,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>Fumigation Type:</label>
-                            <select name="packing_items[0][fumigation_type]" class="form-control select2" data-placeholder="Select Fumigation Type">
+                            <select name="packing_items[0][fumigation_type]" class="form-control select2">
                                 <option value="">Select Fumigation Type</option>
                                 @foreach($fumigationTypes as $fType)
                                     <option value="{{ $fType }}">{{ ucfirst($fType) }}</option>
@@ -1399,9 +1399,8 @@
                     }
                     fumigationSelect.val(fVal);
                 }
-                if (item.fumigation_type) {
-                    let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
-                    fumigationTypeSelect.val(item.fumigation_type);
+                let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
+                fumigationTypeSelect.val(item.fumigation_type || '');
                     if (!fumigationTypeSelect.val()) {
                         let lowerVal = String(item.fumigation_type).toLowerCase().trim();
                         fumigationTypeSelect.find('option').each(function() {
@@ -1411,7 +1410,6 @@
                             }
                         });
                     }
-                }
 
                 // Attachment sync
                 if (item.attachment_path || item.attachment) {

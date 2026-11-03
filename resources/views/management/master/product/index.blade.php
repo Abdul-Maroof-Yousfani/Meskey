@@ -47,14 +47,23 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4 col-sm-6 mb-1">
+                                    <div class="col-md-2 col-sm-6 mb-1">
+                                        <label for="product_type_filter" class="form-label font-weight-bold">Product Type</label>
+                                        <select name="product_type" id="product_type_filter" class="form-control select2">
+                                            <option value="all">All Types</option>
+                                            <option value="raw_material" {{ request('product_type') == 'raw_material' ? 'selected' : '' }}>Raw Material</option>
+                                            <option value="finish_good" {{ request('product_type') == 'finish_good' ? 'selected' : '' }}>Finish Good</option>
+                                            <option value="general_items" {{ request('product_type') == 'general_items' ? 'selected' : '' }}>General Items</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 col-sm-6 mb-1">
                                         <label for="search" class="form-label font-weight-bold">Search</label>
                                         <input type="text" class="form-control" id="search"
                                             placeholder="Search by name, code, barcode..." name="search"
                                             value="{{ request('search', '') }}">
                                     </div>
-                                    <div class="mb-1">
-                                        <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-block">
+                                    <div class="col-md-1 col-sm-6 mb-1">
+                                        <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-block" title="Reset Filters">
                                             <i class="ft-rotate-ccw"></i>
                                         </button>
                                     </div>
@@ -92,7 +101,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            $('#category_id_filter, #parent_id_filter').select2();
+            $('#category_id_filter, #parent_id_filter, #product_type_filter').select2();
 
             filterationCommon(`{{ route('get.product') }}`);
 
@@ -103,7 +112,7 @@
 
             // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
             $(document).on('ajaxSuccess', function() {
-                $('#category_id_filter, #parent_id_filter').select2();
+                $('#category_id_filter, #parent_id_filter, #product_type_filter').select2();
             });
 
             // Reset button handler
@@ -112,6 +121,7 @@
                 $('#filterForm input[name="page"]').val(1);
                 $('#category_id_filter').val('all').trigger('change');
                 $('#parent_id_filter').val('all').trigger('change');
+                $('#product_type_filter').val('all').trigger('change');
             });
         });
 

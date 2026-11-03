@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\{StoreProductRequest, UpdateProductRequest};
-use App\Models\{Product, UnitOfMeasure, Category};
+use App\Models\{Product, UnitOfMeasure, Category, CategoryHead};
 use App\Models\Master\Account\Account;
 use Illuminate\Http\Request;
 
@@ -64,10 +64,11 @@ class ProductController extends Controller
 
         $hasCategoryFilter = $request->filled('category_id') && $request->category_id !== 'all';
         $hasParentFilter = $request->filled('parent_id') && $request->parent_id !== 'all';
+        $hasProductTypeFilter = $request->filled('product_type') && $request->product_type !== 'all';
 
         $query = Product::with([
             'category',
-            'children' => function ($cq) use ($request, $hasCategoryFilter) {
+            'children' => function ($cq) use ($request, $hasCategoryFilter, $hasProductTypeFilter) {
                 $cq->with('category')
                     ->when($hasCategoryFilter, function ($q) use ($request) {
                         $categoryId = $request->category_id;
@@ -78,6 +79,9 @@ class ProductController extends Controller
                                         ->whereHas('parent', fn($pq) => $pq->where('category_id', $categoryId));
                                 });
                         });
+                    })
+                    ->when($hasProductTypeFilter, function ($q) use ($request) {
+                        $q->where('product_type', $request->product_type);
                     })
                     ->when($request->filled('search'), function ($q) use ($request) {
                         $searchTerm = '%' . trim($request->search) . '%';
@@ -123,6 +127,15 @@ class ProductController extends Controller
                         });
                 });
             })
+            ->when($hasProductTypeFilter, function ($q) use ($request) {
+                $productType = $request->product_type;
+                return $q->where(function ($sub) use ($productType) {
+                    $sub->where('product_type', $productType)
+                        ->orWhereHas('children', function ($cq) use ($productType) {
+                            $cq->where('product_type', $productType);
+                        });
+                });
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . trim($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -155,7 +168,7 @@ class ProductController extends Controller
             ")
             ->orderBy('created_at', 'desc');
 
-        if ($hasCategoryFilter || $hasParentFilter) {
+        if ($hasCategoryFilter || $hasParentFilter || $hasProductTypeFilter) {
             $products = $query->get();
         } else {
             $products = $query->paginate($request->get('per_page', 25));
@@ -216,13 +229,55 @@ class ProductController extends Controller
     {
         // dd($request);
         $data = $request->all();
+        $selectedHeads = $request->input('selected_heads', []);
+        unset($data['selected_heads']);
+
         $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory', 'yes'));
 
         $data['parent_id'] = $request->parent_id ?? null;
         $data['account_id'] = $account->id;
-        $UnitOfMeasure = Product::create($data);
+        $parentProduct = Product::create($data);
 
-        return response()->json(['success' => 'Product created successfully.', 'data' => $UnitOfMeasure], 201);
+        // If parent product (parent_id is null) and heads are checked, create child products
+        if (empty($parentProduct->parent_id) && !empty($selectedHeads) && is_array($selectedHeads)) {
+            $heads = CategoryHead::where('category_id', $parentProduct->category_id)
+                ->whereIn('id', $selectedHeads)
+                ->orderBy('sort_order')
+                ->get();
+
+            foreach ($heads as $head) {
+                $childName = trim($parentProduct->name . ' ' . $head->name);
+
+                // Create account for child product
+                $childAccount = Account::firstOrCreate(
+                    ['company_id' => $parentProduct->company_id, 'name' => $childName],
+                    getParamsForAccountCreation($parentProduct->company_id, $childName, 'Inventory', 'yes')
+                );
+
+                // Avoid creating duplicate if exists
+                $existing = Product::where('company_id', $parentProduct->company_id)
+                    ->where('name', $childName)
+                    ->first();
+
+                if (!$existing) {
+                    Product::create([
+                        'company_id'                => $parentProduct->company_id,
+                        'parent_id'                 => $parentProduct->id,
+                        'category_id'               => $parentProduct->category_id,
+                        'unit_of_measure_id'        => $parentProduct->unit_of_measure_id,
+                        'account_id'                => $childAccount->id,
+                        'bag_weight_for_purchasing' => $parentProduct->bag_weight_for_purchasing,
+                        'product_type'              => $head->head_type_slug === 'by' ? 'raw_material' : ($parentProduct->product_type ?? 'finish_good'),
+                        'description'               => $parentProduct->description,
+                        'status'                    => 'active',
+                        'name'                      => $childName,
+                        'product_category_flags'    => $head->head_type_slug,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json(['success' => 'Product created successfully.', 'data' => $parentProduct], 201);
     }
 
     /**

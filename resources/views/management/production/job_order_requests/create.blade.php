@@ -335,7 +335,7 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Fumigation Type:</label>
-                                                <select name="packing_items[0][fumigation_type]" class="form-control select2" data-placeholder="Select Fumigation Type">
+                                                <select name="packing_items[0][fumigation_type]" class="form-control select2">
                                                     <option value="">Select Fumigation Type</option>
                                                     @foreach($fumigationTypes as $fType)
                                                         <option value="{{ $fType }}">{{ ucfirst($fType) }}</option>
@@ -698,7 +698,34 @@
                 `;
                 $('#export-order-quantity-info').html(alertHtml).show();
 
-                addPackingRowsFromExportOrder(data.packing_items);
+                addPackingRowsFromExportOrder(data.packing_items, data);
+                if (!data.packing_items || data.packing_items.length === 0) {
+                    let fumigationVal = data.fumigation_company_id || data.fumigation_by;
+                    if (fumigationVal) {
+                        if (typeof fumigationVal === 'string') {
+                            try { fumigationVal = JSON.parse(fumigationVal); } catch(e) { fumigationVal = [fumigationVal]; }
+                        }
+                        if (Array.isArray(fumigationVal)) {
+                            fumigationVal = fumigationVal.map(String);
+                        } else {
+                            fumigationVal = [String(fumigationVal)];
+                        }
+                        $('select[name="packing_items[0][fumigation_company_id][]"]').val(fumigationVal).trigger('change');
+                    }
+                    if (data.fumigation_type) {
+                        let fTypeSelect = $('select[name="packing_items[0][fumigation_type]"]');
+                        fTypeSelect.val(data.fumigation_type).trigger('change');
+                        if (!fTypeSelect.val()) {
+                            let lowerVal = String(data.fumigation_type).toLowerCase().trim();
+                            fTypeSelect.find('option').each(function() {
+                                if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                    fTypeSelect.val($(this).val()).trigger('change');
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+                }
                 updateFumigationRequirement();
             }).fail(function(xhr) {
                 console.error('Export Order Details Error:', xhr.status, xhr.responseText);
@@ -816,7 +843,7 @@
             });
         }
 
-        function addPackingRowsFromExportOrder(items) {
+        function addPackingRowsFromExportOrder(items, eoData) {
             if (!items || items.length === 0) {
                 resetPackingItemsToDefault();
                 return;
@@ -888,13 +915,34 @@
                 row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
                 
-                if (item.fumigation_company_id) {
+                // Fumigation sync
+                let fumigationVal = item.fumigation_company_id || item.fumigation_by || (eoData && (eoData.fumigation_company_id || eoData.fumigation_by));
+                if (fumigationVal) {
                     let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
-                    fumigationSelect.val(item.fumigation_company_id);
+                    let fVal = fumigationVal;
+                    if (typeof fVal === 'string') {
+                        try { fVal = JSON.parse(fVal); } catch(e) { fVal = [fVal]; }
+                    }
+                    if (Array.isArray(fVal)) {
+                        fVal = fVal.map(String);
+                    } else if (fVal) {
+                        fVal = [String(fVal)];
+                    }
+                    fumigationSelect.val(fVal);
                 }
-                if (item.fumigation_type) {
+                let fType = item.fumigation_type || (eoData && eoData.fumigation_type);
+                if (fType) {
                     let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
-                    fumigationTypeSelect.val(item.fumigation_type);
+                    fumigationTypeSelect.val(fType);
+                    if (!fumigationTypeSelect.val()) {
+                        let lowerVal = String(fType).toLowerCase().trim();
+                        fumigationTypeSelect.find('option').each(function() {
+                            if ($(this).val().toLowerCase().trim() === lowerVal || $(this).text().toLowerCase().trim() === lowerVal) {
+                                fumigationTypeSelect.val($(this).val());
+                                return false;
+                            }
+                        });
+                    }
                 }
                 
                 let subContainer = row.find('.sub-packing-items-container');
@@ -910,6 +958,9 @@
                         $(this).trigger('change');
                     }
                 });
+
+                row.find(`select[name="packing_items[${index}][fumigation_type]"]`).trigger('change');
+                row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`).trigger('change');
 
                 if (item.no_of_bags > 0 && item.extra_bags > 0) {
                     let perc = (item.extra_bags / item.no_of_bags) * 100;

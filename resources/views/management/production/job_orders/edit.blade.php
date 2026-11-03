@@ -442,8 +442,8 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>Fumigation Type:</label>
-                                <select name="packing_items[{{ $packingIndex }}][fumigation_type]" class="form-control select2" data-placeholder="Select Fumigation Type">
-                                    <option value="">Select Fumigation Type</option>
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_type]" class="form-control select2">
+                                    <option value="" {{ (empty($packingItem->fumigation_type) && empty(old("packing_items.{$packingIndex}.fumigation_type"))) ? 'selected' : '' }}>Select Fumigation Type</option>
                                     @foreach($fumigationTypes as $fType)
                                         <option value="{{ $fType }}" {{ ($packingItem->fumigation_type == $fType || old("packing_items.{$packingIndex}.fumigation_type") == $fType) ? 'selected' : '' }}>
                                             {{ ucfirst($fType) }}
@@ -1265,9 +1265,8 @@
                     }
                     fumigationSelect.val(fVal);
                 }
-                if (item.fumigation_type) {
-                    let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
-                    fumigationTypeSelect.val(item.fumigation_type);
+                let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
+                fumigationTypeSelect.val(item.fumigation_type || '');
                     if (!fumigationTypeSelect.val()) {
                         let lowerVal = String(item.fumigation_type).toLowerCase().trim();
                         fumigationTypeSelect.find('option').each(function() {
@@ -1277,7 +1276,6 @@
                             }
                         });
                     }
-                }
                 
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
@@ -1420,9 +1418,8 @@
                     }
                     fumigationSelect.val(fVal);
                 }
-                if (item.fumigation_type) {
-                    let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
-                    fumigationTypeSelect.val(item.fumigation_type);
+                let fumigationTypeSelect = row.find(`select[name="packing_items[${index}][fumigation_type]"]`);
+                fumigationTypeSelect.val(item.fumigation_type || '');
                     if (!fumigationTypeSelect.val()) {
                         let lowerVal = String(item.fumigation_type).toLowerCase().trim();
                         fumigationTypeSelect.find('option').each(function() {
@@ -1432,7 +1429,6 @@
                             }
                         });
                     }
-                }
 
                 // Attachment sync
                 if (item.attachment_path || item.attachment) {

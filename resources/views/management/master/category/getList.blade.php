@@ -26,6 +26,10 @@
                     </td>
 
                     <td>
+                        <a onclick="openModal(this,'{{ route('category.heads.create', $row->id) }}','Configure Product Heads - {{ addslashes($row->name) }}', false, '50%')"
+                            class="success p-1 text-center mr-2 position-relative" title="Configure Head, B2 & By Products">
+                            <i class="ft-layers font-medium-3 text-success"></i>
+                        </a>
                         @if($row->is_protected !== "yes")
                             @can('role-edit')
                                 <a onclick="openModal(this,'{{ route('category.edit', $row->id) }}','Edit Category')"

@@ -15,6 +15,8 @@ use App\Models\Master\PlantBreakdownType;
 use App\Models\Production\PlantBreakdown;
 use App\Models\Production\PlantBreakdownItem;
 use App\Models\Production\ProductionVoucher;
+use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Master\CompanyLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,25 +24,52 @@ class MachinePlanSettingController extends Controller
 {
     public function index()
     {
-        return view('management.production.machine_plan_setting.index');
+        $companyLocations = $this->userCompanyLocations();
+
+        return view('management.production.machine_plan_setting.index', compact('companyLocations'));
     }
 
     public function getList(Request $request)
     {
-        $machinePlanSettings = MachinePlanSetting::with(['plant', 'productionVoucher', 'user', 'items.machine'])
+        $machinePlanSettings = MachinePlanSetting::with(['plant.companyLocation', 'plant.arrivalLocation', 'companyLocation', 'productionVoucher', 'user', 'items.machine'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
-                return $q->where(function ($sq) use ($searchTerm) {
+                $matchingJobOrderIds = JobOrder::where('job_order_no', 'like', $searchTerm)->pluck('id')->all();
+
+                return $q->where(function ($sq) use ($searchTerm, $matchingJobOrderIds) {
                     $sq->whereHas('plant', function ($q) use ($searchTerm) {
                         $q->where('name', 'like', $searchTerm);
                     })
                         ->orWhereHas('productionVoucher', function ($q) use ($searchTerm) {
                             $q->where('prod_no', 'like', $searchTerm);
                         });
+
+                    if (!empty($matchingJobOrderIds)) {
+                        $sq->orWhereHas('items', function ($iq) use ($matchingJobOrderIds) {
+                            $iq->where(function ($jq) use ($matchingJobOrderIds) {
+                                $jq->whereIn('job_order_id', $matchingJobOrderIds);
+                                foreach ($matchingJobOrderIds as $joId) {
+                                    $jq->orWhereJsonContains('job_order_ids', (int) $joId);
+                                }
+                            });
+                        });
+                    }
                 });
             })
             ->when($request->filled('company_id'), function ($q) use ($request) {
                 return $q->where('company_id', $request->company_id);
+            })
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->where(function ($sq) use ($request) {
+                    $sq->where('company_location_id', $request->company_location_id)
+                        ->orWhere(function ($old) use ($request) {
+                            // Older records saved before location was captured
+                            $old->whereNull('company_location_id')
+                                ->whereHas('plant', function ($p) use ($request) {
+                                    $p->where('company_location_id', $request->company_location_id);
+                                });
+                        });
+                });
             })
             ->when($request->filled('plant_id'), function ($q) use ($request) {
                 return $q->where('plant_id', $request->plant_id);
@@ -63,12 +92,19 @@ class MachinePlanSettingController extends Controller
                 return $item->date->format('Y-m-d') . '_' . $item->plant_id;
             });
 
-        return view('management.production.machine_plan_setting.getList', compact('machinePlanSettings', 'plantBreakdowns'));
+        // job_order_no for every job order shown on this page, keyed by id
+        $jobOrderNos = JobOrder::whereIn(
+            'id',
+            $machinePlanSettings->getCollection()->flatMap->items->flatMap->job_order_id_list->unique()->values()
+        )->pluck('job_order_no', 'id');
+
+        return view('management.production.machine_plan_setting.getList', compact('machinePlanSettings', 'plantBreakdowns', 'jobOrderNos'));
     }
 
     public function create(Request $request)
     {
-        $plants = Plant::where('status', 'active')->get();
+        $companyLocations = $this->userCompanyLocations();
+        $plants = Plant::with('arrivalLocation')->where('status', 'active')->get();
         $date = $request->input('date', date('Y-m-d'));
         $productionVouchers = ProductionVoucher::whereDate('prod_date', $date)
             ->when($request->filled('plant_id'), function ($q) use ($request) {
@@ -83,7 +119,7 @@ class MachinePlanSettingController extends Controller
             })
             ->get();
 
-        return view('management.production.machine_plan_setting.create', compact('plants', 'productionVouchers', 'machines', 'breakdownTypes'));
+        return view('management.production.machine_plan_setting.create', compact('companyLocations', 'plants', 'productionVouchers', 'machines', 'breakdownTypes'));
     }
 
     public function store(MachinePlanSettingRequest $request)
@@ -93,6 +129,7 @@ class MachinePlanSettingController extends Controller
         try {
             $machinePlanSettingData = $request->only([
                 'company_id',
+                'company_location_id',
                 'date',
                 'plant_id',
                 'production_voucher_id',
@@ -158,6 +195,7 @@ class MachinePlanSettingController extends Controller
                                     'machine_plan_setting_id' => $machinePlanSetting->id,
                                     'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                                     'production_machine_id' => $machineId,
+                                    ...$this->machineJobOrderData($request, $machineId),
                                     'start_time' => $startTime ?: null,
                                     'end_time' => $endTime ?: null,
                                     'duration_minutes' => $durationMinutes,
@@ -207,6 +245,7 @@ class MachinePlanSettingController extends Controller
                             'machine_plan_setting_id' => $machinePlanSetting->id,
                             'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                             'production_machine_id' => $machineId,
+                            ...$this->machineJobOrderData($request, $machineId),
                             'start_time' => null,
                             'end_time' => null,
                             'duration_minutes' => 0,
@@ -242,6 +281,8 @@ class MachinePlanSettingController extends Controller
                             'machine_plan_setting_id' => $machinePlanSetting->id,
                             'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                             'production_machine_id' => $machineData['production_machine_id'],
+                            'job_order_id' => $machineData['job_order_id'] ?? null,
+                            'job_order_ids' => !empty($machineData['job_order_id']) ? [(int) $machineData['job_order_id']] : null,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
                             'duration_minutes' => $durationMinutes,
@@ -306,6 +347,12 @@ class MachinePlanSettingController extends Controller
 
             DB::commit();
 
+            try {
+                app(\App\Services\AutoAnalysisRequestService::class)->checkAndGenerateRequests();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('AutoAnalysis checkAndGenerateRequests error on machine plan save: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => 'Machine Plan Setting created successfully.',
                 'data' => $machinePlanSetting->load('items.machine')
@@ -323,11 +370,21 @@ class MachinePlanSettingController extends Controller
     {
         $machinePlanSetting = MachinePlanSetting::with(['items.machine', 'items.breakdowns'])->findOrFail($id);
 
-        $plants = Plant::where('status', 'active')
+        $companyLocations = $this->userCompanyLocations();
+
+        $plants = Plant::with('arrivalLocation')->where('status', 'active')
             ->when($request->filled('company_id'), function ($q) use ($request) {
                 return $q->where('company_id', $request->company_id);
             })
             ->get();
+
+        // Older records may not have a location stored; fall back to the plant's location
+        $selectedLocationId = $machinePlanSetting->company_location_id
+            ?: optional($machinePlanSetting->plant)->company_location_id;
+
+        $jobOrders = $selectedLocationId
+            ? $this->jobOrdersForLocation($selectedLocationId, $request->company_id)
+            : collect();
 
         $selectedDate = $machinePlanSetting->date ? $machinePlanSetting->date->format('Y-m-d') : null;
 
@@ -360,7 +417,7 @@ class MachinePlanSettingController extends Controller
             })
             ->get();
 
-        return view('management.production.machine_plan_setting.edit', compact('machinePlanSetting', 'plants', 'productionVouchers', 'machines', 'breakdownTypes', 'plantBreakdown'));
+        return view('management.production.machine_plan_setting.edit', compact('machinePlanSetting', 'companyLocations', 'selectedLocationId', 'jobOrders', 'plants', 'productionVouchers', 'machines', 'breakdownTypes', 'plantBreakdown'));
     }
 
     public function update(MachinePlanSettingRequest $request, $id)
@@ -375,6 +432,7 @@ class MachinePlanSettingController extends Controller
 
             $machinePlanSettingData = $request->only([
                 'company_id',
+                'company_location_id',
                 'date',
                 'plant_id',
                 'production_voucher_id',
@@ -428,6 +486,7 @@ class MachinePlanSettingController extends Controller
                                     'machine_plan_setting_id' => $machinePlanSetting->id,
                                     'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                                     'production_machine_id' => $machineId,
+                                    ...$this->machineJobOrderData($request, $machineId),
                                     'start_time' => $startTime ?: null,
                                     'end_time' => $endTime ?: null,
                                     'duration_minutes' => $durationMinutes,
@@ -477,6 +536,7 @@ class MachinePlanSettingController extends Controller
                             'machine_plan_setting_id' => $machinePlanSetting->id,
                             'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                             'production_machine_id' => $machineId,
+                            ...$this->machineJobOrderData($request, $machineId),
                             'start_time' => null,
                             'end_time' => null,
                             'duration_minutes' => 0,
@@ -512,6 +572,8 @@ class MachinePlanSettingController extends Controller
                             'machine_plan_setting_id' => $machinePlanSetting->id,
                             'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                             'production_machine_id' => $machineData['production_machine_id'],
+                            'job_order_id' => $machineData['job_order_id'] ?? null,
+                            'job_order_ids' => !empty($machineData['job_order_id']) ? [(int) $machineData['job_order_id']] : null,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
                             'duration_minutes' => $durationMinutes,
@@ -708,6 +770,7 @@ class MachinePlanSettingController extends Controller
                 'id' => $machine->id,
                 'name' => $machine->name,
                 'is_enabled' => $isEnabled,
+                'job_order_ids' => $firstItem ? $firstItem->job_order_id_list : [],
                 'start_time' => $slots[0]['start_time'] ?? '',
                 'end_time' => $slots[0]['end_time'] ?? '',
                 'hours' => $slots[0]['hours'] ?? null,
@@ -742,6 +805,78 @@ class MachinePlanSettingController extends Controller
         return response()->json([
             'vouchers' => $vouchers
         ]);
+    }
+
+    public function getJobOrdersByLocation(Request $request)
+    {
+        if (!$request->filled('company_location_id')) {
+            return response()->json(['jobOrders' => []]);
+        }
+
+        $jobOrders = $this->jobOrdersForLocation($request->company_location_id, $request->company_id)
+            ->map(function ($jo) {
+                $refText = $jo->ref_no ? ' (' . $jo->ref_no . ')' : '';
+                $prodText = $jo->product ? ' - ' . $jo->product->name : '';
+                return [
+                    'id' => $jo->id,
+                    'text' => $jo->job_order_no . $refText . $prodText,
+                ];
+            })
+            ->values();
+
+        return response()->json(['jobOrders' => $jobOrders]);
+    }
+
+    /**
+     * Job orders chosen for one machine card: all of them in job_order_ids,
+     * the first in job_order_id for code that reads a single job order.
+     */
+    private function machineJobOrderData(Request $request, $machineId): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            'intval',
+            (array) $request->input("machine_job_order_id.{$machineId}", [])
+        ))));
+
+        return [
+            'job_order_id' => $ids[0] ?? null,
+            'job_order_ids' => $ids ?: null,
+        ];
+    }
+
+    /**
+     * Same location list (and order) as the Job Order form:
+     * super-admins see all active locations, others only their assigned ones.
+     */
+    private function userCompanyLocations()
+    {
+        $user = auth()->user();
+        $locationIds = getUserCurrentCompanyLocations();
+
+        if ($user && ($user->user_type === 'super-admin' || empty($locationIds))) {
+            return CompanyLocation::where('status', 'active')->get();
+        }
+
+        return CompanyLocation::whereIn('id', $locationIds)->where('status', 'active')->get();
+    }
+
+    private function jobOrdersForLocation($locationId, $companyId = null)
+    {
+        $companyId = $companyId ?: (auth()->user()->company_id ?? null);
+
+        return JobOrder::with('product')
+            ->when($companyId, function ($q) use ($companyId) {
+                return $q->where('company_id', $companyId);
+            })
+            ->whereIn('status', [1, 'active'])
+            ->where(function ($sub) use ($locationId) {
+                $sub->where('company_location_id', $locationId)
+                    ->orWhereHas('packingItems', function ($pi) use ($locationId) {
+                        $pi->where('company_location_id', $locationId);
+                    });
+            })
+            ->orderBy('job_order_no', 'desc')
+            ->get();
     }
 
     public function getBreakdownsByPlantAndDate(Request $request)

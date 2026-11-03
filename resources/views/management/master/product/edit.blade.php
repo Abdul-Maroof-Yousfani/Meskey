@@ -85,7 +85,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Category:</label>
-                <select class="form-control" name="category_id">
+                <select class="form-control" name="category_id" id="category_id">
                     <option value="">Select Category</option>
                     @foreach ($categories as $category)
                         <option {{ $category->id == $product->category_id ? 'selected' : '' }} value="{{ $category->id }}">
@@ -103,13 +103,11 @@
                     @foreach ($parentProducts as $parentProduct)
                         <option {{ $parentProduct->id == $product->parent_id ? 'selected' : '' }}
                             value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
-
                     @endforeach
-
-
                 </select>
             </div>
         </div>
+
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Unit of Measure:</label>
@@ -202,6 +200,7 @@
 
             </div>
         </div> --}}
+
     </div>
     <div class="row bottom-button-bar">
         <div class="col-12">

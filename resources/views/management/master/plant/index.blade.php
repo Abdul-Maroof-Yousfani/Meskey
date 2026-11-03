@@ -74,27 +74,6 @@
 
             filterationCommon(`{{ route('get.plant') }}`);
 
-            $(document).on('change', '#company_location_id', function () {
-                let locationId = $(this).val();
-
-                if (locationId && locationId > 0) {
-                    initializeDynamicDependentCall1Select2(
-                        '#company_location_id',
-                        '#arrival_location_id',
-                        'company_locations',
-                        'name',
-                        'id',
-                        'arrival_locations',
-                        'company_location_id',
-                        'name',
-                        true,
-                        false,
-                        true,
-                        true
-                    );
-                }
-            });
-
 
         });
     </script>

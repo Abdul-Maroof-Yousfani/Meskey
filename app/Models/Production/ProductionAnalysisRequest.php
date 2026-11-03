@@ -27,9 +27,13 @@ class ProductionAnalysisRequest extends Model
         'plant_id',
         'job_order_id',
         'production_voucher_id',
+        'machine_plan_setting_id',
         'type',
         'remarks',
         'status',
+        'is_auto_generated',
+        'auto_generated_at',
+        'auto_scheduled_interval',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -37,6 +41,9 @@ class ProductionAnalysisRequest extends Model
 
     protected $casts = [
         'request_date' => 'date',
+        'is_auto_generated' => 'boolean',
+        'auto_generated_at' => 'datetime',
+        'auto_scheduled_interval' => 'integer',
     ];
 
     // Allowed analysis types constant
@@ -101,6 +108,11 @@ class ProductionAnalysisRequest extends Model
     public function productionVoucher()
     {
         return $this->belongsTo(ProductionVoucher::class, 'production_voucher_id');
+    }
+
+    public function machinePlanSetting()
+    {
+        return $this->belongsTo(MachinePlanSetting::class, 'machine_plan_setting_id');
     }
 
     public function getTypeNameAttribute(): string

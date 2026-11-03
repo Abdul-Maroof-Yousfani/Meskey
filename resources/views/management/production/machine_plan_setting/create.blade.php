@@ -15,14 +15,29 @@
 
                 <div class="col-md-3">
                     <div class="form-group mb-2">
-                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Plant:</label>
-                        <select name="plant_id" id="plant_id" class="form-control select2" style="width: 100%;" required>
-                            <option value="">Select Plant</option>
-                            @foreach($plants as $plant)
-                                <option value="{{ $plant->id }}">{{ $plant->arrivalLocation->name ?? '' }} -
-                                    {{ $plant->name }}
-                                </option>
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Location:</label>
+                        <select name="company_location_id" id="company_location_id" class="form-control select2" style="width: 100%;" required>
+                            <option value="">Select Location</option>
+                            @foreach($companyLocations as $location)
+                                <option value="{{ $location->id }}" {{ $loop->first ? 'selected' : '' }}>{{ $location->name }}</option>
                             @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group mb-2">
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Plant:</label>
+                        @php $defaultLocationId = optional($companyLocations->first())->id; @endphp
+                        <select name="plant_id" id="plant_id" class="form-control select2" style="width: 100%;" required>
+                            @if($defaultLocationId)
+                                <option value="">Select Plant</option>
+                                @foreach($plants->where('company_location_id', $defaultLocationId) as $plant)
+                                    <option value="{{ $plant->id }}">{{ $plant->arrivalLocation->name ?? '' }} - {{ $plant->name }}</option>
+                                @endforeach
+                            @else
+                                <option value="">Select Location First</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -121,12 +136,110 @@
 </form>
 
 
+@php
+    $mpsPlantOptions = $plants->map(fn ($p) => [
+        'id' => $p->id,
+        'location_id' => $p->company_location_id,
+        'text' => trim(($p->arrivalLocation->name ?? '') . ' - ' . $p->name, ' -'),
+    ])->values();
+@endphp
 <script>
+    var mpsAllPlants = @json($mpsPlantOptions);
+
+    function populatePlantsByLocation(locationId, selectedPlantId) {
+        var $plant = $('#plant_id');
+        $plant.empty();
+        if (!locationId) {
+            $plant.append('<option value="">Select Location First</option>');
+        } else {
+            $plant.append('<option value="">Select Plant</option>');
+            $.each(mpsAllPlants, function (i, p) {
+                if (p.location_id == locationId) {
+                    var sel = (selectedPlantId && selectedPlantId == p.id) ? 'selected' : '';
+                    $plant.append(`<option value="${p.id}" ${sel}>${p.text}</option>`);
+                }
+            });
+        }
+        $plant.trigger('change.select2');
+    }
+
+    // Job orders of the selected location, used by every machine's Job Order select
+    var mpsJobOrders = [];
+
+    function loadJobOrdersByLocation(locationId) {
+        mpsJobOrders = [];
+        fillMachineJobOrderSelects();
+        if (!locationId) return;
+
+        $.ajax({
+            url: '{{ route("machine-plan-setting.job-orders-by-location") }}',
+            type: 'GET',
+            data: { company_location_id: locationId },
+            success: function (response) {
+                mpsJobOrders = response.jobOrders || [];
+                if (mpsJobOrders.length === 0) {
+                    toastr.warning('No job orders found for this location');
+                }
+                fillMachineJobOrderSelects();
+            },
+            error: function () {
+                toastr.error('Error loading job orders');
+            }
+        });
+    }
+
+    // Fill every machine's Job Orders multi-select and make it searchable (select2, like Location)
+    function fillMachineJobOrderSelects() {
+        $('.machine-job-order').each(function () {
+            var $sel = $(this);
+            var selected = $sel.val();
+            if (!selected || !selected.length) {
+                selected = $sel.data('selected') || [];
+            }
+            selected = (Array.isArray(selected) ? selected : [selected]).map(String);
+
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2('destroy');
+            }
+            $sel.empty();
+            $.each(mpsJobOrders, function (i, jo) {
+                var isSel = selected.indexOf(String(jo.id)) !== -1 ? 'selected' : '';
+                $sel.append(`<option value="${jo.id}" ${isSel}>${jo.text}</option>`);
+            });
+            initMachineJobOrderSelect2($sel);
+        });
+    }
+
+    function initMachineJobOrderSelect2($sel) {
+        $sel.select2({
+            width: '100%',
+            placeholder: 'Select Job Orders',
+            closeOnSelect: false,
+            dropdownParent: $sel.closest('.modal').length ? $sel.closest('.modal') : $(document.body)
+        });
+    }
+
     $(document).ready(function () {
-        $('#plant_id, #production_voucher_id').select2({
+        $('#company_location_id, #plant_id, #production_voucher_id').select2({
             width: '100%',
             dropdownParent: $('.select2').closest('.modal').length ? $('.select2').closest('.modal') : $(document.body)
         });
+
+        // Location change: filter plants, load job orders, reset machines
+        $(document).off('change.mps_location', '#company_location_id').on('change.mps_location', '#company_location_id', function () {
+            var locationId = $(this).val();
+            populatePlantsByLocation(locationId);
+            loadJobOrdersByLocation(locationId);
+            $('#productionMachinesContainer').html('<div class="text-center text-muted py-3">Please select a plant to load machines</div>');
+            loadProductionVouchers($('#date').val(), null);
+        });
+
+        // Like the Job Order form, the first location is pre-selected (its plants are rendered above);
+        // load that location's job orders for the machine cards
+        var mpsDefaultLocationId = '{{ $defaultLocationId }}';
+        if (mpsDefaultLocationId) {
+            loadJobOrdersByLocation(mpsDefaultLocationId);
+        }
 
         // Load production vouchers and breakdowns when date changes
         $(document).off('change.mps_date', '#date').on('change.mps_date', '#date', function () {
@@ -350,6 +463,13 @@
                                         </div>
                                     </div>
                                     <div class="machine-card-body p-2" style="background: #fff;">
+                                        <div class="d-flex align-items-center mb-2" style="gap: 8px;">
+                                            <label class="mb-0" style="font-size: 11px; font-weight: 600; color: #4a5568; white-space: nowrap;">Job Orders: <span class="text-danger">*</span></label>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <select name="machine_job_order_id[${machine.id}][]" multiple class="form-control form-control-sm machine-job-order" data-selected='${JSON.stringify(machine.job_order_ids || [])}' style="width: 100%;">
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div id="machine_time_table_${machine.id}">
                                             ${timeSlotsHtml}
                                         </div>
@@ -360,6 +480,7 @@
                     });
                     html += `</div>`;
                     container.append(html);
+                    fillMachineJobOrderSelects();
 
                     $.each(response.machines, function (index, machine) {
                         calculateMachineTime(machine.id);
@@ -885,6 +1006,7 @@
         const statusLabel = $(`#machine_status_${machineId}`);
         const cardBody = card.find('.machine-card-body');
         const addSlotBtn = card.find('button[onclick*="addMachineTimeRow"]');
+        card.find('.machine-job-order').prop('disabled', !isChecked).trigger('change.select2');
 
         if (isChecked) {
             card.css({
