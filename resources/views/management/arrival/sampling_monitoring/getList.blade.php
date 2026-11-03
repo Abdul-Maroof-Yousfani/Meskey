@@ -25,7 +25,7 @@
                     $color = 'grey';
                 }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                ?>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -79,7 +79,7 @@
                             {!! dateFormatHtml($row->created_at) ?? ''  !!}
 
                             <!-- {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                                                                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br> -->
+                                                                                                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br> -->
 
                         </p>
                     </td>

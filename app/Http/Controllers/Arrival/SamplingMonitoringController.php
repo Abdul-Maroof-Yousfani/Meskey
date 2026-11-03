@@ -31,13 +31,14 @@ class SamplingMonitoringController extends Controller
         $isSuperAdmin = $authUser->user_type === 'super-admin';
         // $isSuperAdmin = true;
 
-        $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
-            ->where('is_done', 'yes')
-            ->groupBy('arrival_ticket_id')
-            ->pluck('id');
+        // $latestRequestIds = ArrivalSamplingRequest::selectRaw('MAX(id) as id')
+        //     ->where('is_done', 'yes')
+        //     ->groupBy('arrival_ticket_id')
+        //     ->pluck('id');
 
         $query = ArrivalSamplingRequest::with(['arrivalTicket'])
-            ->whereIn('id', $latestRequestIds)
+            ->where('is_done', 'yes')
+            // ->whereIn('id', $latestRequestIds)
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
