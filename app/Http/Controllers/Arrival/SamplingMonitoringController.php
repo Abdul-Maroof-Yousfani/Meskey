@@ -46,8 +46,8 @@ class SamplingMonitoringController extends Controller
                         ->orWhere('sampling_type', 'like', $searchTerm)
                         // Ticket No
                         ->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
-                            $aq->where('unique_no', 'like', $searchTerm);
-                        });
+                        $aq->where('unique_no', 'like', $searchTerm);
+                    });
                 });
             })
             ->when($request->filled('sampling_type'), function ($q) use ($request) {
@@ -255,7 +255,7 @@ class SamplingMonitoringController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    
+
     public function editTest(Request $request, $id)
     {
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($id);
@@ -426,6 +426,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
                 'approved_at' => now(),
+                'approved_by' => auth()->user()->id,
             ]);
 
             $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
@@ -527,7 +528,7 @@ class SamplingMonitoringController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    
+
     public function updateTest(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [

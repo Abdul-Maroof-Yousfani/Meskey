@@ -4,9 +4,10 @@
             <th class="col-sm-2">Ticket No. </th>
             <th class="col-sm-2">Product</th>
             <th class="col-sm-1">Type</th>
-            <th class="col-sm-3">Remark</th>
-            <th class="col-sm-1">Status</th>
-            <th class="col-sm-2">Created</th>
+            <th class="col-sm-2">Remark</th>
+            <th class="col-sm-2">Aprroval Status</th>
+            <th class="col-sm-2">Result Posted At</th>
+            <th class="col-sm-2">Req Created At</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -24,7 +25,7 @@
                     $color = 'grey';
                 }
 
-                                                                ?>
+                                                                                                                                                                                                                                                                                                                                                                                        ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -52,19 +53,28 @@
                         @endif --}}
 
                         @if ($row->approved_status == 'pending')
-                            <div class="badge badge-warning text-uppercase">{{ $row->approved_status }}</div>
+                            <div class="badge badge-warning text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @elseif($row->approved_status == 'rejected')
-                            <div class="badge badge-danger text-uppercase">{{ $row->approved_status }}</div>
+                            <div class="badge badge-danger text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @elseif($row->approved_status == 'approved')
-                            <div class="badge badge-success text-uppercase">{{ $row->approved_status }}</div>
+                            <div class="badge badge-success text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @else
-                            <div class="badge badge-secondary text-uppercase">{{ $row->approved_status }}</div>
+                            <div class="badge badge-secondary text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @endif
+
+                        {!! dateFormatHtml($row->approved_at) ?? ''  !!}
+                        {{ $row->approved_by != null ? $row->approvedByUser->name : '' }}
+                    </td>
+                    <td>
+                        {!!  dateFormatHtml($row->result_posted_at) ?? ''  !!}
+
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                            {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br>
+                            {!! dateFormatHtml($row->created_at) ?? ''  !!}
+
+                            <!-- {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
+                                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br> -->
 
                         </p>
                     </td>
