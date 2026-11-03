@@ -590,6 +590,7 @@ class SamplingMonitoringController extends Controller
                 'lumpsum_deduction_kgs_maund' => (float) $request->lumpsum_deduction_kgs_maund ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
                 'approved_at' => now(),
+                'approved_by' => auth()->user()->id,
             ]);
 
             $records = ArrivalSamplingResult::where('arrival_sampling_request_id', $id)->get();
