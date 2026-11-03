@@ -25,7 +25,7 @@
                     $color = 'grey';
                 }
 
-                                                                                                                                                                                                                                                                                                                                                                                        ?>
+                                                                                                                                                                                                                                                                                                                                                                                                                        ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -58,13 +58,13 @@
                             <div class="badge badge-danger text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @elseif($row->approved_status == 'approved')
                             <div class="badge badge-success text-uppercase mb-1">{{ $row->approved_status }}</div>
-                            @if ($row->is_auto_approved == 'yes')
-                                <div class="badge badge-info text-uppercase mb-1" title="Auto approved: slabs matched the previous QC">
-                                    <i class="fa fa-check-circle"></i> Auto Approved
-                                </div>
-                            @endif
                         @else
                             <div class="badge badge-secondary text-uppercase mb-1">{{ $row->approved_status }}</div>
+                        @endif
+                        @if ($row->is_auto_approved == 'yes')
+                            <div class="badge badge-info text-uppercase mb-1" title="Auto approved: slabs matched the previous QC">
+                                <i class="fa fa-check-circle"></i> Auto Decision
+                            </div>
                         @endif
 
                         {!! dateFormatHtml($row->approved_at) ?? ''  !!}
@@ -79,7 +79,7 @@
                             {!! dateFormatHtml($row->created_at) ?? ''  !!}
 
                             <!-- {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} /
-                                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br> -->
+                                                                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }} <br> -->
 
                         </p>
                     </td>
