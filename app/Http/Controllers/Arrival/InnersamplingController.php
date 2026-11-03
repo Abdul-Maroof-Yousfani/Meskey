@@ -311,6 +311,12 @@ class InnersamplingController extends Controller
             ];
 
             if ($initialStatus === 'approved') {
+                // Auto-approved because slabs matched the previous QC: record when, and flag it
+                $updateData['approved_at'] = now();
+                // The decision is carried over from the previous approved QC, so its approver is the approver here
+                $updateData['approved_by'] = $initialRequestForInnerReq->approved_by;
+                $updateData['is_auto_approved'] = 'yes';
+
                 $updateData['is_lumpsum_deduction'] = $initialRequestForInnerReq->is_lumpsum_deduction ?? 0;
                 $updateData['lumpsum_deduction'] = $initialRequestForInnerReq->lumpsum_deduction ?? 0;
                 $updateData['lumpsum_deduction_kgs'] = $initialRequestForInnerReq->lumpsum_deduction_kgs ?? 0;

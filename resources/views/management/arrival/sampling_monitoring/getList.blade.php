@@ -58,6 +58,11 @@
                             <div class="badge badge-danger text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @elseif($row->approved_status == 'approved')
                             <div class="badge badge-success text-uppercase mb-1">{{ $row->approved_status }}</div>
+                            @if ($row->is_auto_approved == 'yes')
+                                <div class="badge badge-info text-uppercase mb-1" title="Auto approved: slabs matched the previous QC">
+                                    <i class="fa fa-check-circle"></i> Auto Approved
+                                </div>
+                            @endif
                         @else
                             <div class="badge badge-secondary text-uppercase mb-1">{{ $row->approved_status }}</div>
                         @endif

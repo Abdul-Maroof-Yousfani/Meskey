@@ -413,7 +413,14 @@
                         <li class="nav-item">
                             <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab" href="#inner-{{ $index }}"
                                 role="tab" aria-controls="inner-{{ $index }}" aria-selected="false">
-                                <div>{{ $statusLabel }}</div>
+                                <div>
+                                    {{ $statusLabel }}
+                                    @if ($innerData['request']->is_auto_approved == 'yes')
+                                        <span class="badge badge-info ml-1" title="Auto approved: slabs matched the previous QC">
+                                            <i class="fa fa-check-circle"></i> Auto Approved
+                                        </span>
+                                    @endif
+                                </div>
                                 <small
                                     class="text-muted">{{ $innerData['request']->created_at->format('M d, Y h:i A') }}</small>
                             </a>
@@ -445,6 +452,11 @@
                             role="tab" aria-controls="current-inner" aria-selected="true">
                             <div>
                                 {{ $arrivalSamplingRequest->is_re_sampling == 'yes' ? 'Current ' . ucwords($arrivalSamplingRequest->sampling_type) . ' Resampling' : 'Current ' . $arrivalSamplingRequest->sampling_type . ' Checklist' }}
+                                @if ($arrivalSamplingRequest->is_auto_approved == 'yes')
+                                    <span class="badge badge-info ml-1" title="Auto approved: slabs matched the previous QC">
+                                        <i class="fa fa-check-circle"></i> Auto Approved
+                                    </span>
+                                @endif
                             </div>
                             <small
                                 class="text-muted">{{ $arrivalSamplingRequest->created_at->format('M d, Y h:i A') }}</small>
