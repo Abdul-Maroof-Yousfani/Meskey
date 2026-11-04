@@ -45,6 +45,19 @@
                         <span class="badge {{ $badge }} px-2 py-1">
                             {{ ucfirst($status) }}
                         </span>
+                        @if($do->cancel)
+                            <div class="mt-1">
+                                <span class="badge badge-danger px-2 py-1" title="{{ $do->cancel_reason ? 'Reason: '.$do->cancel_reason : '' }}">
+                                    Cancelled
+                                </span>
+                            </div>
+                        @elseif($do->continue_at)
+                            <div class="mt-1">
+                                <span class="badge badge-primary px-2 py-1" title="{{ $do->continue_reason ? 'Continue Reason: '.$do->continue_reason : '' }}">
+                                    Continued
+                                </span>
+                            </div>
+                        @endif
                     </td>
                     <td>
                         <a class="info p-1 text-center position-relative"
@@ -52,11 +65,12 @@
                             <i class="ft-eye font-medium-3"></i></a>
 
                         @if(auth()->user()->id == $do->created_by)
-                            @if($status === 'pending' || $status === 'reverted')
+                            @if($status === 'pending' || $status === 'reverted' || $status === 'approved')
                                 <a class="info p-1 text-center position-relative"
                                     onclick="openModal(this,'{{ route('export-delivery-order.edit', $do->id) }}','Edit Delivery Order',false,'90%')" title="Edit">
                                     <i class="ft-edit font-medium-3"></i></a>
-
+                            @endif
+                            @if($status === 'pending' || $status === 'reverted')
                                 <a onclick="deletemodal('{{ route('export-delivery-order.destroy', $do->id) }}','{{ route('get.export-delivery-order') }}')"
                                     class="danger p-1 text-center mr-2 position-relative" title="Delete">
                                     <i class="ft-x font-medium-3"></i>

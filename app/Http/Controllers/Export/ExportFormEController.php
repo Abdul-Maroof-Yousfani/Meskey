@@ -491,6 +491,7 @@ class ExportFormEController extends Controller
         try {
             $export_orders = ExportOrder::with(['packingItems'])
                 ->where('id', '>', 0)
+                ->where('cancel','!=',1)
                 ->where('buyer_id', $buyer_id)
                 ->where('am_approval_status', 'approved')
                 ->whereNotIn('id', function($q) {

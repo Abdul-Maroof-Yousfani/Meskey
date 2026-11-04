@@ -31,6 +31,7 @@ class LogisticsController extends Controller
     {
         abort_if(!canAccess('logistics-create') && !auth()->user()->can('logistics-create'), 403);
         $exportOrders = ExportOrder::with('logistics')
+            ->where('cancel','!=',1)
             ->where('am_approval_status', 'approved')
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');

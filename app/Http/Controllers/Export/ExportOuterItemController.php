@@ -39,7 +39,17 @@ class ExportOuterItemController extends Controller
     public function create()
     {
         // Available tickets are those which have a loading slip but NO outer items yet
-        $availableTickets = LoadingProgramItem::whereHas('exportLoadingSlip')
+        $availableTickets = LoadingProgramItem::whereHas('exportLoadingProgram.exportOrders', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('exportLoadingProgram.deliveryOrder', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('exportLoadingSlip')
             ->whereDoesntHave('outerItems')
             ->with(['exportLoadingSlip', 'brand'])
             ->get();

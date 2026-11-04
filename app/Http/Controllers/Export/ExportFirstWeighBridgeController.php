@@ -57,7 +57,17 @@ class ExportFirstWeighBridgeController extends Controller
     {
         $data = [
             'ArrivalTruckTypes' => ArrivalTruckType::where('status', 'active')->get(),
-            'Tickets' => LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+            'Tickets' => LoadingProgramItem::whereHas('exportLoadingProgram.exportOrders', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('exportLoadingProgram.deliveryOrder', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'export_order');
             })
                 ->whereHas('exportQc', function ($query) {

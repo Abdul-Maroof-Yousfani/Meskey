@@ -60,6 +60,16 @@ class ExportLoadingSlipController extends Controller
     public function create()
     {
         $availableTickets = $this->ticketQuery()
+            ->whereHas('exportLoadingProgram.exportOrders', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('exportLoadingProgram.deliveryOrder', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
             ->whereHas('exportQc', function ($query) {
                 $query->where('status', 'accept')
                     ->orWhere(function ($approvalQuery) {
