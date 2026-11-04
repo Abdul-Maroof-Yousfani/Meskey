@@ -48,6 +48,16 @@ class ExportDispatchQcController extends Controller
     public function create()
     {
         $Tickets = $this->ticketQuery()
+            ->whereHas('exportLoadingProgram.exportOrders', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('exportLoadingProgram.deliveryOrder', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
             ->whereHas('exportLoadingSlip')
             ->with($this->ticketRelations())
             ->get()

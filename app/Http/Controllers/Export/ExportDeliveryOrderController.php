@@ -54,6 +54,7 @@ class ExportDeliveryOrderController extends Controller
         // Filter only Export Orders that have remaining capacity (Total MT - Consumed MT > 0)
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
             ->where('am_approval_status', 'approved')
+            ->where('cancel','!=',1)
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
@@ -655,6 +656,89 @@ class ExportDeliveryOrderController extends Controller
 
     public function update(Request $request, $id)
     {
+        $deliveryOrder = DeliveryOrder::find($id);
+
+        if (!$deliveryOrder) {
+            return response()->json([
+                'success' => 'Delivery Order not found.',
+            ], 404);
+        }
+
+        if ($deliveryOrder->am_approval_status === "approved") {
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'contract_status' => ['required', 'string', \Illuminate\Validation\Rule::in(['continue', 'cancel'])],
+                'cancel_reason' => [
+                    \Illuminate\Validation\Rule::requiredIf(fn() => strtolower($request->contract_status) === 'cancel'),
+                    'nullable',
+                    'string',
+                ],
+                'continue_reason' => [
+                    \Illuminate\Validation\Rule::requiredIf(fn() => strtolower($request->contract_status) === 'continue' && !empty($deliveryOrder->cancel)),
+                    'nullable',
+                    'string',
+                ],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 422,
+                    'errors' => $validator->errors()->messages(),
+                ], 422);
+            }
+
+            DB::beginTransaction();
+            try {
+                $isCancelled = strtolower($request->contract_status) === 'cancel';
+                $userId = auth()->user()?->id ?? null;
+
+                if ($isCancelled) {
+                    $updateData = [
+                        'contract_status' => 'cancel',
+                        'cancel' => 1,
+                        'cancel_reason' => $request->cancel_reason,
+                        'cancel_by' => $userId,
+                        'cancel_at' => now(),
+                    ];
+                } else {
+                    $updateData = [
+                        'contract_status' => 'continue',
+                        'cancel' => 0,
+                    ];
+                    if ($deliveryOrder->cancel) {
+                        $updateData['continue_reason'] = $request->continue_reason;
+                        $updateData['continue_by'] = $userId;
+                        $updateData['continue_at'] = now();
+                    }
+                }
+
+                $wasPreviouslyCancelled = (bool) $deliveryOrder->cancel;
+                $deliveryOrder->update($updateData);
+
+                DB::commit();
+
+                $message = $isCancelled
+                    ? 'Delivery Order cancelled successfully.'
+                    : ($wasPreviouslyCancelled ? 'Delivery Order reopened/continued successfully.' : 'Contract status updated successfully.');
+
+                return response()->json([
+                    'success' => $message,
+                ], 200);
+            } catch (\Throwable $e) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Something went wrong',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        }
+
+        if ($deliveryOrder->am_approval_status === "rejected") {
+            return response()->json([
+                'success' => 'Delivery Order has been rejected and cannot be updated.',
+            ], 400);
+        }
+
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'export_form_e_id' => 'required|exists:export_form_es,id',
             'ref_no' => 'required',
@@ -714,7 +798,7 @@ class ExportDeliveryOrderController extends Controller
             }
 
             if (
-                $deliveryOrder->am_approval_status === "approved" ||
+
                 $deliveryOrder->am_approval_status === "rejected"
             ) {
                 DB::rollBack();
@@ -893,7 +977,7 @@ class ExportDeliveryOrderController extends Controller
             }
 
             if (
-                $deliveryOrder->am_approval_status === "approved" ||
+
                 $deliveryOrder->am_approval_status === "rejected"
             ) {
                 DB::rollBack();
@@ -931,6 +1015,7 @@ class ExportDeliveryOrderController extends Controller
     {
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
             ->where('buyer_id', $buyer_id)
+            ->where('cancel','!=',1)
             ->where('am_approval_status', 'approved')
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');

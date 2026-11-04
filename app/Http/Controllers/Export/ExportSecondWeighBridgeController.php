@@ -41,7 +41,10 @@ class ExportSecondWeighBridgeController extends Controller
 
     public function create()
     {
-        $LoadingSlips = ExportLoadingSlip::whereDoesntHave('secondWeighbridge')
+        $LoadingSlips = ExportLoadingSlip::whereHas('deliveryOrder.exportOrder', function ($q) {
+                $q->where('cancel', '!=', 1);
+            })
+            ->whereDoesntHave('secondWeighbridge')
             ->whereHas('loadingProgramItem.exportDispatchQcs', function ($query) {
                 $query->where('status', 'accept');
             })

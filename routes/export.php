@@ -29,6 +29,7 @@ use App\Http\Controllers\Export\ExportSecondWeighBridgeController;
 use App\Http\Controllers\Export\ExportOuterItemController;
 use App\Http\Controllers\Export\DocumentListController;
 use App\Http\Controllers\Export\ExportOrderAddendumController;
+use App\Http\Controllers\Export\ExportFilingController;
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
 Route::post('/get-modes', [ModeOfTermController::class, 'getTable'])->name('get.modes');
@@ -71,6 +72,10 @@ Route::get('/export-order/documents-by-country', [ExportOrderController::class, 
 Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
 Route::get('/export-order/{id}/print', [ExportOrderController::class, 'print'])->name('export-order.print');
+
+// export filing documents
+Route::resource('export-filing', ExportFilingController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+Route::post('/get-export-filing', [ExportFilingController::class, 'getList'])->name('get.export-filing');
 
 // c freight
 Route::resource('c-freight', \App\Http\Controllers\Export\CFreightController::class);

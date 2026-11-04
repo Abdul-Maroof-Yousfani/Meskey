@@ -489,6 +489,8 @@ class ExportLoadingProgramController extends Controller
             ->toArray();
 
         $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+            ->where('cancel','!=',1)
+            ->where('cancel','!=',1)
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
@@ -520,7 +522,8 @@ class ExportLoadingProgramController extends Controller
             ->whereIn('id', $export_order_ids)
             ->get();
 
-        $DeliveryOrders = DeliveryOrder::where('type', 'export_order')
+        $DeliveryOrders = DeliveryOrder::where('cancel','!=',1)
+            ->where('type', 'export_order')
             ->whereIn('export_order_id', $export_order_ids)
             ->where('am_approval_status', 'approved')
             ->when($company_location_id, function ($q) use ($company_location_id) {

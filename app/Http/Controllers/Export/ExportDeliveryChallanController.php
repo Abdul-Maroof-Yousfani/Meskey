@@ -556,7 +556,17 @@ class ExportDeliveryChallanController extends Controller
     {
         $delivery_challan_id = $request->delivery_challan_id;
 
-        $query = LoadingProgramItem::with([
+        $query = LoadingProgramItem::whereHas('exportLoadingProgram.exportOrders', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->whereHas('exportLoadingProgram.deliveryOrder', function ($q) {
+                $q->where(function ($q) {
+                    $q->where('cancel', 0)->orWhereNull('cancel');
+                });
+            })
+            ->with([
             'exportLoadingProgram.deliveryOrder.customer',
             'exportLoadingProgram.deliveryOrder',
             'exportLoadingProgram.exportOrder',
@@ -937,7 +947,10 @@ class ExportDeliveryChallanController extends Controller
 
     public function dailyDispatch()
     {
-        $delivery_orders = \App\Models\Export\ExportDeliveryOrder::whereHas('delivery_challans', function($q) {
+        $delivery_orders = \App\Models\Export\ExportDeliveryOrder::whereHas('exportOrder',function($q){
+            $q->where('cancel','!=',1);
+        })
+        ->whereHas('delivery_challans', function($q) {
             $q->where('am_approval_status', 'approved');
         })->get();
         return view('management.export.delivery-challan.daily-dispatch', compact('delivery_orders'));

@@ -36,6 +36,7 @@ class CFreightController extends Controller
     public function create(): View
     {
         $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+            ->where('cancel','!=',1)
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })->latest()->get();

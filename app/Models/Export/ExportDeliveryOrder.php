@@ -16,6 +16,22 @@ class ExportDeliveryOrder extends DeliveryOrder
     protected $table = "delivery_order";
     protected $guarded = ["id", "created_at", "updated_at"];
 
+    protected $casts = [
+        'cancel' => 'boolean',
+        'cancel_at' => 'datetime',
+        'continue_at' => 'datetime',
+    ];
+
+    public function cancelBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'cancel_by');
+    }
+
+    public function continueBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'continue_by');
+    }
+
     /**
      * Scope for export type records
      */

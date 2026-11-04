@@ -49,7 +49,7 @@ class ExportSodaFieldController extends Controller
     public function create(): View
     {
         $users = Customer::get();
-        $products = Product::where('status', 1)->get();
+        $products = Product::where('status', 1)->where('product_type','finish_good')->get();
         $bagPackings = BagPacking::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
         $modeofterms = ModeOfTerm::where('status', 1)->get();

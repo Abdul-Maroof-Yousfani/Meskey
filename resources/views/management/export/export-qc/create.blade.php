@@ -90,7 +90,8 @@
                         if (response.success) {
                             populateTicketData(response.data);
                         } else {
-                            Swal.fire("No Data", "No ticket details found.", "info");
+                            $('#ticketDataContainer').html('');
+                            Swal.fire("No Data", response.message || "No ticket details found.", "info");
                         }
                     },
                     error: function() {

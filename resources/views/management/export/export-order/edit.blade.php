@@ -31,6 +31,60 @@
         value="{{ old('company_id', $exportOrder->company_id ?: auth()->user()->current_company_id) }}">
 
     <div class="row form-mar">
+    @php
+        $isApprovedOrder = ($exportOrder->am_approval_status === 'approved');
+    @endphp
+
+    @if($isApprovedOrder)
+        @php
+            $currentStatus = old('contract_status', $exportOrder->contract_status ?: ($exportOrder->cancel ? 'cancel' : 'continue'));
+            $wasCancelled = (bool) $exportOrder->cancel;
+        @endphp
+        <div class="col-12 mb-3">
+            <div class="card border-warning shadow-sm" style="background: #fffcf5;">
+                <div class="card-header bg-light-warning py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="ft-alert-triangle text-warning font-medium-3 mr-1"></i>
+                        <strong class="text-dark">Export Order Status: Approved (Locked)</strong>
+                        <span class="text-muted ml-2">Sab fields read-only / block kar di gayi hain. Aap yahan Contract Status update kar sakte hain.</span>
+                    </div>
+                    <div>
+                        @if($exportOrder->cancel)
+                            <span class="badge badge-danger px-2 py-1 font-medium-1">Cancelled</span>
+                        @else
+                            <span class="badge badge-success px-2 py-1 font-medium-1">Approved</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold">Contract Status: <span class="text-danger">*</span></label>
+                                <select name="contract_status" id="contract_status_select" class="form-control select2" required>
+                                    <option value="continue" {{ $currentStatus === 'continue' ? 'selected' : '' }}>Continue</option>
+                                    <option value="cancel" {{ $currentStatus === 'cancel' ? 'selected' : '' }}>Cancel</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8" id="cancel_reason_wrapper" style="{{ $currentStatus === 'cancel' ? '' : 'display: none;' }}">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold">Cancel Reason: <span class="text-danger">*</span></label>
+                                <textarea name="cancel_reason" id="cancel_reason_input" class="form-control" rows="2" placeholder="Order cancel karne ki wajah likhein...">{{ old('cancel_reason', $exportOrder->cancel_reason) }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-8" id="continue_reason_wrapper" style="{{ ($currentStatus === 'continue' && $wasCancelled) ? '' : 'display: none;' }}">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold">Continue Reason: <span class="text-danger">*</span></label>
+                                <textarea name="continue_reason" id="continue_reason_input" class="form-control" rows="2" placeholder="Pehle cancel shuda order ko dubara continue / open karne ki wajah likhein...">{{ old('continue_reason', $exportOrder->continue_reason) }}</textarea>
+                                <small class="text-info"><i class="ft-info mr-1"></i>Yeh order pehle cancel ho chuka tha. Dubara continue karne ke liye reason likhein.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
         <div class="col-8">
             <!-- Basic Information -->
             <div class="col-md-12">
@@ -2673,6 +2727,48 @@
         $('#marking_attachment_input').val('');
         $('#attachment_file_preview').hide();
     });
+
+    @if(!empty($isApprovedOrder))
+        setTimeout(function() {
+            $('#ajaxSubmit').find('input, select, textarea').not('[name="contract_status"], [name="cancel_reason"], [name="continue_reason"], [name="_token"], [name="_method"], #companyId, #listRefresh').each(function() {
+                $(this).prop('disabled', true);
+                $(this).css({'pointer-events': 'none', 'background-color': '#f8f9fa'});
+            });
+            $('#ajaxSubmit select:disabled').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+            $('.add-item-row, .remove-item-row, .add-sub-packing-item, .remove-sub-packing-item, .add-spec-row, .remove-spec-row, #btn_marking_attachment, #btn_remove_attachment').hide();
+            $('.submitbutton').html('<i class="ft-check mr-1"></i> Update Contract Status');
+
+            var wasCancelled = {{ $exportOrder->cancel ? '1' : '0' }};
+
+            function handleContractStatusToggle() {
+                var selectedVal = $('#contract_status_select').val();
+                if (selectedVal === 'cancel') {
+                    $('#cancel_reason_wrapper').slideDown(200);
+                    $('#cancel_reason_input').prop('required', true);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                } else if (selectedVal === 'continue') {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    if (wasCancelled == '1') {
+                        $('#continue_reason_wrapper').slideDown(200);
+                        $('#continue_reason_input').prop('required', true);
+                    } else {
+                        $('#continue_reason_wrapper').slideUp(200);
+                        $('#continue_reason_input').prop('required', false);
+                    }
+                } else {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                }
+            }
+
+            $('#contract_status_select').on('change', handleContractStatusToggle);
+            handleContractStatusToggle();
+        }, 250);
+    @endif
 
     initializeExportOrderEditForm();
 </script>

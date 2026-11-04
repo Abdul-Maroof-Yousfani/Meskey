@@ -34,7 +34,10 @@ class ExportOrder extends Model
         'shipment_delivery_date_to' => 'date',
         'fumigation_by' => 'array',
         'inspection_by' => 'array',
-        'shipment_country' => 'array'
+        'shipment_country' => 'array',
+        'cancel' => 'boolean',
+        'cancel_at' => 'datetime',
+        'continue_at' => 'datetime',
     ];
 
     protected static function booted()
@@ -240,6 +243,16 @@ class ExportOrder extends Model
     public function gafta()
     {
         return $this->belongsTo(\App\Models\Export\Gafta::class, 'gafta_id');
+    }
+
+    public function continueBy()
+    {
+        return $this->belongsTo(User::class, 'continue_by');
+    }
+
+    public function cancelBy()
+    {
+        return $this->belongsTo(User::class, 'cancel_by');
     }
 
     public function logistics()

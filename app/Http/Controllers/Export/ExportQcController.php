@@ -48,9 +48,20 @@ class ExportQcController extends Controller
     public function create()
     {
         $Tickets = $this->ticketQuery()
-            ->whereDoesntHave('exportQc')
-            ->with($this->ticketRelations())
-            ->get();
+        ->whereHas('exportLoadingProgram.exportOrders', function ($q) {
+            $q->where(function ($q) {
+                $q->where('cancel', 0)->orWhereNull('cancel');
+            });
+        })
+        ->whereHas('exportLoadingProgram.deliveryOrder', function ($q) {
+            $q->where(function ($q) {
+                $q->where('cancel', 0)->orWhereNull('cancel');
+            });
+        })
+        ->whereDoesntHave('exportQc')
+        ->with($this->ticketRelations())
+        ->get();
+
 
         return view('management.export.export-qc.create', compact('Tickets'));
     }
@@ -275,7 +286,18 @@ class ExportQcController extends Controller
     {
         $LoadingProgramItem = $this->ticketQuery()
             ->with($this->ticketRelations())
-            ->findOrFail($request->loading_program_item_id);
+            ->whereHas('exportLoadingProgram.deliveryOrder.exportOrder', function ($q) {
+                $q->where('cancel', '!=', 1);
+            })
+            ->find($request->loading_program_item_id);
+
+        // find() returns null instead of throwing a 404, so the cancel message reaches the UI
+        if (!$LoadingProgramItem) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Export order has been cancel',
+            ]);
+        }
 
         $orders = $this->buildOrdersFromTicket($LoadingProgramItem);
         $summary = $this->summarizeOrders($orders);

@@ -64,7 +64,7 @@ class ExportOrderController extends Controller
 
     public function create(): View
     {
-        $products = Product::where('status', 1)->get();
+        $products = Product::where('status', 1)->where('product_type','finish_good')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
@@ -429,14 +429,49 @@ class ExportOrderController extends Controller
                 ], 404);
             }
 
-            if (
-                $exportOrder->am_approval_status === "approved" ||
-                $exportOrder->am_approval_status === "rejected"
-            ) {
+            if ($exportOrder->am_approval_status === "approved") {
+                $isCancelled = strtolower($request->contract_status) === 'cancel';
+                $userId = auth()->user()?->id ?? null;
+
+                if ($isCancelled) {
+                    $updateData = [
+                        'contract_status' => 'cancel',
+                        'cancel' => 1,
+                        'cancel_reason' => $request->cancel_reason,
+                        'cancel_by' => $userId,
+                        'cancel_at' => now(),
+                    ];
+                } else {
+                    $updateData = [
+                        'contract_status' => 'continue',
+                        'cancel' => 0,
+                    ];
+                    if ($exportOrder->cancel) {
+                        $updateData['continue_reason'] = $request->continue_reason;
+                        $updateData['continue_by'] = $userId;
+                        $updateData['continue_at'] = now();
+                    }
+                }
+
+                $wasPreviouslyCancelled = (bool) $exportOrder->cancel;
+                $exportOrder->update($updateData);
+
+                DB::commit();
+
+                $message = $isCancelled
+                    ? 'Export Order cancelled successfully.'
+                    : ($wasPreviouslyCancelled ? 'Export Order reopened/continued successfully.' : 'Contract status updated successfully.');
+
+                return response()->json([
+                    'success' => $message,
+                ], 200);
+            }
+
+            if ($exportOrder->am_approval_status === "rejected") {
                 DB::rollBack();
 
                 return response()->json([
-                    'success' => 'Export Order has been approved/rejected and cannot be updated.', // update_export_order_marker
+                    'success' => 'Export Order has been rejected and cannot be updated.',
                 ], 400);
             }
 

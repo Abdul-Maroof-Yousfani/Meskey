@@ -29,6 +29,58 @@
 
     <!-- Delivery Order Details (Editable) -->
     <div class="row form-mar">
+    @php
+        $isApprovedOrder = ($deliveryOrder->am_approval_status === 'approved');
+        $currentStatus = old('contract_status', $deliveryOrder->contract_status ?: ($deliveryOrder->cancel ? 'cancel' : 'continue'));
+        $wasCancelled = (bool) $deliveryOrder->cancel;
+    @endphp
+
+    @if($isApprovedOrder)
+        <div class="col-12 mb-3">
+            <div class="card border-warning shadow-sm" style="background: #fffcf5;">
+                <div class="card-header bg-light-warning py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="ft-alert-triangle text-warning font-medium-3 mr-1"></i>
+                        <strong class="text-dark">Delivery Order Status: Approved (Locked)</strong>
+                        <span class="text-muted ml-2">Sab fields read-only / block kar di gayi hain. Aap yahan Contract Status update kar sakte hain.</span>
+                    </div>
+                    <div>
+                        @if($deliveryOrder->cancel)
+                            <span class="badge badge-danger px-2 py-1 font-medium-1">Cancelled</span>
+                        @else
+                            <span class="badge badge-success px-2 py-1 font-medium-1">Approved</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold">Contract Status: <span class="text-danger">*</span></label>
+                                <select name="contract_status" id="contract_status_select" class="form-control select2" required>
+                                    <option value="continue" {{ $currentStatus === 'continue' ? 'selected' : '' }}>Continue</option>
+                                    <option value="cancel" {{ $currentStatus === 'cancel' ? 'selected' : '' }}>Cancel</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8" id="cancel_reason_wrapper" style="{{ $currentStatus === 'cancel' ? '' : 'display: none;' }}">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold">Cancel Reason: <span class="text-danger">*</span></label>
+                                <textarea name="cancel_reason" id="cancel_reason_input" class="form-control" rows="2" placeholder="DO cancel karne ki wajah likhein...">{{ old('cancel_reason', $deliveryOrder->cancel_reason) }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-8" id="continue_reason_wrapper" style="{{ ($currentStatus === 'continue' && $wasCancelled) ? '' : 'display: none;' }}">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold">Continue Reason: <span class="text-danger">*</span></label>
+                                <textarea name="continue_reason" id="continue_reason_input" class="form-control" rows="2" placeholder="Pehle cancel shuda DO ko dubara continue / open karne ki wajah likhein...">{{ old('continue_reason', $deliveryOrder->continue_reason) }}</textarea>
+                                <small class="text-info"><i class="ft-info mr-1"></i>Yeh DO pehle cancel ho chuka tha. Dubara continue karne ke liye reason likhein.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Delivery Details</h6>
             <div class="row">
@@ -1205,6 +1257,48 @@
             $('#snap_incoterm_edit').val(data.incoterm ? data.incoterm.name : '');
             $('#snap_packing_type_edit').val(data.packing_type || '');
             togglePackingTypeColumns();
+
+    @if(!empty($isApprovedOrder))
+        setTimeout(function() {
+            $('#ajaxSubmit').find('input, select, textarea').not('[name="contract_status"], [name="cancel_reason"], [name="continue_reason"], [name="_token"], [name="_method"], #listRefresh').each(function() {
+                $(this).prop('disabled', true);
+                $(this).css({'pointer-events': 'none', 'background-color': '#f8f9fa'});
+            });
+            $('#ajaxSubmit select:disabled').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+            $('#addLocationRow, .remove-location-row, .add-item-row, .remove-item-row, .add-sub-packing-item, .remove-sub-packing-item, .add-spec-row, .remove-spec-row').hide();
+            $('.submitbutton').prop('disabled', false).html('<i class="ft-check mr-1"></i> Update Contract Status');
+
+            var wasCancelled = {{ $deliveryOrder->cancel ? '1' : '0' }};
+
+            function handleContractStatusToggle() {
+                var selectedVal = $('#contract_status_select').val();
+                if (selectedVal === 'cancel') {
+                    $('#cancel_reason_wrapper').slideDown(200);
+                    $('#cancel_reason_input').prop('required', true);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                } else if (selectedVal === 'continue') {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    if (wasCancelled == '1') {
+                        $('#continue_reason_wrapper').slideDown(200);
+                        $('#continue_reason_input').prop('required', true);
+                    } else {
+                        $('#continue_reason_wrapper').slideUp(200);
+                        $('#continue_reason_input').prop('required', false);
+                    }
+                } else {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                }
+            }
+
+            $('#contract_status_select').on('change', handleContractStatusToggle);
+            handleContractStatusToggle();
+        }, 300);
+    @endif
             $('#snap_mode_of_term_edit').val(data.mode_of_term ? data.mode_of_term.name : '');
             $('#snap_mode_of_transport_edit').val(data.mode_of_transport ? data.mode_of_transport.name : '');
             $('#snap_origin_country_edit').val(data.origin_country ? data.origin_country.name : '');
@@ -1225,6 +1319,48 @@
             if (packingItemsAuto && packingItemsAuto.length > 0) {
                 addPackingRowsFromExportOrder(packingItemsAuto);
                 togglePackingTypeColumns();
+
+    @if(!empty($isApprovedOrder))
+        setTimeout(function() {
+            $('#ajaxSubmit').find('input, select, textarea').not('[name="contract_status"], [name="cancel_reason"], [name="continue_reason"], [name="_token"], [name="_method"], #listRefresh').each(function() {
+                $(this).prop('disabled', true);
+                $(this).css({'pointer-events': 'none', 'background-color': '#f8f9fa'});
+            });
+            $('#ajaxSubmit select:disabled').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+            $('#addLocationRow, .remove-location-row, .add-item-row, .remove-item-row, .add-sub-packing-item, .remove-sub-packing-item, .add-spec-row, .remove-spec-row').hide();
+            $('.submitbutton').prop('disabled', false).html('<i class="ft-check mr-1"></i> Update Contract Status');
+
+            var wasCancelled = {{ $deliveryOrder->cancel ? '1' : '0' }};
+
+            function handleContractStatusToggle() {
+                var selectedVal = $('#contract_status_select').val();
+                if (selectedVal === 'cancel') {
+                    $('#cancel_reason_wrapper').slideDown(200);
+                    $('#cancel_reason_input').prop('required', true);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                } else if (selectedVal === 'continue') {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    if (wasCancelled == '1') {
+                        $('#continue_reason_wrapper').slideDown(200);
+                        $('#continue_reason_input').prop('required', true);
+                    } else {
+                        $('#continue_reason_wrapper').slideUp(200);
+                        $('#continue_reason_input').prop('required', false);
+                    }
+                } else {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                }
+            }
+
+            $('#contract_status_select').on('change', handleContractStatusToggle);
+            handleContractStatusToggle();
+        }, 300);
+    @endif
                 checkCapacity();
             } else {
                 $('#packingItems').find('.packing-item:not(#dummyPackingRow)').remove();
@@ -1456,6 +1592,9 @@
 
         // Current request MT check
         function checkCapacity() {
+            @if(!empty($isApprovedOrder))
+                return;
+            @endif
             let totalAllowed = parseFloat($('#lbl_total_eo_mt').text()) || 0;
             let consumed = parseFloat($('#lbl_consumed_mt').text()) || 0;
             let currentRequest = 0;
@@ -1497,5 +1636,47 @@
         }
 
         togglePackingTypeColumns();
+
+    @if(!empty($isApprovedOrder))
+        setTimeout(function() {
+            $('#ajaxSubmit').find('input, select, textarea').not('[name="contract_status"], [name="cancel_reason"], [name="continue_reason"], [name="_token"], [name="_method"], #listRefresh').each(function() {
+                $(this).prop('disabled', true);
+                $(this).css({'pointer-events': 'none', 'background-color': '#f8f9fa'});
+            });
+            $('#ajaxSubmit select:disabled').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+            $('#addLocationRow, .remove-location-row, .add-item-row, .remove-item-row, .add-sub-packing-item, .remove-sub-packing-item, .add-spec-row, .remove-spec-row').hide();
+            $('.submitbutton').prop('disabled', false).html('<i class="ft-check mr-1"></i> Update Contract Status');
+
+            var wasCancelled = {{ $deliveryOrder->cancel ? '1' : '0' }};
+
+            function handleContractStatusToggle() {
+                var selectedVal = $('#contract_status_select').val();
+                if (selectedVal === 'cancel') {
+                    $('#cancel_reason_wrapper').slideDown(200);
+                    $('#cancel_reason_input').prop('required', true);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                } else if (selectedVal === 'continue') {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    if (wasCancelled == '1') {
+                        $('#continue_reason_wrapper').slideDown(200);
+                        $('#continue_reason_input').prop('required', true);
+                    } else {
+                        $('#continue_reason_wrapper').slideUp(200);
+                        $('#continue_reason_input').prop('required', false);
+                    }
+                } else {
+                    $('#cancel_reason_wrapper').slideUp(200);
+                    $('#cancel_reason_input').prop('required', false);
+                    $('#continue_reason_wrapper').slideUp(200);
+                    $('#continue_reason_input').prop('required', false);
+                }
+            }
+
+            $('#contract_status_select').on('change', handleContractStatusToggle);
+            handleContractStatusToggle();
+        }, 300);
+    @endif
     });
 </script>

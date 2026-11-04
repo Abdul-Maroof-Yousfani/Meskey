@@ -1055,16 +1055,6 @@
                         </li>
                         @endcanAccess
 
-                        <!-- @canAccess('export-soda-field') -->
-                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('export-soda-field.index') }}"
-                                onclick="loadPageContent('{{ route('export-soda-field.index') }}')"
-                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                <span data-i18n="Task Board">Export Sauda</span>
-                            </a>
-                        </li>
-                        <!-- @endcanAccess -->
-
                         {{-- @canAccess('quotation') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('quotation.index') }}"
@@ -1075,6 +1065,18 @@
                         </li>
                         {{-- @endcanAccess --}}
 
+
+                        <!-- @canAccess('export-soda-field') -->
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-soda-field.index') }}"
+                                onclick="loadPageContent('{{ route('export-soda-field.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Export Sauda</span>
+                            </a>
+                        </li>
+                        <!-- @endcanAccess -->
+
+
                         {{-- @canAccess('export-order') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-order.index') }}"
@@ -1082,6 +1084,15 @@
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                     data-i18n="Extended">Export
                                     Order</span></a>
+                        </li>
+                        {{-- @endcanAccess --}}
+
+                        {{-- @canAccess('export-filing') --}}
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-filing.index') }}"
+                                onclick="loadPageContent('{{ route('export-filing.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Filing Documents</span></a>
                         </li>
                         {{-- @endcanAccess --}}
 

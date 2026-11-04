@@ -22,6 +22,29 @@ class ExportOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Approved export orders only update contract status
+            $exportOrder = $this->route('export_order');
+            if ($exportOrder) {
+                if (is_numeric($exportOrder) || is_string($exportOrder)) {
+                    $exportOrder = \App\Models\Export\ExportOrder::find($exportOrder);
+                }
+                if ($exportOrder && $exportOrder->am_approval_status === 'approved') {
+                    return [
+                        'contract_status' => ['required', 'string', \Illuminate\Validation\Rule::in(['continue', 'cancel'])],
+                        'cancel_reason' => [
+                            \Illuminate\Validation\Rule::requiredIf(fn() => strtolower($this->input('contract_status')) === 'cancel'),
+                            'nullable',
+                            'string',
+                        ],
+                        'continue_reason' => [
+                            \Illuminate\Validation\Rule::requiredIf(fn() => strtolower($this->input('contract_status')) === 'continue' && !empty($exportOrder->cancel)),
+                            'nullable',
+                            'string',
+                        ],
+                    ];
+                }
+            }
+
         return [
 
             /* ================= BASIC INFO ================= */

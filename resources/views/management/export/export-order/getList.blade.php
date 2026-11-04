@@ -49,10 +49,24 @@
                         <span class="badge {{ $badge }} px-2 py-1">
                             {{ ucfirst($status) }}
                         </span>
+                        @if($export->cancel)
+                            <div class="mt-1">
+                                <span class="badge badge-danger px-2 py-1" title="{{ $export->cancel_reason ? 'Reason: '.$export->cancel_reason : '' }}">
+                                    Cancelled
+                                </span>
+                            </div>
+                        @elseif($export->continue_at)
+                            <div class="mt-1">
+                                <span class="badge badge-primary px-2 py-1" title="{{ $export->continue_reason ? 'Continue Reason: '.$export->continue_reason : '' }}">
+                                    Continued
+                                </span>
+                            </div>
+                        @endif
+
                     </td>
                     <td>
                         {{-- @canAccess('export-order-show') --}}
-                        <a class="info p-1 text-center position-relative "
+                        <a class="info p-1 text-center position-relative btn-action-show"
                             onclick="openModal(this,'{{ route('export-order.show', $export->id) }}','Show Export Order',false,'90%')">
                             <i class="ft-eye font-medium-3"></i></a>
                         {{-- @endcanAccess --}}
@@ -69,12 +83,14 @@
                         @endphp
 
                         @if(auth()->user()->id == $export->created_by)
-                            @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
+                            @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted' || $approvalStatus === 'approved')
                                 {{-- @canAccess('export-order-edit') --}}
-                                <a class="info p-1 text-center position-relative "
+                                <a class="info p-1 text-center position-relative btn-action-edit"
                                     onclick="openModal(this,'{{ route('export-order.edit', $export->id) }}','Edit Export Order',false,'90%')">
                                     <i class="ft-edit font-medium-3"></i></a>
                                 {{-- @endcanAccess --}}
+                                @endif
+                                @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
                                 {{-- @canAccess('export-order-delete') --}}
                                 <a onclick="deletemodal('{{ route('export-order.destroy', $export->id) }}','{{ route('get.export-order') }}')"
                                     class="danger p-1 text-center mr-2 position-relative ">
@@ -82,8 +98,8 @@
                                     <i class="ft-x font-medium-3"></i>
                                 </a>
                                 {{-- @endcanAccess --}}
+                                @endif
                             @endif
-                        @endif
                     </td>
                 </tr>
             @endforeach
