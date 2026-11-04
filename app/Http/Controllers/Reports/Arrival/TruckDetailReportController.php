@@ -34,8 +34,8 @@ class TruckDetailReportController extends Controller
     public function getList(Request $request)
     {
         // Increase memory and execution time for detailed reports
-        ini_set('memory_limit', '512M');
-        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M'); // ya '1G' ya '-1' (unlimited)
+        ini_set('max_execution_time', 600); // 10 minutes
 
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
 
@@ -55,16 +55,16 @@ class TruckDetailReportController extends Controller
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
             ->with([
-                'miller',
-                'qcProduct',
-                'product',
+                'miller:id,name',
+                'qcProduct:id,name',
+                'product:id,name',
                 'location',
-                'decisionBy',
-                'saudaType',
-                'station',
-                'truckType',
-                'accountsOf',
-                'broker',
+                'decisionBy:id,name',
+                'saudaType:id,name',
+                'station:id,name',
+                'truckType:id,name',
+                'accountsOf:id,name',
+                'broker:id,name',
                 'approvals.bagType',
                 'approvals.bagCondition',
                 'approvals.bagPacking',
@@ -142,7 +142,7 @@ class TruckDetailReportController extends Controller
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
-            ->get();
+            ->cursor();
 
         $commodityIds = $tickets->pluck('qc_product')
             ->merge($tickets->pluck('product_id'))
