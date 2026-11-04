@@ -280,7 +280,8 @@
             loadTicketsWithDispatchQc();
             getNumber();
 
-            $f('#initial_ticket_id').off('change').on('change', function () {
+            // Namespaced: a bare off('change') also removes select2's own handler, so the picked ticket never shows
+            $f('#initial_ticket_id').off('change.dcTicket').on('change.dcTicket', function () {
                 const ticketId = $(this).val();
                 if (!ticketId) {
                     resetForm();

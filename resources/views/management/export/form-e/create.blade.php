@@ -190,8 +190,12 @@
             }
         });
 
+        // Export order limit (remaining + positive tolerance), set when the order details load
+        var orderMaxAllowed = NaN;
+
         $('#export_order_id').on('change', function() {
             var orderId = $(this).val();
+            orderMaxAllowed = NaN;
             if (!orderId) {
                 // Clear inputs if nothing selected
                 $('[data-name]').val('');
@@ -215,7 +219,9 @@
                         populateSnapshot(response.data);
                         $('#total_quantity').val(response.total_quantity);
                         $('#remaining_quantity').val(response.remaining_quantity);
-                        $('#input_quantity').attr('max', response.remaining_quantity);
+                        // Max includes the export order's positive tolerance
+                        orderMaxAllowed = parseFloat(response.max_remaining_allowed ?? response.remaining_quantity);
+                        $('#input_quantity').attr('max', orderMaxAllowed);
                         $('#input_quantity').val(response.remaining_quantity);
 
                         if (response.data && response.data.close_order_reason) {
@@ -251,17 +257,17 @@
                     // Only job orders with capacity left come back from the server
                     res.data.forEach(function(jo) {
                         opts += '<option value="' + jo.id + '" data-remaining="' + jo.remaining_mt + '">' +
-                            jo.job_order_no + ' (Remaining: ' + jo.remaining_mt + ' / ' + jo.capacity_mt +
-                            ' MT)</option>';
+                            jo.job_order_no + ' (Capacity: ' + jo.capacity_mt + ' MT, Remaining with tolerance: ' +
+                            jo.remaining_mt + ' MT)</option>';
                     });
                     $('#job_order_id').html(opts).trigger('change');
                 }
             });
         });
 
-        // Input quantity cannot go above what is left on the selected job order
+        // Input quantity cannot go above what is left on the selected job order (both limits include tolerance)
         $('#job_order_id').on('change', function() {
-            var orderRemaining = parseFloat($('#remaining_quantity').val());
+            var orderRemaining = orderMaxAllowed;
             var jobRemaining = parseFloat($(this).find(':selected').data('remaining'));
             var max = isNaN(jobRemaining) ? orderRemaining : (isNaN(orderRemaining) ? jobRemaining : Math.min(orderRemaining, jobRemaining));
 

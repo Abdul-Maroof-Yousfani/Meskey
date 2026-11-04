@@ -59,7 +59,7 @@
                 <td>
                     <div class="d-flex justify-content-center">
                         <a class="info p-1 text-center position-relative" title="View"
-                            onclick="openModal(this,'{{ route('commercial-invoice.show', $invoice->id) }}','Show Commercial Invoice',true,'95%')">
+                            onclick="openModal(this,'{{ route('commercial-invoice.show', $invoice->id) }}','Show Commercial Invoice',false,'95%')">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                         @if($invoice->am_approval_status === 'approved')

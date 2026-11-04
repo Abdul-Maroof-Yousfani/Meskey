@@ -126,11 +126,16 @@ class ExportFormEController extends Controller
             if ($remainingQuantity < 0)
                 $remainingQuantity = 0;
 
+            // Upper limit for the input box: total + positive tolerance - used (same rule as store)
+            $positiveTolerance = (float) ($exportOrder->positive_tolerance ?? 0);
+            $maxRemainingAllowed = max(0, $totalQuantity + ($totalQuantity * ($positiveTolerance / 100)) - $usedQuantity);
+
             return response()->json([
                 'success' => true,
                 'data' => $exportOrder,
                 'total_quantity' => $totalQuantity,
                 'remaining_quantity' => $remainingQuantity,
+                'max_remaining_allowed' => round($maxRemainingAllowed, 2),
                 'used_quantity' => $usedQuantity
             ]);
         } catch (\Exception $e) {
@@ -399,11 +404,15 @@ class ExportFormEController extends Controller
 
                 $remainingQuantity = $totalQuantity - $usedQuantity;
 
-                if ($request->input_quantity > $remainingQuantity) {
+                // Same rule as store: positive tolerance is allowed on top of the remaining quantity
+                $positiveTolerance = (float) ($exportOrder->positive_tolerance ?? 0);
+                $maxRemainingAllowed = $remainingQuantity + ($totalQuantity * ($positiveTolerance / 100));
+
+                if ($request->input_quantity > $maxRemainingAllowed + 0.0001) {
                     DB::rollBack();
 
                     return response()->json([
-                        'success' => 'Input quantity cannot exceed remaining quantity (' . $remainingQuantity . ')',
+                        'success' => 'Input quantity cannot exceed remaining allowed quantity (' . number_format($maxRemainingAllowed, 2) . ' MT).',
                     ], 422);
                 }
 
@@ -416,7 +425,7 @@ class ExportFormEController extends Controller
                 }
 
                 $formE->update(array_merge($data, [
-                    'remaining_quantity' => $remainingQuantity - $request->input_quantity,
+                    'remaining_quantity' => max(0, $remainingQuantity - $request->input_quantity),
                 ]));
             } else {
                 $data = $request->only(['buyer_id', 'job_order_id', 'form_e_no', 'form_e_date']);
@@ -618,11 +627,23 @@ class ExportFormEController extends Controller
     }
 
     /**
-     * Job orders of an export order with their capacity, used and remaining MT.
+     * Max MT a job order can take in Form-E: its capacity plus the export order's positive tolerance.
+     */
+    private function jobOrderAllowedCapacity(float $capacity, $exportOrder): float
+    {
+        $positiveTolerance = (float) ($exportOrder->positive_tolerance ?? 0);
+
+        return $capacity + ($capacity * ($positiveTolerance / 100));
+    }
+
+    /**
+     * Job orders of an export order with their capacity, used and remaining MT (remaining includes positive tolerance).
      * Fully used job orders are left out, except $keepJobOrderId (the one already selected on an edit).
      */
     private function jobOrdersWithBalance($exportOrderId, $exceptFormEId = null, $keepJobOrderId = null)
     {
+        $exportOrder = ExportOrder::find($exportOrderId);
+
         $jobOrders = JobOrder::with('packingItems')
             ->where('export_order_id', $exportOrderId)
             ->latest()
@@ -635,13 +656,15 @@ class ExportFormEController extends Controller
             ->pluck('used_quantity', 'job_order_id');
 
         return $jobOrders
-            ->map(function ($jobOrder) use ($usedByJobOrder) {
+            ->map(function ($jobOrder) use ($usedByJobOrder, $exportOrder) {
                 $capacity = (float) $jobOrder->packingItems->sum('metric_tons');
+                $allowed = $this->jobOrderAllowedCapacity($capacity, $exportOrder);
                 $used = (float) ($usedByJobOrder[$jobOrder->id] ?? 0);
 
                 $jobOrder->capacity_mt = round($capacity, 2);
+                $jobOrder->allowed_mt = round($allowed, 2);
                 $jobOrder->used_mt = round($used, 2);
-                $jobOrder->remaining_mt = round(max(0, $capacity - $used), 2);
+                $jobOrder->remaining_mt = round(max(0, $allowed - $used), 2);
                 $jobOrder->unsetRelation('packingItems');
 
                 return $jobOrder;
@@ -660,20 +683,24 @@ class ExportFormEController extends Controller
         }
 
         // Lock the job order so two Form-Es saved at the same time cannot both pass the check
-        $jobOrder = JobOrder::with('packingItems')->lockForUpdate()->find($jobOrderId);
+        $jobOrder = JobOrder::with(['packingItems', 'exportOrder'])->lockForUpdate()->find($jobOrderId);
         if (!$jobOrder) {
             return null;
         }
 
         $capacity = (float) $jobOrder->packingItems->sum('metric_tons');
+        $allowed = $this->jobOrderAllowedCapacity($capacity, $jobOrder->exportOrder);
         $used = (float) ExportFormE::where('job_order_id', $jobOrderId)
             ->when($exceptFormEId, fn($q) => $q->where('id', '!=', $exceptFormEId))
             ->sum('input_quantity');
-        $remaining = max(0, $capacity - $used);
+        $remaining = max(0, $allowed - $used);
 
         if ($inputQty > $remaining + 0.0001) {
+            $positiveTolerance = (float) ($jobOrder->exportOrder->positive_tolerance ?? 0);
+
             return 'Job Order ' . $jobOrder->job_order_no . ' capacity is ' . number_format($capacity, 2)
-                . ' MT and ' . number_format($used, 2) . ' MT is already used in Form-E. Input quantity cannot exceed '
+                . ' MT (' . number_format($allowed, 2) . ' MT with +' . rtrim(rtrim(number_format($positiveTolerance, 2), '0'), '.') . '% tolerance) and '
+                . number_format($used, 2) . ' MT is already used in Form-E. Input quantity cannot exceed '
                 . number_format($remaining, 2) . ' MT.';
         }
 

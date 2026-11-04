@@ -42,7 +42,7 @@
                 </td>
                 <td>
                     <a class="info p-1 text-center position-relative"
-                        onclick="openModal(this,'{{ route('bill-of-lading.show', $billOfLading->id) }}','Show Bill Of Lading',true,'95%')">
+                        onclick="openModal(this,'{{ route('bill-of-lading.show', $billOfLading->id) }}','Show Bill Of Lading',false,'95%')">
                         <i class="ft-eye font-medium-3"></i>
                     </a>
                     @if($billOfLading->am_approval_status === 'approved')
