@@ -55,26 +55,44 @@ class TruckDetailGateReportController extends Controller
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
             ->with([
-                'miller',
-                'qcProduct',
-                'product',
+                'miller:id,name',
+                'qcProduct:id,name',
+                'product:id,name',
+
                 'location',
-                'decisionBy',
-                'saudaType',
-                'station',
-                'truckType',
-                'accountsOf',
-                'broker',
-                'approvals.bagType',
-                'approvals.bagCondition',
-                'approvals.bagPacking',
-                'approvals.locationType',
-                'approvals.gala',
-                'approvals.creator',
+                'decisionBy:id,name',
+                'saudaType:id,name',
+                'station:id,name',
+                'truckType:id,name',
+                'accountsOf:id,name',
+
+                'broker:id,name',
+                'purchaseOrder:id,contract_no',
+                // ✅ Nested — column select karo
+                'approvals' => function ($q) {
+                    $q->select(
+                        'id',
+                        'arrival_ticket_id',
+                        'bag_type_id',
+                        'bag_condition_id',
+                        'bag_packing_id',
+                        'location_type_id',
+                        'gala_id',
+                        'creator_id'
+                    )
+                        ->with([
+                            'bagType:id,name',
+                            'bagCondition:id,name',
+                            'bagPacking:id,name',
+                            'locationType:id,name',
+                            'gala:id,name',
+                            'creator:id,name',
+                        ]);
+                },
                 'unloadingLocation.arrivalLocation',
                 'freight',
                 'arrivalSlip.createdBy',
-                'purchaseOrder',
+                // 'purchaseOrder',
                 'firstWeighbridge',
                 'secondWeighbridge',
                 'lastInitialSampling',
@@ -141,7 +159,7 @@ class TruckDetailGateReportController extends Controller
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
-            ->get();
+            ->cursor();
 
         $commodityIds = $tickets->pluck('qc_product')
             ->merge($tickets->pluck('product_id'))
