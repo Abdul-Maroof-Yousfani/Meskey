@@ -199,6 +199,16 @@ class ExportFormEController extends Controller
             $inputQty = (float) $request->input_quantity;
             $totalWithCurrent = $usedQuantity + $inputQty;
 
+            // Form-E quantity cannot exceed what is left on the selected job order
+            $jobOrderError = $this->jobOrderCapacityError($request->job_order_id, $inputQty);
+            if ($jobOrderError) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'error' => $jobOrderError,
+                ], 422);
+            }
+
             // If the export order was already closed prior to this session, prevent creating new Form-E
             if (!empty($exportOrder->close_order_reason)) {
                 $hasClosingCache = cache()->has("closing_export_order_{$exportOrder->id}");
@@ -287,7 +297,7 @@ class ExportFormEController extends Controller
         try {
             $formE = ExportFormE::findOrFail($id);
             $buyers = Customer::get();
-            $job_orders = JobOrder::where('export_order_id', $formE->export_order_id)->latest()->get();
+            $job_orders = $this->jobOrdersWithBalance($formE->export_order_id, $formE->id, $formE->job_order_id);
             $export_orders = ExportOrder::where('am_approval_status', 'approved')
                 ->whereNotIn('id', function($q) {
                     $q->select('export_order_id')->from('export_order_addendums');
@@ -344,7 +354,23 @@ class ExportFormEController extends Controller
                 'form_e_no' => 'required|string|unique:export_form_es,form_e_no,' . $id,
                 'form_e_date' => 'required|date',
                 'input_quantity' => 'required|numeric|min:0.01',
+                'job_order_id' => 'nullable|exists:job_orders,id',
             ]);
+
+            // Form-E quantity cannot exceed what is left on the job order (this Form-E's own quantity excluded)
+            $jobOrderError = $this->jobOrderCapacityError(
+                $request->has('job_order_id') ? $request->job_order_id : $formE->job_order_id,
+                (float) ($request->input_quantity ?? $formE->input_quantity),
+                $formE->id
+            );
+            if ($jobOrderError) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => $jobOrderError,
+                    'error' => $jobOrderError,
+                ], 422);
+            }
 
             // Re-calculate quantities if they update input_quantity. 
             // The requirement only says to create multi Form-E but not exceed. 
@@ -403,11 +429,15 @@ class ExportFormEController extends Controller
                 $formE->update($data);
             }
 
+            DB::commit();
+
             return response()->json([
                 'success' => 'Export Form-E updated successfully',
                 'data' => $formE
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
+
             return response()->json([
                 'success' => 'Something went wrong: ' . $e->getMessage()
             ], 500);
@@ -538,6 +568,26 @@ class ExportFormEController extends Controller
     {
         try {
             $formEs = ExportFormE::where('export_order_id', $order_id)->latest()->get();
+
+            // MT already used per Form-E by delivery orders that are not cancelled
+            $consumedByFormE = \App\Models\Export\ExportDeliveryOrder::with('exportPackingItems')
+                ->whereIn('export_form_e_id', $formEs->pluck('id'))
+                ->notCancelled()
+                ->get()
+                ->groupBy('export_form_e_id')
+                ->map(fn($dos) => $dos->sum(fn($do) => $do->exportPackingItems->sum('metric_tons')));
+
+            // Only Form-Es that still have capacity left
+            $formEs = $formEs
+                ->map(function ($formE) use ($consumedByFormE) {
+                    $consumed = (float) ($consumedByFormE[$formE->id] ?? 0);
+                    $formE->consumed_mt = round($consumed, 2);
+                    $formE->remaining_mt = round(max(0, (float) $formE->input_quantity - $consumed), 2);
+                    return $formE;
+                })
+                ->filter(fn($formE) => $formE->remaining_mt > 0.001)
+                ->values();
+
             return response()->json([
                 'success' => true,
                 'data' => $formEs
@@ -553,7 +603,8 @@ class ExportFormEController extends Controller
     public function getJobOrdersByOrder($order_id)
     {
         try {
-            $jobOrders = JobOrder::where('export_order_id', $order_id)->latest()->get();
+            // Only job orders that still have capacity left
+            $jobOrders = $this->jobOrdersWithBalance($order_id);
             return response()->json([
                 'success' => true,
                 'data' => $jobOrders
@@ -564,6 +615,69 @@ class ExportFormEController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Job orders of an export order with their capacity, used and remaining MT.
+     * Fully used job orders are left out, except $keepJobOrderId (the one already selected on an edit).
+     */
+    private function jobOrdersWithBalance($exportOrderId, $exceptFormEId = null, $keepJobOrderId = null)
+    {
+        $jobOrders = JobOrder::with('packingItems')
+            ->where('export_order_id', $exportOrderId)
+            ->latest()
+            ->get();
+
+        $usedByJobOrder = ExportFormE::whereIn('job_order_id', $jobOrders->pluck('id'))
+            ->when($exceptFormEId, fn($q) => $q->where('id', '!=', $exceptFormEId))
+            ->groupBy('job_order_id')
+            ->selectRaw('job_order_id, SUM(input_quantity) as used_quantity')
+            ->pluck('used_quantity', 'job_order_id');
+
+        return $jobOrders
+            ->map(function ($jobOrder) use ($usedByJobOrder) {
+                $capacity = (float) $jobOrder->packingItems->sum('metric_tons');
+                $used = (float) ($usedByJobOrder[$jobOrder->id] ?? 0);
+
+                $jobOrder->capacity_mt = round($capacity, 2);
+                $jobOrder->used_mt = round($used, 2);
+                $jobOrder->remaining_mt = round(max(0, $capacity - $used), 2);
+                $jobOrder->unsetRelation('packingItems');
+
+                return $jobOrder;
+            })
+            ->filter(fn($jobOrder) => $jobOrder->remaining_mt > 0 || $jobOrder->id == $keepJobOrderId)
+            ->values();
+    }
+
+    /**
+     * Returns an error message when the quantity is more than the job order has left, otherwise null.
+     */
+    private function jobOrderCapacityError($jobOrderId, float $inputQty, $exceptFormEId = null): ?string
+    {
+        if (!$jobOrderId) {
+            return null;
+        }
+
+        // Lock the job order so two Form-Es saved at the same time cannot both pass the check
+        $jobOrder = JobOrder::with('packingItems')->lockForUpdate()->find($jobOrderId);
+        if (!$jobOrder) {
+            return null;
+        }
+
+        $capacity = (float) $jobOrder->packingItems->sum('metric_tons');
+        $used = (float) ExportFormE::where('job_order_id', $jobOrderId)
+            ->when($exceptFormEId, fn($q) => $q->where('id', '!=', $exceptFormEId))
+            ->sum('input_quantity');
+        $remaining = max(0, $capacity - $used);
+
+        if ($inputQty > $remaining + 0.0001) {
+            return 'Job Order ' . $jobOrder->job_order_no . ' capacity is ' . number_format($capacity, 2)
+                . ' MT and ' . number_format($used, 2) . ' MT is already used in Form-E. Input quantity cannot exceed '
+                . number_format($remaining, 2) . ' MT.';
+        }
+
+        return null;
     }
 
     public function getTollrangeById(Request $request)

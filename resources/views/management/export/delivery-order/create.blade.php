@@ -1036,7 +1036,7 @@
                 if(res.success && res.data) {
                     var opts = '<option value="">Select Form-E</option>';
                     res.data.forEach(function(fe) {
-                        opts += '<option value="'+fe.id+'">'+(fe.form_e_no || 'FE-'+fe.id)+' (Qty: '+fe.input_quantity+' MT)</option>';
+                        opts += '<option value="'+fe.id+'">'+(fe.form_e_no || 'FE-'+fe.id)+' (Remaining: '+fe.remaining_mt+' / '+fe.input_quantity+' MT)</option>';
                     });
                     $('#export_form_e_id').html(opts).trigger('change');
                     // Hide qty alert until a Form-E is actually selected
@@ -1089,7 +1089,10 @@
                             } else {
                                 joSelect.removeAttr('disabled');
                             }
-                            
+
+                            // If a Form-E was already selected, keep its job order locked
+                            applyFormEJobOrder();
+
                             if(response.data.autofill.vessel_name) $('#vessel_name').val(response.data.autofill.vessel_name);
                             if(response.data.autofill.vessel_eta) $('#vessel_eta').val(response.data.autofill.vessel_eta);
                             if(response.data.autofill.vessel_etd) $('#vessel_etd').val(response.data.autofill.vessel_etd);
@@ -1152,6 +1155,29 @@
             });
         });
 
+        // Job order number of the selected Form-E; the job order dropdown is locked to it
+        var currentFormEJobOrderNo = '';
+
+        function applyFormEJobOrder() {
+            if (!currentFormEJobOrderNo) return;
+
+            var joSelect = $('#job_order_no');
+            if (joSelect.find('option').filter(function() { return $(this).val() == currentFormEJobOrderNo; }).length === 0) {
+                joSelect.append(new Option(currentFormEJobOrderNo, currentFormEJobOrderNo));
+            }
+            joSelect.val(currentFormEJobOrderNo).trigger('change').prop('disabled', true);
+
+            // A disabled select is not submitted, so send the value through a hidden input
+            $('#job_order_no_hidden_container').html('<input type="hidden" name="job_order_no" value="' + currentFormEJobOrderNo + '">');
+        }
+
+        function releaseFormEJobOrder() {
+            if (!currentFormEJobOrderNo) return;
+            currentFormEJobOrderNo = '';
+            $('#job_order_no').val('').trigger('change').prop('disabled', false);
+            $('#job_order_no_hidden_container').empty();
+        }
+
         $('#export_form_e_id').on('change', function() {
             var formEId = $(this).val();
             if (!formEId) {
@@ -1159,6 +1185,7 @@
                 currentFormETotalMt = 0;
                 currentFormEConsumedMt = 0;
                 $('#qty_info_alert').hide();
+                releaseFormEJobOrder();
                 return;
             }
 
@@ -1177,7 +1204,10 @@
                         $('#lbl_remaining_mt').text(currentFormERemainingMt.toFixed(3));
 
                         if (response.job_order_no) {
-                            $('#job_order_no').val(response.job_order_no);
+                            currentFormEJobOrderNo = response.job_order_no;
+                            applyFormEJobOrder();
+                        } else {
+                            releaseFormEJobOrder();
                         }
 
                         // Apply Form-E qty to any already-loaded packing rows

@@ -20,6 +20,7 @@
         <th>Rejected Trucks</th>
         <th>Sauda Calc Type</th>
         <th>Status</th>
+        <th>Action</th>
     @endslot
 
     @slot('body')
@@ -116,12 +117,18 @@
                             class="badge badge-warning">{{ $contract['status'] == 'draft' ? 'Pending' : $contract['status'] }}</span>
                     @endif
                 </td>
+                <td>
+                    <a onclick="openModal(this,'{{ route('raw-material.purchase-order.trucks', $contract['id']) }}','Trucks: Contract #{{ $contract['contract_no'] ?? '' }}', true, '55%')"
+                        class="warning p-1 text-center position-relative" title="View Trucks" style="cursor: pointer;">
+                        <i class="fa fa-truck font-medium-3"></i>
+                    </a>
+                </td>
             </tr>
 
             @if (($contract['sauda_type']['name'] ?? null) == 'Thadda')
                 @if (count($contract['purchase_freights'] ?? []) > 0)
                     <tr class="freight-row" data-contract-id="{{ $contract['id'] }}" style="display: none;">
-                        <td colspan="20">
+                        <td colspan="21">
                             <div class="freight-container p-3 bg-light border-left border-primary">
                                 <h6 class="mb-3">
                                     <i class="fa fa-truck text-primary"></i>

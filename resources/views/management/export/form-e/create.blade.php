@@ -248,13 +248,30 @@
             $.get("{{ route('export.get-job-orders-by-order-form-e', '') }}/" + orderId, function(res) {
                 if (res.success && res.data) {
                     var opts = '<option value="">Select Job Order</option>';
+                    // Only job orders with capacity left come back from the server
                     res.data.forEach(function(jo) {
-                        opts += '<option value="' + jo.id + '">' + jo.job_order_no +
-                            '</option>';
+                        opts += '<option value="' + jo.id + '" data-remaining="' + jo.remaining_mt + '">' +
+                            jo.job_order_no + ' (Remaining: ' + jo.remaining_mt + ' / ' + jo.capacity_mt +
+                            ' MT)</option>';
                     });
                     $('#job_order_id').html(opts).trigger('change');
                 }
             });
+        });
+
+        // Input quantity cannot go above what is left on the selected job order
+        $('#job_order_id').on('change', function() {
+            var orderRemaining = parseFloat($('#remaining_quantity').val());
+            var jobRemaining = parseFloat($(this).find(':selected').data('remaining'));
+            var max = isNaN(jobRemaining) ? orderRemaining : (isNaN(orderRemaining) ? jobRemaining : Math.min(orderRemaining, jobRemaining));
+
+            if (isNaN(max)) return;
+
+            $('#input_quantity').attr('max', max);
+            var qty = parseFloat($('#input_quantity').val());
+            if (!isNaN(qty) && qty > max && !$('#input_quantity').prop('disabled')) {
+                $('#input_quantity').val(max).trigger('input');
+            }
         });
 
         $('#input_quantity').on('input', function() {

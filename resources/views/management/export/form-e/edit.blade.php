@@ -58,7 +58,7 @@
                         <select name="job_order_id" id="job_order_id_edit" class="form-control select2">
                             <option value="">Select Job Order</option>
                             @foreach ($job_orders as $jo)
-                                <option value="{{ $jo->id }}" {{ $formE->job_order_id == $jo->id ? 'selected' : '' }}>{{ $jo->job_order_no }}</option>
+                                <option value="{{ $jo->id }}" data-remaining="{{ $jo->remaining_mt }}" {{ $formE->job_order_id == $jo->id ? 'selected' : '' }}>{{ $jo->job_order_no }} (Remaining: {{ $jo->remaining_mt }} / {{ $jo->capacity_mt }} MT)</option>
                             @endforeach
                         </select>
                     </div>
@@ -151,6 +151,16 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
+
+        // Max = the smaller of what the export order and the selected job order have left
+        var orderAvailable = {{ (float) $formE->remaining_quantity + (float) $formE->input_quantity }};
+        function applyJobOrderMax() {
+            var jobRemaining = parseFloat($('#job_order_id_edit').find(':selected').data('remaining'));
+            var max = isNaN(jobRemaining) ? orderAvailable : Math.min(orderAvailable, jobRemaining);
+            $('#input_quantity_edit').attr('max', max).trigger('input');
+        }
+        $('#job_order_id_edit').on('change', applyJobOrderMax);
+        applyJobOrderMax();
 
         $('#input_quantity_edit').on('input', function() {
             var max = parseFloat($(this).attr('max'));

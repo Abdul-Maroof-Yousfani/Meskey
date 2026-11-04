@@ -52,7 +52,7 @@ class ExportDeliveryOrderController extends Controller
         $buyers = Customer::get();
 
         // Filter only Export Orders that have remaining capacity (Total MT - Consumed MT > 0)
-        $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
+        $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders' => fn($q) => $q->notCancelled()->with('exportPackingItems')])
             ->where('am_approval_status', 'approved')
             ->where('cancel','!=',1)
             ->whereNotIn('id', function($q) {
@@ -159,7 +159,7 @@ class ExportDeliveryOrderController extends Controller
         $fumigation_by = is_string($exportOrder->fumigation_by) ? json_decode($exportOrder->fumigation_by, true) : (is_array($exportOrder->fumigation_by) ? $exportOrder->fumigation_by : []);
         $inspection_by = is_string($exportOrder->inspection_by) ? json_decode($exportOrder->inspection_by, true) : (is_array($exportOrder->inspection_by) ? $exportOrder->inspection_by : []);
 
-        $deliveryOrders = DeliveryOrder::with('exportPackingItems')->where('export_order_id', $id)->get();
+        $deliveryOrders = DeliveryOrder::with('exportPackingItems')->where('export_order_id', $id)->notCancelled()->get();
         $totalEoMt = $exportOrder->packingItems->sum('metric_tons');
         $consumedMt = $deliveryOrders->sum(function ($do) {
             return $do->exportPackingItems->sum('metric_tons');
@@ -335,6 +335,7 @@ class ExportDeliveryOrderController extends Controller
         $totalAllowedMt = (float) $formE->input_quantity;
         $alreadyConsumedMt = DeliveryOrder::with(['exportPackingItems'])
             ->where('export_form_e_id', $request->export_form_e_id)
+            ->notCancelled()
             ->get()
             ->sum(function ($do) {
                 return $do->exportPackingItems->sum('metric_tons');
@@ -520,6 +521,7 @@ class ExportDeliveryOrderController extends Controller
         $alreadyConsumedMt = (float) DeliveryOrder::with(['exportPackingItems'])
             ->where('export_form_e_id', $deliveryOrder->export_form_e_id)
             ->where('id', '!=', $id)
+            ->notCancelled()
             ->get()
             ->sum(function ($do) {
                 return $do->exportPackingItems->sum('metric_tons');
@@ -587,6 +589,7 @@ class ExportDeliveryOrderController extends Controller
         $alreadyConsumedMt = (float) DeliveryOrder::with(['exportPackingItems'])
             ->where('export_form_e_id', $deliveryOrder->export_form_e_id)
             ->where('id', '!=', $id)
+            ->notCancelled()
             ->get()
             ->sum(function ($do) {
                 return $do->exportPackingItems->sum('metric_tons');
@@ -700,6 +703,29 @@ class ExportDeliveryOrderController extends Controller
                         'cancel_at' => now(),
                     ];
                 } else {
+                    // Reopening a cancelled DO takes its quantity back from the Form-E,
+                    // so it is only allowed if the Form-E still has that much capacity left
+                    if ($deliveryOrder->cancel && $deliveryOrder->export_form_e_id) {
+                        $formE = ExportFormE::lockForUpdate()->find($deliveryOrder->export_form_e_id);
+                        $doMt = (float) $deliveryOrder->exportPackingItems()->sum('metric_tons');
+                        $otherConsumedMt = (float) DeliveryOrder::with(['exportPackingItems'])
+                            ->where('export_form_e_id', $deliveryOrder->export_form_e_id)
+                            ->where('id', '!=', $deliveryOrder->id)
+                            ->notCancelled()
+                            ->get()
+                            ->sum(fn($do) => $do->exportPackingItems->sum('metric_tons'));
+                        $formERemainingMt = (float) ($formE->input_quantity ?? 0) - $otherConsumedMt;
+
+                        if ($formE && $doMt > $formERemainingMt + 0.001) {
+                            DB::rollBack();
+                            return response()->json([
+                                'status' => 'error',
+                                'success' => false,
+                                'message' => "Cannot continue this Delivery Order. It needs $doMt MT but Form-E only has " . round(max(0, $formERemainingMt), 2) . " MT left.",
+                            ], 422);
+                        }
+                    }
+
                     $updateData = [
                         'contract_status' => 'continue',
                         'cancel' => 0,
@@ -814,6 +840,7 @@ class ExportDeliveryOrderController extends Controller
             $alreadyConsumedMt = DeliveryOrder::with(['exportPackingItems'])
                 ->where('export_form_e_id', $request->export_form_e_id)
                 ->where('id', '!=', $id)
+                ->notCancelled()
                 ->get()
                 ->sum(function ($do) {
                     return $do->exportPackingItems->sum('metric_tons');
@@ -1013,7 +1040,7 @@ class ExportDeliveryOrderController extends Controller
 
     public function getOrdersByBuyer($buyer_id)
     {
-        $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
+        $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders' => fn($q) => $q->notCancelled()->with('exportPackingItems')])
             ->where('buyer_id', $buyer_id)
             ->where('cancel','!=',1)
             ->where('am_approval_status', 'approved')
@@ -1073,11 +1100,12 @@ class ExportDeliveryOrderController extends Controller
     }
     public function getFormEUsage($id)
     {
-        $formE = ExportFormE::findOrFail($id);
+        $formE = ExportFormE::with('jobOrder')->findOrFail($id);
         $totalAllowed = (float) $formE->input_quantity;
 
         $consumed = DeliveryOrder::with(['exportPackingItems'])
             ->where('export_form_e_id', $id)
+            ->notCancelled()
             ->get()
             ->sum(function ($do) {
                 return $do->exportPackingItems->sum('metric_tons');
@@ -1088,7 +1116,8 @@ class ExportDeliveryOrderController extends Controller
             'total' => round($totalAllowed, 2),
             'consumed' => round($consumed, 2),
             'remaining' => round(max(0, $totalAllowed - $consumed), 2),
-            'job_order_no' => $formE->job_order_no ?? ''
+            // Form-E stores job_order_id, the DO dropdown works with the job order number
+            'job_order_no' => $formE->jobOrder?->job_order_no ?? ''
         ]);
     }
 }

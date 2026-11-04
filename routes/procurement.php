@@ -50,6 +50,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::get('purchase-order/{id}/view', [PurchaseOrderController::class, 'view'])->name('purchase-order.view');
+    Route::get('purchase-order/{id}/trucks', [PurchaseOrderController::class, 'trucks'])->name('purchase-order.trucks');
     Route::get('purchase-order/{id}/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'showModal'])->defaults('modelType', 'purchase-order')->name('purchase-order.audit-logs');
     Route::post('get-purchase-order', [PurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::get('/export-csv', [PurchaseOrderController::class, 'exportCsv'])->name('purchase-order.export-csv');

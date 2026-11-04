@@ -288,6 +288,21 @@ class PurchaseOrderController extends Controller
         ], 201);
     }
 
+    /**
+     * Side modal: the arrival tickets (trucks) received against a purchase order.
+     */
+    public function trucks($id)
+    {
+        $purchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
+
+        $tickets = $purchaseOrder->arrivalTickets()
+            ->select('id', 'unique_no', 'truck_no', 'bilty_no', 'net_weight', 'arrived_net_weight', 'first_qc_status', 'second_qc_status', 'arrival_slip_status', 'created_at')
+            ->latest()
+            ->get();
+
+        return view('management.procurement.raw_material.purchase_order.trucks', compact('purchaseOrder', 'tickets'));
+    }
+
     public function view($id)
     {
         $data['arrivalPurchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);

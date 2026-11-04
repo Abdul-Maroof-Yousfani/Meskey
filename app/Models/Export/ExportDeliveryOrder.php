@@ -176,4 +176,12 @@ class ExportDeliveryOrder extends DeliveryOrder
         }
         return implode(', ', array_unique($stations));
     }
+
+    // Cancelled DOs do not use up Form-E / Export Order capacity
+    public function scopeNotCancelled($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('cancel', 0)->orWhereNull('cancel');
+        });
+    }
 }
