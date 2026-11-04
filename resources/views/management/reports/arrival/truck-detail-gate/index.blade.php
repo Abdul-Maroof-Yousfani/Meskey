@@ -45,7 +45,8 @@
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
-                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                                    value="{{ request('daterange', \Carbon\Carbon::now()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}"
+                                                    />
                                                 </div>
                                             </div>
 

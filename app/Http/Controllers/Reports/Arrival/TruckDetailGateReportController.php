@@ -33,9 +33,9 @@ class TruckDetailGateReportController extends Controller
 
     public function getList(Request $request)
     {
-        // Increase memory and execution time for detailed reports
-        ini_set('memory_limit', '512M');
-        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M'); // ya '1G' ya '-1' (unlimited)
+        ini_set('max_execution_time', 600); // 10 minutes
+
 
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
 
