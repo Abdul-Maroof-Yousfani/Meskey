@@ -296,7 +296,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
 
         $tickets = $purchaseOrder->arrivalTickets()
-            ->select('id', 'unique_no', 'truck_no', 'bilty_no', 'net_weight', 'arrived_net_weight', 'first_qc_status', 'second_qc_status', 'arrival_slip_status', 'created_at')
+            ->select('id', 'unique_no', 'truck_no', 'bilty_no', 'net_weight', 'arrived_net_weight', 'first_qc_status', 'second_qc_status', 'arrival_slip_status', 'is_ticket_verified', 'created_at')
             ->latest()
             ->get();
 

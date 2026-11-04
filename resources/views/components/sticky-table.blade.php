@@ -142,17 +142,14 @@
             }
 
             if (rightSticky > 0) {
-                let rightPositions = [];
-                let cumulativeWidth = 0;
                 const totalCols = headers.length;
 
+                // right offset of a column = total width of the sticky columns to its right
+                let rightOffsets = {};
+                let cumulativeWidth = 0;
                 for (let i = totalCols - 1; i >= totalCols - rightSticky; i--) {
-                    if (headers[i]) {
-                        cumulativeWidth += headers[i].offsetWidth;
-                    } else {
-                        cumulativeWidth += 150;
-                    }
-                    rightPositions.unshift(cumulativeWidth);
+                    rightOffsets[i] = cumulativeWidth;
+                    cumulativeWidth += headers[i] ? headers[i].offsetWidth : 150;
                 }
 
                 const rightStickyCells = table.querySelectorAll('.sticky-col-right');
@@ -161,8 +158,7 @@
                         ? parseInt(cell.dataset.colIndex)
                         : Array.from(cell.parentNode.children).indexOf(cell);
                     if (colIndex >= totalCols - rightSticky) {
-                        const posIndex = rightSticky - (totalCols - colIndex);
-                        cell.style.right = (posIndex === 0 ? 0 : rightPositions[posIndex - 1]) + 'px';
+                        cell.style.right = rightOffsets[colIndex] + 'px';
                     }
                 });
             }

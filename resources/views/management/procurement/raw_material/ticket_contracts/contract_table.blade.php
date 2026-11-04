@@ -1,4 +1,4 @@
-<x-sticky-table :items="$contracts" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'">
+<x-sticky-table :items="$contracts" :leftSticky="3" :rightSticky="2" :emptyMessage="'No purchase orders found'">
     @slot('head')
         <th>Contract #</th>
         <th>Commodity</th>

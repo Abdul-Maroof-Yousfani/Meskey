@@ -7,7 +7,7 @@
 
     $tickets: collection of ArrivalTicket with
         unique_no, truck_no, bilty_no, net_weight, arrived_net_weight,
-        first_qc_status, second_qc_status, arrival_slip_status
+        first_qc_status, second_qc_status, arrival_slip_status, is_ticket_verified, created_at
     $purchaseOrder (optional): shows the contract # and commodity on top
 --}}
 @php
@@ -51,6 +51,21 @@
     .ats-box.ats-danger .ats-value {
         color: #ff4961;
     }
+
+    /* Instagram style blue tick for verified tickets */
+    .ats-verified {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 15px;
+        height: 15px;
+        margin-left: 4px;
+        border-radius: 50%;
+        background: #1d9bf0;
+        color: #fff;
+        font-size: 9px;
+        vertical-align: middle;
+    }
 </style>
 
 @isset($purchaseOrder)
@@ -93,13 +108,19 @@
                 <th class="text-right">Loaded Weight</th>
                 <th class="text-right">Arrived Weight</th>
                 <th>Status</th>
+                <th>Created At</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($tickets as $ticket)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $ticket->unique_no ?? 'N/A' }}</td>
+                    <td class="text-nowrap">
+                        {{ $ticket->unique_no ?? 'N/A' }}
+                        @if ($ticket->is_ticket_verified == 1)
+                            <span class="ats-verified" title="Verified"><i class="fa fa-check"></i></span>
+                        @endif
+                    </td>
                     <td>{{ $ticket->truck_no ?? 'N/A' }}</td>
                     <td>{{ $ticket->bilty_no ?? 'N/A' }}</td>
                     <td class="text-right">{{ number_format((float) $ticket->net_weight, 2) }}</td>
@@ -116,10 +137,11 @@
                                 <span class="badge badge-warning">In Process</span>
                         @endswitch
                     </td>
+                    <td class="text-nowrap">{{ $ticket->created_at ? $ticket->created_at->format('d-m-Y h:i A') : 'N/A' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center text-muted">No trucks found</td>
+                    <td colspan="8" class="text-center text-muted">No trucks found</td>
                 </tr>
             @endforelse
         </tbody>
@@ -129,7 +151,7 @@
                     <th colspan="4" class="text-right">Total</th>
                     <th class="text-right">{{ number_format((float) $tickets->sum('net_weight'), 2) }}</th>
                     <th class="text-right">{{ number_format($totalKgs, 2) }}</th>
-                    <th></th>
+                    <th colspan="2"></th>
                 </tr>
             </tfoot>
         @endif
