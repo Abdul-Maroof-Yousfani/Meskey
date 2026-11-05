@@ -211,7 +211,8 @@
                 // Filter/data request
                 runFilter();
             });
-            runFilter();
+            // runFilter();
+            $(".selectWithoutAjax").select2();
         });
 
 

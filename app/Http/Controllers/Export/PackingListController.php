@@ -327,7 +327,7 @@ class PackingListController extends CommercialInvoiceController
             ->values()
             ->all();
 
-        return CommercialInvoice::with(['exportOrder', 'billOfLading'])
+        return CommercialInvoice::where('am_approval_status','approved')->with(['exportOrder', 'billOfLading'])
             ->where('export_order_id', $exportOrderId)
             ->whereNotIn('id', $takenInvoiceIds)
             ->latest()

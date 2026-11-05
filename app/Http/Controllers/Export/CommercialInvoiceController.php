@@ -230,7 +230,7 @@ class CommercialInvoiceController extends Controller
             'current_invoice_id' => ['nullable', 'integer', 'exists:commercial_invoices,id'],
         ]);
 
-        $billOfLadings = BillOfLading::where('export_order_id', $validated['export_order_id'])
+        $billOfLadings = BillOfLading::where('am_approval_status','approved')->where('export_order_id', $validated['export_order_id'])
             ->latest()
             ->get()
             ->filter(function (BillOfLading $billOfLading) use ($validated) {

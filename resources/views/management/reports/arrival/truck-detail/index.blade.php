@@ -277,7 +277,8 @@
                 // Dependent supplier request
                 fetchSuppliers();
             });
-            runFilter();
+            // runFilter();
+            $(".selectWithoutAjax").select2();
         });
 
 

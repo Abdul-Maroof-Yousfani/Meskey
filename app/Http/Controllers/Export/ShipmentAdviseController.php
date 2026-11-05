@@ -270,7 +270,7 @@ class ShipmentAdviseController extends PackingListController
             ->values()
             ->all();
 
-        return PackingList::with(['commercialInvoice'])
+        return PackingList::where('am_approval_status','approved')->with(['commercialInvoice'])
             ->where('export_order_id', $exportOrderId)
             ->whereNotIn('id', $takenIds)
             ->latest()
