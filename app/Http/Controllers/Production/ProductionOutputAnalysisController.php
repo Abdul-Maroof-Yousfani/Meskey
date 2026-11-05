@@ -101,6 +101,8 @@ class ProductionOutputAnalysisController extends Controller
 
     public function store(Request $request)
     {
+        $this->validateQcValues($request);
+
         try {
             DB::beginTransaction();
 
@@ -287,6 +289,8 @@ class ProductionOutputAnalysisController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->validateQcValues($request);
+
         try {
             DB::beginTransaction();
 
@@ -351,6 +355,23 @@ class ProductionOutputAnalysisController extends Controller
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Failed to update analysis: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Every QC Checklist value must be filled with a number of 0 or more.
+     * Runs before the try block so a validation error returns 422, not 500.
+     */
+    private function validateQcValues(Request $request): void
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.params' => 'required|array',
+            'items.*.params.*' => 'required|numeric|min:0',
+        ], [
+            'items.*.params.*.required' => 'All QC Checklist values are required (enter 0 if none).',
+            'items.*.params.*.numeric' => 'QC Checklist values must be numbers.',
+            'items.*.params.*.min' => 'QC Checklist values cannot be less than 0.',
+        ]);
     }
 
     public function destroy($id)

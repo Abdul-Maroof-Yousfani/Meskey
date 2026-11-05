@@ -63,6 +63,16 @@ class StoreProductionInputAnalysisRequest extends FormRequest
             'items' => 'required|array',
             'items.*.time' => 'required',
             'items.*.params' => 'required|array',
+            'items.*.params.*' => 'required|numeric|min:0',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'items.*.params.*.required' => 'All QC Checklist values are required (enter 0 if none).',
+            'items.*.params.*.numeric' => 'QC Checklist values must be numbers.',
+            'items.*.params.*.min' => 'QC Checklist values cannot be less than 0.',
         ];
     }
 }

@@ -179,7 +179,7 @@
                         </label>
                         <div class="col-md-9">
                             <div class="input-group">
-                                <input type="text" 
+                                <input type="number" step="any" min="0" required
                                        name="items[0][params][{{ $productSlabType->id }}]" 
                                        class="form-control" 
                                        value="{{ $savedSlabsMap[$productSlabType->id] ?? '' }}"
@@ -293,7 +293,7 @@
                         </label>
                         <div class="col-md-9">
                             <div class="input-group">
-                                <input type="text" 
+                                <input type="number" step="any" min="0" required
                                        name="items[0][params][${slab.id}]" 
                                        class="form-control" 
                                        placeholder="${symbol}">
