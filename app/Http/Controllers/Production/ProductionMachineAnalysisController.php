@@ -366,7 +366,11 @@ class ProductionMachineAnalysisController extends Controller
         try {
             DB::beginTransaction();
             $analysis = ProductionMachineAnalysis::findOrFail($id);
+            $requestId = $analysis->analysis_request_id;
             $analysis->delete();
+
+            // Request goes back to pending since its analysis no longer exists
+            \App\Models\Production\ProductionAnalysisRequest::revertToPendingIfUnused($requestId);
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Analysis deleted successfully']);
         } catch (\Exception $e) {

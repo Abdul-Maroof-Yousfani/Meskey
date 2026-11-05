@@ -65,7 +65,7 @@ class ProductionVoucherRequest extends FormRequest
                 'exists:products,id'
             ],
             'plant_id' => [
-                'nullable',
+                'required',
                 'exists:plants,id'
             ],
             'by_product_id' => [
@@ -337,6 +337,7 @@ class ProductionVoucherRequest extends FormRequest
             'location_id.exists' => 'Selected location does not exist',
             'product_id.required' => 'Head product is required',
             'product_id.exists' => 'Selected head product does not exist',
+            'plant_id.required' => 'Plant is required',
             'plant_id.exists' => 'Selected plant does not exist',
             'by_product_id.exists' => 'Selected by product does not exist',
             'net_total_output.lte' => 'Total input must be greater than or equal to total output.',

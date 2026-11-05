@@ -135,6 +135,29 @@ class ProductionAnalysisRequest extends Model
         };
     }
 
+    /**
+     * Set a completed request back to pending when no analysis is linked to it anymore
+     * (e.g. after its analysis was deleted).
+     */
+    public static function revertToPendingIfUnused(?int $requestId): void
+    {
+        if (!$requestId) {
+            return;
+        }
+
+        $request = self::find($requestId);
+        if (!$request || $request->status !== 'completed') {
+            return;
+        }
+
+        $stillUsed = ProductionAnalysis::where('analysis_request_id', $requestId)->exists()
+            || ProductionMachineAnalysis::where('analysis_request_id', $requestId)->exists();
+
+        if (!$stillUsed) {
+            $request->update(['status' => 'pending']);
+        }
+    }
+
     public function getStatusBadgeClassAttribute(): string
     {
         return match ($this->status) {
