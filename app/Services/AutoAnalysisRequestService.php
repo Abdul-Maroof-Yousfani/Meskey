@@ -133,13 +133,15 @@ class AutoAnalysisRequestService
         $currentTime = $atTime->format('H:i:s');
         $todayDate = $atTime->format('Y-m-d');
 
-        $plan = MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
+        // A plant can have several plans (each with its own Production Voucher) on one day;
+        // the one with a machine running right now is the one requests are made against.
+        $plans = MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
             ->where('plant_id', $plant->id)
             ->whereDate('date', $todayDate)
             ->latest('id')
-            ->first();
+            ->get();
 
-        if (!$plan) {
+        if ($plans->isEmpty()) {
             return [
                 'is_running' => false,
                 'reason' => 'No Machine Plan Setting created for today',
@@ -149,6 +151,20 @@ class AutoAnalysisRequestService
             ];
         }
 
+        $lastResult = null;
+        foreach ($plans as $plan) {
+            $lastResult = $this->runningInfoForPlan($plan, $currentTime);
+            if ($lastResult['is_running']) {
+                return $lastResult;
+            }
+        }
+
+        return $lastResult;
+    }
+
+    /** Running state of one plan at the given time (H:i:s). */
+    private function runningInfoForPlan(MachinePlanSetting $plan, string $currentTime): array
+    {
         $enabledItems = $plan->items->where('is_enabled', true);
         if ($enabledItems->isEmpty()) {
             return [
@@ -256,14 +272,14 @@ class AutoAnalysisRequestService
             }
         }
 
-        // 2. Check MachineTimeBreakdown on enabled machines
-        $plan = MachinePlanSetting::with(['items.breakdowns'])
+        // 2. Check MachineTimeBreakdown on enabled machines of the day's plans
+        $plans = MachinePlanSetting::with(['items.breakdowns'])
             ->where('plant_id', $plant->id)
             ->whereDate('date', $todayDate)
             ->latest('id')
-            ->first();
+            ->get();
 
-        if ($plan) {
+        foreach ($plans as $plan) {
             $runningMachines = $plan->items->where('is_enabled', true);
             foreach ($runningMachines as $mItem) {
                 foreach ($mItem->breakdowns as $b) {
@@ -478,6 +494,13 @@ class AutoAnalysisRequestService
             }
             $currentInterval = rand($min, $max);
 
+            // Requests are made against the running plan's Production Voucher; older plans get their draft now
+            $plan = $runningInfo['plan'] ?? null;
+            if ($plan && !$plan->production_voucher_id) {
+                app(MachinePlanDraftVoucherService::class)->syncForPlan($plan);
+                $plan->refresh();
+            }
+
             $analysisRequest = ProductionAnalysisRequest::create([
                 'request_no' => $requestNo,
                 'request_date' => $now->toDateString(),
@@ -485,16 +508,17 @@ class AutoAnalysisRequestService
                 'company_location_id' => $plant->company_location_id,
                 'arrival_location_id' => $plant->arrival_location_id,
                 'plant_id' => $plant->id,
-                'job_order_id' => null, // Do not attach Job Order; user/QC links specific Job Order if needed
-                'production_voucher_id' => $runningInfo['plan']->production_voucher_id ?? null,
-                'machine_plan_setting_id' => $runningInfo['plan']->id ?? null,
+                'job_order_id' => null, // Job orders come from the Production Voucher
+                'production_voucher_id' => $plan->production_voucher_id ?? null,
+                'machine_plan_setting_id' => $plan->id ?? null,
                 'type' => $type,
                 'remarks' => 'Auto-generated for running plant (' . $plant->name . ')',
                 'status' => 'pending',
                 'is_auto_generated' => true,
                 'auto_generated_at' => $now,
                 'auto_scheduled_interval' => $currentInterval,
-                'created_by' => auth()->id() ?? 1,
+                // auth()->id() returns the username in this app; created_by needs the numeric id
+                'created_by' => auth()->user()?->id ?? 1,
             ]);
 
             // Immediately schedule the NEXT target due time so subsequent auto requests continue without waiting on pending status

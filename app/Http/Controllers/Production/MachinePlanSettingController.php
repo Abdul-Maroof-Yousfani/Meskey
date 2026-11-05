@@ -17,6 +17,7 @@ use App\Models\Production\PlantBreakdownItem;
 use App\Models\Production\ProductionVoucher;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Master\CompanyLocation;
+use App\Services\MachinePlanDraftVoucherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -105,13 +106,6 @@ class MachinePlanSettingController extends Controller
     {
         $companyLocations = $this->userCompanyLocations();
         $plants = Plant::with('arrivalLocation')->where('status', 'active')->get();
-        $date = $request->input('date', date('Y-m-d'));
-        $productionVouchers = ProductionVoucher::whereDate('prod_date', $date)
-            ->when($request->filled('plant_id'), function ($q) use ($request) {
-                return $q->where('plant_id', $request->plant_id);
-            })
-            ->latest()
-            ->get();
         $breakdownTypes = PlantBreakdownType::where('status', 'active')->get();
         $machines = ProductionMachine::where('status', 'active')
             ->when($request->filled('plant_id'), function ($q) use ($request) {
@@ -119,7 +113,7 @@ class MachinePlanSettingController extends Controller
             })
             ->get();
 
-        return view('management.production.machine_plan_setting.create', compact('companyLocations', 'plants', 'productionVouchers', 'machines', 'breakdownTypes'));
+        return view('management.production.machine_plan_setting.create', compact('companyLocations', 'plants', 'machines', 'breakdownTypes'));
     }
 
     public function store(MachinePlanSettingRequest $request)
@@ -132,9 +126,9 @@ class MachinePlanSettingController extends Controller
                 'company_location_id',
                 'date',
                 'plant_id',
-                'production_voucher_id',
                 'remarks',
             ]);
+            // production_voucher_id is not chosen on the form: the plan creates its own draft voucher
             $companyId = $request->company_id ?: (auth()->user()->company_id ?? 1);
             $machinePlanSettingData['company_id'] = $companyId;
             $machinePlanSettingData['user_id'] = auth()->user()->id;
@@ -313,7 +307,7 @@ class MachinePlanSettingController extends Controller
                         'plant_id' => $request->plant_id,
                     ],
                     [
-                        'production_voucher_id' => $request->production_voucher_id,
+                        'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                         'user_id' => auth()->user()->id,
                     ]
                 );
@@ -345,6 +339,9 @@ class MachinePlanSettingController extends Controller
                 }
             }
 
+            // Create (or refresh) this plan's draft Production Voucher
+            app(MachinePlanDraftVoucherService::class)->syncForPlan($machinePlanSetting->fresh(['plant', 'items']));
+
             DB::commit();
 
             try {
@@ -368,7 +365,7 @@ class MachinePlanSettingController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $machinePlanSetting = MachinePlanSetting::with(['items.machine', 'items.breakdowns'])->findOrFail($id);
+        $machinePlanSetting = MachinePlanSetting::with(['items.machine', 'items.breakdowns', 'productionVoucher'])->findOrFail($id);
 
         $companyLocations = $this->userCompanyLocations();
 
@@ -385,17 +382,6 @@ class MachinePlanSettingController extends Controller
         $jobOrders = $selectedLocationId
             ? $this->jobOrdersForLocation($selectedLocationId, $request->company_id)
             : collect();
-
-        $selectedDate = $machinePlanSetting->date ? $machinePlanSetting->date->format('Y-m-d') : null;
-
-        $productionVouchers = ProductionVoucher::when($selectedDate, function ($q) use ($selectedDate) {
-            return $q->whereDate('prod_date', $selectedDate);
-        })
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
-            ->latest()
-            ->get();
 
         $breakdownTypes = PlantBreakdownType::where('status', 'active')
             ->when($request->filled('company_id'), function ($q) use ($request) {
@@ -417,7 +403,7 @@ class MachinePlanSettingController extends Controller
             })
             ->get();
 
-        return view('management.production.machine_plan_setting.edit', compact('machinePlanSetting', 'companyLocations', 'selectedLocationId', 'jobOrders', 'plants', 'productionVouchers', 'machines', 'breakdownTypes', 'plantBreakdown'));
+        return view('management.production.machine_plan_setting.edit', compact('machinePlanSetting', 'companyLocations', 'selectedLocationId', 'jobOrders', 'plants', 'machines', 'breakdownTypes', 'plantBreakdown'));
     }
 
     public function update(MachinePlanSettingRequest $request, $id)
@@ -435,9 +421,9 @@ class MachinePlanSettingController extends Controller
                 'company_location_id',
                 'date',
                 'plant_id',
-                'production_voucher_id',
                 'remarks',
             ]);
+            // production_voucher_id stays the plan's own voucher; it is not chosen on the form
 
             $machinePlanSettingData['user_id'] = auth()->user()->id;
             $machinePlanSetting->update($machinePlanSettingData);
@@ -611,14 +597,14 @@ class MachinePlanSettingController extends Controller
                         'company_id' => $request->company_id,
                         'date' => $request->date,
                         'plant_id' => $request->plant_id,
-                        'production_voucher_id' => $request->production_voucher_id,
+                        'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                         'user_id' => auth()->user()->id,
                     ]);
                 } else {
                     $plantBreakdown->update([
                         'date' => $request->date,
                         'plant_id' => $request->plant_id,
-                        'production_voucher_id' => $request->production_voucher_id,
+                        'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                         'user_id' => auth()->user()->id,
                     ]);
                 }
@@ -649,6 +635,9 @@ class MachinePlanSettingController extends Controller
                     }
                 }
             }
+
+            // Keep the plan's draft Production Voucher in step (or create one for older plans)
+            app(MachinePlanDraftVoucherService::class)->syncForPlan($machinePlanSetting->fresh(['plant', 'items']));
 
             DB::commit();
 
@@ -685,6 +674,9 @@ class MachinePlanSettingController extends Controller
             }
 
             ProductionVoucherMachineTime::where('machine_plan_setting_id', $machinePlanSetting->id)->delete();
+
+            // Its voucher goes too, but only while it is still an untouched draft
+            app(MachinePlanDraftVoucherService::class)->deleteDraftForPlan($machinePlanSetting);
 
             $machinePlanSetting->delete();
 
@@ -813,6 +805,28 @@ class MachinePlanSettingController extends Controller
             return response()->json(['jobOrders' => []]);
         }
 
+        // Product filter: exactly the Head / B2 / By job orders that Create Production Voucher shows
+        // for this location + head product (same function, so both screens always agree)
+        if ($request->filled('product_id')) {
+            $voucherRequest = Request::create('/', 'POST', [
+                'location_id' => $request->company_location_id,
+                'product_id' => $request->product_id,
+                'company_id' => $request->company_id,
+            ]);
+            $lists = app(ProductionVoucherController::class)->getJobOrdersByLocation($voucherRequest)->getData(true);
+
+            $jobOrders = collect();
+            foreach (['headJobOrders' => 'Head', 'b2JobOrders' => 'B2', 'byJobOrders' => 'By Product'] as $key => $group) {
+                foreach ($lists[$key] ?? [] as $jo) {
+                    if (!$jobOrders->contains('id', $jo['id'])) {
+                        $jobOrders->push(['id' => $jo['id'], 'text' => $jo['display_text'], 'group' => $group]);
+                    }
+                }
+            }
+
+            return response()->json(['jobOrders' => $jobOrders->values()]);
+        }
+
         $jobOrders = $this->jobOrdersForLocation($request->company_location_id, $request->company_id)
             ->map(function ($jo) {
                 $refText = $jo->ref_no ? ' (' . $jo->ref_no . ')' : '';
@@ -820,11 +834,26 @@ class MachinePlanSettingController extends Controller
                 return [
                     'id' => $jo->id,
                     'text' => $jo->job_order_no . $refText . $prodText,
+                    'group' => self::jobOrderGroup($jo),
                 ];
             })
             ->values();
 
         return response()->json(['jobOrders' => $jobOrders]);
+    }
+
+    /** Most job orders one machine card may take per group (as the Production Voucher's 3 Head / 3 B2 / 3 By selects). */
+    public const MACHINE_JOB_ORDER_LIMIT = 3;
+
+    /** Head / B2 / By Product group of a job order, from its product's category flag. */
+    public static function jobOrderGroup($jobOrder): string
+    {
+        $flag = optional($jobOrder->product)->product_category_flags;
+        return match ($flag) {
+            'b2' => 'B2',
+            'by' => 'By Product',
+            default => 'Head',
+        };
     }
 
     /**

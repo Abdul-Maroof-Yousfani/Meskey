@@ -26,8 +26,8 @@
                                     data-plant-id="{{ $req->plant_id }}"
                                     data-plant-name="{{ $req->plant?->name }}"
                                     data-job-order-id="{{ $req->job_order_id }}"
-                                    data-job-order-no="{{ $req->jobOrder?->job_order_no }}"
-                                    data-product-id="{{ $req->jobOrder?->product_id }}"
+                                    data-job-order-no="{{ $req->voucher_display }}"
+                                    data-product-id="{{ $req->suggestedProductId() }}"
                                     data-request-date="{{ $req->request_date?->format('Y-m-d') }}"
                                     @selected(isset($analysisRequest) && $analysisRequest->id == $req->id)>
                                     {{ $req->request_no }} - {{ $req->companyLocation?->name }} (Plant: {{ $req->plant?->name ?? 'N/A' }}) - {{ $req->request_date->format('d-m-Y') }}
@@ -50,7 +50,7 @@
                                     $isSelected = false;
                                     if (isset($fixedProduct) && $fixedProduct) {
                                         $isSelected = ($fixedProduct->id == $product->id);
-                                    } elseif (isset($analysisRequest) && $analysisRequest->jobOrder?->product_id == $product->id) {
+                                    } elseif (isset($analysisRequest) && $analysisRequest->suggestedProductId() == $product->id) {
                                         $isSelected = true;
                                     }
                                 @endphp
@@ -68,8 +68,8 @@
                             <i class="ft-map-pin text-primary mr-1"></i> Location: <strong id="req_disp_location">{{ $analysisRequest->companyLocation?->name ?? '' }}</strong> &bull;
                             <i class="ft-navigation text-info mr-1 ml-2"></i> Arrival: <span id="req_disp_arrival">{{ $analysisRequest->arrivalLocation?->name ?? '' }}</span> &bull;
                             <i class="ft-cpu text-success mr-1 ml-2"></i> Plant: <span id="req_disp_plant">{{ $analysisRequest->plant?->name ?? '' }}</span>
-                            <span id="req_disp_jo_wrapper" class="ml-2 {{ isset($analysisRequest) && $analysisRequest->jobOrder ? '' : 'd-none' }}">
-                                &bull; <i class="ft-file-text text-warning mr-1"></i> Job Order: <strong id="req_disp_jo">{{ $analysisRequest->jobOrder?->job_order_no ?? '' }}</strong>
+                            <span id="req_disp_jo_wrapper" class="ml-2 {{ isset($analysisRequest) && $analysisRequest->voucher_display ? '' : 'd-none' }}">
+                                &bull; <i class="ft-file-text text-warning mr-1"></i> Voucher: <strong id="req_disp_jo">{{ $analysisRequest?->voucher_display ?? '' }}</strong>
                             </span>
                         </div>
                     </div>

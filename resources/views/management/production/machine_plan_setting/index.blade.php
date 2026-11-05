@@ -26,8 +26,9 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
-                                                <label for="company_location_id" class="form-label">Location</label>
-                                                <select name="company_location_id" id="company_location_id" class="form-control">
+                                                <label for="filter_company_location_id" class="form-label">Location</label>
+                                                {{-- Own id: the create/edit drawer on this page has its own #company_location_id --}}
+                                                <select name="company_location_id" id="filter_company_location_id" class="form-control">
                                                     <option value="">All Locations</option>
                                                     @foreach ($companyLocations as $location)
                                                         <option value="{{ $location->id }}" {{ request('company_location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>

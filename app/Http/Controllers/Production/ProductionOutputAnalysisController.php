@@ -37,7 +37,7 @@ class ProductionOutputAnalysisController extends Controller
                     $q->orWhere('id', $request->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher'])
             ->latest('id')
             ->get();
 
@@ -47,7 +47,7 @@ class ProductionOutputAnalysisController extends Controller
 
         if ($request->filled('analysis_request_id')) {
             $analysisRequest = $analysisRequests->firstWhere('id', $request->analysis_request_id)
-                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])->find($request->analysis_request_id);
+                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher'])->find($request->analysis_request_id);
 
             if ($analysisRequest) {
                 $preSelectedLocationId = $analysisRequest->company_location_id;
@@ -109,12 +109,14 @@ class ProductionOutputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
-            $matchingVoucherId = \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
-                ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
-                    $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
-                })
-                ->latest('id')
-                ->value('id');
+            // The request's own Production Voucher first; otherwise the latest voucher of that date and plant
+            $matchingVoucherId = $analysisReq?->production_voucher_id
+                ?: \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
+                    ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
+                        $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
+                    })
+                    ->latest('id')
+                    ->value('id');
 
             $firstProduct = ProductionAnalysis::getFirstProductForRun(
                 $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
@@ -144,14 +146,14 @@ class ProductionOutputAnalysisController extends Controller
                 'production_voucher_id' => $matchingVoucherId,
             ]);
 
-            // If created against an Analysis Request, mark it completed & link Job Order if present
+            // If created against an Analysis Request, mark it completed & link the job orders of its Production Voucher
             if ($request->filled('analysis_request_id')) {
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
                 if ($analysisReq) {
                     $analysisReq->update(['status' => 'completed']);
-                    if ($analysisReq->job_order_id) {
+                    foreach ($analysisReq->jobOrderIdsForAnalysis() as $jobOrderId) {
                         DB::table('job_orders_against_production_analysis')->insertOrIgnore([
-                            'job_order_id' => $analysisReq->job_order_id,
+                            'job_order_id' => $jobOrderId,
                             'production_id' => $analysis->id,
                             'created_at' => now(),
                             'updated_at' => now(),
@@ -252,7 +254,7 @@ class ProductionOutputAnalysisController extends Controller
                     $q->orWhere('id', $item->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher'])
             ->latest('id')
             ->get();
 
@@ -456,7 +458,7 @@ class ProductionOutputAnalysisController extends Controller
         return response()->json([
             'status' => 'success',
             'is_fixed' => false,
-            'suggested_product_id' => $analysisReq?->jobOrder?->product_id,
+            'suggested_product_id' => $analysisReq?->suggestedProductId(),
             'product_id' => null,
         ]);
     }

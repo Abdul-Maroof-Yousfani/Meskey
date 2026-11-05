@@ -25,7 +25,7 @@
                                     data-arrival-location-name="{{ $req->arrivalLocation?->name }}"
                                     data-plant-id="{{ $req->plant_id }}"
                                     data-plant-name="{{ $req->plant?->name }}"
-                                    data-product-id="{{ $req->jobOrder?->product_id }}"
+                                    data-product-id="{{ $req->suggestedProductId() }}"
                                     data-request-date="{{ $req->request_date?->format('Y-m-d') }}"
                                     @selected(isset($analysisRequest) && $analysisRequest->id == $req->id)>
                                     {{ $req->request_no }} - {{ $req->companyLocation?->name }} (Plant: {{ $req->plant?->name ?? 'N/A' }}) - {{ $req->request_date->format('d-m-Y') }}
@@ -48,7 +48,7 @@
                                     $isSelected = false;
                                     if (isset($fixedProduct) && $fixedProduct) {
                                         $isSelected = ($fixedProduct->id == $product->id);
-                                    } elseif (isset($analysisRequest) && $analysisRequest->jobOrder?->product_id == $product->id) {
+                                    } elseif (isset($analysisRequest) && $analysisRequest->suggestedProductId() == $product->id) {
                                         $isSelected = true;
                                     }
                                 @endphp

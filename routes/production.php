@@ -141,5 +141,6 @@ Route::get('production-analysis-request/get-number', [ProductionAnalysisRequestC
 Route::get('production-analysis-request/get-arrival-locations/{id}', [ProductionAnalysisRequestController::class, 'getArrivalLocationsByCompanyLocation'])->name('production-analysis-request.get-arrival-locations');
 Route::get('production-analysis-request/get-plants/{companyId}/{arrivalId}', [ProductionAnalysisRequestController::class, 'getPlantsByArrivalLocation'])->name('production-analysis-request.get-plants');
 Route::get('production-analysis-request/get-job-orders/{companyLocationId}', [ProductionAnalysisRequestController::class, 'getJobOrdersByCompanyLocation'])->name('production-analysis-request.get-job-orders');
+Route::get('production-analysis-request/get-production-vouchers', [ProductionAnalysisRequestController::class, 'getProductionVouchers'])->name('production-analysis-request.get-production-vouchers');
 Route::post('get-production-analysis-request', [ProductionAnalysisRequestController::class, 'getList'])->name('get.production-analysis-request');
 Route::resource('production-analysis-request', ProductionAnalysisRequestController::class);

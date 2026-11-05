@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ProductionAnalysisRequest extends Model
 {
@@ -113,6 +114,55 @@ class ProductionAnalysisRequest extends Model
     public function machinePlanSetting()
     {
         return $this->belongsTo(MachinePlanSetting::class, 'machine_plan_setting_id');
+    }
+
+    /**
+     * Job orders an analysis made from this request belongs to: those of its Production Voucher,
+     * plus the single job order older requests were created against.
+     */
+    public function jobOrderIdsForAnalysis(): array
+    {
+        $ids = $this->production_voucher_id
+            ? DB::table('production_voucher_job_orders')->where('production_voucher_id', $this->production_voucher_id)->pluck('job_order_id')->all()
+            : [];
+
+        if ($this->job_order_id) {
+            $ids[] = $this->job_order_id;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    private $suggestedProductIdCache = false;
+
+    /** Product to suggest on the analysis form: the voucher's Head Product, else its first job order's product. */
+    public function suggestedProductId(): ?int
+    {
+        if ($this->suggestedProductIdCache !== false) {
+            return $this->suggestedProductIdCache;
+        }
+
+        $voucher = $this->productionVoucher;
+        if ($voucher && $voucher->product_id) {
+            return $this->suggestedProductIdCache = (int) $voucher->product_id;
+        }
+
+        $firstJobOrderId = $this->jobOrderIdsForAnalysis()[0] ?? null;
+        $productId = $firstJobOrderId ? JobOrder::whereKey($firstJobOrderId)->value('product_id') : null;
+
+        return $this->suggestedProductIdCache = $productId ? (int) $productId : null;
+    }
+
+    /** "PV no [Draft] - JO-1, JO-2" for the analysis forms; the job order no. for older requests. */
+    public function getVoucherDisplayAttribute(): ?string
+    {
+        $voucher = $this->productionVoucher;
+        if ($voucher) {
+            $jobOrders = $voucher->jobOrders()->pluck('job_order_no')->implode(', ');
+            return $voucher->prod_no . ($voucher->is_draft ? ' [Draft]' : '') . ($jobOrders ? ' - ' . $jobOrders : '');
+        }
+
+        return $this->jobOrder?->job_order_no;
     }
 
     public function getTypeNameAttribute(): string

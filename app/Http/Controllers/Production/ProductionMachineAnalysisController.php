@@ -42,7 +42,7 @@ class ProductionMachineAnalysisController extends Controller
                     $q->orWhere('id', $request->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product', 'productionVoucher'])
             ->latest('id')
             ->get();
 
@@ -52,7 +52,7 @@ class ProductionMachineAnalysisController extends Controller
 
         if ($request->filled('analysis_request_id')) {
             $analysisRequest = $analysisRequests->firstWhere('id', $request->analysis_request_id)
-                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product'])->find($request->analysis_request_id);
+                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product', 'productionVoucher'])->find($request->analysis_request_id);
 
             if ($analysisRequest) {
                 $preSelectedLocationId = $analysisRequest->company_location_id;
@@ -114,12 +114,14 @@ class ProductionMachineAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
-            $matchingVoucherId = \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
-                ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
-                    $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
-                })
-                ->latest('id')
-                ->value('id');
+            // The request's own Production Voucher first; otherwise the latest voucher of that date and plant
+            $matchingVoucherId = $analysisReq?->production_voucher_id
+                ?: \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
+                    ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
+                        $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
+                    })
+                    ->latest('id')
+                    ->value('id');
 
             $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
                 $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
@@ -256,7 +258,7 @@ class ProductionMachineAnalysisController extends Controller
                     $q->orWhere('id', $item->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder.product', 'productionVoucher'])
             ->latest('id')
             ->get();
 
@@ -503,7 +505,7 @@ class ProductionMachineAnalysisController extends Controller
         return response()->json([
             'status' => 'success',
             'is_fixed' => false,
-            'suggested_product_id' => $analysisReq?->jobOrder?->product_id,
+            'suggested_product_id' => $analysisReq?->suggestedProductId(),
             'product_id' => null,
         ]);
     }

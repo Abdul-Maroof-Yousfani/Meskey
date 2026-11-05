@@ -25,9 +25,16 @@
                         </span>
                     </div>
                     <div class="col-md-4 mb-2">
-                        <label class="text-muted d-block mb-1">Job Order</label>
+                        <label class="text-muted d-block mb-1">Production Voucher</label>
                         <h6>
-                            @if($item->jobOrder)
+                            @if($item->productionVoucher)
+                                <span class="badge badge-light text-dark font-weight-bold">
+                                    {{ $item->productionVoucher->prod_no }}
+                                </span>
+                                @if($item->productionVoucher->is_draft)
+                                    <span class="badge badge-warning">Draft</span>
+                                @endif
+                            @elseif($item->jobOrder)
                                 <span class="badge badge-light text-dark font-weight-bold">
                                     {{ $item->jobOrder->job_order_no }}
                                 </span>

@@ -196,17 +196,28 @@
                     </td>
                 </tr>
             @endforeach
-        {{-- Mode 2: Create Mode - Populate from selected Job Orders and Packing Items --}}
-        @elseif(!$isVoucherSelected)
-            @php
-                $renderedB2JobOrderIds = [];
-            @endphp
+        @endif
+        {{-- Mode 2: rows from the selected Job Orders and Packing Items.
+             On edit this runs too, but only for job orders without a saved output row yet
+             (a newly added job order, or a draft voucher made from a Machine Plan). --}}
+        @php
+            $savedRows = collect($existingOutputs ?? []);
+            $coveredJobOrderIds = $savedRows->pluck('job_order_id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+            $savedNoJoProductIds = $savedRows->whereNull('job_order_id')->pluck('product_id')->map(fn ($id) => (int) $id)->all();
+            foreach (($jobOrders ?? collect()) as $coveredJo) {
+                if (in_array((int) $coveredJo->product_id, $savedNoJoProductIds, true)) {
+                    $coveredJobOrderIds[] = (int) $coveredJo->id;
+                }
+            }
+            $renderedB2JobOrderIds = $coveredJobOrderIds;
+        @endphp
+        @if(isset($jobOrders) || isset($jobOrderPackings))
             @if(isset($jobOrderPackings) && $jobOrderPackings->count() > 0)
                 @foreach($jobOrderPackings as $jobOrderPacking)
                     @php
                         $jo = $jobOrderPacking->jobOrder ?? null;
                         $prod = $jo ? ($jo->product ?? null) : null;
-                        if (!$isB2ProductValid($prod)) {
+                        if (!$isB2ProductValid($prod) || ($jo && in_array((int) $jo->id, $coveredJobOrderIds, true))) {
                             continue;
                         }
                         $renderedRowCount++;

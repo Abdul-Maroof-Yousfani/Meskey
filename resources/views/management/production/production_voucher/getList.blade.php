@@ -18,6 +18,9 @@
                 <tr>
                     <td>
                         <strong class="d-block">{{ $voucher->prod_no }}</strong>
+                        @if($voucher->is_draft)
+                            <small class="text-warning">Draft from Machine Plan &mdash; edit to complete</small>
+                        @endif
                     </td>
                     <td>{{ \Carbon\Carbon::parse($voucher->prod_date)->format('M d, Y') }}</td>
                     <td>

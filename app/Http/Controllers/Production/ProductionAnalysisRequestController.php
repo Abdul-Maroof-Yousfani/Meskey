@@ -8,6 +8,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Plant;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Production\ProductionAnalysisRequest;
+use App\Models\Production\ProductionVoucher;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +56,7 @@ class ProductionAnalysisRequestController extends Controller
             'arrivalLocation',
             'plant',
             'jobOrder',
+            'productionVoucher',
             'creator',
             'productionAnalysis',
             'machineAnalysis',
@@ -105,6 +107,9 @@ class ProductionAnalysisRequestController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('request_no', 'like', $search)
                   ->orWhere('remarks', 'like', $search)
+                  ->orWhereHas('productionVoucher', function ($vq) use ($search) {
+                      $vq->where('prod_no', 'like', $search);
+                  })
                   ->orWhereHas('jobOrder', function ($jq) use ($search) {
                       $jq->where('job_order_no', 'like', $search)
                          ->orWhere('ref_no', 'like', $search);
@@ -139,28 +144,23 @@ class ProductionAnalysisRequestController extends Controller
         // Generate location-wise request number
         $requestNo = $this->generateNumber(date('Y-m-d'), $preSelectedLocationId);
 
-        // Pre-populate initial arrival locations & job orders for the 1st selected location
+        // Pre-populate initial arrival locations & production vouchers for the 1st selected location
         $arrivalLocations = collect();
-        $jobOrders = collect();
+        $productionVouchers = collect();
         if ($preSelectedLocationId) {
             $arrivalLocations = ArrivalLocation::where('company_location_id', $preSelectedLocationId)
                 ->where('status', 'active')
                 ->orWhereNull('status')
                 ->get();
 
-            $jobOrders = JobOrder::where('status', 'active')
-                ->whereHas('packingItems', function ($q) use ($preSelectedLocationId) {
-                    $q->where('company_location_id', $preSelectedLocationId);
-                })
-                ->latest('id')
-                ->get();
+            $productionVouchers = $this->vouchersFor($preSelectedLocationId, null, date('Y-m-d'));
         }
 
         return view('management.production.production_analysis_request.create', compact(
             'companyLocations',
             'preSelectedLocationId',
             'arrivalLocations',
-            'jobOrders',
+            'productionVouchers',
             'types',
             'requestNo'
         ));
@@ -177,7 +177,7 @@ class ProductionAnalysisRequestController extends Controller
             'arrival_location_id' => 'required|exists:arrival_locations,id',
             'plant_id' => 'required|exists:plants,id',
             'type' => 'required|in:' . implode(',', array_keys(ProductionAnalysisRequest::getTypes())),
-            'job_order_id' => 'nullable|exists:job_orders,id',
+            'production_voucher_id' => 'nullable|exists:production_vouchers,id',
             'remarks' => 'nullable|string',
         ]);
 
@@ -195,7 +195,9 @@ class ProductionAnalysisRequestController extends Controller
                 'company_location_id' => $request->company_location_id,
                 'arrival_location_id' => $request->arrival_location_id,
                 'plant_id' => $request->plant_id,
-                'job_order_id' => $request->job_order_id,
+                // Job orders now come from the Production Voucher
+                'production_voucher_id' => $request->production_voucher_id,
+                'machine_plan_setting_id' => $this->planIdOfVoucher($request->production_voucher_id),
                 'type' => $request->type,
                 'remarks' => $request->remarks,
                 'status' => 'pending',
@@ -228,6 +230,7 @@ class ProductionAnalysisRequestController extends Controller
             'arrivalLocation',
             'plant',
             'jobOrder',
+            'productionVoucher',
             'creator',
             'productionAnalysis',
             'machineAnalysis',
@@ -260,12 +263,12 @@ class ProductionAnalysisRequestController extends Controller
             ->where('arrival_location_id', $item->arrival_location_id)
             ->get();
 
-        $jobOrders = JobOrder::where('status', 'active')
-            ->whereHas('packingItems', function ($q) use ($item) {
-                $q->where('company_location_id', $item->company_location_id);
-            })
-            ->latest('id')
-            ->get();
+        $productionVouchers = $this->vouchersFor(
+            $item->company_location_id,
+            $item->plant_id,
+            $item->request_date ? $item->request_date->format('Y-m-d') : null,
+            $item->production_voucher_id
+        );
 
         $types = ProductionAnalysisRequest::getTypes();
 
@@ -274,7 +277,7 @@ class ProductionAnalysisRequestController extends Controller
             'companyLocations',
             'arrivalLocations',
             'plants',
-            'jobOrders',
+            'productionVouchers',
             'types'
         ));
     }
@@ -292,7 +295,7 @@ class ProductionAnalysisRequestController extends Controller
             'arrival_location_id' => 'required|exists:arrival_locations,id',
             'plant_id' => 'required|exists:plants,id',
             'type' => 'required|in:' . implode(',', array_keys(ProductionAnalysisRequest::getTypes())),
-            'job_order_id' => 'nullable|exists:job_orders,id',
+            'production_voucher_id' => 'nullable|exists:production_vouchers,id',
             'remarks' => 'nullable|string',
         ]);
 
@@ -317,7 +320,8 @@ class ProductionAnalysisRequestController extends Controller
                 'company_location_id' => $request->company_location_id,
                 'arrival_location_id' => $request->arrival_location_id,
                 'plant_id' => $request->plant_id,
-                'job_order_id' => $request->job_order_id,
+                'production_voucher_id' => $request->production_voucher_id,
+                'machine_plan_setting_id' => $this->planIdOfVoucher($request->production_voucher_id) ?? $analysisRequest->machine_plan_setting_id,
                 'type' => $request->type,
                 'remarks' => $request->remarks,
                 'updated_by' => auth()->user()?->id ?? 1,
@@ -464,6 +468,57 @@ class ProductionAnalysisRequestController extends Controller
     /**
      * AJAX endpoint: Get active Job Orders for a company location
      */
+    /**
+     * Production Vouchers of a location (optionally one plant and one date) for the request form.
+     */
+    public function getProductionVouchers(Request $request)
+    {
+        if (!$request->filled('company_location_id')) {
+            return response()->json([]);
+        }
+
+        $vouchers = $this->vouchersFor($request->company_location_id, $request->plant_id, $request->date)
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'text' => $this->voucherLabel($v),
+            ])
+            ->values();
+
+        return response()->json($vouchers);
+    }
+
+    public function voucherLabel(ProductionVoucher $voucher): string
+    {
+        $jobOrders = $voucher->jobOrders->pluck('job_order_no')->implode(', ');
+        return $voucher->prod_no
+            . ($voucher->is_draft ? ' [Draft]' : '')
+            . ($jobOrders ? ' - ' . $jobOrders : '');
+    }
+
+    private function vouchersFor($companyLocationId, $plantId = null, $date = null, $alwaysIncludeId = null)
+    {
+        return ProductionVoucher::with('jobOrders:id,job_order_no')
+            ->where(function ($q) use ($companyLocationId, $plantId, $date, $alwaysIncludeId) {
+                $q->where(function ($sub) use ($companyLocationId, $plantId, $date) {
+                    $sub->where('location_id', $companyLocationId)
+                        ->when($plantId, fn ($p) => $p->where('plant_id', $plantId))
+                        ->when($date, fn ($d) => $d->whereDate('prod_date', $date));
+                });
+                if ($alwaysIncludeId) {
+                    $q->orWhere('id', $alwaysIncludeId);
+                }
+            })
+            ->latest('id')
+            ->get();
+    }
+
+    private function planIdOfVoucher($voucherId): ?int
+    {
+        return $voucherId
+            ? \App\Models\Production\MachinePlanSetting::where('production_voucher_id', $voucherId)->value('id')
+            : null;
+    }
+
     public function getJobOrdersByCompanyLocation($companyLocationId)
     {
         $jobOrders = JobOrder::where('status', 'active')

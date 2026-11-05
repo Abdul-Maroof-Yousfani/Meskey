@@ -142,7 +142,15 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="mb-0">Edit Production Voucher #{{ $productionVoucher->prod_no }}</h4>
+                            <h4 class="mb-0">
+                                Edit Production Voucher #{{ $productionVoucher->prod_no }}
+                                @if($productionVoucher->is_draft)
+                                    <span class="badge badge-warning ml-1">Draft</span>
+                                @endif
+                            </h4>
+                            @if($productionVoucher->is_draft)
+                                <small class="text-muted">Created from the Machine Plan Setting. Complete the details and save; it then stops being a draft.</small>
+                            @endif
                         </div>
                         <div class="card-body">
 <form action="{{ route('production-voucher.update', $productionVoucher->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -462,13 +470,16 @@
         @if(count($packingItems) > 0)
         <div class="col-md-12 mt-3" id="packingItemsSection">
             <h6 class="header-heading-sepration">Packing Items</h6>
-            @include('management.production.production_voucher.partials.packing_items_table', [
-                'packingItems' => $packingItems,
-                'producedByJobOrder' => $producedByJobOrder,
-                'producedDetailsByJobOrder' => $producedDetailsByJobOrder,
-                'locationId' => $locationId,
-                'currentProductionVoucherId' => $productionVoucher->id ?? null
-            ])
+            {{-- Same container as create: job order changes reload the packing items into it --}}
+            <div id="packingItemsContainer">
+                @include('management.production.production_voucher.partials.packing_items_table', [
+                    'packingItems' => $packingItems,
+                    'producedByJobOrder' => $producedByJobOrder,
+                    'producedDetailsByJobOrder' => $producedDetailsByJobOrder,
+                    'locationId' => $locationId,
+                    'currentProductionVoucherId' => $productionVoucher->id ?? null
+                ])
+            </div>
         </div>
         @else
         <div class="col-md-12 mt-3" id="packingItemsSection" style="display: none;">
@@ -659,6 +670,9 @@
                     </div>
                     <div id="productionHeadProductsTable">
                         @php
+                            // Output tables get only the voucher's selected job orders (as the AJAX reload does),
+                            // not every job order of the location
+                            $selectedJobOrders = $jobOrders->whereIn('id', $jobOrderIds ?? [])->values();
                             $headProduct = $productionVoucher->product;
                             $headProductOutputs = $headProductOutputs ?? $productionVoucher->outputs->whereIn('product_id', $allHeadProductIds ?? [$productionVoucher->product_id])->values();
                             $arrivalSubLocations = $sublocations;
@@ -667,7 +681,7 @@
                             'headProduct' => $headProduct,
                             'arrivalSubLocations' => $arrivalSubLocations,
                             'brands' => $brands,
-                            'jobOrders' => $jobOrders,
+                            'jobOrders' => $selectedJobOrders,
                             'headProductOutputs' => $headProductOutputs,
                             'productionVoucher' => $productionVoucher,
                             'jobOrderPackings' => $jobOrderPackings,
@@ -696,7 +710,7 @@
                             'b2Product' => $b2Product,
                             'arrivalSubLocations' => $arrivalSubLocations,
                             'brands' => $brands,
-                            'jobOrders' => $jobOrders,
+                            'jobOrders' => $selectedJobOrders,
                             'b2ProductOutputs' => $b2ProductOutputs,
                             'productionVoucher' => $productionVoucher,
                             'jobOrderPackings' => $b2JobOrderPackings ?? collect(),
@@ -726,7 +740,7 @@
                             'byProducts' => $byProducts,
                             'arrivalSubLocations' => $arrivalSubLocations,
                             'brands' => $brands,
-                            'jobOrders' => $jobOrders,
+                            'jobOrders' => $selectedJobOrders,
                             'byProductOutputs' => $byProductOutputs,
                           //  'jobOrderPackings'=>$jobOrderPackingsByProduct
                             'jobOrderPackings'=>collect()
@@ -1362,6 +1376,17 @@
 
     function onProductChanged() {
         autoSelectByProduct();
+
+        // Same as create: clear previous job orders and packing items when head product changes
+        isPopulatingJobOrders = true;
+        try {
+            $('select.job-order-select').val('').trigger('change.select2');
+        } finally {
+            isPopulatingJobOrders = false;
+        }
+        $('#packingItemsSection').hide();
+        $('#packingItemsContainer').empty();
+
         var joPromise = loadJobOrdersByLocation();
         if (joPromise && typeof joPromise.always === 'function') {
             joPromise.always(function() {
@@ -2298,6 +2323,31 @@
         addNewOutputRow('by');
     });
 
+    // Same as create: empty an output table when no job order is selected
+    function resetOutputTableToEmpty(containerId) {
+        var $container = $('#' + containerId);
+        var $tbody = $container.find('tbody');
+        if ($tbody.length > 0) {
+            $tbody.find('tr').not('.commodity-total-row, .table-success, .ant-table-placeholder').remove();
+            $tbody.find('tr.commodity-total-row, tr.table-success').addClass('d-none');
+            $tbody.find('tr.ant-table-placeholder').removeClass('d-none');
+        }
+    }
+
+    // Same as create: re-apply select2 on the selects of a freshly loaded output table
+    function reinitOutputTableSelect2(target) {
+        target.find('select.select2').each(function() {
+            if ($(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2('destroy');
+            }
+            $(this).select2({
+                width: '100%',
+                dropdownAutoWidth: true,
+                dropdownParent: $(this).closest('.modal-body, .card-body, body')
+            });
+        });
+    }
+
     var loadDataTimer = null;
     function loadData() {
         clearTimeout(loadDataTimer);
@@ -2306,17 +2356,27 @@
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = getSelectedJobOrderIds();
             const headProductId = $('[name="product_id"]').val();
-            if (byProductId && locationId) {
+
+            // Only load if job order(s) are selected
+            if (!jobOrderIds || jobOrderIds.length === 0) {
+                resetOutputTableToEmpty('productionByProductsTable');
+                calculateByProducts();
+                calculateNetTotalInput();
+                return;
+            }
+
+            if (locationId && (byProductId || headProductId)) {
                 fetchDynamicHTML('{{ route('production-voucher.get-by-product-table') }}', 'productionByProductsTable', {
                     by_product_id: byProductId,
                     location_id: locationId,
                     job_order_ids: jobOrderIds,
                     production_voucher_id: {{ $productionVoucher->id ?? 'null' }},
                     head_product_id: headProductId
-                }, { 
+                }, {
                     method: 'POST',
                     onSuccess: function(response, target) {
                         target.html(response);
+                        reinitOutputTableSelect2(target);
                         // Reinitialize calculations after table loads
                         setTimeout(function() {
                             initializeCalculations();
@@ -2326,7 +2386,7 @@
             }
         }, 50);
     }
-    
+
     var loadHeadProductsTimer = null;
     function loadHeadProductsData() {
         clearTimeout(loadHeadProductsTimer);
@@ -2334,6 +2394,15 @@
             const productId = $('[name="product_id"]').val();
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = getSelectedJobOrderIds();
+
+            // Only load if job order(s) are selected
+            if (!jobOrderIds || jobOrderIds.length === 0) {
+                resetOutputTableToEmpty('productionHeadProductsTable');
+                calculateHeadProducts();
+                calculateNetTotalInput();
+                return;
+            }
+
             if (productId && locationId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-head-products-data') }}', 'productionHeadProductsTable', {
                     product_id: productId,
@@ -2341,10 +2410,11 @@
                     job_order_ids: jobOrderIds,
                     company_id: '{{ auth()->user()->company_id ?? 1 }}',
                     production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
-                }, { 
+                }, {
                     method: 'POST',
                     onSuccess: function(response, target) {
                         target.html(response);
+                        reinitOutputTableSelect2(target);
                         // Reinitialize calculations after table loads
                         setTimeout(function() {
                             initializeCalculations();
@@ -2362,6 +2432,15 @@
             const productId = $('[name="product_id"]').val();
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = getSelectedJobOrderIds();
+
+            // Only load if job order(s) are selected
+            if (!jobOrderIds || jobOrderIds.length === 0) {
+                resetOutputTableToEmpty('productionB2ProductsTable');
+                calculateB2Products();
+                calculateNetTotalInput();
+                return;
+            }
+
             if (productId && locationId) {
                 fetchDynamicHTML('{{ route('production-voucher.get-b2-products-data') }}', 'productionB2ProductsTable', {
                     product_id: productId,
@@ -2369,10 +2448,11 @@
                     job_order_ids: jobOrderIds,
                     company_id: '{{ auth()->user()->company_id ?? 1 }}',
                     production_voucher_id: {{ $productionVoucher->id ?? 'null' }}
-                }, { 
+                }, {
                     method: 'POST',
                     onSuccess: function(response, target) {
                         target.html(response);
+                        reinitOutputTableSelect2(target);
                         setTimeout(function() {
                             initializeCalculations();
                         }, 200);

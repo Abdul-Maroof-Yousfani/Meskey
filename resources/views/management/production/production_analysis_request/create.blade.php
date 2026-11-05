@@ -64,13 +64,14 @@
 
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Job Order: <small class="text-muted">(Optional)</small></label>
-                        <select name="job_order_id" id="req_job_order_id" class="form-control select2">
-                            <option value="">Select Job Order (Optional)</option>
-                            @foreach($jobOrders as $jo)
-                                <option value="{{ $jo->id }}">{{ $jo->job_order_no }} {{ $jo->ref_no ? '(' . $jo->ref_no . ')' : '' }}</option>
+                        <label>Production Voucher: <small class="text-muted">(Optional)</small></label>
+                        <select name="production_voucher_id" id="req_production_voucher_id" class="form-control select2">
+                            <option value="">Select Production Voucher (Optional)</option>
+                            @foreach($productionVouchers as $pv)
+                                <option value="{{ $pv->id }}">{{ app(\App\Http\Controllers\Production\ProductionAnalysisRequestController::class)->voucherLabel($pv) }}</option>
                             @endforeach
                         </select>
+                        <small class="text-muted">Job orders are taken from the selected voucher.</small>
                     </div>
                 </div>
 
@@ -114,28 +115,57 @@
             }
         }
 
-        // Date change -> refresh request number
+        // Production Vouchers of the selected location / plant / date
+        function loadProductionVouchers() {
+            let $pvSelect = $('#req_production_voucher_id');
+            let current = $pvSelect.val();
+            let companyLocationId = $('#req_company_location_id').val();
+
+            $pvSelect.html('<option value="">Select Production Voucher (Optional)</option>');
+            if (!companyLocationId) {
+                $pvSelect.trigger('change');
+                return;
+            }
+
+            $.get("{{ route('production-analysis-request.get-production-vouchers') }}", {
+                company_location_id: companyLocationId,
+                plant_id: $('#req_plant_id').val(),
+                date: $('#request_date').val()
+            }, function(data) {
+                $.each(data, function(i, item) {
+                    let selected = (current && current == item.id) ? 'selected' : '';
+                    $pvSelect.append(`<option value="${item.id}" ${selected}>${item.text}</option>`);
+                });
+                $pvSelect.trigger('change');
+            });
+        }
+
+        // Date change -> refresh request number and vouchers
         $('#request_date').on('change input', function() {
             refreshRequestNumber();
+            loadProductionVouchers();
         });
 
-        // Company Location Change -> Update Request # and Load Arrival Locations & Job Orders
+        // Plant change -> vouchers of that plant
+        $('#req_plant_id').on('change', function() {
+            loadProductionVouchers();
+        });
+
+        // Company Location Change -> Update Request # and Load Arrival Locations & Production Vouchers
         $('#req_company_location_id').on('change', function() {
             let companyLocationId = $(this).val();
             let $arrivalSelect = $('#req_arrival_location_id');
             let $plantSelect = $('#req_plant_id');
-            let $joSelect = $('#req_job_order_id');
 
             // Refresh Request # for the newly selected location
             refreshRequestNumber();
 
             $arrivalSelect.html('<option value="">Select Arrival Location</option>').prop('disabled', true);
             $plantSelect.html('<option value="">Select Plant</option>').prop('disabled', true);
-            $joSelect.html('<option value="">Select Job Order (Optional)</option>');
 
             if (!companyLocationId) {
                 $arrivalSelect.trigger('change');
-                $joSelect.trigger('change');
+                loadProductionVouchers();
                 return;
             }
 
@@ -150,16 +180,7 @@
                 $arrivalSelect.trigger('change');
             });
 
-            // Load Job Orders
-            let joUrl = "{{ route('production-analysis-request.get-job-orders', ':id') }}".replace(':id', companyLocationId);
-            $.get(joUrl, function(data) {
-                $joSelect.html('<option value="">Select Job Order (Optional)</option>');
-                $.each(data, function(i, item) {
-                    let label = item.job_order_no + (item.ref_no ? ` (${item.ref_no})` : '');
-                    $joSelect.append(`<option value="${item.id}">${label}</option>`);
-                });
-                $joSelect.trigger('change');
-            });
+            loadProductionVouchers();
         });
 
         // Arrival Location Change -> Load Plants

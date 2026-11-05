@@ -28,6 +28,19 @@
 
                 <div class="col-md-3">
                     <div class="form-group mb-2">
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Product:</label>
+                        {{-- Filter only: narrows the machine cards' job orders to this product's Head, B2 and By job orders --}}
+                        <select id="mps_product_id" class="form-control select2" style="width: 100%;">
+                            <option value="">All Products</option>
+                            @foreach(getFinishGoodProducts() as $product)
+                                <option value="{{ $product->id }}">{{ $product->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group mb-2">
                         <label class="mb-1" style="font-size: 12px; font-weight: 600;">Plant:</label>
                         <select name="plant_id" id="plant_id" class="form-control select2" style="width: 100%;" required>
                             <option value="">Select Plant</option>
@@ -45,14 +58,17 @@
                 <div class="col-md-3">
                     <div class="form-group mb-2">
                         <label class="mb-1" style="font-size: 12px; font-weight: 600;">Production Voucher:</label>
-                        <select name="production_voucher_id" id="production_voucher_id" class="form-control select2" style="width: 100%;">
-                            <option value="">Select Production Voucher (Optional)</option>
-                            @foreach($productionVouchers as $voucher)
-                                <option value="{{ $voucher->id }}" {{ $machinePlanSetting->production_voucher_id == $voucher->id ? 'selected' : '' }}>
-                                    {{ $voucher->prod_no }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @php $planVoucher = $machinePlanSetting->productionVoucher; @endphp
+                        <div class="d-flex align-items-center" style="height: 34px; gap: 6px;">
+                            @if($planVoucher)
+                                <a href="{{ route('production-voucher.edit', $planVoucher->id) }}" target="_blank" style="font-weight: 600;">{{ $planVoucher->prod_no }}</a>
+                                @if($planVoucher->is_draft)
+                                    <span class="badge badge-warning">Draft</span>
+                                @endif
+                            @else
+                                <span class="text-muted" style="font-size: 12px;">Created automatically on save</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
@@ -116,11 +132,11 @@
                                             <div class="machine-card-body p-2" style="background: #fff;">
                                                 @php $machineJobOrderIds = $firstSlot ? $firstSlot->job_order_id_list : []; @endphp
                                                 <div class="d-flex align-items-center mb-2" style="gap: 8px;">
-                                                    <label class="mb-0" style="font-size: 11px; font-weight: 600; color: #4a5568; white-space: nowrap;">Job Orders: <span class="text-danger">*</span></label>
+                                                    <label class="mb-0" style="font-size: 11px; font-weight: 600; color: #4a5568; white-space: nowrap;">Job Orders:</label>
                                                     <div style="flex: 1; min-width: 0;">
                                                         <select name="machine_job_order_id[{{ $machine->id }}][]" multiple class="form-control form-control-sm machine-job-order" data-selected='@json($machineJobOrderIds)' style="width: 100%;">
                                                             @foreach($jobOrders as $jo)
-                                                                <option value="{{ $jo->id }}" {{ in_array($jo->id, $machineJobOrderIds) ? 'selected' : '' }}>
+                                                                <option value="{{ $jo->id }}" data-group="{{ \App\Http\Controllers\Production\MachinePlanSettingController::jobOrderGroup($jo) }}" {{ in_array($jo->id, $machineJobOrderIds) ? 'selected' : '' }}>
                                                                     {{ $jo->job_order_no }}@if($jo->ref_no) ({{ $jo->ref_no }})@endif @if($jo->product) - {{ $jo->product->name }}@endif
                                                                 </option>
                                                             @endforeach
@@ -381,25 +397,32 @@
         $mpsJobOrderOptions = $jobOrders->map(fn ($jo) => [
             'id' => $jo->id,
             'text' => $jo->job_order_no . ($jo->ref_no ? ' (' . $jo->ref_no . ')' : '') . ($jo->product ? ' - ' . $jo->product->name : ''),
+            'group' => \App\Http\Controllers\Production\MachinePlanSettingController::jobOrderGroup($jo),
         ])->values();
     @endphp
     var mpsJobOrders = @json($mpsJobOrderOptions);
 
-    function loadJobOrdersByLocation(locationId) {
-        mpsJobOrders = [];
-        fillMachineJobOrderSelects();
+    // Location (and optional Product filter) -> job orders for the machine cards.
+    // keepSelections: false when the location itself changed (its old job orders no longer apply)
+    function loadJobOrdersByLocation(locationId, keepSelections) {
+        if (!keepSelections) {
+            mpsJobOrders = [];
+            fillMachineJobOrderSelects(false);
+        }
         if (!locationId) return;
 
         $.ajax({
             url: '{{ route("machine-plan-setting.job-orders-by-location") }}',
             type: 'GET',
-            data: { company_location_id: locationId },
+            data: { company_location_id: locationId, product_id: $('#mps_product_id').val() },
             success: function (response) {
                 mpsJobOrders = response.jobOrders || [];
                 if (mpsJobOrders.length === 0) {
-                    toastr.warning('No job orders found for this location');
+                    toastr.warning($('#mps_product_id').val()
+                        ? 'No job orders found for this product at this location'
+                        : 'No job orders found for this location');
                 }
-                fillMachineJobOrderSelects();
+                fillMachineJobOrderSelects(true);
             },
             error: function () {
                 toastr.error('Error loading job orders');
@@ -407,27 +430,56 @@
         });
     }
 
-    // Fill every machine's Job Orders multi-select and make it searchable (select2, like Location)
-    function fillMachineJobOrderSelects() {
+    // Fill every machine's Job Orders multi-select and make it searchable (select2, like Location).
+    // Job orders already picked on a card stay picked even when the Product filter no longer lists them.
+    function fillMachineJobOrderSelects(keepSelections) {
         $('.machine-job-order').each(function () {
             var $sel = $(this);
-            var selected = $sel.val();
-            if (!selected || !selected.length) {
-                selected = $sel.data('selected') || [];
+            var keep = [];
+            if (keepSelections !== false) {
+                $sel.find('option:selected').each(function () {
+                    keep.push({ id: String($(this).val()), text: $(this).text(), group: $(this).attr('data-group') });
+                });
+                if (!keep.length) {
+                    keep = ($sel.data('selected') || []).map(function (id) { return { id: String(id), text: null }; });
+                }
             }
-            selected = (Array.isArray(selected) ? selected : [selected]).map(String);
+            var keepIds = keep.map(function (k) { return k.id; });
 
             if ($sel.hasClass('select2-hidden-accessible')) {
                 $sel.select2('destroy');
             }
             $sel.empty();
+
+            var groups = {};
+            var listedIds = [];
             $.each(mpsJobOrders, function (i, jo) {
-                var isSel = selected.indexOf(String(jo.id)) !== -1 ? 'selected' : '';
-                $sel.append(`<option value="${jo.id}" ${isSel}>${jo.text}</option>`);
+                listedIds.push(String(jo.id));
+                var isSel = keepIds.indexOf(String(jo.id)) !== -1 ? 'selected' : '';
+                var $opt = $(`<option value="${jo.id}" ${isSel}></option>`).text(jo.text).attr('data-group', jo.group || 'Head');
+                if (jo.group) {
+                    if (!groups[jo.group]) {
+                        groups[jo.group] = $('<optgroup></optgroup>').attr('label', jo.group).appendTo($sel);
+                    }
+                    groups[jo.group].append($opt);
+                } else {
+                    $sel.append($opt);
+                }
             });
+
+            // Picked earlier but not in the current list (e.g. another product): keep them
+            $.each(keep, function (i, k) {
+                if (listedIds.indexOf(k.id) === -1 && k.text) {
+                    $sel.append($(`<option value="${k.id}" selected></option>`).text(k.text).attr('data-group', k.group || 'Head'));
+                }
+            });
+
             initMachineJobOrderSelect2($sel);
         });
     }
+
+    // Per machine card: at most 3 Head, 3 B2 and 3 By Product job orders (as the Production Voucher)
+    var MPS_JOB_ORDER_LIMIT = {{ \App\Http\Controllers\Production\MachinePlanSettingController::MACHINE_JOB_ORDER_LIMIT }};
 
     function initMachineJobOrderSelect2($sel) {
         $sel.select2({
@@ -436,10 +488,21 @@
             closeOnSelect: false,
             dropdownParent: $sel.closest('.modal').length ? $sel.closest('.modal') : $(document.body)
         });
+
+        $sel.off('select2:selecting.mpsLimit').on('select2:selecting.mpsLimit', function (e) {
+            var group = $(e.params.args.data.element).attr('data-group') || 'Head';
+            var count = $sel.find('option:selected').filter(function () {
+                return ($(this).attr('data-group') || 'Head') === group;
+            }).length;
+            if (count >= MPS_JOB_ORDER_LIMIT) {
+                e.preventDefault();
+                toastr.warning('Only ' + MPS_JOB_ORDER_LIMIT + ' ' + group + ' job orders can be selected on one machine');
+            }
+        });
     }
 
     $(document).ready(function() {
-        $('#company_location_id, #plant_id, #production_voucher_id').select2({
+        $('#company_location_id, #plant_id, #mps_product_id').select2({
             width: '100%',
             dropdownParent: $('.select2').closest('.modal').length ? $('.select2').closest('.modal') : $(document.body)
         });
@@ -453,15 +516,19 @@
         $(document).off('change.mps_location', '#company_location_id').on('change.mps_location', '#company_location_id', function () {
             var locationId = $(this).val();
             populatePlantsByLocation(locationId);
-            loadJobOrdersByLocation(locationId);
+            loadJobOrdersByLocation(locationId, false);
             $('#productionMachinesContainer').html('<div class="text-center text-muted py-3">Please select a plant to load machines</div>');
         });
 
-        // Load production vouchers and breakdowns when date changes
+        // Product filter: the cards list that product's Head, B2 and By job orders (picked ones stay)
+        $(document).off('change.mps_product', '#mps_product_id').on('change.mps_product', '#mps_product_id', function () {
+            loadJobOrdersByLocation($('#company_location_id').val(), true);
+        });
+
+        // Load breakdowns and machines when date changes
         $(document).off('change.mps_date', '#date').on('change.mps_date', '#date', function () {
             var selectedDate = $(this).val();
             var plantId = $('#plant_id').val();
-            loadProductionVouchers(selectedDate, plantId);
             if (plantId) {
                 loadPlantBreakdowns(selectedDate, plantId);
                 loadMachines(plantId);
@@ -472,7 +539,6 @@
         $(document).off('change.mps_plant', '#plant_id').on('change.mps_plant', '#plant_id', function () {
             var plantId = $(this).val();
             var selectedDate = $('#date').val();
-            loadProductionVouchers(selectedDate, plantId);
             if (plantId) {
                 loadMachines(plantId);
                 if (selectedDate) {
@@ -501,43 +567,6 @@
             validateAllSlotBreakdowns($(this), null);
         });
     });
-
-    function loadProductionVouchers(date, plantId = null, selectedVoucherId = null) {
-        var $voucherSelect = $('#production_voucher_id');
-        var currentSelected = (selectedVoucherId !== null && selectedVoucherId !== undefined) ? selectedVoucherId : $voucherSelect.val();
-        $voucherSelect.empty().append('<option value="">Select Production Voucher (Optional)</option>');
-
-        if (!plantId) {
-            plantId = $('#plant_id').val();
-        }
-
-        if (!date) {
-            $voucherSelect.trigger('change');
-            return;
-        }
-
-        $.ajax({
-            url: '{{ route("getProductionVouchersByDate") }}',
-            type: 'GET',
-            data: { 
-                date: date,
-                plant_id: plantId
-            },
-            success: function (response) {
-                if (response.vouchers && response.vouchers.length > 0) {
-                    $.each(response.vouchers, function (index, voucher) {
-                        var isSelected = (currentSelected && currentSelected == voucher.id) ? 'selected' : '';
-                        $voucherSelect.append(`<option value="${voucher.id}" ${isSelected}>${voucher.prod_no}</option>`);
-                    });
-                }
-                $voucherSelect.trigger('change');
-            },
-            error: function (xhr) {
-                console.error('Error loading production vouchers:', xhr);
-                toastr.error('Error loading production vouchers');
-            }
-        });
-    }
 
     function loadMachines(plantId) {
         var date = $('#date').val();
@@ -660,7 +689,7 @@
                                     </div>
                                     <div class="machine-card-body p-2" style="background: #fff;">
                                         <div class="d-flex align-items-center mb-2" style="gap: 8px;">
-                                            <label class="mb-0" style="font-size: 11px; font-weight: 600; color: #4a5568; white-space: nowrap;">Job Orders: <span class="text-danger">*</span></label>
+                                            <label class="mb-0" style="font-size: 11px; font-weight: 600; color: #4a5568; white-space: nowrap;">Job Orders:</label>
                                             <div style="flex: 1; min-width: 0;">
                                                 <select name="machine_job_order_id[${machine.id}][]" multiple class="form-control form-control-sm machine-job-order" data-selected='${JSON.stringify(machine.job_order_ids || [])}' style="width: 100%;">
                                                 </select>
@@ -685,15 +714,11 @@
                 } else {
                     container.html('<div class="text-center text-muted py-3">No machines found for this plant</div>');
                 }
-                // Pre-fill or clear remarks and voucher based on selected date
+                // Pre-fill or clear remarks based on selected date
                 if (response.existing_plan) {
                     $('#remarks_input, [name="remarks"]').val(response.existing_plan.remarks || '');
-                    if (response.existing_plan.production_voucher_id) {
-                        $('#production_voucher_id').val(response.existing_plan.production_voucher_id).trigger('change');
-                    }
                 } else {
                     $('#remarks_input, [name="remarks"]').val('');
-                    $('#production_voucher_id').val('').trigger('change');
                 }
             },
             error: function (xhr) {

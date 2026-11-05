@@ -72,14 +72,28 @@ class MachinePlanSettingRequest extends FormRequest
                 }
             }
 
-            // Every active machine must be created against a job order
-            $enabledMachineIds = (array) $this->input('production_machine_id', []);
-            if (!empty($enabledMachineIds)) {
-                $machineNames = \App\Models\Master\ProductionMachine::whereIn('id', $enabledMachineIds)->pluck('name', 'id');
-                foreach ($enabledMachineIds as $machineId) {
-                    if (empty(array_filter((array) $this->input("machine_job_order_id.{$machineId}", [])))) {
-                        $name = $machineNames[$machineId] ?? "#{$machineId}";
-                        $validator->errors()->add("machine_job_order_id.{$machineId}", "Please select at least one job order for machine '{$name}'.");
+            // Each machine card takes at most 3 Head, 3 B2 and 3 By Product job orders
+            $limit = \App\Http\Controllers\Production\MachinePlanSettingController::MACHINE_JOB_ORDER_LIMIT;
+            $perMachine = (array) $this->input('machine_job_order_id', []);
+            $allIds = collect($perMachine)->flatten()->filter()->unique()->values();
+            if ($allIds->isNotEmpty()) {
+                $jobOrders = \App\Models\Production\JobOrder\JobOrder::with('product:id,product_category_flags')
+                    ->whereIn('id', $allIds)->get()->keyBy('id');
+                $machineNames = \App\Models\Master\ProductionMachine::whereIn('id', array_keys($perMachine))->pluck('name', 'id');
+
+                foreach ($perMachine as $machineId => $ids) {
+                    $counts = collect((array) $ids)->filter()->unique()
+                        ->map(fn ($id) => $jobOrders->get($id))->filter()
+                        ->countBy(fn ($jo) => \App\Http\Controllers\Production\MachinePlanSettingController::jobOrderGroup($jo));
+
+                    foreach ($counts as $group => $count) {
+                        if ($count > $limit) {
+                            $name = $machineNames[$machineId] ?? "#{$machineId}";
+                            $validator->errors()->add(
+                                "machine_job_order_id.{$machineId}",
+                                "Machine '{$name}': only {$limit} {$group} job orders can be selected ({$count} selected)."
+                            );
+                        }
                     }
                 }
             }

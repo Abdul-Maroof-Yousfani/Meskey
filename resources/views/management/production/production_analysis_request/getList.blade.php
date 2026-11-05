@@ -7,7 +7,7 @@
             <th>Company Location</th>
             <th>Arrival Location</th>
             <th>Plant</th>
-            <th>Job Order</th>
+            <th>Production Voucher</th>
             <th>Remarks</th>
             <th>Status</th>
             <th class="text-right px-4">Action</th>
@@ -27,7 +27,15 @@
                 <td>{{ $item->arrivalLocation->name ?? 'N/A' }}</td>
                 <td>{{ $item->plant->name ?? 'N/A' }}</td>
                 <td>
-                    @if($item->jobOrder)
+                    @if($item->productionVoucher)
+                        <span class="badge badge-light text-dark font-weight-bold">
+                            {{ $item->productionVoucher->prod_no }}
+                        </span>
+                        @if($item->productionVoucher->is_draft)
+                            <span class="badge badge-warning">Draft</span>
+                        @endif
+                    @elseif($item->jobOrder)
+                        {{-- Older requests made against a job order --}}
                         <span class="badge badge-light text-dark font-weight-bold">
                             {{ $item->jobOrder->job_order_no }}
                         </span>

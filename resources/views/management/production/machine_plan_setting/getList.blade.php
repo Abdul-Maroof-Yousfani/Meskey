@@ -35,7 +35,14 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->productionVoucher->prod_no ?? '--' }}
+                            @if($row->productionVoucher)
+                                <a href="{{ route('production-voucher.edit', $row->productionVoucher->id) }}" target="_blank">{{ $row->productionVoucher->prod_no }}</a>
+                                @if($row->productionVoucher->is_draft)
+                                    <span class="badge badge-warning">Draft</span>
+                                @endif
+                            @else
+                                --
+                            @endif
                         </p>
                     </td>
                     <td>

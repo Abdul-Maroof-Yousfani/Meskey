@@ -69,6 +69,7 @@ class ProductionVoucherController extends Controller
                     $p = $out->product;
                     return $p && ($p->product_category_flags ?? '') === 'by';
                 })->values();
+                $byProductOutputs = $this->savedOutputsForJobOrders($byProductOutputs, $jobOrderIds, $productIds);
                 $savedByProdIds = $byProductOutputs->pluck('product_id')->toArray();
                 $productIds = array_unique(array_merge($productIds, $savedByProdIds));
             }
@@ -212,6 +213,7 @@ class ProductionVoucherController extends Controller
                     $p = $out->product;
                     return $p && !in_array($p->product_category_flags, ['b2', 'by']) && $p->product_type !== 'general_items';
                 })->values();
+                $headProductOutputs = $this->savedOutputsForJobOrders($headProductOutputs, $jobOrderIds, $productIds);
                 $savedProdIds = $headProductOutputs->pluck('product_id')->toArray();
                 $productIds = array_unique(array_merge($productIds, $savedProdIds));
             }
@@ -325,6 +327,7 @@ class ProductionVoucherController extends Controller
                     $p = $out->product;
                     return $p && ($p->product_category_flags ?? '') === 'b2';
                 })->values();
+                $b2ProductOutputs = $this->savedOutputsForJobOrders($b2ProductOutputs, $jobOrderIds, $productIds);
                 $savedB2ProdIds = $b2ProductOutputs->pluck('product_id')->toArray();
                 $productIds = array_unique(array_merge($productIds, $savedB2ProdIds));
             }
@@ -1310,13 +1313,17 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync($jobOrderIds);
             }
 
-            // Find existing machine plan setting for this plant and date (if any)
+            // Find existing machine plan setting for this plant and date (if any) that has no voucher of its own yet
             $planSetting = null;
             if ($productionVoucher->prod_date && $productionVoucher->plant_id) {
                 $planSetting = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
                     ->whereDate('date', $productionVoucher->prod_date)
+                    ->whereNull('production_voucher_id')
                     ->first();
             }
+
+            // Job orders picked on the plan's machine cards, kept when the rows are re-created below
+            $planMachineJobOrders = [];
 
             // Sync production machines
             if ($request->has('production_machine_id')) {
@@ -1325,6 +1332,7 @@ class ProductionVoucherController extends Controller
                 // If a machine plan setting already exists, delete any existing times for it so we don't duplicate
                 if ($planSetting) {
                     $planSettingTimeIds = \App\Models\Production\ProductionVoucherMachineTime::where('machine_plan_setting_id', $planSetting->id)->pluck('id');
+                    $planMachineJobOrders = $this->machineJobOrdersOf($planSettingTimeIds);
                     if ($planSettingTimeIds->isNotEmpty()) {
                         \App\Models\Production\MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $planSettingTimeIds)->delete();
                         \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $planSettingTimeIds)->delete();
@@ -1362,7 +1370,7 @@ class ProductionVoucherController extends Controller
                                     'duration_minutes' => $durationMinutes,
                                     'hours' => $hours,
                                     'is_enabled' => in_array($machineId, $request->production_machine_id ?? []),
-                                ]);
+                                ] + ($planMachineJobOrders[$machineId] ?? []));
 
                                 // Save child breakdowns for this slot
                                 $slotBreakdownFroms = $request->input("slot_breakdown_from.{$machineId}.{$index}", []);
@@ -1557,52 +1565,8 @@ class ProductionVoucherController extends Controller
                 }
             }
 
-            // Auto assign production voucher to Machine Plan Setting & Plant Breakdown if they exist for the same date and plant
-            if ($productionVoucher->prod_date && $productionVoucher->plant_id) {
-                $planSettings = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
-                    ->whereDate('date', $productionVoucher->prod_date)
-                    ->get();
-
-                foreach ($planSettings as $setting) {
-                    $setting->update(['production_voucher_id' => $productionVoucher->id]);
-                }
-
-                \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
-                    ->whereDate('date', $productionVoucher->prod_date)
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-            }
-
-            // Auto assign all performed Analysis on the same date to this production voucher
-            if ($productionVoucher->prod_date) {
-                $voucherDate = $productionVoucher->prod_date;
-
-                \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
-                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
-                        $q->where(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->orWhereNull('plant_id');
-                        });
-                    })
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-
-                \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
-                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
-                        $q->where(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->orWhereNull('plant_id');
-                        });
-                    })
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-
-                \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
-                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
-                        $q->where(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->orWhereNull('plant_id');
-                        });
-                    })
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-            }
+            // Link the day's plan, breakdown, analyses and analysis requests of this plant to this voucher
+            $this->linkSameDayRecords($productionVoucher);
 
             DB::commit();
 
@@ -1739,6 +1703,15 @@ class ProductionVoucherController extends Controller
             'productionVoucherMachineTimes.breakdowns',
             'productionMachines'
         ])->findOrFail($id);
+
+        // Draft from a Machine Plan Setting: Head Product is still empty. Show the commodity of the
+        // machine cards' job orders so those job orders load pre-selected (saved only when the voucher is saved).
+        if ($productionVoucher->is_draft && !$productionVoucher->product_id && $productionVoucher->jobOrders->isNotEmpty()) {
+            $headJobOrder = $productionVoucher->jobOrders->first(function ($jo) {
+                return $jo->product && !in_array($jo->product->product_category_flags, ['b2', 'by']);
+            }) ?? $productionVoucher->jobOrders->first();
+            $productionVoucher->product_id = $headJobOrder->product_id;
+        }
 
         $productIds = Product::where('id', $productionVoucher->product_id)
             ->orWhere('parent_id', $productionVoucher->product_id)
@@ -1992,19 +1965,19 @@ class ProductionVoucherController extends Controller
             })
             ->first();
 
+        // The voucher's own plan first; otherwise a same plant + date plan without a voucher of its own
         $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
-            ->where(function ($q) use ($productionVoucher) {
-                $q->where('production_voucher_id', $productionVoucher->id);
-                if ($productionVoucher->plant_id) {
-                    $q->orWhere(function ($sub) use ($productionVoucher) {
-                        $sub->where('plant_id', $productionVoucher->plant_id);
-                        if ($productionVoucher->prod_date) {
-                            $sub->whereDate('date', $productionVoucher->prod_date);
-                        }
-                    });
-                }
-            })
+            ->where('production_voucher_id', $productionVoucher->id)
             ->first();
+        if (!$machinePlanSetting && $productionVoucher->plant_id) {
+            $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
+                ->where('plant_id', $productionVoucher->plant_id)
+                ->when($productionVoucher->prod_date, function ($q) use ($productionVoucher) {
+                    $q->whereDate('date', $productionVoucher->prod_date);
+                })
+                ->whereNull('production_voucher_id')
+                ->first();
+        }
 
         // Load outputs for head products and b2 products separately
         $headProductOutputs = $productionVoucher->outputs->whereIn('product_id', $allHeadProductIds)->values();
@@ -2090,6 +2063,12 @@ class ProductionVoucherController extends Controller
             // $productionVoucherData['am_approval_status'] = 'pending';
             $productionVoucherData['am_change_made'] = 1;
 
+            // A draft made by a Machine Plan Setting becomes a normal voucher once saved here
+            if ($productionVoucher->is_draft) {
+                $productionVoucherData['is_draft'] = false;
+                $productionVoucherData['status'] = 'active';
+            }
+
             $productionVoucher->update($productionVoucherData);
 
             // Sync job orders to pivot table
@@ -2099,18 +2078,19 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync([]);
             }
 
-            // Find linked or matching machine plan setting
-            $planSetting = null;
-            if ($productionVoucher->plant_id) {
-                $planSetting = \App\Models\Production\MachinePlanSetting::where('production_voucher_id', $productionVoucher->id)
-                    ->orWhere(function ($q) use ($productionVoucher) {
-                        $q->where('plant_id', $productionVoucher->plant_id);
-                        if ($productionVoucher->prod_date) {
-                            $q->whereDate('date', $productionVoucher->prod_date);
-                        }
+            // Find the linked machine plan setting first; otherwise a same plant + date plan without its own voucher
+            $planSetting = \App\Models\Production\MachinePlanSetting::where('production_voucher_id', $productionVoucher->id)->first();
+            if (!$planSetting && $productionVoucher->plant_id) {
+                $planSetting = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
+                    ->when($productionVoucher->prod_date, function ($q) use ($productionVoucher) {
+                        $q->whereDate('date', $productionVoucher->prod_date);
                     })
+                    ->whereNull('production_voucher_id')
                     ->first();
             }
+
+            // Job orders picked on the plan's machine cards, kept when the rows are re-created below
+            $planMachineJobOrders = [];
 
             // Sync production machines
             if ($request->has('production_machine_id')) {
@@ -2122,6 +2102,7 @@ class ProductionVoucherController extends Controller
                     $existingQuery->orWhere('machine_plan_setting_id', $planSetting->id);
                 }
                 $existingMachineTimeIds = $existingQuery->pluck('id');
+                $planMachineJobOrders = $this->machineJobOrdersOf($existingMachineTimeIds);
                 if ($existingMachineTimeIds->isNotEmpty()) {
                     \App\Models\Production\MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $existingMachineTimeIds)->delete();
                     \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $existingMachineTimeIds)->delete();
@@ -2156,7 +2137,7 @@ class ProductionVoucherController extends Controller
                                     'duration_minutes' => $durationMinutes,
                                     'hours' => $hours,
                                     'is_enabled' => in_array($machineId, $request->production_machine_id ?? []),
-                                ]);
+                                ] + ($planMachineJobOrders[$machineId] ?? []));
 
                                 // Save child breakdowns for this slot
                                 $slotBreakdownFroms = $request->input("slot_breakdown_from.{$machineId}.{$index}", []);
@@ -2374,52 +2355,8 @@ class ProductionVoucherController extends Controller
                 }
             }
 
-            // Auto assign production voucher to Machine Plan Setting & Plant Breakdown if they exist for the same date and plant
-            if ($productionVoucher->prod_date && $productionVoucher->plant_id) {
-                $planSettings = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
-                    ->whereDate('date', $productionVoucher->prod_date)
-                    ->get();
-
-                foreach ($planSettings as $setting) {
-                    $setting->update(['production_voucher_id' => $productionVoucher->id]);
-                }
-
-                \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
-                    ->whereDate('date', $productionVoucher->prod_date)
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-            }
-
-            // Auto assign all performed Analysis on the same date to this production voucher
-            if ($productionVoucher->prod_date) {
-                $voucherDate = $productionVoucher->prod_date;
-
-                \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
-                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
-                        $q->where(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->orWhereNull('plant_id');
-                        });
-                    })
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-
-                \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
-                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
-                        $q->where(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->orWhereNull('plant_id');
-                        });
-                    })
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-
-                \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
-                    ->when($productionVoucher->plant_id, function ($q) use ($productionVoucher) {
-                        $q->where(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->orWhereNull('plant_id');
-                        });
-                    })
-                    ->update(['production_voucher_id' => $productionVoucher->id]);
-            }
+            // Link the day's plan, breakdown, analyses and analysis requests of this plant to this voucher
+            $this->linkSameDayRecords($productionVoucher);
 
             DB::commit();
 
@@ -3289,6 +3226,89 @@ class ProductionVoucherController extends Controller
         ])->findOrFail($id);
 
         return view('management.production.production_voucher.view_production_voucher', compact('productionVoucher'));
+    }
+
+    /**
+     * Saved outputs of a voucher that still belong to the job orders selected on the form.
+     * When a job order is removed or swapped on the edit screen, its old output rows (and their
+     * products) must not be shown again. Rows without a job order stay only if their product
+     * belongs to one of the selected job orders.
+     */
+    private function savedOutputsForJobOrders($outputs, array $jobOrderIds, array $jobOrderProductIds)
+    {
+        $jobOrderIds = array_map('intval', $jobOrderIds);
+        $jobOrderProductIds = array_map('intval', $jobOrderProductIds);
+
+        return $outputs->filter(function ($out) use ($jobOrderIds, $jobOrderProductIds) {
+            return $out->job_order_id
+                ? in_array((int) $out->job_order_id, $jobOrderIds, true)
+                : in_array((int) $out->product_id, $jobOrderProductIds, true);
+        })->values();
+    }
+
+    /**
+     * Link the same plant + date records to this voucher.
+     * Only records not yet linked to another voucher are taken, so several vouchers
+     * (one per Machine Plan Setting) can exist on the same day without stealing each other's records.
+     */
+    private function linkSameDayRecords(ProductionVoucher $productionVoucher): void
+    {
+        if (!$productionVoucher->prod_date) {
+            return;
+        }
+
+        $voucherId = $productionVoucher->id;
+        $voucherDate = $productionVoucher->prod_date;
+        $freeOrMine = function ($q) use ($voucherId) {
+            $q->whereNull('production_voucher_id')->orWhere('production_voucher_id', $voucherId);
+        };
+        $samePlant = function ($q) use ($productionVoucher) {
+            if ($productionVoucher->plant_id) {
+                $q->where(function ($sub) use ($productionVoucher) {
+                    $sub->where('plant_id', $productionVoucher->plant_id)->orWhereNull('plant_id');
+                });
+            }
+        };
+
+        if ($productionVoucher->plant_id) {
+            \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
+                ->whereDate('date', $voucherDate)
+                ->where($freeOrMine)
+                ->update(['production_voucher_id' => $voucherId]);
+
+            \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
+                ->whereDate('date', $voucherDate)
+                ->where($freeOrMine)
+                ->update(['production_voucher_id' => $voucherId]);
+        }
+
+        \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
+            ->where($samePlant)->where($freeOrMine)
+            ->update(['production_voucher_id' => $voucherId]);
+
+        \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
+            ->where($samePlant)->where($freeOrMine)
+            ->update(['production_voucher_id' => $voucherId]);
+
+        \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
+            ->where($samePlant)->where($freeOrMine)
+            ->update(['production_voucher_id' => $voucherId]);
+    }
+
+    /**
+     * Job orders chosen on the Machine Plan cards, per machine, so they survive when the
+     * voucher re-creates its machine time rows.
+     */
+    private function machineJobOrdersOf($machineTimeIds): array
+    {
+        return \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $machineTimeIds)
+            ->get(['production_machine_id', 'job_order_id', 'job_order_ids'])
+            ->groupBy('production_machine_id')
+            ->map(fn ($rows) => [
+                'job_order_id' => $rows->first()->job_order_id,
+                'job_order_ids' => $rows->first()->job_order_ids,
+            ])
+            ->all();
     }
 
     public static function generateUniqueNumber($dateParam = null, $locationParam = null)

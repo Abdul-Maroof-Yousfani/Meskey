@@ -47,6 +47,7 @@ class ProductionVoucher extends Model
         'milling_rate_id',
         'by_product_rate_id',
         'status',
+        'is_draft',
         'remarks',
         'qc_remarks',
         'am_approval_status',
@@ -55,6 +56,7 @@ class ProductionVoucher extends Model
 
     protected $casts = [
         'prod_date' => 'date',
+        'is_draft' => 'boolean',
         'produced_qty_kg' => 'decimal:2',
         'labor_cost_per_kg' => 'decimal:4',
         'overhead_cost_per_kg' => 'decimal:4',
@@ -90,6 +92,12 @@ class ProductionVoucher extends Model
     public function jobOrders()
     {
         return $this->belongsToMany(JobOrder::class, 'production_voucher_job_orders');
+    }
+
+    /** Machine Plan Setting this voucher was created from (draft flow). */
+    public function machinePlanSetting()
+    {
+        return $this->hasOne(MachinePlanSetting::class, 'production_voucher_id');
     }
 
     public function location()
