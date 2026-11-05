@@ -12,37 +12,46 @@ class RejectionReturnItem extends Model
     protected $guarded = ['id'];
 
     protected static function booted() {
+        // Bags rejected without deduction were stocked in at QC approval;
+        // returning them to the supplier takes them out of stock.
         static::created(function($rejectionReturnItem) {
-           
+            $rejectionReturn = $rejectionReturnItem->rejectionReturn;
+            $grn = $rejectionReturn?->grn;
             $product = Product::find($rejectionReturnItem->item_id);
-            $stock = Stock::create([
-                "product_id" => $product->account_id,
+            $amount = $rejectionReturnItem->quantity * $rejectionReturnItem->rate;
+
+            Stock::create([
+                "product_id" => $rejectionReturnItem->item_id,
                 "voucher_type" => "qc",
-                "voucher_no" => "qc",
+                "voucher_no" => $rejectionReturn?->return_no,
                 "qty" => $rejectionReturnItem->quantity,
                 "type" => "stock-out",
                 "narration" => "Rejection Return Item",
-                "price" => $rejectionReturnItem->quantity * $rejectionReturnItem->rate,
-                "avg_price_per_kg" => $rejectionReturnItem->quantity * $rejectionReturnItem->rate,
-                'parent_id' => $rejectionReturnItem->rejectionReturn->purchase_order_data_id
+                "price" => $amount,
+                "avg_price_per_kg" => $amount,
+                "company_location_id" => $grn?->location_id,
+                "parent_id" => $grn?->id,
+                "parentable_type" => self::class,
+                "parentable_id" => $rejectionReturnItem->id,
             ]);
 
-
-            createTransaction(
-                $rejectionReturnItem->quantity * $rejectionReturnItem->rate,
-                $product->account_id,
-                9,
-                '-',
-                'credit',
-                'no',
-                [
-                    'grn_no' => $rejectionReturnItem->rejectionReturn->grn->purchase_order_receiving_no,
-                    'purpose' => 'purchase-bag-qc',
-                    'against_reference_number' => $rejectionReturnItem->rejectionReturn->grn->purchase_order_receiving_no,
-                    'payment_against' => "QC",
-                    'remarks' => "Purchase Bag QC"
-                ]
-            );
+            if ($product && $product->account_id) {
+                createTransaction(
+                    $amount,
+                    $product->account_id,
+                    9,
+                    $rejectionReturn?->return_no ?? '-',
+                    'credit',
+                    'no',
+                    [
+                        'grn_no' => $grn?->purchase_order_receiving_no,
+                        'purpose' => 'purchase-bag-qc',
+                        'against_reference_number' => $grn?->purchase_order_receiving_no,
+                        'payment_against' => "QC",
+                        'remarks' => "Purchase Bag QC"
+                    ]
+                );
+            }
         });
 
     }

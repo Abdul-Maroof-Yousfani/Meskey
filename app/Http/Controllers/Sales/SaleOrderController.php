@@ -381,7 +381,6 @@ class SaleOrderController extends Controller
         $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
 
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
-        $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
         $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
         $payload["so_reference_no"] = !$request->so_reference_no ? '' : $request->so_reference_no;
         $payload["transporter_used"] = !$request->transporter_used ? 'no' : $request->transporter_used;
@@ -403,6 +402,9 @@ class SaleOrderController extends Controller
 
         DB::beginTransaction();
         try {
+            // Generate SO number inside transaction with lock to prevent duplicates
+            $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
+
             $sales_order = SalesOrder::create($payload);
 
             foreach ($locations as $location) {
@@ -1117,7 +1119,7 @@ class SaleOrderController extends Controller
             $itemRows = [];
             if ($items->isEmpty()) {
                 $itemRows[] = [
-                    'item_data' => (object) ['item_id' => null, 'qty' => 0, 'rate' => 0, 'description' => 'No items'],
+                    'item_data' => (object) ['item_id' => null, 'qty' => 0, 'rate' => 0, 'rate_per_mond' => 0, 'minimum_qty' => 0, 'description' => 'No items'],
                     'item' => (object) ['name' => 'N/A', 'unitOfMeasure' => (object) ['name' => '']],
                 ];
             } else {
@@ -1279,9 +1281,16 @@ class SaleOrderController extends Controller
 
         $prefix = 'SO-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $latestContract = SalesOrder::where('reference_no', 'like', "$prefix-%")
-            ->latest()
-            ->first();
+        // Use numeric ordering on the suffix to get the true highest number (not alphabetical/created_at)
+        // lockForUpdate when inside a transaction to prevent race conditions (duplicate SO numbers)
+        $query = SalesOrder::where('reference_no', 'like', "$prefix-%")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(reference_no, '-', -1) AS UNSIGNED) DESC");
+
+        if (DB::transactionLevel() > 0) {
+            $query->lockForUpdate();
+        }
+
+        $latestContract = $query->first();
 
         $datePart = Carbon::parse($date)->format('Y-m-d');
 

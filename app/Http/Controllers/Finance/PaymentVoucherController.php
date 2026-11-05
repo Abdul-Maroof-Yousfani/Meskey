@@ -573,6 +573,12 @@ class PaymentVoucherController extends Controller
 
             $remainingAmount = max(0, $creditAmount - $alreadyRefunded);
 
+            // If this JV credit belongs to a Sale Order / DO, it is the same money as that SO's advance.
+            $linkedSoPool = $this->getJvDetailLinkedSoPool($detail, null, $excludePvId);
+            if ($linkedSoPool !== null) {
+                $remainingAmount = min($remainingAmount, max(0, $linkedSoPool['available']));
+            }
+
             if ($remainingAmount > 0.01) {
                 $jvDateFormatted = $jv->jv_date ? $jv->jv_date->format('d-M-Y') : 'N/A';
                 $availableJvs[] = [
@@ -696,7 +702,7 @@ class PaymentVoucherController extends Controller
             ->when($excludeJvId, function ($q) use ($excludeJvId) {
                 $q->where('journal_vouchers.id', '!=', $excludeJvId);
             })
-            ->select('journal_voucher_details.credit_amount', 'journal_vouchers.created_at')
+            ->select('journal_voucher_details.id', 'journal_voucher_details.credit_amount', 'journal_vouchers.created_at')
             ->get();
 
         $creditJvs = (float) $creditJvRecords->sum('credit_amount');
@@ -766,6 +772,33 @@ class PaymentVoucherController extends Controller
             }
         }
 
+        // 5b. DPV "Journal Voucher" rows that refunded one of the credit JV lines counted above as
+        // this SO's advance. Those rows are saved without sales_order_id, so step 5 misses them;
+        // without this the same money could be refunded again through the SO/DO row.
+        $creditJvDetailIds = $creditJvRecords->where('credit_amount', '>', 0)->pluck('id')->all();
+        if (!empty($creditJvDetailIds)) {
+            $totalRefunded += (float) PaymentVoucherData::where(function ($q) use ($creditJvDetailIds) {
+                    $q->whereIn('journal_voucher_detail_id', $creditJvDetailIds)
+                      ->orWhere(function ($sq) use ($creditJvDetailIds) {
+                          $sq->where('reference_type', 'journal_voucher')
+                             ->whereIn('reference_id', $creditJvDetailIds);
+                      });
+                })
+                ->whereNull('sales_order_id')
+                ->whereNull('delivery_order_id')
+                ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo, $excludePvId) {
+                    $q->whereNull('deleted_at');
+                    $q->where('am_approval_status', '!=', 'rejected');
+                    if ($excludeVoucherNo) {
+                        $q->where('unique_no', '!=', $excludeVoucherNo);
+                    }
+                    if ($excludePvId) {
+                        $q->where('id', '!=', $excludePvId);
+                    }
+                })
+                ->sum('amount');
+        }
+
         // 6. JV debits / adjustments across SO, DOs, and linked RVs
         $rvIds = array_keys($rvMap);
         $totalJvDebits = (float) DB::table('journal_voucher_details')
@@ -813,8 +846,75 @@ class PaymentVoucherController extends Controller
             ->whereIn('delivery_order_id', $activeDoIds)
             ->sum('amount');
 
+        // JV credit balance consumed by active DOs (stored in settlement_adjustments against the DO number)
+        // is held by those DOs exactly like attached RV advance. Only JVs whose credit line is counted in
+        // this SO's advance pool (see getSalesOrderTotalNetAdvance step 3) are taken into account.
+        $activeDoRefs = $activeDos->pluck('reference_no')->filter()->values()->toArray();
+        if (!empty($activeDoRefs)) {
+            $soDoIds = DB::table('delivery_order')
+                ->where('so_id', $soId)
+                ->where('am_approval_status', '!=', 'rejected')
+                ->pluck('id')
+                ->toArray();
+
+            $soPoolJvIds = DB::table('journal_voucher_details')
+                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                ->whereNull('journal_vouchers.deleted_at')
+                ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
+                ->where('journal_voucher_details.credit_amount', '>', 0)
+                ->where(function ($q) use ($soId, $soDoIds) {
+                    $q->where('journal_voucher_details.sales_order_id', $soId);
+                    if (!empty($soDoIds)) {
+                        $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
+                    }
+                })
+                ->distinct()
+                ->pluck('journal_vouchers.id')
+                ->toArray();
+
+            if (!empty($soPoolJvIds)) {
+                $attachedToActive += (float) DB::table('settlement_adjustments')
+                    ->where('reference_type', 'journal_voucher')
+                    ->whereIn('reference_id', $soPoolJvIds)
+                    ->whereIn('voucher_no', $activeDoRefs)
+                    ->sum('amount');
+            }
+        }
+
         $directSoRemaining = max(0, $soNetAvailable - $attachedToActive);
         return round(min($directSoRemaining, $soNetAvailable), 2);
+    }
+
+    /**
+     * A customer's credit JV line that carries sales_order_id / delivery_order_id is the same money
+     * that getSalesOrderTotalNetAdvance() counts as that SO's advance. Refunding it through a
+     * "Journal Voucher" row must therefore also stay within (and consume) the SO's refundable pool,
+     * otherwise the same amount can be paid once as JV refund and again as SO/DO refund.
+     *
+     * @return array{so_id:int, available:float}|null  null when the JV line is not tied to any SO/DO
+     */
+    public function getJvDetailLinkedSoPool($jvDetail, $excludeVoucherNo = null, $excludePvId = null): ?array
+    {
+        if (!empty($jvDetail->sales_order_id)) {
+            $soId = (int) $jvDetail->sales_order_id;
+            return [
+                'so_id' => $soId,
+                'available' => (float) $this->getSalesOrderRemainingAdvance($soId, $excludeVoucherNo, $excludePvId),
+            ];
+        }
+
+        if (!empty($jvDetail->delivery_order_id)) {
+            $soId = (int) DB::table('delivery_order')->where('id', $jvDetail->delivery_order_id)->value('so_id');
+            if ($soId) {
+                return [
+                    'so_id' => $soId,
+                    'available' => (float) $this->getSalesOrderTotalNetAdvance($soId, $excludeVoucherNo, $excludePvId),
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1175,6 +1275,18 @@ class PaymentVoucherController extends Controller
                         throw new \Exception("Row #" . ($index + 1) . ": Amount cannot exceed the remaining balance of Journal Voucher ({$jvDetail->journalVoucher->jv_no}) which is Rs. " . number_format($maxAllowed, 2));
                     }
 
+                    // A JV credit tied to a Sale Order / DO is that SO's advance: cap by (and consume) the SO pool.
+                    $linkedSoPool = $this->getJvDetailLinkedSoPool($jvDetail, null, $paymentVoucher->id);
+                    if ($linkedSoPool !== null) {
+                        $linkedSoId = $linkedSoPool['so_id'];
+                        $soPoolLeft = max(0, $linkedSoPool['available'] - ($usedSoAdvanceInBatch[$linkedSoId] ?? 0));
+                        if ($netAmount > $soPoolLeft + 0.01) {
+                            $soRef = SalesOrder::where('id', $linkedSoId)->value('reference_no') ?: "#{$linkedSoId}";
+                            throw new \Exception("Row #" . ($index + 1) . ": Journal Voucher ({$jvDetail->journalVoucher->jv_no}) is the advance of Sale Order ({$soRef}). Remaining refundable amount of that Sale Order is Rs. " . number_format($soPoolLeft, 2) . " (it may already be refunded / used through the Sale Order, DO or this voucher).");
+                        }
+                        $usedSoAdvanceInBatch[$linkedSoId] = ($usedSoAdvanceInBatch[$linkedSoId] ?? 0) + $netAmount;
+                    }
+
                     PaymentVoucherData::create([
                         'payment_voucher_id' => $paymentVoucher->id,
                         'account_id' => $request->customer_account_id,
@@ -1255,19 +1367,20 @@ class PaymentVoucherController extends Controller
                             throw new \Exception("Row #" . ($index + 1) . ": Payment cannot be issued for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to refund.");
                         }
 
-                        $rawDoMax = $this->getDeliveryOrderRemainingRefundAmount($do);
+                        // Rows of this voucher already inserted above are excluded here and counted via the batch arrays instead.
+                        $rawDoMax = $this->getDeliveryOrderRemainingRefundAmount($do, null, $paymentVoucher->id);
                         $doBatchUsed = $usedDoAdvanceInBatch[$doId] ?? 0;
                         $soBatchUsed = $usedSoAdvanceInBatch[$soId] ?? 0;
 
                         $remDo = max(0, $rawDoMax - $doBatchUsed);
-                        $remSo = max(0, $this->getSalesOrderTotalNetAdvance($soId) - $soBatchUsed);
+                        $remSo = max(0, $this->getSalesOrderTotalNetAdvance($soId, null, $paymentVoucher->id) - $soBatchUsed);
                         $maxAllowed = min($remDo, $remSo);
 
                         $refType = 'delivery_order';
                         $refId = $do->id;
                     } else {
                         $so = SalesOrder::with(['sales_order_data'])->findOrFail($soId);
-                        $rawSoMax = $this->getSalesOrderRemainingAdvance($so);
+                        $rawSoMax = $this->getSalesOrderRemainingAdvance($so, null, $paymentVoucher->id);
                         $soBatchUsed = $usedSoAdvanceInBatch[$soId] ?? 0;
                         $maxAllowed = max(0, $rawSoMax - $soBatchUsed);
                         $refType = 'sales_order';
@@ -1401,6 +1514,8 @@ class PaymentVoucherController extends Controller
             $totalAmount = 0;
             $usedSoAdvanceInBatch = [];
             $usedDoAdvanceInBatch = [];
+            $usedJvInBatch = [];
+            $usedJvDetailInBatch = [];
 
             foreach ($request->row_type as $index => $rowType) {
                 $amount = (float) $request->amount[$index];
@@ -1449,11 +1564,30 @@ class PaymentVoucherController extends Controller
                     })
                     ->sum('net_amount');
 
+                    // This voucher's own rows are excluded above, so count earlier rows of this same request here.
+                    $settlementSpent += $usedJvInBatch[$jvDetail->journal_voucher_id] ?? 0;
+                    $alreadyRefunded += $usedJvDetailInBatch[$jvDetail->id] ?? 0;
+
                     $maxAllowed = max(0, $creditAmt - max($settlementSpent, $alreadyRefunded));
 
                     if ($netAmount > $maxAllowed + 0.01) {
                         throw new \Exception("Row #" . ($index + 1) . ": Amount cannot exceed the remaining balance of Journal Voucher ({$jvDetail->journalVoucher->jv_no}) which is Rs. " . number_format($maxAllowed, 2));
                     }
+
+                    // A JV credit tied to a Sale Order / DO is that SO's advance: cap by (and consume) the SO pool.
+                    $linkedSoPool = $this->getJvDetailLinkedSoPool($jvDetail, $payment_voucher->unique_no, $payment_voucher->id);
+                    if ($linkedSoPool !== null) {
+                        $linkedSoId = $linkedSoPool['so_id'];
+                        $soPoolLeft = max(0, $linkedSoPool['available'] - ($usedSoAdvanceInBatch[$linkedSoId] ?? 0));
+                        if ($netAmount > $soPoolLeft + 0.01) {
+                            $soRef = SalesOrder::where('id', $linkedSoId)->value('reference_no') ?: "#{$linkedSoId}";
+                            throw new \Exception("Row #" . ($index + 1) . ": Journal Voucher ({$jvDetail->journalVoucher->jv_no}) is the advance of Sale Order ({$soRef}). Remaining refundable amount of that Sale Order is Rs. " . number_format($soPoolLeft, 2) . " (it may already be refunded / used through the Sale Order, DO or this voucher).");
+                        }
+                        $usedSoAdvanceInBatch[$linkedSoId] = ($usedSoAdvanceInBatch[$linkedSoId] ?? 0) + $netAmount;
+                    }
+
+                    $usedJvInBatch[$jvDetail->journal_voucher_id] = ($usedJvInBatch[$jvDetail->journal_voucher_id] ?? 0) + $netAmount;
+                    $usedJvDetailInBatch[$jvDetail->id] = ($usedJvDetailInBatch[$jvDetail->id] ?? 0) + $netAmount;
 
                     PaymentVoucherData::create([
                         'payment_voucher_id' => $payment_voucher->id,

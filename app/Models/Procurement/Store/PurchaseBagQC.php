@@ -30,26 +30,7 @@ class PurchaseBagQC extends Model
         $this->am_approval_status = "approved";
         approve_qc($this);
 
-        $itemId = $this->grn->item_id;
-        $supplierId = $this->grn->purchase_order_receiving->supplier_id;
-        $supplier = Supplier::find($supplierId);
-
-        $price = ($this->accepted_quantity + $this->rejected_quantity) * $this->grn->purchase_order_data->rate;
-
-        Stock::create([
-            'product_id' => $itemId,
-            'voucher_type' => 'grn',
-            'voucher_no' => $this->grn->purchase_order_receiving->purchase_order_receiving_no,
-            'qty' => $this->accepted_quantity + $this->rejected_quantity,
-            'type' => 'stock-in',
-            'narration' => 'Goods Received Note',
-            'price' => $price,
-            'avg_price_per_kg' => $price,
-            'company_location_id' => $this->grn->purchase_order_receiving->location_id,
-            'parent_id' => $this->grn->purchase_order_receiving->id,
-            "parentable_type" => PurchaseOrderReceiving::class,
-            "parentable_id" => $this->grn->purchase_order_receiving->id,
-        ]);
+        $this->postStockIn();
 
         // $product = Product::select("id", "account_id")->find($itemId);
         // if($product->account_id) {
@@ -87,6 +68,65 @@ class PurchaseBagQC extends Model
         //         ]  
         //     );
         // }
+    }
+
+    /**
+     * Stock-in for the QC'd GRN line: the full received qty
+     * (accepted + rejected with deduction + rejected without deduction).
+     * Bags rejected without deduction physically stay in store until the supplier
+     * collects them; the Rejection Return then posts the matching stock-out.
+     * Used by both manual approval and auto-approval; safe to call more than once.
+     */
+    public function postStockIn(): ?Stock
+    {
+        $grnLine = $this->grn;
+        $grn = $grnLine?->purchase_order_receiving;
+        if (!$grnLine || !$grn) {
+            return null;
+        }
+
+        $alreadyPosted = Stock::where('voucher_type', 'grn')
+            ->where('type', 'stock-in')
+            ->where(function ($q) use ($grnLine, $grn) {
+                $q->where(function ($q) use ($grnLine) {
+                    $q->where('parentable_type', PurchaseOrderReceivingData::class)
+                        ->where('parentable_id', $grnLine->id);
+                })->orWhere(function ($q) use ($grnLine, $grn) {
+                    // Rows posted before this fix were linked to the GRN header.
+                    $q->where('parentable_type', PurchaseOrderReceiving::class)
+                        ->where('parentable_id', $grn->id)
+                        ->where('product_id', $grnLine->item_id);
+                });
+            })
+            ->first();
+
+        if ($alreadyPosted) {
+            return $alreadyPosted;
+        }
+
+        $qty = (float) $this->accepted_quantity
+            + (float) $this->rejected_quantity
+            + (float) ($this->rejection_return ?? 0);
+        if ($qty <= 0) {
+            return null;
+        }
+
+        $price = $qty * (float) ($grnLine->purchase_order_data->rate ?? 0);
+
+        return Stock::create([
+            'product_id' => $grnLine->item_id,
+            'voucher_type' => 'grn',
+            'voucher_no' => $grn->purchase_order_receiving_no,
+            'qty' => $qty,
+            'type' => 'stock-in',
+            'narration' => 'Goods Received Note',
+            'price' => $price,
+            'avg_price_per_kg' => $price,
+            'company_location_id' => $grn->location_id,
+            'parent_id' => $grn->id,
+            'parentable_type' => PurchaseOrderReceivingData::class,
+            'parentable_id' => $grnLine->id,
+        ]);
     }
 
     public function scopeFilter($query)

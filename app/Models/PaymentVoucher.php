@@ -683,6 +683,18 @@ class PaymentVoucher extends Model
                 if ($netAmount > $jvAvailable + 0.01) {
                     return "Cannot approve Payment Voucher {$this->unique_no}: Journal Voucher {$jvNo} only has Rs. " . number_format($jvAvailable, 2) . " available balance, but this voucher refunds Rs. " . number_format($netAmount, 2) . ".";
                 }
+
+                // A JV credit tied to a Sale Order / DO is that SO's advance: it shares the SO's refundable pool
+                // with any SO/DO rows (in this voucher or elsewhere).
+                $linkedSoPool = $jvDetail ? $pvController->getJvDetailLinkedSoPool($jvDetail, $this->unique_no, $this->id) : null;
+                if ($linkedSoPool !== null) {
+                    $linkedSoId = $linkedSoPool['so_id'];
+                    $soAccumulated[$linkedSoId] = ($soAccumulated[$linkedSoId] ?? 0) + $netAmount;
+                    if ($soAccumulated[$linkedSoId] > $linkedSoPool['available'] + 0.01) {
+                        $soRef = \App\Models\Sales\SalesOrder::find($linkedSoId)->reference_no ?? ("SO #" . $linkedSoId);
+                        return "Cannot approve Payment Voucher {$this->unique_no}: Journal Voucher {$jvNo} is the advance of Sales Order {$soRef}, which only has Rs. " . number_format($linkedSoPool['available'], 2) . " refundable balance, but this voucher refunds Rs. " . number_format($soAccumulated[$linkedSoId], 2) . " from it.";
+                    }
+                }
             }
         }
 

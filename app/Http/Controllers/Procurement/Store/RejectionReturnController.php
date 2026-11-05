@@ -59,7 +59,12 @@ class RejectionReturnController extends Controller
             DB::beginTransaction();
 
             $grn = \App\Models\Procurement\Store\PurchaseOrderReceiving::find($request->grn_id);
-            
+
+            if ($error = $this->validateReturnQty($request, (int) $request->grn_id)) {
+                DB::rollBack();
+                return response()->json(['status' => 'error', 'message' => $error], 422);
+            }
+
             // Generate Return No
             $returnNo = generateUniqueNumber('rejection_returns', 'RET-', null, 'return_no');
 
@@ -97,8 +102,10 @@ class RejectionReturnController extends Controller
 
     public function create()
     {
+        // Only approved QCs post the stock-in, so only those bags can be returned.
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
-                $q->where('rejection_return', '>', 0);
+                $q->where('rejection_return', '>', 0)
+                  ->where('am_approval_status', 'approved');
             })
             ->where(function($query) {
                 // Either no rejection return yet
@@ -118,7 +125,8 @@ class RejectionReturnController extends Controller
         $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::with(['items.item', 'grn.supplier'])->findOrFail($id);
         
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
-                  $q->where('rejection_return', '>', 0);
+                  $q->where('rejection_return', '>', 0)
+                    ->where('am_approval_status', 'approved');
             })
             ->get();
             
@@ -137,6 +145,12 @@ class RejectionReturnController extends Controller
             DB::beginTransaction();
 
             $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::findOrFail($id);
+
+            if ($error = $this->validateReturnQty($request, (int) $rejectionReturn->grn_id, (int) $rejectionReturn->id)) {
+                DB::rollBack();
+                return response()->json(['status' => 'error', 'message' => $error], 422);
+            }
+
             $rejectionReturn->update([
                 'date' => $request->purchase_date,
                 'truck_no' => $request->truck_no,
@@ -145,8 +159,8 @@ class RejectionReturnController extends Controller
                 "am_change_made" => 1
             ]);
 
-            // Simple item sync: delete and re-add
-            $rejectionReturn->items()->delete();
+            // Item sync: remove old items with their stock-out/ledger rows, then re-add
+            $rejectionReturn->clearItems();
             foreach ($request->item_id as $index => $itemId) {
                 if (isset($request->qty[$index]) && $request->qty[$index] > 0) {
                     $rejectionReturn->items()->create([
@@ -183,7 +197,8 @@ class RejectionReturnController extends Controller
         try {
             DB::beginTransaction();
             $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::findOrFail($id);
-            $rejectionReturn->items()->delete();
+            // Removes the stock-out too, so the bags are back in stock.
+            $rejectionReturn->clearItems();
             $rejectionReturn->delete();
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Rejection Return deleted successfully']);
@@ -191,5 +206,34 @@ class RejectionReturnController extends Controller
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Per item, the qty returned must not exceed the approved QC's "rejected without deduction"
+     * qty for this GRN, minus what other active rejection returns already took.
+     */
+    private function validateReturnQty(Request $request, int $grnId, ?int $excludeReturnId = null): ?string
+    {
+        $requested = [];
+        foreach ($request->item_id ?? [] as $index => $itemId) {
+            $qty = (float) ($request->qty[$index] ?? 0);
+            if ($qty > 0) {
+                $requested[$itemId] = ($requested[$itemId] ?? 0) + $qty;
+            }
+        }
+
+        if (empty($requested)) {
+            return 'Please add at least one item with quantity.';
+        }
+
+        foreach ($requested as $itemId => $qty) {
+            $allowed = \App\Models\Procurement\Store\RejectionReturn::returnableQty($grnId, (int) $itemId, $excludeReturnId);
+            if ($qty > $allowed + 0.0001) {
+                $name = \App\Models\Product::find($itemId)->name ?? "Item {$itemId}";
+                return "Return qty for '{$name}' ({$qty}) exceeds the approved QC rejected-without-deduction balance ({$allowed}).";
+            }
+        }
+
+        return null;
     }
 }

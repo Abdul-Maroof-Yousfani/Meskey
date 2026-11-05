@@ -307,6 +307,7 @@ class DeliveryOrderController extends Controller
 
             $raw_vouchers = $request->receipt_vouchers ?? [];
             $salesOrder = SalesOrder::find($request->sale_order_id);
+            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($request->sale_order_id, $request->customer_id);
 
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
@@ -377,6 +378,7 @@ class DeliveryOrderController extends Controller
                                 ->sum('debit_amount');
 
                             $spent += $jv_spent;
+                            $spent += $soLevelJvDeductions[$rv->id] ?? 0;
 
                             $dpv_refunded = (float) DB::table('payment_voucher_data')
                                 ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
@@ -880,9 +882,11 @@ class DeliveryOrderController extends Controller
             ])
                 ->where("customer_id", $customer_id)
                 ->where("am_approval_status", "approved")
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
                 ->get();
 
-
+            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($sale_order_id, $customer_id);
 
             $dpvRefunds = DB::table('payment_voucher_data')
                 ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
@@ -943,6 +947,7 @@ class DeliveryOrderController extends Controller
                     ->sum('debit_amount');
 
                 $spent += $jv_spent;
+                $spent += $soLevelJvDeductions[$rv->id] ?? 0;
 
                 $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent));
 
@@ -973,6 +978,87 @@ class DeliveryOrderController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * SO-level JV debits ("SO / DO" lines in a JV that carry only sales_order_id, without a
+     * receipt_voucher_id or delivery_order_id) move advance out of the Sale Order's pool without
+     * naming which RV it came from. Spread that total FIFO over the SO's RVs so that every RV
+     * balance shown/consumed by a Delivery Order already reflects the transfer.
+     *
+     * @return array<int, float> [receipt_voucher_id => amount to deduct]
+     */
+    private function getSoLevelJvDeductionsByRv($soId, $customerId, $excludeDoId = null): array
+    {
+        $soId = (int) $soId;
+        if (!$soId) {
+            return [];
+        }
+
+        $totalSoLevelDebit = (float) DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_vouchers.am_approval_status', 'approved')
+            ->where('journal_voucher_details.sales_order_id', $soId)
+            ->whereNull('journal_voucher_details.receipt_voucher_id')
+            ->whereNull('journal_voucher_details.delivery_order_id')
+            ->sum('journal_voucher_details.debit_amount');
+
+        if ($totalSoLevelDebit <= 0) {
+            return [];
+        }
+
+        $rvs = DB::table('receipt_voucher_items')
+            ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
+            ->whereNull('receipt_vouchers.deleted_at')
+            ->where('receipt_vouchers.am_approval_status', 'approved')
+            ->where('receipt_vouchers.customer_id', $customerId)
+            ->where('receipt_voucher_items.reference_type', 'sale_order')
+            ->where('receipt_voucher_items.reference_id', $soId)
+            ->groupBy('receipt_vouchers.id', 'receipt_vouchers.created_at')
+            ->orderBy('receipt_vouchers.created_at')
+            ->orderBy('receipt_vouchers.id')
+            ->select('receipt_vouchers.id', DB::raw('SUM(receipt_voucher_items.net_amount) as linked_amount'))
+            ->get();
+
+        $deductions = [];
+        $left = $totalSoLevelDebit;
+
+        foreach ($rvs as $rv) {
+            if ($left <= 0) {
+                break;
+            }
+
+            $doSpent = (float) DB::table('delivery_order_receipt_voucher')
+                ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
+                ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
+                ->where('delivery_order.so_id', $soId)
+                ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
+                ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                ->when($excludeDoId, function ($q) use ($excludeDoId) {
+                    $q->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $excludeDoId);
+                })
+                ->sum('delivery_order_receipt_voucher.amount');
+
+            $rvJvSpent = (float) DB::table('journal_voucher_details')
+                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                ->whereNull('journal_vouchers.deleted_at')
+                ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_vouchers.am_approval_status', 'approved')
+                ->where('journal_voucher_details.receipt_voucher_id', $rv->id)
+                ->sum('journal_voucher_details.debit_amount');
+
+            $available = max(0, (float) $rv->linked_amount - $doSpent - $rvJvSpent);
+            $deduct = min($available, $left);
+
+            if ($deduct > 0) {
+                $deductions[$rv->id] = $deduct;
+                $left -= $deduct;
+            }
+        }
+
+        return $deductions;
     }
 
     public function get_journal_vouchers(Request $request)
@@ -1146,6 +1232,8 @@ class DeliveryOrderController extends Controller
                 ];
             }
 
+            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($delivery_order->so_id, $delivery_order->customer_id, $delivery_order->id);
+
             $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
                 ->whereHas("items", function ($query) use ($delivery_order) {
                     $query->where("reference_type", "sale_order")
@@ -1153,8 +1241,9 @@ class DeliveryOrderController extends Controller
                 })
                 ->where("customer_id", $delivery_order->customer_id)
                 ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
                 ->get()
-                ->map(function ($rv) use ($delivery_order, &$dpvPool) {
+                ->map(function ($rv) use ($delivery_order, &$dpvPool, $soLevelJvDeductions) {
                     $linked_amount = $rv->items->where("reference_type", "sale_order")
                         ->where("reference_id", $delivery_order->so_id)
                         ->sum("net_amount");
@@ -1183,6 +1272,8 @@ class DeliveryOrderController extends Controller
                         ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
                         ->where('payment_voucher_data.delivery_order_id', $delivery_order->id)
                         ->sum('payment_voucher_data.net_amount');
+
+                    $spent += $soLevelJvDeductions[$rv->id] ?? 0;
 
                     $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent) - $thisDoRefund);
 
@@ -1367,6 +1458,7 @@ class DeliveryOrderController extends Controller
             $delivery_order->receipt_vouchers()->detach();
 
             $salesOrder = SalesOrder::find($request->sale_order_id);
+            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($request->sale_order_id, $request->customer_id, $delivery_order->id);
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
                     if (str_starts_with($rv_val, 'adv_')) {
@@ -1425,6 +1517,7 @@ class DeliveryOrderController extends Controller
                                 ->sum('debit_amount');
 
                             $spent += $jv_spent;
+                            $spent += $soLevelJvDeductions[$rv->id] ?? 0;
 
                             $dpv_refunded = (float) DB::table('payment_voucher_data')
                                 ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')

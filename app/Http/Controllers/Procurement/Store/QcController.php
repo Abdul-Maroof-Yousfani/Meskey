@@ -442,43 +442,81 @@ class QcController extends Controller
         // $stock->save();
 
         
-        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        $purchase_receiving_data = PurchaseOrderReceivingData::with('purchase_order_data')->find($id);
 
+        if (!$purchase_receiving_data) {
+            return response()->json(["message" => "GRN item not found."], 404);
+        }
 
-        $tolerance = $purchase_receiving_data->tolerance;
+        if ($purchase_receiving_data->qc()->exists()) {
+            return response()->json(["message" => "QC already exists for this GRN item. Please edit it instead."], 422);
+        }
 
         $isBag = $purchase_receiving_data->category_id == 38;
-        $qcParametersOk = $isBag ? areQcParametersOk($request) : true;
-        
-        if ($isBag) {
-            $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
-            $allowed_value = $min_weight - $tolerance;
-            $is_auto_approval = ($request->sample_average_weight >= $allowed_value) && $qcParametersOk && ($request->rejected_quantity == 0);
-        } else {
-            // For non-bags, auto-approve if no rejected quantity
-            $is_auto_approval = ($request->rejected_quantity == 0);
-        }
+        $is_auto_approval = $this->isQcAutoApprovable($request, $purchase_receiving_data);
 
-        $qc = $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag ?? 0]);
-       
-        if($is_auto_approval) {
-            $qc->am_approval_status = "approved";
-            $qc->am_change_made = 0;
-            $qc->save();
-            approve_qc($qc);
-        }
-        
-        if ($isBag && $net_weights) {
-            foreach($net_weights as $index => $net_weight) {
-                if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
-                $purchase_receiving_data->qc->bags()->create([
-                    "net_weight" => $net_weights[$index],
-                    "bag_weight" => $bag_weights[$index]
-                ]);
+        DB::transaction(function () use ($request, $purchase_receiving_data, $isBag, $is_auto_approval, $net_weights, $bag_weights) {
+            $qc = $purchase_receiving_data->qc()->create([
+                ...collect($request->validated())->except("net_weight", "bag_weight"),
+                "deduction_per_bag" => $request->deduction_per_bag ?? 0,
+            ]);
+
+            $this->saveQcBags($qc, $isBag, $net_weights, $bag_weights);
+
+            if ($is_auto_approval) {
+                $this->autoApproveQc($qc);
             }
-        }
+        });
 
         return response()->json(["qc has been stored"], 200);
+    }
+
+    /**
+     * Auto-approval rules (same for create and edit):
+     * - Bags (category 38): sample average weight >= PO min weight - tolerance,
+     *   printing + bottom stitching + ready to pack all OK, and no rejected qty.
+     * - Other items: no rejected qty.
+     */
+    private function isQcAutoApprovable(QCRequest $request, PurchaseOrderReceivingData $grnLine): bool
+    {
+        $noRejection = (float) $request->rejected_quantity == 0;
+
+        if ($grnLine->category_id != 38) {
+            return $noRejection;
+        }
+
+        $min_weight = (float) ($grnLine->purchase_order_data->min_weight ?? 0);
+        $allowed_value = $min_weight - (float) $grnLine->tolerance;
+
+        return ((float) $request->sample_average_weight >= $allowed_value)
+            && areQcParametersOk($request)
+            && $noRejection;
+    }
+
+    private function autoApproveQc(PurchaseBagQC $qc): void
+    {
+        $qc->am_approval_status = "approved";
+        $qc->is_auto_approved = 1;
+        $qc->am_change_made = 1;
+        $qc->save();
+
+        approve_qc($qc);
+        $qc->postStockIn();
+    }
+
+    private function saveQcBags(PurchaseBagQC $qc, bool $isBag, $net_weights, $bag_weights): void
+    {
+        if (!$isBag || !$net_weights) {
+            return;
+        }
+
+        foreach ($net_weights as $index => $net_weight) {
+            if (is_null($net_weight) || is_null($bag_weights[$index] ?? null)) continue;
+            $qc->bags()->create([
+                "net_weight" => $net_weight,
+                "bag_weight" => $bag_weights[$index],
+            ]);
+        }
     }
     public function update(QCRequest $request) {
         $net_weights = $request->net_weight;
@@ -486,41 +524,40 @@ class QcController extends Controller
         $id = $request->purchase_receiving_data_id;
 
 
-        $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+        $purchase_receiving_data = PurchaseOrderReceivingData::with('purchase_order_data', 'qc')->find($id);
+        $qc = $purchase_receiving_data?->qc;
 
+        if (!$qc) {
+            return response()->json(["message" => "QC not found for this GRN item."], 404);
+        }
 
-        $tolerance = $purchase_receiving_data->tolerance;
+        $currentStatus = strtolower($qc->am_approval_status ?? 'pending');
+        if (in_array($currentStatus, ['approved', 'rejected'])) {
+            return response()->json(["message" => "This QC is already {$currentStatus} and cannot be edited."], 422);
+        }
 
         $isBag = $purchase_receiving_data->category_id == 38;
-        $qcParametersOk = $isBag ? areQcParametersOk($request) : true;
-        
-        if ($isBag) {
-            $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
-            $allowed_value = $min_weight - $tolerance;
-            $is_auto_approval = ($request->sample_average_weight >= $allowed_value) && $qcParametersOk;
-        } else {
-            $is_auto_approval = ($request->rejected_quantity == 0);
-        }
-     
-        $purchase_receiving_data->qc()->update([...collect($request->validated())->except("net_weight", "bag_weight"), "deduction_per_bag" => $request->deduction_per_bag ?? 0]);
-        if($is_auto_approval) {
-            $purchase_receiving_data->qc->am_approval_status = "approved";
-            $purchase_receiving_data->qc->save();
-            approve_qc($purchase_receiving_data->qc);
-        }
-        $purchase_receiving_data->qc->bags()->delete();
+        $is_auto_approval = $this->isQcAutoApprovable($request, $purchase_receiving_data);
 
+        DB::transaction(function () use ($request, $qc, $isBag, $is_auto_approval, $net_weights, $bag_weights) {
+            $qc->update([
+                ...collect($request->validated())->except("net_weight", "bag_weight"),
+                "deduction_per_bag" => $request->deduction_per_bag ?? 0,
+                // The QC form only splits accepted/rejected; the approver re-splits
+                // rejected into with/without deduction on the approval screen.
+                "rejection_return" => 0,
+                // An edited QC (including a reverted one) goes back to the approver as pending.
+                "am_approval_status" => "pending",
+                "am_change_made" => 1,
+            ]);
 
+            $qc->bags()->delete();
+            $this->saveQcBags($qc, $isBag, $net_weights, $bag_weights);
 
-        if ($isBag && $net_weights) {
-            foreach($net_weights as $index => $net_weight) {
-                if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
-                $purchase_receiving_data->qc->bags()->create([
-                    "net_weight" => $net_weights[$index],
-                    "bag_weight" => $bag_weights[$index]
-                ]);
+            if ($is_auto_approval) {
+                $this->autoApproveQc($qc);
             }
-        }
+        });
 
         return response()->json(["qc has been updated"], 200);
     }
