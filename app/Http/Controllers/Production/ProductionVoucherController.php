@@ -3302,10 +3302,9 @@ class ProductionVoucherController extends Controller
     private function machineJobOrdersOf($machineTimeIds): array
     {
         return \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $machineTimeIds)
-            ->get(['production_machine_id', 'job_order_id', 'job_order_ids'])
+            ->get(['production_machine_id', 'job_order_ids'])
             ->groupBy('production_machine_id')
             ->map(fn ($rows) => [
-                'job_order_id' => $rows->first()->job_order_id,
                 'job_order_ids' => $rows->first()->job_order_ids,
             ])
             ->all();

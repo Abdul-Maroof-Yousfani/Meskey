@@ -17,7 +17,6 @@ class ProductionVoucherMachineTime extends Model
         'machine_plan_setting_id',
         'production_voucher_id',
         'production_machine_id',
-        'job_order_id',
         'job_order_ids',
         'start_time',
         'end_time',
@@ -38,16 +37,17 @@ class ProductionVoucherMachineTime extends Model
         return $this->belongsTo(MachinePlanSetting::class);
     }
 
-    public function jobOrder()
-    {
-        return $this->belongsTo(\App\Models\Production\JobOrder\JobOrder::class, 'job_order_id');
-    }
-
-    /** All job orders this machine row is created against (falls back to the single job_order_id). */
+    /** All job orders this machine row is created against (stored in job_order_ids). */
     public function getJobOrderIdListAttribute(): array
     {
-        $ids = $this->job_order_ids ?: ($this->job_order_id ? [$this->job_order_id] : []);
-        return array_values(array_unique(array_map('intval', $ids)));
+        $ids = (array) ($this->job_order_ids ?: []);
+        return array_values(array_unique(array_filter(array_map('intval', $ids))));
+    }
+
+    /** Job order models for job_order_ids. */
+    public function getJobOrdersAttribute()
+    {
+        return \App\Models\Production\JobOrder\JobOrder::whereIn('id', $this->job_order_id_list)->get();
     }
 
     public function productionVoucher()

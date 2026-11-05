@@ -48,7 +48,6 @@ class MachinePlanSettingController extends Controller
                     if (!empty($matchingJobOrderIds)) {
                         $sq->orWhereHas('items', function ($iq) use ($matchingJobOrderIds) {
                             $iq->where(function ($jq) use ($matchingJobOrderIds) {
-                                $jq->whereIn('job_order_id', $matchingJobOrderIds);
                                 foreach ($matchingJobOrderIds as $joId) {
                                     $jq->orWhereJsonContains('job_order_ids', (int) $joId);
                                 }
@@ -275,7 +274,6 @@ class MachinePlanSettingController extends Controller
                             'machine_plan_setting_id' => $machinePlanSetting->id,
                             'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                             'production_machine_id' => $machineData['production_machine_id'],
-                            'job_order_id' => $machineData['job_order_id'] ?? null,
                             'job_order_ids' => !empty($machineData['job_order_id']) ? [(int) $machineData['job_order_id']] : null,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
@@ -558,7 +556,6 @@ class MachinePlanSettingController extends Controller
                             'machine_plan_setting_id' => $machinePlanSetting->id,
                             'production_voucher_id' => $machinePlanSetting->production_voucher_id,
                             'production_machine_id' => $machineData['production_machine_id'],
-                            'job_order_id' => $machineData['job_order_id'] ?? null,
                             'job_order_ids' => !empty($machineData['job_order_id']) ? [(int) $machineData['job_order_id']] : null,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
@@ -868,7 +865,6 @@ class MachinePlanSettingController extends Controller
         ))));
 
         return [
-            'job_order_id' => $ids[0] ?? null,
             'job_order_ids' => $ids ?: null,
         ];
     }
