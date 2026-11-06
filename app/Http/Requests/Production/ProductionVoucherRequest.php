@@ -72,6 +72,10 @@ class ProductionVoucherRequest extends FormRequest
                 'nullable',
                 'exists:products,id'
             ],
+            'machine_plan_setting_id' => [
+                'nullable',
+                'integer'
+            ],
             'remarks' => [
                 'nullable',
                 // 'string',
@@ -285,7 +289,8 @@ class ProductionVoucherRequest extends FormRequest
                     );
                 } else if ($this->filled('prod_date')) {
                     $prodDate = $this->prod_date;
-                    $voucherId = $this->route('production_voucher');
+                    $voucherId = $this->voucherId();
+                    $formattedDate = \Carbon\Carbon::parse($prodDate)->format('d-m-Y');
 
                     $voucherHasTimes = false;
                     if ($voucherId) {
@@ -293,17 +298,13 @@ class ProductionVoucherRequest extends FormRequest
                         $voucherHasTimes = $pv && $pv->plant_id == $plantId && $pv->productionVoucherMachineTimes->isNotEmpty();
                     }
 
-                    if (!$voucherHasTimes) {
-                        $plan = \App\Models\Production\MachinePlanSetting::with('items')
-                            ->where('plant_id', $plantId)
-                            ->whereDate('date', $prodDate)
-                            ->when($voucherId, function ($q) use ($voucherId) {
-                                $q->orWhere('production_voucher_id', $voucherId);
-                            })
-                            ->first();
+                    // Which of the day's plans this voucher belongs to (one voucher per plan)
+                    $choice = $this->planChoice();
+                    $plan = $choice['plan'];
 
-                        $formattedDate = \Carbon\Carbon::parse($prodDate)->format('d-m-Y');
-
+                    if ($choice['error']) {
+                        $validator->errors()->add('machine_plan_setting_id', $choice['error']);
+                    } elseif (!$voucherHasTimes) {
                         if (!$plan) {
                             $validator->errors()->add(
                                 'plant_id',
@@ -316,10 +317,96 @@ class ProductionVoucherRequest extends FormRequest
                             );
                         }
                     }
+
+                    // Machine times must not overlap each other or the plant's other plans / vouchers that day
+                    if (!$choice['error']) {
+                        $conflicts = app(\App\Services\Production\Milling\ProductionDayPlanService::class)->timeConflicts(
+                            (int) $plantId,
+                            $prodDate,
+                            \App\Services\Production\Milling\ProductionDayPlanService::slotsFromRequest($this, false),
+                            $plan?->id,
+                            array_filter([$voucherId, $plan?->production_voucher_id])
+                        );
+                        foreach (array_slice($conflicts, 0, 6) as $message) {
+                            $validator->errors()->add('machine_times', $message);
+                        }
+                    }
                 }
             }
+
+            // Costing needs raw material in and finished goods out
+            $this->validateInputAndHeadOutput($validator);
         });
     }
+
+    /** At least one complete input row and one head product output row. */
+    private function validateInputAndHeadOutput($validator): void
+    {
+        $inputProductIds = (array) $this->input('input_product_id', []);
+        $inputLocationIds = (array) $this->input('input_location_id', []);
+        $inputQtys = (array) $this->input('input_qty', []);
+
+        $hasInput = false;
+        foreach ($inputProductIds as $i => $productId) {
+            if (!empty($productId) && !empty($inputLocationIds[$i]) && (float) ($inputQtys[$i] ?? 0) > 0) {
+                $hasInput = true;
+                break;
+            }
+        }
+        if (!$hasInput) {
+            $validator->errors()->add('input_product_id', 'At least one Production Input (product, location and qty) is required.');
+        }
+
+        $outputProductIds = (array) $this->input('output_product_id', []);
+        $outputQtys = (array) $this->input('output_qty', []);
+        $outputBags = (array) $this->input('output_no_of_bags', []);
+        $outputSizes = (array) $this->input('output_bag_size', []);
+        $headProductId = $this->input('product_id');
+
+        $rowProductIds = [];
+        foreach ($outputProductIds as $i => $productId) {
+            $qty = (float) ($outputQtys[$i] ?? 0);
+            if ($qty <= 0) {
+                $qty = (float) ($outputBags[$i] ?? 0) * (float) ($outputSizes[$i] ?? 0);
+            }
+            if (!empty($productId) && $qty > 0) {
+                $rowProductIds[] = $productId;
+            }
+        }
+
+        // Same rule as the costing: the voucher's head product, or a 'head' product that is not a By / B2 product
+        $flags = \App\Models\Product::whereIn('id', array_unique($rowProductIds))->pluck('product_category_flags', 'id');
+        $hasHead = collect($rowProductIds)->contains(function ($productId) use ($headProductId, $flags) {
+            return $productId == $headProductId || ($flags[$productId] ?? null) === 'head';
+        });
+
+        if (!$hasHead) {
+            $validator->errors()->add('output_product_id', 'At least one Head Product output with qty is required; without it the production cost has nowhere to go.');
+        }
+    }
+
+    /** Id of the voucher being updated (null on create). */
+    public function voucherId(): ?int
+    {
+        $id = $this->route('production_voucher');
+        return $id ? (int) (is_object($id) ? $id->id : $id) : null;
+    }
+
+    /** The day's Machine Plan this voucher is saved against; see ProductionDayPlanService::planChoiceForVoucher. */
+    public function planChoice(): array
+    {
+        if ($this->planChoiceCache === null) {
+            $this->planChoiceCache = app(\App\Services\Production\Milling\ProductionDayPlanService::class)->planChoiceForVoucher(
+                $this->plant_id ? (int) $this->plant_id : null,
+                $this->prod_date,
+                $this->filled('machine_plan_setting_id') ? (int) $this->machine_plan_setting_id : null,
+                $this->voucherId()
+            );
+        }
+        return $this->planChoiceCache;
+    }
+
+    private ?array $planChoiceCache = null;
 
     /**
      * Get custom error messages for validator errors.

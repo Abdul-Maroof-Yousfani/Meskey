@@ -111,14 +111,8 @@ class ProductionOutputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
-            // The request's own Production Voucher first; otherwise the latest voucher of that date and plant
-            $matchingVoucherId = $analysisReq?->production_voucher_id
-                ?: \App\Models\Production\ProductionVoucher::whereDate('prod_date', $request->date)
-                    ->when($request->plant_id ?: $analysisReq?->plant_id, function($q, $pId) {
-                        $q->where(fn($sub) => $sub->where('plant_id', $pId)->orWhereNull('plant_id'));
-                    })
-                    ->latest('id')
-                    ->value('id');
+            // The request's own voucher for now; once the readings are saved the analysis is linked to the voucher that fits it
+            $matchingVoucherId = $analysisReq?->production_voucher_id;
 
             $firstProduct = ProductionAnalysis::getFirstProductForRun(
                 $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
@@ -187,10 +181,13 @@ class ProductionOutputAnalysisController extends Controller
                 }
             }
 
+            // Link to the voucher whose machines were running at the reading time (or the request's voucher)
+            app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis);
+
             DB::commit();
 
             try {
-                app(\App\Services\AutoAnalysisRequestService::class)->onAnalysisCompleted($analysis);
+                app(\App\Services\Production\Milling\AutoAnalysisRequestService::class)->onAnalysisCompleted($analysis);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('AutoAnalysis onAnalysisCompleted (output) error: ' . $e->getMessage());
             }
@@ -295,6 +292,7 @@ class ProductionOutputAnalysisController extends Controller
             DB::beginTransaction();
 
             $analysis = ProductionAnalysis::findOrFail($id);
+            $previousRequestId = $analysis->analysis_request_id;
 
             $analysisReq = null;
             if ($request->filled('analysis_request_id')) {
@@ -348,6 +346,9 @@ class ProductionOutputAnalysisController extends Controller
                     }
                 }
             }
+
+            // Link to the fitting voucher; a request this analysis moved away from goes back to pending
+            app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis, $previousRequestId);
 
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Analysis updated successfully']);

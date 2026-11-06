@@ -597,6 +597,12 @@
                                                 <div id="machinePlanSettingBadgeCreate"></div>
                                             </div>
                                         </div>
+                                        {{-- A plant can have several Machine Plans on a day (one voucher each): pick which one this voucher is for --}}
+                                        <div id="voucherPlanPicker" class="d-flex align-items-center flex-wrap mb-2" style="display: none !important; gap: 8px;">
+                                            <label for="machine_plan_setting_id" class="mb-0" style="font-weight: 600; font-size: 13px;">Machine Plan:</label>
+                                            <select name="machine_plan_setting_id" id="machine_plan_setting_id" class="form-control form-control-sm" style="width: auto; min-width: 260px;"></select>
+                                            <small class="text-muted">This plant has several plans on this date; each plan gets its own voucher.</small>
+                                        </div>
                                         <div id="productionMachinesContainer" class="p-3 border">
                                             <!-- Machines will be loaded here -->
                                         </div>
@@ -1126,7 +1132,26 @@
 
         var isResettingPlant = false;
 
-        function loadMachinesByPlant() {
+        // Fill the Machine Plan picker; shown only when the plant has more than one plan that day
+        function renderVoucherPlanPicker(response) {
+            var plans = (response && response.plans) || [];
+            var $sel = $('#machine_plan_setting_id');
+            $sel.empty();
+            $.each(plans, function(i, p) {
+                $sel.append($('<option></option>').val(p.id).text(p.label).prop('disabled', !p.available));
+            });
+            if (response && response.machine_plan_setting) {
+                $sel.val(response.machine_plan_setting.id);
+            }
+            $('#voucherPlanPicker').attr('style', plans.length > 1 ? 'gap: 8px;' : 'display: none !important; gap: 8px;');
+        }
+
+        $(document).on('change', '#machine_plan_setting_id', function() {
+            loadMachinesByPlant($(this).val());
+        });
+
+        // planId: set only when picked on the plan picker; plant / date changes start from the default plan
+        function loadMachinesByPlant(planId) {
             if (isResettingPlant) {
                 return;
             }
@@ -1156,10 +1181,12 @@
                     date: date,
                     location_id: locationId,
                     sub_location_id: subLocationId,
+                    machine_plan_setting_id: (typeof planId === 'string' || typeof planId === 'number') ? planId : '',
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
                     container.empty();
+                    renderVoucherPlanPicker(response);
 
                     if (!response || response.success === false || !response.machines || response.machines.length === 0) {
                         section.hide();

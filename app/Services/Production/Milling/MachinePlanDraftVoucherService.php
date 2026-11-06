@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Production\Milling;
 
 use App\Http\Controllers\Production\ProductionVoucherController;
 use App\Models\Production\MachinePlanSetting;

@@ -33,8 +33,9 @@
         return $html;
     };
 @endphp
+{{-- Options source for "Add More" rows only. No name: it must not be submitted, or it shifts output_product_id[] against output_qty[] --}}
 <div style="display:none;" class="commodity-select-template">
-    <select class="form-control select2" name="output_product_id[]">
+    <select class="form-control" disabled>
         <option value="">Select Commodity</option>
         @foreach($allByCommodities as $item)
             <option value="{{ $item->id }}">{{ $item->name }}</option>

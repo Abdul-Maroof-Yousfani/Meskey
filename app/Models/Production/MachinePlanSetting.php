@@ -44,6 +44,19 @@ class MachinePlanSetting extends Model
         return $this->belongsTo(ProductionVoucher::class);
     }
 
+    /**
+     * Once its Production Voucher is completed (no longer a draft), the plan's machine rows are the
+     * voucher's actual times; they can then only be changed from the Production Voucher.
+     */
+    public function isLocked(): bool
+    {
+        if (!$this->production_voucher_id) {
+            return false;
+        }
+        $voucher = $this->relationLoaded('productionVoucher') ? $this->productionVoucher : $this->productionVoucher()->first();
+        return $voucher && !$voucher->is_draft;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

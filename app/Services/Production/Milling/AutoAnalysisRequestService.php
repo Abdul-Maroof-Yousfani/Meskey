@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Production\Milling;
 
 use App\Http\Controllers\Production\ProductionAnalysisRequestController;
 use App\Models\Master\Plant;
@@ -49,7 +49,7 @@ class AutoAnalysisRequestService
             }
 
             // 2. Check if an active breakdown currently exists for this plant
-            if ($this->hasActiveBreakdown($plant, $now)) {
+            if ($this->hasActiveBreakdown($plant, $now, $runningInfo['plan'] ?? null)) {
                 $skipped[] = [
                     'plant_id' => $plant->id,
                     'plant_name' => $plant->name,
@@ -234,7 +234,7 @@ class AutoAnalysisRequestService
     /**
      * Check if the plant or running machine currently has an active breakdown.
      */
-    public function hasActiveBreakdown(Plant $plant, ?Carbon $atTime = null): bool
+    public function hasActiveBreakdown(Plant $plant, ?Carbon $atTime = null, ?MachinePlanSetting $runningPlan = null): bool
     {
         $atTime = $atTime ?: now();
         $currentTime = $atTime->format('H:i:s');
@@ -272,10 +272,11 @@ class AutoAnalysisRequestService
             }
         }
 
-        // 2. Check MachineTimeBreakdown on enabled machines of the day's plans
+        // 2. Check MachineTimeBreakdown on enabled machines of the running plan (or all of the day's plans)
         $plans = MachinePlanSetting::with(['items.breakdowns'])
             ->where('plant_id', $plant->id)
             ->whereDate('date', $todayDate)
+            ->when($runningPlan, fn ($q) => $q->where('id', $runningPlan->id))
             ->latest('id')
             ->get();
 
@@ -350,6 +351,20 @@ class AutoAnalysisRequestService
         if (!$referenceTimestamp) {
             $startTimeStr = $runningInfo['machine']->start_time ?? ($runningInfo['plan'] ? $runningInfo['plan']->created_at->format('H:i:s') : '00:00:00');
             $referenceTimestamp = Carbon::parse($atTime->toDateString() . ' ' . $startTimeStr);
+        }
+
+        // Another plan (its own voucher) took over since the last request: its interval starts from its own start time
+        $runningPlan = $runningInfo['plan'] ?? null;
+        $slotStart = $runningInfo['machine']->start_time ?? null;
+        if ($lastRequest && $runningPlan && $slotStart
+            && $lastRequest->machine_plan_setting_id && $lastRequest->machine_plan_setting_id != $runningPlan->id) {
+            $runStart = Carbon::parse($atTime->toDateString() . ' ' . $slotStart);
+            if ($runStart->gt($atTime)) {
+                $runStart->subDay(); // overnight slot that began yesterday evening
+            }
+            if ($referenceTimestamp->lt($runStart)) {
+                $referenceTimestamp = $runStart;
+            }
         }
 
         return $referenceTimestamp;
@@ -582,7 +597,7 @@ class AutoAnalysisRequestService
         $todayDate = $atTime->format('Y-m-d');
 
         $runningInfo = $this->isPlantRunning($plant, $atTime);
-        $hasBreakdown = $this->hasActiveBreakdown($plant, $atTime);
+        $hasBreakdown = $this->hasActiveBreakdown($plant, $atTime, $runningInfo['is_running'] ? $runningInfo['plan'] : null);
 
         $pendingInput = ProductionAnalysisRequest::where('plant_id', $plant->id)
             ->where('type', ProductionAnalysisRequest::TYPE_INPUT)

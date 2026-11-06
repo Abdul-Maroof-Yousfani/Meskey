@@ -208,7 +208,7 @@ class ProductionVoucher extends Model
         $this->traitOnApprovalComplete();
 
         try {
-            $costingService = app(\App\Services\ProductionCostingService::class);
+            $costingService = app(\App\Services\Production\Milling\ProductionCostingService::class);
             $costingService->syncProductionVoucher($this);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Production costing sync on approval complete failed for PV #' . $this->id . ': ' . $e->getMessage(), [
@@ -226,7 +226,7 @@ class ProductionVoucher extends Model
         $this->traitOnApprovalRejected();
 
         try {
-            $costingService = app(\App\Services\ProductionCostingService::class);
+            $costingService = app(\App\Services\Production\Milling\ProductionCostingService::class);
             $costingService->deleteVoucherFinancials($this);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Production costing cleanup on rejection failed for PV #' . $this->id . ': ' . $e->getMessage(), [

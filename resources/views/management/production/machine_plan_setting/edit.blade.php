@@ -3,7 +3,18 @@
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.machine-plan-setting') }}" />
 
+    @php $planIsLocked = $machinePlanSetting->isLocked(); @endphp
     <div class="row form-mar">
+        @if($planIsLocked)
+            <div class="col-md-12">
+                <div class="alert alert-warning py-2 px-3 mb-2" style="font-size: 12px;">
+                    <i class="fa fa-lock mr-1"></i>
+                    Production Voucher <strong>{{ $machinePlanSetting->productionVoucher->prod_no }}</strong> of this plan is already completed.
+                    Its machine times are the voucher's actual times, so change them from the Production Voucher.
+                    To run another plan on this day, use Create with <strong>Create as New Voucher</strong>.
+                </div>
+            </div>
+        @endif
         <div class="col-md-12">
             <h6 class="header-heading-sepration mb-2">Machine Plan Setting Information</h6>
             <div class="row">
@@ -331,7 +342,9 @@
     <div class="row bottom-button-bar text-right mt-3">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Update Machine Plan Setting</button>
+            @unless($planIsLocked)
+                <button type="submit" class="btn btn-primary submitbutton">Update Machine Plan Setting</button>
+            @endunless
         </div>
     </div>
 </form>
@@ -580,7 +593,7 @@
         $.ajax({
             url: '{{ route("getMachinesByPlant") }}',
             type: 'GET',
-            data: { plant_id: plantId, date: date },
+            data: { plant_id: plantId, date: date, plan_id: {{ $machinePlanSetting->id }} },
             success: function (response) {
                 container.empty();
                 if (response.machines && response.machines.length > 0) {

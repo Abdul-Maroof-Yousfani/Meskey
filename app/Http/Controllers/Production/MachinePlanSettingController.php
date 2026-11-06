@@ -17,7 +17,7 @@ use App\Models\Production\PlantBreakdownItem;
 use App\Models\Production\ProductionVoucher;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Master\CompanyLocation;
-use App\Services\MachinePlanDraftVoucherService;
+use App\Services\Production\Milling\MachinePlanDraftVoucherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -132,12 +132,8 @@ class MachinePlanSettingController extends Controller
             $machinePlanSettingData['company_id'] = $companyId;
             $machinePlanSettingData['user_id'] = auth()->user()->id;
 
-            $existingPlan = MachinePlanSetting::where('plant_id', $request->plant_id)
-                ->whereDate('date', $request->date)
-                ->when($companyId, function ($q) use ($companyId) {
-                    return $q->where('company_id', $companyId);
-                })
-                ->first();
+            // Same plant + date: update the picked plan, unless 'Create as New Voucher' asks for another plan
+            $existingPlan = $request->targetPlan();
 
             if ($existingPlan) {
                 $existingPlan->update($machinePlanSettingData);
@@ -298,7 +294,8 @@ class MachinePlanSettingController extends Controller
             }
 
             if ($hasBreakdownItems) {
-                $plantBreakdown = PlantBreakdown::updateOrCreate(
+                // One plant breakdown per plant and day, shared by the day's plans
+                $plantBreakdown = PlantBreakdown::firstOrCreate(
                     [
                         'company_id' => $request->company_id,
                         'date' => $request->date,
@@ -309,6 +306,7 @@ class MachinePlanSettingController extends Controller
                         'user_id' => auth()->user()->id,
                     ]
                 );
+                $plantBreakdown->update(['user_id' => auth()->user()->id]);
 
                 $plantBreakdown->items()->delete();
 
@@ -343,7 +341,7 @@ class MachinePlanSettingController extends Controller
             DB::commit();
 
             try {
-                app(\App\Services\AutoAnalysisRequestService::class)->checkAndGenerateRequests();
+                app(\App\Services\Production\Milling\AutoAnalysisRequestService::class)->checkAndGenerateRequests();
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('AutoAnalysis checkAndGenerateRequests error on machine plan save: ' . $e->getMessage());
             }
@@ -601,7 +599,8 @@ class MachinePlanSettingController extends Controller
                     $plantBreakdown->update([
                         'date' => $request->date,
                         'plant_id' => $request->plant_id,
-                        'production_voucher_id' => $machinePlanSetting->production_voucher_id,
+                        // Shared by the day's plans: keep the voucher it is already linked to
+                        'production_voucher_id' => $plantBreakdown->production_voucher_id ?: $machinePlanSetting->production_voucher_id,
                         'user_id' => auth()->user()->id,
                     ]);
                 }
@@ -658,10 +657,23 @@ class MachinePlanSettingController extends Controller
     {
         DB::beginTransaction();
         try {
-            $machinePlanSetting = MachinePlanSetting::findOrFail($id);
+            $machinePlanSetting = MachinePlanSetting::with('productionVoucher')->findOrFail($id);
 
-            // Also delete associated PlantBreakdown if it exists
-            $plantBreakdown = PlantBreakdown::where('date', $machinePlanSetting->date)
+            // Its machine rows are the completed voucher's actual times: keep them
+            if ($machinePlanSetting->isLocked()) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'This plan cannot be deleted: its Production Voucher ' . $machinePlanSetting->productionVoucher->prod_no . ' is already completed.'
+                ], 422);
+            }
+
+            // The plant breakdown is shared by the day's plans: delete it only with the last plan
+            $otherPlansExist = MachinePlanSetting::where('plant_id', $machinePlanSetting->plant_id)
+                ->whereDate('date', $machinePlanSetting->date)
+                ->where('id', '!=', $machinePlanSetting->id)
+                ->exists();
+
+            $plantBreakdown = $otherPlansExist ? null : PlantBreakdown::whereDate('date', $machinePlanSetting->date)
                 ->where('plant_id', $machinePlanSetting->plant_id)
                 ->where('company_id', $machinePlanSetting->company_id)
                 ->first();
@@ -698,17 +710,37 @@ class MachinePlanSettingController extends Controller
             })
             ->get();
 
-        // Check if there is an existing machine plan setting for this plant and selected date
+        // A plant can have several plans (one voucher each) on a date: list them and load the picked one (latest by default)
         $existingSetting = null;
+        $dayPlans = collect();
         if ($request->filled('plant_id') && $request->filled('date')) {
-            $existingSetting = MachinePlanSetting::with('items.breakdowns')
+            $dayPlans = MachinePlanSetting::with(['items.breakdowns', 'items.machine:id,name', 'productionVoucher:id,prod_no,is_draft'])
                 ->where('plant_id', $request->plant_id)
                 ->whereDate('date', $request->date)
                 ->when($request->filled('company_id'), function ($q) use ($request) {
                     return $q->where('company_id', $request->company_id);
                 })
-                ->first();
+                ->orderBy('id')
+                ->get();
+
+            $existingSetting = ($request->filled('plan_id') ? $dayPlans->firstWhere('id', (int) $request->plan_id) : null)
+                ?? $dayPlans->last();
         }
+
+        $existingPlans = $dayPlans->map(function ($plan) {
+            $times = $plan->items->where('is_enabled', true)
+                ->map(fn ($i) => ($i->machine->name ?? 'Machine') . ' ' . \App\Services\Production\Milling\ProductionDayPlanService::formatRange(
+                    \App\Services\Production\Milling\ProductionDayPlanService::slotRange($i->start_time, $i->end_time)
+                ))
+                ->unique()->values()->all();
+
+            return [
+                'id' => $plan->id,
+                'voucher_no' => $plan->productionVoucher->prod_no ?? null,
+                'is_locked' => $plan->isLocked(),
+                'times' => $times,
+            ];
+        })->values();
 
         $machineItemsGrouped = $existingSetting ? $existingSetting->items->groupBy('production_machine_id') : collect();
 
@@ -772,8 +804,10 @@ class MachinePlanSettingController extends Controller
             'existing_plan' => $existingSetting ? [
                 'id' => $existingSetting->id,
                 'production_voucher_id' => $existingSetting->production_voucher_id,
-                'remarks' => $existingSetting->remarks
-            ] : null
+                'remarks' => $existingSetting->remarks,
+                'is_locked' => $existingSetting->isLocked(),
+            ] : null,
+            'existing_plans' => $existingPlans,
         ]);
     }
 

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\AutoAnalysisRequestService;
+use App\Services\Production\Milling\AutoAnalysisRequestService;
 use Illuminate\Console\Command;
 
 class AutoCreateAnalysisRequests extends Command

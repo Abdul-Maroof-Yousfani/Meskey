@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Plant;
 use App\Models\Production\ProductionAnalysisRequest;
-use App\Services\AutoAnalysisRequestService;
+use App\Services\Production\Milling\AutoAnalysisRequestService;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Production\Milling;
 
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Stock;

@@ -514,10 +514,14 @@ class ProductionVoucherController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Apply sorting (default to latest created first)
+        // Apply sorting (default: latest production date first, then the newest voucher of that date)
+        $latestFirst = function ($q) {
+            $q->orderBy('prod_date', 'desc')->orderBy('prod_no', 'desc')->orderBy('id', 'desc');
+        };
+
         if ($request->filled('sort')) {
             $sortField = $request->get('sort');
-            $sortDirection = $request->get('direction', 'desc');
+            $sortDirection = strtolower($request->get('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
             if (in_array($sortField, ['id', 'created_at', 'prod_no', 'prod_date', 'status'])) {
                 $query->orderBy($sortField, $sortDirection);
@@ -525,10 +529,10 @@ class ProductionVoucherController extends Controller
                     $query->orderBy('id', 'desc');
                 }
             } else {
-                $query->latest('id');
+                $latestFirst($query);
             }
         } else {
-            $query->latest('id');
+            $latestFirst($query);
         }
 
         // Paginate results
@@ -1118,18 +1122,34 @@ class ProductionVoucherController extends Controller
         $savedMachineIds = $isVoucherCurrentPlant ? $productionVoucher->productionMachines->pluck('id')->toArray() : [];
         $voucherMachineTimes = $isVoucherCurrentPlant ? $productionVoucher->productionVoucherMachineTimes->groupBy('production_machine_id') : collect([]);
 
-        // 2. Fetch from MachinePlanSetting if date is provided or voucher is linked
-        $machinePlanSetting = null;
-        if ($isVoucherCurrentPlant) {
+        // 2. The day's Machine Plan this voucher is for (a plant can have several plans, one voucher each)
+        $choice = app(\App\Services\Production\Milling\ProductionDayPlanService::class)->planChoiceForVoucher(
+            (int) $plantId,
+            $date,
+            $request->filled('machine_plan_setting_id') ? (int) $request->machine_plan_setting_id : null,
+            $voucherId ? (int) $voucherId : null
+        );
+        $machinePlanSetting = $choice['plan'];
+        $availablePlans = $choice['plans']->filter(
+            fn ($p) => \App\Services\Production\Milling\ProductionDayPlanService::planIsAvailable($p, $voucherId ? (int) $voucherId : null)
+        )->values();
+
+        // Several open plans and none picked yet: start with the first, the form lets the user pick another
+        if (!$machinePlanSetting && !$request->filled('machine_plan_setting_id') && $availablePlans->isNotEmpty()) {
+            $machinePlanSetting = $availablePlans->first();
+        }
+        if (!$machinePlanSetting && $isVoucherCurrentPlant) {
             $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.breakdowns'])
                 ->where('production_voucher_id', $productionVoucher->id)
                 ->first();
         }
-        if (!$machinePlanSetting && $date) {
-            $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.breakdowns'])
-                ->where('plant_id', $plantId)
-                ->whereDate('date', $date)
-                ->first();
+
+        // Moved to another plan of the day: show that plan's times, not this voucher's old ones
+        if ($machinePlanSetting && $productionVoucher && $machinePlanSetting->production_voucher_id
+            && $machinePlanSetting->production_voucher_id != $productionVoucher->id) {
+            $isVoucherCurrentPlant = false;
+            $savedMachineIds = [];
+            $voucherMachineTimes = collect([]);
         }
 
         // Validate Machine Plan Setting existence and having at least one machine record
@@ -1143,7 +1163,7 @@ class ProductionVoucherController extends Controller
                     'has_machines' => false,
                     'machines' => [],
                     'machine_plan_setting' => null,
-                    'message' => "No Machine Plan Setting record found for plant '{$plantName}' on {$formattedDate}. Please create a Machine Plan Setting for this plant and date first."
+                    'message' => $choice['error'] ?? "No Machine Plan Setting record found for plant '{$plantName}' on {$formattedDate}. Please create a Machine Plan Setting for this plant and date first."
                 ]);
             }
 
@@ -1260,12 +1280,32 @@ class ProductionVoucherController extends Controller
                 'date' => $machinePlanSetting->date ? $machinePlanSetting->date->format('d-m-Y') : null,
                 'remarks' => $machinePlanSetting->remarks,
             ] : null,
+            // The day's plans for the plan picker; completed ones belong to other vouchers
+            'plans' => \App\Services\Production\Milling\ProductionDayPlanService::planOptions($choice['plans'], $voucherId ? (int) $voucherId : null),
         ]);
     }
 
     public function store(ProductionVoucherRequest $request)
     {
-        // dd($request);
+        // Each Machine Plan has one voucher. When the picked plan already has its untouched draft voucher,
+        // that draft is completed in place: it keeps its number and its linked requests and analyses.
+        $choicePlan = $request->planChoice()['plan'];
+        $draftVoucher = ($choicePlan && $choicePlan->production_voucher_id)
+            ? ProductionVoucher::find($choicePlan->production_voucher_id)
+            : null;
+
+        if ($draftVoucher && $draftVoucher->is_draft) {
+            $response = $this->update($request, $draftVoucher->id);
+            if ($response->getStatusCode() !== 200) {
+                return $response;
+            }
+            return response()->json([
+                'success' => "Production Voucher {$draftVoucher->prod_no} created successfully.",
+                'redirect' => route('production-voucher.index'),
+                'data' => $response->getData(true)['data'] ?? null,
+            ], 201);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -1313,13 +1353,10 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync($jobOrderIds);
             }
 
-            // Find existing machine plan setting for this plant and date (if any) that has no voucher of its own yet
-            $planSetting = null;
-            if ($productionVoucher->prod_date && $productionVoucher->plant_id) {
-                $planSetting = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
-                    ->whereDate('date', $productionVoucher->prod_date)
-                    ->whereNull('production_voucher_id')
-                    ->first();
+            // The picked plan of this plant and date (it has no voucher of its own yet)
+            $planSetting = $choicePlan;
+            if ($planSetting) {
+                app(\App\Services\Production\Milling\ProductionDayPlanService::class)->attachVoucherToPlan($productionVoucher, $planSetting);
             }
 
             // Job orders picked on the plan's machine cards, kept when the rows are re-created below
@@ -1337,7 +1374,6 @@ class ProductionVoucherController extends Controller
                         \App\Models\Production\MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $planSettingTimeIds)->delete();
                         \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $planSettingTimeIds)->delete();
                     }
-                    $planSetting->update(['production_voucher_id' => $productionVoucher->id]);
                 }
 
                 // Save Machine Timings
@@ -1421,7 +1457,7 @@ class ProductionVoucherController extends Controller
 
                 foreach ($inputProductIds as $index => $productId) {
                     if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
-                        $costingService = app(\App\Services\ProductionCostingService::class);
+                        $costingService = app(\App\Services\Production\Milling\ProductionCostingService::class);
                         $inRate = isset($inputRates[$index]) && (float)$inputRates[$index] > 0
                             ? (float)$inputRates[$index]
                             : (float)$costingService->getRawMaterialRateFromStock((int)$productId, (int)$productionVoucher->location_id);
@@ -1522,7 +1558,8 @@ class ProductionVoucherController extends Controller
                 }
 
                 if ($hasBreakdownItems) {
-                    $plantBreakdown = PlantBreakdown::updateOrCreate(
+                    // One plant breakdown per plant and day, shared by the day's vouchers
+                    $plantBreakdown = PlantBreakdown::firstOrCreate(
                         [
                             'company_id' => $productionVoucher->company_id,
                             'date' => $productionVoucher->prod_date,
@@ -1965,19 +2002,20 @@ class ProductionVoucherController extends Controller
             })
             ->first();
 
-        // The voucher's own plan first; otherwise a same plant + date plan without a voucher of its own
+        // The voucher's own plan first; otherwise the open plan of its plant and date
+        $planChoice = app(\App\Services\Production\Milling\ProductionDayPlanService::class)->planChoiceForVoucher(
+            $productionVoucher->plant_id,
+            $productionVoucher->prod_date,
+            null,
+            $productionVoucher->id
+        );
         $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
             ->where('production_voucher_id', $productionVoucher->id)
             ->first();
-        if (!$machinePlanSetting && $productionVoucher->plant_id) {
-            $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine', 'items.breakdowns'])
-                ->where('plant_id', $productionVoucher->plant_id)
-                ->when($productionVoucher->prod_date, function ($q) use ($productionVoucher) {
-                    $q->whereDate('date', $productionVoucher->prod_date);
-                })
-                ->whereNull('production_voucher_id')
-                ->first();
+        if (!$machinePlanSetting && $planChoice['plan']) {
+            $machinePlanSetting = $planChoice['plan']->load(['items.machine', 'items.breakdowns']);
         }
+        $voucherPlanOptions = \App\Services\Production\Milling\ProductionDayPlanService::planOptions($planChoice['plans'], $productionVoucher->id);
 
         // Load outputs for head products and b2 products separately
         $headProductOutputs = $productionVoucher->outputs->whereIn('product_id', $allHeadProductIds)->values();
@@ -2022,7 +2060,8 @@ class ProductionVoucherController extends Controller
             'b2ProductOutputs',
             'breakdownTypes',
             'plantBreakdown',
-            'machinePlanSetting'
+            'machinePlanSetting',
+            'voucherPlanOptions'
         ));
     }
 
@@ -2078,15 +2117,26 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync([]);
             }
 
-            // Find the linked machine plan setting first; otherwise a same plant + date plan without its own voucher
-            $planSetting = \App\Models\Production\MachinePlanSetting::where('production_voucher_id', $productionVoucher->id)->first();
-            if (!$planSetting && $productionVoucher->plant_id) {
-                $planSetting = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
-                    ->when($productionVoucher->prod_date, function ($q) use ($productionVoucher) {
-                        $q->whereDate('date', $productionVoucher->prod_date);
-                    })
-                    ->whereNull('production_voucher_id')
-                    ->first();
+            // The plan this voucher belongs to on its (possibly changed) plant and date
+            $dayPlans = app(\App\Services\Production\Milling\ProductionDayPlanService::class);
+            $choice = $dayPlans->planChoiceForVoucher(
+                $productionVoucher->plant_id,
+                $productionVoucher->prod_date,
+                $request->filled('machine_plan_setting_id') ? (int) $request->machine_plan_setting_id : null,
+                $productionVoucher->id
+            );
+            if ($choice['error']) {
+                throw new \RuntimeException($choice['error']);
+            }
+            $planSetting = $choice['plan'];
+
+            // Plant, date or plan changed: the old plan keeps its own times and gets a fresh draft voucher
+            $ownPlan = \App\Models\Production\MachinePlanSetting::where('production_voucher_id', $productionVoucher->id)->first();
+            if ($ownPlan && (!$planSetting || $ownPlan->id !== $planSetting->id)) {
+                $dayPlans->releaseVoucherFromPlan($productionVoucher, $ownPlan);
+            }
+            if ($planSetting && $planSetting->production_voucher_id != $productionVoucher->id) {
+                $dayPlans->attachVoucherToPlan($productionVoucher, $planSetting);
             }
 
             // Job orders picked on the plan's machine cards, kept when the rows are re-created below
@@ -2198,7 +2248,7 @@ class ProductionVoucherController extends Controller
 
                 foreach ($inputProductIds as $index => $productId) {
                     if (!empty($productId) && !empty($inputLocationIds[$index]) && !empty($inputQtys[$index])) {
-                        $costingService = app(\App\Services\ProductionCostingService::class);
+                        $costingService = app(\App\Services\Production\Milling\ProductionCostingService::class);
                         $inRate = isset($inputRates[$index]) && (float)$inputRates[$index] > 0
                             ? (float)$inputRates[$index]
                             : (float)$costingService->getRawMaterialRateFromStock((int)$productId, (int)$productionVoucher->location_id);
@@ -2296,15 +2346,10 @@ class ProductionVoucherController extends Controller
                     }
                 }
 
-                $plantBreakdown = PlantBreakdown::where(function ($q) use ($productionVoucher) {
-                    $q->where('production_voucher_id', $productionVoucher->id);
-                    if ($productionVoucher->plant_id && $productionVoucher->prod_date) {
-                        $q->orWhere(function ($sub) use ($productionVoucher) {
-                            $sub->where('plant_id', $productionVoucher->plant_id)
-                                ->whereDate('date', $productionVoucher->prod_date);
-                        });
-                    }
-                })->first();
+                // The plant breakdown of the voucher's current plant and date (an old day's breakdown stays on its day)
+                $plantBreakdown = PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
+                    ->whereDate('date', $productionVoucher->prod_date)
+                    ->first();
 
                 if ($hasBreakdownItems) {
                     if (!$plantBreakdown) {
@@ -2316,10 +2361,9 @@ class ProductionVoucherController extends Controller
                             'user_id' => auth()->user()->id,
                         ]);
                     } else {
+                        // Shared by the day's vouchers: keep the voucher it is already linked to
                         $plantBreakdown->update([
-                            'date' => $productionVoucher->prod_date,
-                            'plant_id' => $productionVoucher->plant_id,
-                            'production_voucher_id' => $productionVoucher->id,
+                            'production_voucher_id' => $plantBreakdown->production_voucher_id ?: $productionVoucher->id,
                         ]);
                         $plantBreakdown->items()->delete();
                     }
@@ -2355,7 +2399,8 @@ class ProductionVoucherController extends Controller
                 }
             }
 
-            // Link the day's plan, breakdown, analyses and analysis requests of this plant to this voucher
+            // Records of an old plant / date leave this voucher; the day's free records are linked by time
+            $dayPlans->relinkMismatchedRecords($productionVoucher);
             $this->linkSameDayRecords($productionVoucher);
 
             DB::commit();
@@ -2394,7 +2439,7 @@ class ProductionVoucherController extends Controller
 
         // Phase 3: Clean up Financial JV transactions and Stock entries
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $costingService->deleteVoucherFinancials($productionVoucher);
         } catch (\Throwable $costEx) {
             \Illuminate\Support\Facades\Log::error('Production costing cleanup error on destroy: ' . $costEx->getMessage());
@@ -2547,7 +2592,7 @@ class ProductionVoucherController extends Controller
         ]);
 
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $costingService->syncProductionVoucher($productionVoucher);
         } catch (\Throwable $e) {}
 
@@ -2573,7 +2618,7 @@ class ProductionVoucherController extends Controller
         $input->update($request->only(['product_id', 'location_id', 'slot_id', 'qty', 'remarks']));
 
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $pv = ProductionVoucher::find($id);
             if ($pv) $costingService->syncProductionVoucher($pv);
         } catch (\Throwable $e) {}
@@ -2591,7 +2636,7 @@ class ProductionVoucherController extends Controller
         $input->delete();
 
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $pv = ProductionVoucher::find($id);
             if ($pv) $costingService->syncProductionVoucher($pv);
         } catch (\Throwable $e) {}
@@ -2634,7 +2679,7 @@ class ProductionVoucherController extends Controller
         ]);
 
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $costingService->syncProductionVoucher($productionVoucher);
         } catch (\Throwable $e) {}
 
@@ -2665,7 +2710,7 @@ class ProductionVoucherController extends Controller
         $output->update($request->only(['product_id', 'qty', 'no_of_bags', 'bag_size', 'avg_weight_per_bag', 'arrival_sub_location_id', 'brand_id', 'slot_id', 'job_order_id', 'remarks']));
 
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $pv = ProductionVoucher::find($id);
             if ($pv) $costingService->syncProductionVoucher($pv);
         } catch (\Throwable $e) {}
@@ -2683,7 +2728,7 @@ class ProductionVoucherController extends Controller
         $output->delete();
 
         try {
-            $costingService = new \App\Services\ProductionCostingService();
+            $costingService = new \App\Services\Production\Milling\ProductionCostingService();
             $pv = ProductionVoucher::find($id);
             if ($pv) $costingService->syncProductionVoucher($pv);
         } catch (\Throwable $e) {}
@@ -2986,23 +3031,8 @@ class ProductionVoucherController extends Controller
         $voucherDate = $productionVoucher->prod_date ? \Carbon\Carbon::parse($productionVoucher->prod_date)->format('Y-m-d') : null;
         $plantId = $productionVoucher->plant_id;
 
-        // Auto assign any unlinked analysis on this date to this voucher
-        if ($voucherDate) {
-            \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
-                ->when($plantId, fn($q) => $q->where(fn($sub) => $sub->where('plant_id', $plantId)->orWhereNull('plant_id')))
-                ->whereNull('production_voucher_id')
-                ->update(['production_voucher_id' => $productionVoucher->id]);
-
-            \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
-                ->when($plantId, fn($q) => $q->where(fn($sub) => $sub->where('plant_id', $plantId)->orWhereNull('plant_id')))
-                ->whereNull('production_voucher_id')
-                ->update(['production_voucher_id' => $productionVoucher->id]);
-
-            \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
-                ->when($plantId, fn($q) => $q->where(fn($sub) => $sub->where('plant_id', $plantId)->orWhereNull('plant_id')))
-                ->whereNull('production_voucher_id')
-                ->update(['production_voucher_id' => $productionVoucher->id]);
-        }
+        // Link the plant's unlinked analyses of this date to their voucher (by time when the day has several)
+        $this->linkSameDayRecords($productionVoucher);
 
         // 1. Production Analysis (Input & Output)
         $analyses = \App\Models\Production\ProductionAnalysis::with([
@@ -3014,17 +3044,7 @@ class ProductionVoucherController extends Controller
             'location',
             'analysisRequest.jobOrder'
         ])
-        ->where(function ($q) use ($productionVoucher, $voucherDate, $plantId) {
-            $q->where('production_voucher_id', $productionVoucher->id);
-            if ($voucherDate) {
-                $q->orWhere(function ($sub) use ($voucherDate, $plantId) {
-                    $sub->whereDate('analysis_date', $voucherDate);
-                    if ($plantId) {
-                        $sub->where(fn($pSub) => $pSub->where('plant_id', $plantId)->orWhereNull('plant_id'));
-                    }
-                });
-            }
-        })
+        ->where('production_voucher_id', $productionVoucher->id)
         ->orderBy('created_at', 'asc')
         ->get();
 
@@ -3037,17 +3057,7 @@ class ProductionVoucherController extends Controller
             'analysisRequest',
             'product'
         ])
-        ->where(function ($q) use ($productionVoucher, $voucherDate, $plantId) {
-            $q->where('production_voucher_id', $productionVoucher->id);
-            if ($voucherDate) {
-                $q->orWhere(function ($sub) use ($voucherDate, $plantId) {
-                    $sub->whereDate('analysis_date', $voucherDate);
-                    if ($plantId) {
-                        $sub->where(fn($pSub) => $pSub->where('plant_id', $plantId)->orWhereNull('plant_id'));
-                    }
-                });
-            }
-        })
+        ->where('production_voucher_id', $productionVoucher->id)
         ->orderBy('created_at', 'asc')
         ->get();
 
@@ -3247,52 +3257,21 @@ class ProductionVoucherController extends Controller
     }
 
     /**
-     * Link the same plant + date records to this voucher.
-     * Only records not yet linked to another voucher are taken, so several vouchers
-     * (one per Machine Plan Setting) can exist on the same day without stealing each other's records.
+     * Link the plant's unlinked requests, analyses and plant breakdown of the voucher's date.
+     * Several vouchers (one per Machine Plan) can share a day, so each record goes to the voucher
+     * whose machines were running at its time; records of other plants or without a plant are left alone.
      */
     private function linkSameDayRecords(ProductionVoucher $productionVoucher): void
     {
-        if (!$productionVoucher->prod_date) {
+        if (!$productionVoucher->prod_date || !$productionVoucher->plant_id) {
             return;
         }
 
-        $voucherId = $productionVoucher->id;
-        $voucherDate = $productionVoucher->prod_date;
-        $freeOrMine = function ($q) use ($voucherId) {
-            $q->whereNull('production_voucher_id')->orWhere('production_voucher_id', $voucherId);
-        };
-        $samePlant = function ($q) use ($productionVoucher) {
-            if ($productionVoucher->plant_id) {
-                $q->where(function ($sub) use ($productionVoucher) {
-                    $sub->where('plant_id', $productionVoucher->plant_id)->orWhereNull('plant_id');
-                });
-            }
-        };
-
-        if ($productionVoucher->plant_id) {
-            \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
-                ->whereDate('date', $voucherDate)
-                ->where($freeOrMine)
-                ->update(['production_voucher_id' => $voucherId]);
-
-            \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
-                ->whereDate('date', $voucherDate)
-                ->where($freeOrMine)
-                ->update(['production_voucher_id' => $voucherId]);
-        }
-
-        \App\Models\Production\ProductionAnalysis::whereDate('analysis_date', $voucherDate)
-            ->where($samePlant)->where($freeOrMine)
-            ->update(['production_voucher_id' => $voucherId]);
-
-        \App\Models\Production\ProductionMachineAnalysis::whereDate('analysis_date', $voucherDate)
-            ->where($samePlant)->where($freeOrMine)
-            ->update(['production_voucher_id' => $voucherId]);
-
-        \App\Models\Production\ProductionAnalysisRequest::whereDate('request_date', $voucherDate)
-            ->where($samePlant)->where($freeOrMine)
-            ->update(['production_voucher_id' => $voucherId]);
+        app(\App\Services\Production\Milling\ProductionDayPlanService::class)->linkFreeRecords(
+            (int) $productionVoucher->plant_id,
+            $productionVoucher->prod_date,
+            $productionVoucher->id
+        );
     }
 
     /**
@@ -3464,7 +3443,7 @@ class ProductionVoucherController extends Controller
         $totalInputCost = 0;
         $inputItemsPreview = [];
         $inputLocationIds = $request->input('input_location_id', []);
-        $costingService = new \App\Services\ProductionCostingService();
+        $costingService = new \App\Services\Production\Milling\ProductionCostingService();
 
         foreach ($inputProductIds as $idx => $inProdId) {
             $qty = isset($inputQtys[$idx]) ? (float)$inputQtys[$idx] : 0;

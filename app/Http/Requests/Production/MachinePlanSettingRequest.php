@@ -30,6 +30,8 @@ class MachinePlanSettingRequest extends FormRequest
             'machine_job_order_id.*' => 'nullable|array',
             'machine_job_order_id.*.*' => 'nullable|exists:job_orders,id',
             'production_voucher_id' => 'nullable|exists:production_vouchers,id',
+            'existing_plan_id' => 'nullable|integer',
+            'create_new_plan' => 'nullable|in:0,1',
             'remarks' => 'nullable|string',
             'production_machine_id' => 'nullable|array',
             'production_machine_id.*' => 'nullable|exists:production_machines,id',
@@ -192,6 +194,62 @@ class MachinePlanSettingRequest extends FormRequest
                     }
                 }
             }
+
+            if (!$this->filled('plant_id') || !$this->filled('date')) {
+                return;
+            }
+
+            // A plan whose voucher is completed holds the voucher's actual times: change them from the voucher
+            $targetPlan = $this->targetPlan();
+            if ($targetPlan && $targetPlan->isLocked()) {
+                $prodNo = $targetPlan->productionVoucher->prod_no ?? '';
+                $message = "Production Voucher {$prodNo} of this plan is already completed, so its machine times can only be changed from that voucher.";
+                if (!$this->route('machine_plan_setting')) {
+                    $message .= " Tick 'Create as New Voucher' to add another plan for this day.";
+                }
+                $validator->errors()->add('plan', $message);
+                return;
+            }
+
+            // Machine times must not overlap each other or the plant's other plans that day
+            $conflicts = app(\App\Services\Production\Milling\ProductionDayPlanService::class)->timeConflicts(
+                (int) $this->plant_id,
+                $this->date,
+                \App\Services\Production\Milling\ProductionDayPlanService::slotsFromRequest($this, true),
+                $targetPlan?->id,
+                array_filter([$targetPlan?->production_voucher_id])
+            );
+            foreach (array_slice($conflicts, 0, 6) as $message) {
+                $validator->errors()->add('machine_times', $message);
+            }
         });
+    }
+
+    /**
+     * The existing plan this save writes to: the edited plan, the plan picked on the create screen,
+     * or the plant's latest plan that day. None when 'Create as New Voucher' is ticked.
+     */
+    public function targetPlan(): ?\App\Models\Production\MachinePlanSetting
+    {
+        $query = \App\Models\Production\MachinePlanSetting::with('productionVoucher');
+
+        if ($id = $this->route('machine_plan_setting')) {
+            return $query->find(is_object($id) ? $id->id : $id);
+        }
+
+        if ($this->boolean('create_new_plan') || !$this->filled('plant_id') || !$this->filled('date')) {
+            return null;
+        }
+
+        $samePlantDay = (clone $query)->where('plant_id', $this->plant_id)->whereDate('date', $this->date);
+
+        if ($this->filled('existing_plan_id')) {
+            $plan = (clone $samePlantDay)->find($this->existing_plan_id);
+            if ($plan) {
+                return $plan;
+            }
+        }
+
+        return $samePlantDay->latest('id')->first();
     }
 }

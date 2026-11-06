@@ -61,6 +61,38 @@
                         <input type="text" name="remarks" id="remarks_input" class="form-control form-control-sm" placeholder="General remarks..." style="height: 34px;">
                     </div>
                 </div>
+
+                {{-- Shown when this plant already has plan(s) on the date: pick one to update, or save as a new plan + voucher --}}
+                <div class="col-md-12" id="existingPlansBox" style="display: none;">
+                    <div class="mps-plans-panel">
+                        <div class="mps-plans-head">
+                            <div class="mps-plans-title">
+                                <span class="mps-plans-icon"><i class="fa fa-calendar-check-o"></i></span>
+                                <div>
+                                    <div class="mps-plans-heading" id="existingPlansText"></div>
+                                    <div class="mps-plans-sub">Pick a plan to update it, or switch on <strong>Create as New Voucher</strong> to add another one.</div>
+                                </div>
+                            </div>
+                            <div class="mps-plans-controls">
+                                <div class="mps-plans-field">
+                                    <label for="existing_plan_id">Loaded plan</label>
+                                    <select name="existing_plan_id" id="existing_plan_id" class="form-control form-control-sm"></select>
+                                </div>
+                                <label class="mps-mode-switch" for="create_new_plan">
+                                    <span class="custom-control custom-switch mb-0">
+                                        <input type="checkbox" class="custom-control-input" id="create_new_plan" name="create_new_plan" value="1">
+                                        <span class="custom-control-label"></span>
+                                    </span>
+                                    <span class="mps-mode-label">Create as New Voucher</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="existingPlansTimes" class="mps-plans-list"></div>
+
+                        <div id="existingPlansHint" class="mps-plans-hint"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -136,6 +168,47 @@
     </div>
 </form>
 
+
+<style>
+    .mps-plans-panel { border: 1px solid #d6e4f5; border-radius: 8px; background: #f7faff; margin-bottom: 12px; overflow: hidden; font-size: 12px; }
+    .mps-plans-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e3ecf7; }
+    .mps-plans-title { display: flex; align-items: center; gap: 10px; }
+    .mps-plans-icon { width: 32px; height: 32px; border-radius: 8px; background: #e8f1fc; color: #2f6fce; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .mps-plans-heading { font-weight: 700; color: #1f2d3d; font-size: 13px; }
+    .mps-plans-sub { color: #6b7a8c; font-size: 11px; }
+    .mps-plans-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+    .mps-plans-field { display: flex; align-items: center; gap: 6px; }
+    .mps-plans-field label { margin: 0; font-weight: 600; color: #4a5568; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; }
+    .mps-plans-field select { height: 30px; min-width: 240px; width: auto; font-size: 12px; }
+    .mps-mode-switch { display: flex; align-items: center; gap: 4px; margin: 0; padding: 4px 10px 4px 6px; border: 1px solid #d6e4f5; border-radius: 20px; background: #f7faff; cursor: pointer; transition: all .2s; }
+    .mps-mode-switch .custom-control-label { cursor: pointer; }
+    .mps-mode-label { font-weight: 600; color: #4a5568; font-size: 12px; white-space: nowrap; }
+    .mps-mode-switch.is-on { background: #e9f7ef; border-color: #9fd8b5; }
+    .mps-mode-switch.is-on .mps-mode-label { color: #1e7e44; }
+
+    .mps-plans-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; padding: 12px 14px; }
+    .mps-plan-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+    .mps-plan-card:hover { border-color: #93c3f2; }
+    .mps-plan-card.is-loaded { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+    .mps-plan-card.is-faded { opacity: .65; }
+    .mps-plan-card-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+    .mps-plan-name { font-weight: 700; color: #1f2d3d; }
+    .mps-plan-voucher { color: #6b7a8c; font-size: 11px; margin-left: 4px; }
+    .mps-plan-badges { display: flex; gap: 4px; }
+    .mps-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: .3px; }
+    .mps-badge-draft { background: #fff4e0; color: #b26b00; }
+    .mps-badge-done { background: #e6f6ec; color: #1e7e44; }
+    .mps-badge-loaded { background: #e8f1fc; color: #2f6fce; }
+    .mps-plan-times { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mps-time-chip { display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; border-radius: 4px; padding: 2px 6px; font-size: 11px; color: #334155; }
+    .mps-time-chip strong { font-weight: 600; }
+    .mps-time-chip i { color: #94a3b8; }
+    .mps-plan-empty { color: #94a3b8; font-style: italic; font-size: 11px; }
+
+    .mps-plans-hint { padding: 8px 14px; border-top: 1px solid #e3ecf7; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+    .mps-plans-hint.mode-update { background: #fffaf0; color: #8a5a00; }
+    .mps-plans-hint.mode-new { background: #eefaf3; color: #1e7e44; }
+</style>
 
 @php
     $mpsPlantOptions = $plants->map(fn ($p) => [
@@ -278,6 +351,7 @@
             populatePlantsByLocation(locationId);
             loadJobOrdersByLocation(locationId, false);
             $('#productionMachinesContainer').html('<div class="text-center text-muted py-3">Please select a plant to load machines</div>');
+            renderExistingPlans([], null);
         });
 
         // Product filter: the cards list that product's Head, B2 and By job orders (picked ones stay)
@@ -355,19 +429,137 @@
         `;
     }
 
-    function loadMachines(plantId) {
+    // Plans this plant already has on the date: the loaded one is updated on save,
+    // unless 'Create as New Voucher' is ticked (then a new plan + voucher is made from the form).
+    function renderExistingPlans(plans, loadedPlan) {
+        var $box = $('#existingPlansBox');
+        var $select = $('#existing_plan_id');
+        var $toggle = $('#create_new_plan');
+
+        if (!plans.length) {
+            $box.hide();
+            $select.empty();
+            $toggle.prop('checked', false).data('locked', false);
+            updatePlanSaveMode();
+            return;
+        }
+
+        $('#existingPlansText').text(plans.length === 1
+            ? '1 plan already exists for this plant on this date'
+            : plans.length + ' plans already exist for this plant on this date');
+        $select.empty();
+        var $list = $('#existingPlansTimes').empty();
+        var loadedId = loadedPlan ? String(loadedPlan.id) : null;
+
+        $.each(plans, function (i, p) {
+            var label = 'Plan #' + p.id + (p.voucher_no ? ' – ' + p.voucher_no : '') + (p.is_locked ? ' (Completed)' : ' (Draft)');
+            $select.append($('<option></option>').val(p.id).text(label));
+
+            // One card per plan: status, voucher and its running machine times
+            var isLoaded = String(p.id) === loadedId;
+            var $card = $('<div class="mps-plan-card"></div>').attr('data-plan-id', p.id).toggleClass('is-loaded', isLoaded);
+            var $top = $('<div class="mps-plan-card-top"></div>');
+            var $name = $('<div></div>')
+                .append($('<span class="mps-plan-name"></span>').text('Plan #' + p.id))
+                .append($('<span class="mps-plan-voucher"></span>').text(p.voucher_no || ''));
+            var $badges = $('<div class="mps-plan-badges"></div>');
+            if (isLoaded) {
+                $badges.append('<span class="mps-badge mps-badge-loaded">Loaded</span>');
+            }
+            $badges.append(p.is_locked
+                ? '<span class="mps-badge mps-badge-done"><i class="fa fa-lock mr-1"></i>Completed</span>'
+                : '<span class="mps-badge mps-badge-draft">Draft</span>');
+            $top.append($name, $badges);
+
+            var $times = $('<div class="mps-plan-times"></div>');
+            if (p.times.length) {
+                $.each(p.times, function (j, t) {
+                    // "Machine name 08:00–14:00": the time range is the last word
+                    var cut = t.lastIndexOf(' ');
+                    var machine = cut > 0 ? t.substring(0, cut) : t;
+                    var range = cut > 0 ? t.substring(cut + 1) : '';
+                    $times.append($('<span class="mps-time-chip"></span>')
+                        .append($('<strong></strong>').text(machine))
+                        .append(range ? $('<span></span>').html('<i class="fa fa-clock-o"></i> ').append(document.createTextNode(range)) : ''));
+                });
+            } else {
+                $times.append('<span class="mps-plan-empty">No running machine</span>');
+            }
+
+            $list.append($card.append($top, $times));
+        });
+        if (loadedPlan) {
+            $select.val(loadedPlan.id);
+        }
+
+        // A completed voucher's plan cannot be changed here: only a new plan can be saved
+        var locked = !!(loadedPlan && loadedPlan.is_locked);
+        $toggle.data('locked', locked);
+        if (locked) {
+            $toggle.prop('checked', true);
+        }
+        $box.show();
+        updatePlanSaveMode();
+    }
+
+    function updatePlanSaveMode() {
+        var hasPlans = $('#existing_plan_id option').length > 0;
+        var isNew = $('#create_new_plan').is(':checked');
+        var $hint = $('#existingPlansHint');
+
+        $('.mps-mode-switch').toggleClass('is-on', isNew);
+        // While a new plan is being made, the existing ones are only shown for reference
+        $('#existingPlansTimes .mps-plan-card').toggleClass('is-faded', isNew);
+
+        if (!hasPlans) {
+            $hint.removeClass('mode-update mode-new').html('');
+            $('.submitbutton').text('Save Machine Plan Setting');
+        } else if (isNew) {
+            $hint.removeClass('mode-update').addClass('mode-new').html(
+                '<i class="fa fa-plus-circle"></i><span>A <strong>new plan and a new Production Voucher</strong> will be saved. Keep its machine times clear of the plans above.</span>'
+            );
+            $('.submitbutton').text('Save as New Voucher');
+        } else {
+            $hint.removeClass('mode-new').addClass('mode-update').html(
+                '<i class="fa fa-pencil"></i><span>The <strong>loaded plan will be updated</strong> with this form.</span>'
+            );
+            $('.submitbutton').text('Update Loaded Plan');
+        }
+    }
+
+    // Clicking a plan card loads that plan (same as picking it in the dropdown)
+    $(document).off('click.mps_plan_card', '.mps-plan-card').on('click.mps_plan_card', '.mps-plan-card', function () {
+        var id = String($(this).data('plan-id'));
+        if ($('#existing_plan_id').val() !== id) {
+            $('#existing_plan_id').val(id).trigger('change');
+        }
+    });
+
+    $(document).off('change.mps_plan_pick', '#existing_plan_id').on('change.mps_plan_pick', '#existing_plan_id', function () {
+        loadMachines($('#plant_id').val(), $(this).val());
+    });
+    $(document).off('change.mps_new_plan', '#create_new_plan').on('change.mps_new_plan', '#create_new_plan', function () {
+        if (!$(this).is(':checked') && $(this).data('locked')) {
+            $(this).prop('checked', true);
+            toastr.warning('The loaded plan\'s voucher is already completed; only a new plan can be saved.');
+        }
+        updatePlanSaveMode();
+    });
+
+    function loadMachines(plantId, planId) {
         var date = $('#date').val();
         var container = $('#productionMachinesContainer');
 
         if (!plantId) {
             container.html('<div class="text-center text-muted py-3">Please select a plant to load machines</div>');
+            renderExistingPlans([], null);
             return;
         }
 
         $.ajax({
             url: '{{ route("getMachinesByPlant") }}',
             type: 'GET',
-            data: { plant_id: plantId, date: date },
+            data: { plant_id: plantId, date: date, plan_id: planId || '' },
             success: function (response) {
                 container.empty();
                 if (response.machines && response.machines.length > 0) {
@@ -508,6 +700,8 @@
                 } else {
                     $('#remarks_input, [name="remarks"]').val('');
                 }
+
+                renderExistingPlans(response.existing_plans || [], response.existing_plan);
             },
             error: function (xhr) {
                 console.error('Error loading machines:', xhr);
