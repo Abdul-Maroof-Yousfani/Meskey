@@ -73,6 +73,8 @@
                                                 'pending_output' => null,
                                                 'next_input_due' => null,
                                                 'next_output_due' => null,
+                                                'input_note' => 'Paused – no plan',
+                                                'output_note' => 'Paused – no plan',
                                             ];
                                         @endphp
                                         <tr id="plant-row-{{ $plant->id }}" class="plant-setting-row" data-plant-id="{{ $plant->id }}">
@@ -203,6 +205,8 @@
                                                         <span class="sched-badge-due mb-1" title="Next scheduled auto request run">
                                                             <i class="ft-clock mr-1"></i>Next: {{ $live['next_input_due'] }}
                                                         </span>
+                                                    @elseif(!empty($live['input_note']))
+                                                        <span class="sched-text-range text-muted">{{ $live['input_note'] }}</span>
                                                     @elseif(!$live['pending_input'])
                                                         <span class="sched-text-range">
                                                             Between {{ $plant->getInputMinInterval() }}&ndash;{{ $plant->getInputMaxInterval() }}m
@@ -227,6 +231,8 @@
                                                         <span class="sched-badge-due mb-1" title="Next scheduled auto request run">
                                                             <i class="ft-clock mr-1"></i>Next: {{ $live['next_output_due'] }}
                                                         </span>
+                                                    @elseif(!empty($live['output_note']))
+                                                        <span class="sched-text-range text-muted">{{ $live['output_note'] }}</span>
                                                     @elseif(!$live['pending_output'])
                                                         <span class="sched-text-range">
                                                             Between {{ $plant->getOutputMinInterval() }}&ndash;{{ $plant->getOutputMaxInterval() }}m

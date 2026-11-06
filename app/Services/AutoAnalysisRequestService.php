@@ -648,15 +648,39 @@ class AutoAnalysisRequestService
             }
         }
 
+        // Show a "Next" time only while the schedule is actually active
+        $scheduleNote = null;
+        if (!$plant->auto_analysis_enabled) {
+            $scheduleNote = 'Auto request off';
+        } elseif ($hasBreakdown) {
+            $scheduleNote = 'Paused – breakdown';
+        } elseif (!$runningInfo['is_running']) {
+            $scheduleNote = $runningInfo['plan'] ? 'Paused – machine not running' : 'Paused – no plan';
+        }
+        $scheduleActive = $scheduleNote === null;
+
+        $nextInputDue = $scheduleActive && $plant->next_input_analysis_at ? $plant->next_input_analysis_at->format('h:i A') : null;
+        $nextOutputDue = $scheduleActive && $plant->next_output_analysis_at ? $plant->next_output_analysis_at->format('h:i A') : null;
+        $inputNote = $scheduleNote;
+        $outputNote = $scheduleNote;
+
         // Not "due" while waiting for the last request to be completed
         if ($plant->require_last_completed) {
             $lastIn = $this->getLastRequest($plant, ProductionAnalysisRequest::TYPE_INPUT);
             if ($lastIn && $lastIn->status !== 'completed') {
                 $isInputDueNow = false;
+                if ($scheduleActive) {
+                    $nextInputDue = null;
+                    $inputNote = 'Waiting for Req #' . $lastIn->request_no . ' to complete';
+                }
             }
             $lastOut = $this->getLastRequest($plant, ProductionAnalysisRequest::TYPE_OUTPUT);
             if ($lastOut && $lastOut->status !== 'completed') {
                 $isOutputDueNow = false;
+                if ($scheduleActive) {
+                    $nextOutputDue = null;
+                    $outputNote = 'Waiting for Req #' . $lastOut->request_no . ' to complete';
+                }
             }
         }
 
@@ -672,10 +696,12 @@ class AutoAnalysisRequestService
             'pending_input_count' => $pendingInputCount,
             'pending_output' => $pendingOutput,
             'pending_output_count' => $pendingOutputCount,
-            'next_input_due' => $plant->next_input_analysis_at ? $plant->next_input_analysis_at->format('h:i A') : null,
+            'next_input_due' => $nextInputDue,
             'is_input_due_now' => $isInputDueNow,
-            'next_output_due' => $plant->next_output_analysis_at ? $plant->next_output_analysis_at->format('h:i A') : null,
+            'input_note' => $inputNote,
+            'next_output_due' => $nextOutputDue,
             'is_output_due_now' => $isOutputDueNow,
+            'output_note' => $outputNote,
         ];
     }
 }
