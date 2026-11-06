@@ -307,7 +307,8 @@ class DeliveryOrderController extends Controller
 
             $raw_vouchers = $request->receipt_vouchers ?? [];
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($request->sale_order_id, $request->customer_id);
+            // This DO has nothing attached yet, so the whole free balance is available to it
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $request->sale_order_id);
 
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
@@ -325,7 +326,7 @@ class DeliveryOrderController extends Controller
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                                 ->whereNull('journal_vouchers.deleted_at')
                                 ->whereNull('journal_voucher_details.deleted_at')
-                                ->where('journal_vouchers.am_approval_status', 'approved')
+                                ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
                                 ->where('receipt_voucher_id', $adv->receipt_voucher_id)
                                 ->sum('debit_amount');
                                 
@@ -355,42 +356,8 @@ class DeliveryOrderController extends Controller
                         $rv_id = str_replace('rv_', '', $rv_val);
                         $rv = ReceiptVoucher::with('items')->find($rv_id);
                         if ($rv) {
-                            $linked_amount = $rv->items->where("reference_type", "sale_order")
-                                ->where("reference_id", $request->sale_order_id)
-                                ->sum("net_amount");
-
-                            $spent = DB::table('delivery_order_receipt_voucher')
-                                ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
-                                ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
-                                ->where('delivery_order.so_id', $request->sale_order_id)
-                                ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                                ->where('delivery_order.am_approval_status', '!=', 'rejected')
-                                ->sum('delivery_order_receipt_voucher.amount');
-
-
-
-                            $jv_spent = DB::table('journal_voucher_details')
-                                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                                ->whereNull('journal_vouchers.deleted_at')
-                                ->whereNull('journal_voucher_details.deleted_at')
-                                ->where('journal_vouchers.am_approval_status', 'approved')
-                                ->where('receipt_voucher_id', $rv->id)
-                                ->sum('debit_amount');
-
-                            $spent += $jv_spent;
-                            $spent += $soLevelJvDeductions[$rv->id] ?? 0;
-
-                            $dpv_refunded = (float) DB::table('payment_voucher_data')
-                                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                                ->whereNull('payment_vouchers.deleted_at')
-                                ->whereNull('payment_voucher_data.deleted_at')
-                                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                                ->where('payment_voucher_data.sales_order_id', $request->sale_order_id)
-                                ->whereNull('payment_voucher_data.delivery_order_id')
-                                ->where('payment_vouchers.created_at', '>=', $rv->created_at)
-                                ->sum('payment_voucher_data.net_amount');
-
-                            $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded));
+                            $remaining = min($this->saleBalances()->rvAvailableForDo($rv->id, (int) $request->sale_order_id), max(0, $poolLeft));
+                            $poolLeft -= $remaining;
 
                             if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();
@@ -447,9 +414,10 @@ class DeliveryOrderController extends Controller
                             ->where('reference_id', $jv_id)
                             ->sum('amount');
                             
-                        $remaining = doubleval($total_credit) - doubleval($spent);
-                        
+                        $remaining = min(doubleval($total_credit) - doubleval($spent), max(0, $poolLeft));
+
                         if ($remaining > 0) {
+                            $poolLeft -= $remaining;
                             if ($jv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();
                                 return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
@@ -674,14 +642,29 @@ class DeliveryOrderController extends Controller
 
         $customer_id = $request->customer_id;
 
+        // While editing a DO its own SO always stays selectable: the DO itself is what holds that SO's balance
+        $ownSoId = $request->filled('delivery_order_id')
+            ? DeliveryOrder::where('id', $request->delivery_order_id)->value('so_id')
+            : null;
+
         $saleOrders = SalesOrder::with("locations")
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
-            ->activeContract()
             ->where('customer_id', $customer_id)
-            ->where('delivery_date', '>=', now()->toDateString())
+            ->where(function ($q) use ($ownSoId) {
+                $q->where(function ($open) {
+                    $open->activeContract()->where('delivery_date', '>=', now()->toDateString());
+                });
+                if ($ownSoId) {
+                    $q->orWhere('id', $ownSoId);
+                }
+            })
             ->get()
-            ->filter(function ($saleOrder) {
+            ->filter(function ($saleOrder) use ($ownSoId) {
+                if ($ownSoId && $saleOrder->id == $ownSoId) {
+                    return true;
+                }
+
                 // if ($saleOrder->transporter_used == 'yes') {
                 //     $hasApprovedLogistics = $saleOrder->logistics()
                 //         ->where('am_approval_status', 'approved')
@@ -820,7 +803,12 @@ class DeliveryOrderController extends Controller
 
         $bag_types = BagType::select('id', 'name')->get();
 
-        return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent', 'remaining_qty'));
+        // Editing a DO: what this DO holds is available to it again
+        $ownDoLines = $request->filled('delivery_order_id')
+            ? \App\Models\Sales\DeliveryOrderData::where('delivery_order_id', $request->delivery_order_id)->get()
+            : collect();
+
+        return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent', 'remaining_qty', 'ownDoLines'));
     }
 
     public function get_receipt_vouchers(Request $request)
@@ -849,7 +837,7 @@ class DeliveryOrderController extends Controller
                     ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                     ->whereNull('journal_vouchers.deleted_at')
                     ->whereNull('journal_voucher_details.deleted_at')
-                    ->where('journal_vouchers.am_approval_status', 'approved')
+                    ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
                     ->where('receipt_voucher_id', $adv->receipt_voucher_id)
                     ->sum('debit_amount');
                     
@@ -886,87 +874,16 @@ class DeliveryOrderController extends Controller
                 ->orderBy('id', 'asc')
                 ->get();
 
-            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($sale_order_id, $customer_id);
-
-            $dpvRefunds = DB::table('payment_voucher_data')
-                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                ->whereNull('payment_vouchers.deleted_at')
-                ->whereNull('payment_voucher_data.deleted_at')
-                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                ->where('payment_voucher_data.sales_order_id', $sale_order_id)
-                ->whereNull('payment_voucher_data.delivery_order_id')
-                ->select('payment_vouchers.id', 'payment_vouchers.created_at', 'payment_voucher_data.net_amount')
-                ->orderBy('payment_vouchers.created_at', 'asc')
-                ->get();
-
-            $dpvPool = [];
-            foreach ($dpvRefunds as $dpv) {
-                $dpvPool[] = [
-                    'created_at' => $dpv->created_at,
-                    'amount' => (float) $dpv->net_amount
-                ];
-            }
+            // Editing a DO: what it has attached is available to it again
+            $exclude = $request->filled('delivery_order_id') ? ['do' => $request->delivery_order_id] : [];
+            $rvLedger = $this->saleBalances()->rvLedger((int) $sale_order_id, $exclude);
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $sale_order_id, $exclude);
 
             foreach ($receipt_vouchers as $rv) {
-                $linked_amount = $rv->items->where("reference_type", "sale_order")
-                    ->where("reference_id", $sale_order_id)
-                    ->sum("net_amount");
-
-                $doSpent = (float) DB::table('delivery_order_receipt_voucher')
-                    ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
-                    ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
-                    ->where('delivery_order.so_id', $sale_order_id)
-                    ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                    ->where('delivery_order.am_approval_status', '!=', 'rejected')
-                    ->sum('delivery_order_receipt_voucher.amount');
-
-                $doIds = DB::table('delivery_order_receipt_voucher')
-                    ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
-                    ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
-                    ->where('delivery_order.so_id', $sale_order_id)
-                    ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                    ->where('delivery_order.am_approval_status', '!=', 'rejected')
-                    ->pluck('delivery_order.id');
-
-                $doRefunds = (float) DB::table('payment_voucher_data')
-                    ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                    ->whereNull('payment_vouchers.deleted_at')
-                    ->whereNull('payment_voucher_data.deleted_at')
-                    ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                    ->whereIn('payment_voucher_data.delivery_order_id', $doIds)
-                    ->sum('payment_voucher_data.net_amount');
-
-                $spent = max(0, $doSpent - $doRefunds);
-
-                $jv_spent = DB::table('journal_voucher_details')
-                    ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                    ->whereNull('journal_vouchers.deleted_at')
-                    ->whereNull('journal_voucher_details.deleted_at')
-                    ->where('journal_vouchers.am_approval_status', 'approved')
-                    ->where('receipt_voucher_id', $rv->id)
-                    ->sum('debit_amount');
-
-                $spent += $jv_spent;
-                $spent += $soLevelJvDeductions[$rv->id] ?? 0;
-
-                $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent));
-
-                $rvDpvDeduction = 0;
-                foreach ($dpvPool as &$dpvItem) {
-                    if ($dpvItem['amount'] > 0 && $dpvItem['created_at'] >= $rv->created_at) {
-                        $deduct = min($rvAvailableBeforeDpv - $rvDpvDeduction, $dpvItem['amount']);
-                        $rvDpvDeduction += $deduct;
-                        $dpvItem['amount'] -= $deduct;
-                        if ($rvDpvDeduction >= $rvAvailableBeforeDpv) {
-                            break;
-                        }
-                    }
-                }
-                unset($dpvItem);
-
-                $remaining = max(0, $rvAvailableBeforeDpv - $rvDpvDeduction);
+                $remaining = min((float) ($rvLedger[$rv->id]['available'] ?? 0), $poolLeft);
 
                 if ($remaining > 0) {
+                    $poolLeft -= $remaining;
                     $data[] = [
                         'id' => "rv_{$rv->id}",
                         'text' => "{$rv->unique_no} ({$rv->ref_bill_no})",
@@ -980,85 +897,9 @@ class DeliveryOrderController extends Controller
         return $data;
     }
 
-    /**
-     * SO-level JV debits ("SO / DO" lines in a JV that carry only sales_order_id, without a
-     * receipt_voucher_id or delivery_order_id) move advance out of the Sale Order's pool without
-     * naming which RV it came from. Spread that total FIFO over the SO's RVs so that every RV
-     * balance shown/consumed by a Delivery Order already reflects the transfer.
-     *
-     * @return array<int, float> [receipt_voucher_id => amount to deduct]
-     */
-    private function getSoLevelJvDeductionsByRv($soId, $customerId, $excludeDoId = null): array
+    private function saleBalances(): \App\Services\SaleAdvanceBalanceService
     {
-        $soId = (int) $soId;
-        if (!$soId) {
-            return [];
-        }
-
-        $totalSoLevelDebit = (float) DB::table('journal_voucher_details')
-            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-            ->whereNull('journal_vouchers.deleted_at')
-            ->whereNull('journal_voucher_details.deleted_at')
-            ->where('journal_vouchers.am_approval_status', 'approved')
-            ->where('journal_voucher_details.sales_order_id', $soId)
-            ->whereNull('journal_voucher_details.receipt_voucher_id')
-            ->whereNull('journal_voucher_details.delivery_order_id')
-            ->sum('journal_voucher_details.debit_amount');
-
-        if ($totalSoLevelDebit <= 0) {
-            return [];
-        }
-
-        $rvs = DB::table('receipt_voucher_items')
-            ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
-            ->whereNull('receipt_vouchers.deleted_at')
-            ->where('receipt_vouchers.am_approval_status', 'approved')
-            ->where('receipt_vouchers.customer_id', $customerId)
-            ->where('receipt_voucher_items.reference_type', 'sale_order')
-            ->where('receipt_voucher_items.reference_id', $soId)
-            ->groupBy('receipt_vouchers.id', 'receipt_vouchers.created_at')
-            ->orderBy('receipt_vouchers.created_at')
-            ->orderBy('receipt_vouchers.id')
-            ->select('receipt_vouchers.id', DB::raw('SUM(receipt_voucher_items.net_amount) as linked_amount'))
-            ->get();
-
-        $deductions = [];
-        $left = $totalSoLevelDebit;
-
-        foreach ($rvs as $rv) {
-            if ($left <= 0) {
-                break;
-            }
-
-            $doSpent = (float) DB::table('delivery_order_receipt_voucher')
-                ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
-                ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
-                ->where('delivery_order.so_id', $soId)
-                ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                ->where('delivery_order.am_approval_status', '!=', 'rejected')
-                ->when($excludeDoId, function ($q) use ($excludeDoId) {
-                    $q->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $excludeDoId);
-                })
-                ->sum('delivery_order_receipt_voucher.amount');
-
-            $rvJvSpent = (float) DB::table('journal_voucher_details')
-                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                ->whereNull('journal_vouchers.deleted_at')
-                ->whereNull('journal_voucher_details.deleted_at')
-                ->where('journal_vouchers.am_approval_status', 'approved')
-                ->where('journal_voucher_details.receipt_voucher_id', $rv->id)
-                ->sum('journal_voucher_details.debit_amount');
-
-            $available = max(0, (float) $rv->linked_amount - $doSpent - $rvJvSpent);
-            $deduct = min($available, $left);
-
-            if ($deduct > 0) {
-                $deductions[$rv->id] = $deduct;
-                $left -= $deduct;
-            }
-        }
-
-        return $deductions;
+        return app(\App\Services\SaleAdvanceBalanceService::class);
     }
 
     public function get_journal_vouchers(Request $request)
@@ -1101,6 +942,7 @@ class DeliveryOrderController extends Controller
 
         $delivery_order_id = $request->delivery_order_id;
         $grouped_details = $jv_details->groupBy('jv_id');
+        $poolLeft = $this->saleBalances()->freeAdvance((int) $sale_order_id, $delivery_order_id ? ['do' => $delivery_order_id] : []);
 
         foreach ($grouped_details as $jv_id => $details) {
             $total_credit = $details->sum('credit_amount');
@@ -1116,9 +958,10 @@ class DeliveryOrderController extends Controller
             }
             
             $spent = $spent_query->sum('amount');
-            $remaining = doubleval($total_credit) - doubleval($spent);
+            $remaining = min(doubleval($total_credit) - doubleval($spent), max(0, $poolLeft));
 
             if ($remaining > 0) {
+                $poolLeft -= $remaining;
                 $first = $details->first();
                 $data[] = [
                     'id' => "jv_{$jv_id}",
@@ -1213,26 +1056,8 @@ class DeliveryOrderController extends Controller
         // 2. Fetch Regular RVs linked to the Sale Order of this DO
         $rvsList = collect();
         if ($delivery_order->so_id) {
-            $dpvRefunds = DB::table('payment_voucher_data')
-                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                ->whereNull('payment_vouchers.deleted_at')
-                ->whereNull('payment_voucher_data.deleted_at')
-                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                ->where('payment_voucher_data.sales_order_id', $delivery_order->so_id)
-                ->whereNull('payment_voucher_data.delivery_order_id')
-                ->select('payment_vouchers.id', 'payment_vouchers.created_at', 'payment_voucher_data.net_amount')
-                ->orderBy('payment_vouchers.created_at', 'asc')
-                ->get();
-
-            $dpvPool = [];
-            foreach ($dpvRefunds as $dpv) {
-                $dpvPool[] = [
-                    'created_at' => $dpv->created_at,
-                    'amount' => (float) $dpv->net_amount
-                ];
-            }
-
-            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($delivery_order->so_id, $delivery_order->customer_id, $delivery_order->id);
+            $rvLedger = $this->saleBalances()->rvLedger((int) $delivery_order->so_id, ['do' => $delivery_order->id]);
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $delivery_order->so_id, ['do' => $delivery_order->id]);
 
             $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
                 ->whereHas("items", function ($query) use ($delivery_order) {
@@ -1243,54 +1068,9 @@ class DeliveryOrderController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->orderBy('id', 'asc')
                 ->get()
-                ->map(function ($rv) use ($delivery_order, &$dpvPool, $soLevelJvDeductions) {
-                    $linked_amount = $rv->items->where("reference_type", "sale_order")
-                        ->where("reference_id", $delivery_order->so_id)
-                        ->sum("net_amount");
-
-                    $spent = DB::table('delivery_order_receipt_voucher')
-                        ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
-                        ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
-                        ->where('delivery_order.so_id', $delivery_order->so_id)
-                        ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                        ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
-                        ->where('delivery_order.am_approval_status', '!=', 'rejected')
-                        ->sum('delivery_order_receipt_voucher.amount');
-
-                    $jv_spent = DB::table('journal_voucher_details')
-                        ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                        ->whereNull('journal_vouchers.deleted_at')
-                        ->whereNull('journal_voucher_details.deleted_at')
-                        ->where('journal_vouchers.am_approval_status', 'approved')
-                        ->where('receipt_voucher_id', $rv->id)
-                        ->sum('debit_amount');
-
-                    $thisDoRefund = (float) DB::table('payment_voucher_data')
-                        ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                        ->whereNull('payment_vouchers.deleted_at')
-                        ->whereNull('payment_voucher_data.deleted_at')
-                        ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                        ->where('payment_voucher_data.delivery_order_id', $delivery_order->id)
-                        ->sum('payment_voucher_data.net_amount');
-
-                    $spent += $soLevelJvDeductions[$rv->id] ?? 0;
-
-                    $rvAvailableBeforeDpv = max(0, doubleval($linked_amount) - doubleval($spent) - $thisDoRefund);
-
-                    $rvDpvDeduction = 0;
-                    foreach ($dpvPool as &$dpvItem) {
-                        if ($dpvItem['amount'] > 0 && $dpvItem['created_at'] >= $rv->created_at) {
-                            $deduct = min($rvAvailableBeforeDpv - $rvDpvDeduction, $dpvItem['amount']);
-                            $rvDpvDeduction += $deduct;
-                            $dpvItem['amount'] -= $deduct;
-                            if ($rvDpvDeduction >= $rvAvailableBeforeDpv) {
-                                break;
-                            }
-                        }
-                    }
-                    unset($dpvItem);
-
-                    $rv->remaining_amount = max(0, $rvAvailableBeforeDpv - $rvDpvDeduction - doubleval($jv_spent));
+                ->map(function ($rv) use ($rvLedger, &$poolLeft) {
+                    $rv->remaining_amount = min((float) ($rvLedger[$rv->id]['available'] ?? 0), $poolLeft);
+                    $poolLeft -= $rv->remaining_amount;
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
                     $rv->date = $rv->rv_date->format('Y-m-d');
@@ -1406,6 +1186,14 @@ class DeliveryOrderController extends Controller
                 ], 422);
             }
 
+            if ($delivery_order->do_status === 'closed') {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'This Delivery Order is closed and its status cannot be changed.',
+                    'message' => 'This Delivery Order is closed and its status cannot be changed.'
+                ], 422);
+            }
+
             $delivery_order->update([
                 'do_status' => $request->do_status
             ]);
@@ -1458,7 +1246,7 @@ class DeliveryOrderController extends Controller
             $delivery_order->receipt_vouchers()->detach();
 
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            $soLevelJvDeductions = $this->getSoLevelJvDeductionsByRv($request->sale_order_id, $request->customer_id, $delivery_order->id);
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $request->sale_order_id, ['do' => $delivery_order->id]);
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
                     if (str_starts_with($rv_val, 'adv_')) {
@@ -1495,49 +1283,8 @@ class DeliveryOrderController extends Controller
                         $rv_id = str_replace('rv_', '', $rv_val);
                         $rv = ReceiptVoucher::with('items')->find($rv_id);
                         if ($rv) {
-                            $linked_amount = $rv->items->where("reference_type", "sale_order")
-                                ->where("reference_id", $request->sale_order_id)
-                                ->sum("net_amount");
-
-                            $spent = DB::table('delivery_order_receipt_voucher')
-                                ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
-                                ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
-                                ->where('delivery_order.so_id', $request->sale_order_id)
-                                ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                                ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
-                                ->where('delivery_order.am_approval_status', '!=', 'rejected')
-                                ->sum('delivery_order_receipt_voucher.amount');
-
-                            $jv_spent = DB::table('journal_voucher_details')
-                                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                                ->whereNull('journal_vouchers.deleted_at')
-                                ->whereNull('journal_voucher_details.deleted_at')
-                                ->where('journal_vouchers.am_approval_status', 'approved')
-                                ->where('receipt_voucher_id', $rv->id)
-                                ->sum('debit_amount');
-
-                            $spent += $jv_spent;
-                            $spent += $soLevelJvDeductions[$rv->id] ?? 0;
-
-                            $dpv_refunded = (float) DB::table('payment_voucher_data')
-                                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                                ->whereNull('payment_vouchers.deleted_at')
-                                ->whereNull('payment_voucher_data.deleted_at')
-                                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                                ->where('payment_voucher_data.sales_order_id', $request->sale_order_id)
-                                ->whereNull('payment_voucher_data.delivery_order_id')
-                                ->where('payment_vouchers.created_at', '>=', $rv->created_at)
-                                ->sum('payment_voucher_data.net_amount');
-
-                            $thisDoRefund = (float) DB::table('payment_voucher_data')
-                                ->join('payment_vouchers', 'payment_vouchers.id', '=', 'payment_voucher_data.payment_voucher_id')
-                                ->whereNull('payment_vouchers.deleted_at')
-                                ->whereNull('payment_voucher_data.deleted_at')
-                                ->where('payment_vouchers.am_approval_status', '!=', 'rejected')
-                                ->where('payment_voucher_data.delivery_order_id', $delivery_order->id)
-                                ->sum('payment_voucher_data.net_amount');
-
-                            $remaining = max(0, doubleval($linked_amount) - doubleval($spent) - doubleval($dpv_refunded) - $thisDoRefund);
+                            $remaining = min($this->saleBalances()->rvAvailableForDo($rv->id, (int) $request->sale_order_id, $delivery_order->id), max(0, $poolLeft));
+                            $poolLeft -= $remaining;
 
                             if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();
@@ -1599,9 +1346,10 @@ class DeliveryOrderController extends Controller
                             ->where('reference_id', $jv_id)
                             ->sum('amount');
                             
-                        $remaining = doubleval($total_credit) - doubleval($spent);
-                        
+                        $remaining = min(doubleval($total_credit) - doubleval($spent), max(0, $poolLeft));
+
                         if ($remaining > 0) {
+                            $poolLeft -= $remaining;
                             if ($jv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
                                 DB::rollBack();
                                 return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
@@ -1636,8 +1384,9 @@ class DeliveryOrderController extends Controller
             foreach ($request->item_id as $key => $item) {
                 $soDataId = $request->so_data_id[$key] ?? $firstSoData?->id;
                 $itemRemaining = $soDataId ? delivery_order_qty_balance($soDataId) : $remaining_qty;
-                $current_qty = $request->current_qty[$key] ?? 0;
-                if ((float) $request->qty[$key] > (float) ($itemRemaining + $current_qty)) {
+                // This DO's old lines were deleted above, so its qty is already back in the balance
+                if ((float) $request->qty[$key] > (float) $itemRemaining) {
+                    DB::rollBack();
                     return response()->json("Total KG is: $itemRemaining, you can not exceed this balance", 422);
                 }
 

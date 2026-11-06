@@ -81,6 +81,11 @@
                                 class="danger p-1 text-center mr-2 position-relative">
                                 <i class="ft-trash-2"></i>
                             </a>
+                        @elseif($loadingSlip->mustReduceForClosedDeliveryOrder())
+                            <a onclick="openModal(this,'{{ route('sales.loading-slip.edit', $loadingSlip->id) }}','Edit Loading Slip', false)"
+                                class="warning p-1 text-center mr-2 position-relative" title="A Delivery Order is closed. Reduce this Loading Slip.">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
                         @endif
                         <a onclick="openModal(this,'{{ route('sales.loading-slip.show', $loadingSlip->id) }}','View Loading Slip', true)"
                             class="info p-1 text-center mr-2 position-relative" title="View">

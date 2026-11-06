@@ -660,7 +660,11 @@ trait HasApprovalSalesOrder
             $this->am_change_made = 1;
             $this->saveQuietly();
 
+            $wasDateAmendment = $this->hasPendingDeliveryDateAmendment();
+
             $this->onApprovalComplete();
+
+            \App\Services\SaleNotificationService::sendSaleOrderDecisionNotification($this, 'approved', null, $wasDateAmendment);
 
             return true;
         }
@@ -711,7 +715,11 @@ trait HasApprovalSalesOrder
         $this->am_change_made = 0;
         $this->saveQuietly();
 
+        $wasDateAmendment = $this->hasPendingDeliveryDateAmendment();
+
         $this->onApprovalRejected();
+
+        \App\Services\SaleNotificationService::sendSaleOrderDecisionNotification($this, 'rejected', $comments, $wasDateAmendment);
 
         return true;
     }
@@ -759,7 +767,11 @@ trait HasApprovalSalesOrder
         $this->am_change_made = 0;
         $this->saveQuietly();
 
+        $wasDateAmendment = $this->hasPendingDeliveryDateAmendment();
+
         $this->onApprovalReverted();
+
+        \App\Services\SaleNotificationService::sendSaleOrderDecisionNotification($this, 'reverted', $comments, $wasDateAmendment);
 
         return true;
     }

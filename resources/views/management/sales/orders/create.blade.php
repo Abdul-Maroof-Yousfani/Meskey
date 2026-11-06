@@ -362,7 +362,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Sell By:</label>
-                <select name="parent_user_id" id="parent_user_id" class="form-control select2">
+                <input type="hidden" name="parent_user_id" value="{{ $defaultSellerId ?? '' }}">
+                <select id="parent_user_id" class="form-control select2" disabled>
                     <option value="">Select Seller</option>
                     @foreach ($sellers ?? [] as $seller)
                         <option value="{{ $seller->id }}" {{ ($defaultSellerId ?? '') == $seller->id ? 'selected' : '' }}>

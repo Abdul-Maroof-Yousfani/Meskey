@@ -156,6 +156,18 @@ class LoadingSlipController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => ['The Sale Order linked to this ticket has been closed. Operations are locked.']]], 422);
         }
 
+        if ($ticketItem && $ticketItem->allDeliveryOrdersClosed()) {
+            return response()->json(['errors' => ['loading_program_item_id' => ['The Delivery Order linked to this ticket has been closed. Operations are locked.']]], 422);
+        }
+
+        if ($ticketItem->hasAnyClosedDeliveryOrder()) {
+            $openBalance = $ticketItem->openQtyBalance();
+            $slipKg = max((float) $request->kilogram, (float) $request->no_of_bags * (float) $request->bag_size);
+            if ($slipKg > $openBalance + 0.01) {
+                return response()->json(['errors' => ['no_of_bags' => ['A Delivery Order of this truck is closed. Only ' . number_format($openBalance, 2) . ' kg can go, but this Loading Slip is for ' . number_format($slipKg, 2) . ' kg.']]], 422);
+            }
+        }
+
         // Check if loading slip already exists for this ticket
         $existingSlip = LoadingSlip::where('loading_program_item_id', $request->loading_program_item_id)->first();
         if ($existingSlip) {
@@ -293,7 +305,13 @@ class LoadingSlipController extends Controller
             $rejectedDispatchQc = $loadingSlip->getLatestRejectedDispatchQc();
         }
 
-        return view('management.sales.loading-slip.edit', compact('loadingSlip', 'rejectedDispatchQc', 'canEdit'));
+        $openQtyLimit = null;
+        $slipItem = $loadingSlip->loadingProgramItem;
+        if ($slipItem && $slipItem->hasAnyClosedDeliveryOrder() && !$loadingSlip->secondWeighbridge) {
+            $openQtyLimit = $slipItem->openQtyBalance();
+        }
+
+        return view('management.sales.loading-slip.edit', compact('loadingSlip', 'rejectedDispatchQc', 'canEdit', 'openQtyLimit'));
     }
 
     /**
@@ -338,9 +356,22 @@ class LoadingSlipController extends Controller
             return response()->json(['error' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.'], 422);
         }
 
+        if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->allDeliveryOrdersClosed()) {
+            return response()->json(['error' => 'The Delivery Order linked to this ticket has been closed. Operations are locked.'], 422);
+        }
+
         // Check if editing is allowed
         if (!$loadingSlip->canBeEdited()) {
             return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
+        }
+
+        $slipItem = $loadingSlip->loadingProgramItem;
+        if ($slipItem && $slipItem->hasAnyClosedDeliveryOrder() && !$loadingSlip->secondWeighbridge) {
+            $openBalance = $slipItem->openQtyBalance();
+            $slipKg = max((float) $request->kilogram, (float) $request->no_of_bags * (float) $request->bag_size);
+            if ($slipKg > $openBalance + 0.01) {
+                return response()->json(['error' => 'A Delivery Order of this truck is closed. Only ' . number_format($openBalance, 2) . ' kg can go, but this Loading Slip is for ' . number_format($slipKg, 2) . ' kg.'], 422);
+            }
         }
 
         $DeliveryOrder = DeliveryOrder::find($loadingSlip->loadingProgramItem->delivery_order_id);
@@ -591,7 +622,9 @@ class LoadingSlipController extends Controller
                 'bag_size' => $orders[0]['bag_size'],
                 'brand' => $orders[0]['brand'],
                 'is_pohanch' => $orders[0]['is_pohanch'],
-                'suggested_qty' => $LoadingProgramItem->qty,
+                'suggested_qty' => $LoadingProgramItem->hasAnyClosedDeliveryOrder()
+                    ? min((float) $LoadingProgramItem->qty, $LoadingProgramItem->openQtyBalance())
+                    : $LoadingProgramItem->qty,
             ]
         ]);
     }

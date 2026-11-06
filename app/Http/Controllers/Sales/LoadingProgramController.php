@@ -340,6 +340,10 @@ class LoadingProgramController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        if ($closedDoError = $this->closedDeliveryOrderError($request)) {
+            return response()->json(['error' => $closedDoError, 'message' => $closedDoError], 422);
+        }
+
         $request['created_by'] = auth()->user()->id;
 
         // Get location data from delivery orders if available
@@ -871,6 +875,10 @@ class LoadingProgramController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        if ($closedDoError = $this->closedDeliveryOrderError($request, $loadingProgram->loadingProgramItems()->pluck('id')->all())) {
+            return response()->json(['error' => $closedDoError, 'message' => $closedDoError], 422);
+        }
+
         // Preserve any DOs linked to locked items so they are not lost from LP header
         $lockedDoIds = \DB::table('loading_program_item_delivery_order')
             ->whereIn('loading_program_item_id', $lockedItemIds)
@@ -1369,6 +1377,31 @@ class LoadingProgramController extends Controller
             'delivery_orders' => $deliveryOrders,
             'transporters_map' => $transportersMap
         ]);
+    }
+
+    /**
+     * A closed DO can stay on a truck it already had, but can't be put on a new one.
+     */
+    private function closedDeliveryOrderError(Request $request, array $existingItemIds = []): ?string
+    {
+        $alreadyLinked = empty($existingItemIds) ? [] : DB::table('loading_program_item_delivery_order')
+            ->whereIn('loading_program_item_id', $existingItemIds)
+            ->pluck('delivery_order_id')
+            ->all();
+
+        $selected = (array) ($request->delivery_order_id ?? []);
+        foreach ((array) ($request->loading_program_items ?? []) as $itemData) {
+            $selected = array_merge($selected, (array) ($itemData['delivery_order_id'] ?? []));
+        }
+
+        $newOnes = array_diff(array_filter($selected), $alreadyLinked);
+        if (empty($newOnes)) {
+            return null;
+        }
+
+        $closedRef = DB::table('delivery_order')->whereIn('id', $newOnes)->where('do_status', 'closed')->value('reference_no');
+
+        return $closedRef ? "Delivery Order {$closedRef} is closed and cannot be used in Loading Programs." : null;
     }
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)

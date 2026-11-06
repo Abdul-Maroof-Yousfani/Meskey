@@ -149,6 +149,12 @@ class FirstWeighBridgeController extends Controller
             ], 422);
         }
 
+        if ($loadingProgramItem && $loadingProgramItem->allDeliveryOrdersClosed()) {
+            return response()->json([
+                'errors' => ['loading_program_item_id' => 'The Delivery Order linked to this ticket has been closed. Cannot proceed.']
+            ], 422);
+        }
+
         if (!$isSuperAdmin && !in_array($loadingProgramItem->arrival_location_id, $locations)) {
             return response()->json([
                 'errors' => ['loading_program_item_id' => 'You are not authorized to perform first weighbridge for this location.']
@@ -301,6 +307,13 @@ class FirstWeighBridgeController extends Controller
             $query->whereIn('arrival_location_id', $locations);
         })
         ->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+
+        if ($loadingProgramItem->hasClosedSaleOrder() || $loadingProgramItem->allDeliveryOrdersClosed()) {
+            return response()->json([
+                'errors' => ['loading_program_item_id' => 'The Sale Order or Delivery Order linked to this ticket has been closed. Cannot proceed.']
+            ], 422);
+        }
+
         $deliveryOrders = $loadingProgramItem->deliveryOrders;
         $request['company_id'] = $request->company_id;
 
@@ -478,6 +491,7 @@ class FirstWeighBridgeController extends Controller
         $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
             ->whereDoesntHave('firstWeighbridge')
             ->where('am_approval_status', 'approved')
+            ->where('do_status', '!=', 'closed')
             ->with('customer', 'delivery_order_data.item')
             ->get();
 

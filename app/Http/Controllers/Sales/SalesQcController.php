@@ -145,6 +145,10 @@ class SalesQcController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
+        if ($ticketItem && $ticketItem->allDeliveryOrdersClosed()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Delivery Order linked to this ticket has been closed. Operations are locked.']], 422);
+        }
+
         // Check if the ticket already has a sales qc
         $existingSalesQc = SalesQc::where('loading_program_item_id', $request->loading_program_item_id)->first();
         if ($existingSalesQc) {
@@ -345,6 +349,10 @@ class SalesQcController extends Controller
         }
         if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
             return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
+        }
+
+        if ($ticketItem && $ticketItem->allDeliveryOrdersClosed()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Delivery Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
         // Check if the ticket already has a sales qc (excluding current one)

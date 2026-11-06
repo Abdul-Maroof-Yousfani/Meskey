@@ -223,6 +223,58 @@ class LoadingProgramItem extends Model
         return false;
     }
 
+    /** DOs this truck is loading against. */
+    public function linkedDeliveryOrderIds(): array
+    {
+        $ids = \Illuminate\Support\Facades\DB::table('loading_program_item_delivery_order')
+            ->where('loading_program_item_id', $this->id)
+            ->pluck('delivery_order_id')
+            ->all();
+
+        if (empty($ids) && $this->delivery_order_id) {
+            $ids = [$this->delivery_order_id];
+        }
+        if (empty($ids) && $this->loading_program_id) {
+            $headerDo = \Illuminate\Support\Facades\DB::table('loading_programs')->where('id', $this->loading_program_id)->value('delivery_order_id');
+            $ids = $headerDo ? [$headerDo] : [];
+        }
+
+        return $ids;
+    }
+
+    /** With every DO of the truck closed, the truck stops at whichever step it has reached before Second Weighbridge. */
+    public function allDeliveryOrdersClosed(): bool
+    {
+        $ids = $this->linkedDeliveryOrderIds();
+        if (empty($ids)) {
+            return false;
+        }
+
+        return !\Illuminate\Support\Facades\DB::table('delivery_order')
+            ->whereIn('id', $ids)
+            ->where('do_status', '!=', 'closed')
+            ->exists();
+    }
+
+    public function hasAnyClosedDeliveryOrder(): bool
+    {
+        $ids = $this->linkedDeliveryOrderIds();
+
+        return !empty($ids) && \Illuminate\Support\Facades\DB::table('delivery_order')
+            ->whereIn('id', $ids)
+            ->where('do_status', 'closed')
+            ->exists();
+    }
+
+    /** Qty this truck can still load from its open DOs. */
+    public function openQtyBalance(): float
+    {
+        $slip = new LoadingSlip();
+        $slip->setRelation('loadingProgramItem', $this);
+
+        return (float) get_second_weighbridge_balance($slip);
+    }
+
     public function scopeWhereDoesntHaveClosedSaleOrder($query)
     {
         $closedStatuses = ['close-contract-due-to-market-down', 'close-with-market-rate-penalty', 'closed', 'close'];

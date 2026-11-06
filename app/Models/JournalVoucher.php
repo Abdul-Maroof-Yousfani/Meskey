@@ -358,12 +358,9 @@ class JournalVoucher extends Model
             'journalVoucherDetails.customerAdvance'
         ]);
 
-        $soUsage = [];
-        $doUsage = [];
         $soCreditUsage = [];
         $doCreditUsage = [];
         $refJvUsage = [];
-        $rvUsage = [];
         $advUsage = [];
 
         $jvController = app(\App\Http\Controllers\Finance\JournalVoucherController::class);
@@ -373,18 +370,8 @@ class JournalVoucher extends Model
             $credit = (float) $detail->credit_amount;
 
             if ($debit > 0) {
-                if ($detail->delivery_order_id) {
-                    $doUsage[$detail->delivery_order_id] = ($doUsage[$detail->delivery_order_id] ?? 0) + $debit;
-                } elseif ($detail->sales_order_id) {
-                    $soUsage[$detail->sales_order_id] = ($soUsage[$detail->sales_order_id] ?? 0) + $debit;
-                }
-
                 if ($detail->reference_jv_id) {
                     $refJvUsage[$detail->reference_jv_id] = ($refJvUsage[$detail->reference_jv_id] ?? 0) + $debit;
-                }
-
-                if ($detail->receipt_voucher_id) {
-                    $rvUsage[$detail->receipt_voucher_id] = ($rvUsage[$detail->receipt_voucher_id] ?? 0) + $debit;
                 }
 
                 if ($detail->customer_advance_id) {
@@ -399,40 +386,15 @@ class JournalVoucher extends Model
             }
         }
 
-        $soPoolUsage = [];
-
-        // Validate SO limits (direct SO adjustments without DO)
-        foreach ($soUsage as $soId => $requiredDebit) {
-            $so = \App\Models\Sales\SalesOrder::find($soId);
-            $soRef = $so ? ($so->reference_no ?: "SO #{$soId}") : "SO #{$soId}";
-
-            $available = $jvController->getSalesOrderRemainingAdvance($soId, $this->id);
-
-            if ($requiredDebit > $available + 0.01) {
-                return "Cannot approve Journal Voucher {$this->jv_no}: Sales Order {$soRef} only has Rs. " . number_format($available, 2) . " available advance balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ". Payment has already been refunded via Payment Voucher or consumed.";
-            }
-
-            $soPoolUsage[$soId] = ($soPoolUsage[$soId] ?? 0) + $requiredDebit;
-        }
-
-        // Validate DO limits
-        foreach ($doUsage as $doId => $requiredDebit) {
-            $do = \App\Models\Sales\DeliveryOrder::with(['delivery_order_data.item'])->find($doId);
-            if (!$do) continue;
-
-            $available = $jvController->getDeliveryOrderRemainingAdvance($do, $this->id);
-            if ($requiredDebit > $available + 0.01) {
-                return "Cannot approve Journal Voucher {$this->jv_no}: Delivery Order {$do->reference_no} only has Rs. " . number_format($available, 2) . " available advance balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ".";
-            }
-
-            if ($do->so_id) {
-                $soPoolUsage[$do->so_id] = ($soPoolUsage[$do->so_id] ?? 0) + $requiredDebit;
-                $soNetTotal = $jvController->getSalesOrderTotalNetAdvance($do->so_id, $this->id);
-                if ($soPoolUsage[$do->so_id] > $soNetTotal + 0.01) {
-                    $soRef = \App\Models\Sales\SalesOrder::find($do->so_id)->reference_no ?? ("SO #" . $do->so_id);
-                    return "Cannot approve Journal Voucher {$this->jv_no}: The total adjustment for Delivery Order(s) and Sales Order {$soRef} exceeds the net remaining advance balance of Rs. " . number_format($soNetTotal, 2) . ".";
-                }
-            }
+        // All debit lines of this JV are checked together against the shared SO / DO / RV balances
+        $balanceError = app(\App\Services\SaleAdvanceBalanceService::class)->validateJvDebits(
+            $this->journalVoucherDetails->map(fn ($detail) => $detail->only([
+                'debit_amount', 'sales_order_id', 'delivery_order_id', 'receipt_voucher_id', 'reference_jv_id', 'reference_jv_detail_id',
+            ]))->all(),
+            $this->id
+        );
+        if ($balanceError) {
+            return "Cannot approve Journal Voucher {$this->jv_no}: {$balanceError}";
         }
 
         // Validate Credit lines to SO / DO (transferring advance INTO order)
@@ -440,18 +402,11 @@ class JournalVoucher extends Model
             $so = \App\Models\Sales\SalesOrder::find($soId);
             if (!$so) continue;
 
-            $soTotalOrderValue = (float) \Illuminate\Support\Facades\DB::table('sales_order_data')
-                ->where('sale_order_id', $soId)
-                ->sum(\Illuminate\Support\Facades\DB::raw('qty * rate'));
+            $remainingOrderCapacity = $jvController->getSalesOrderCreditCapacity($soId, $this->id);
 
-            if ($soTotalOrderValue > 0) {
-                $currentAdvance = $jvController->getSalesOrderActualAdvanceReceived($soId, $this->id);
-                $remainingOrderCapacity = max(0, $soTotalOrderValue - $currentAdvance);
-
-                if ($totalCreditEntered > $remainingOrderCapacity + 0.01) {
-                    $soRef = $so->reference_no ?: "SO #{$soId}";
-                    return "Cannot approve Journal Voucher {$this->jv_no}: The entered credit amount (" . number_format($totalCreditEntered, 2) . ") for Sales Order {$soRef} exceeds its remaining unadvanced order amount of " . number_format($remainingOrderCapacity, 2) . ".";
-                }
+            if ($totalCreditEntered > $remainingOrderCapacity + 0.01) {
+                $soRef = $so->reference_no ?: "SO #{$soId}";
+                return "Cannot approve Journal Voucher {$this->jv_no}: The entered credit amount (" . number_format($totalCreditEntered, 2) . ") for Sales Order {$soRef} exceeds its remaining unadvanced order amount of " . number_format($remainingOrderCapacity, 2) . ".";
             }
         }
 
@@ -514,54 +469,6 @@ class JournalVoucher extends Model
             }
         }
 
-        // Validate RV limits (where not already validated via SO)
-        foreach ($rvUsage as $rvId => $requiredDebit) {
-            $rv = \App\Models\ReceiptVoucher::find($rvId);
-            if (!$rv) continue;
-
-            $doConsumed = (float) \Illuminate\Support\Facades\DB::table('delivery_order_receipt_voucher as dorv')
-                ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
-                ->where('do_tbl.am_approval_status', '!=', 'rejected')
-                ->where('dorv.receipt_voucher_id', $rvId)
-                ->sum('dorv.amount');
-
-            $otherJvConsumed = (float) \Illuminate\Support\Facades\DB::table('journal_voucher_details')
-                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                ->whereNull('journal_vouchers.deleted_at')
-                ->whereNull('journal_voucher_details.deleted_at')
-                ->where('journal_vouchers.am_approval_status', 'approved')
-                ->where('journal_vouchers.id', '!=', $this->id)
-                ->where('journal_voucher_details.receipt_voucher_id', $rvId)
-                ->sum('journal_voucher_details.debit_amount');
-
-            $rvSoIds = \Illuminate\Support\Facades\DB::table('receipt_voucher_items')
-                ->where('receipt_voucher_id', $rvId)
-                ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
-                ->pluck('reference_id');
-
-            $dpvConsumed = 0;
-            if ($rvSoIds->isNotEmpty()) {
-                $dpvConsumed = (float) \App\Models\PaymentVoucherData::whereIn('sales_order_id', $rvSoIds)
-                    ->whereHas('paymentVoucher', function ($q) {
-                        $q->whereNull('deleted_at');
-                        $q->where('am_approval_status', '!=', 'rejected');
-                    })
-                    ->sum('amount');
-            }
-
-            $soLinkedAmount = (float) \Illuminate\Support\Facades\DB::table('receipt_voucher_items')
-                ->where('receipt_voucher_id', $rvId)
-                ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
-                ->sum('net_amount');
-            $baseAmount = $soLinkedAmount > 0 ? $soLinkedAmount : (float) $rv->total_amount;
-
-            $available = max(0, $baseAmount - ($doConsumed + $otherJvConsumed + $dpvConsumed));
-
-            if ($requiredDebit > $available + 0.01) {
-                return "Cannot approve Journal Voucher {$this->jv_no}: Receipt Voucher {$rv->unique_no} only has Rs. " . number_format($available, 2) . " available balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ".";
-            }
-        }
-
         // Validate Excess Advance / Customer Advance limits
         foreach ($advUsage as $advId => $requiredDebit) {
             $adv = \App\Models\CustomerAdvance::find($advId);
@@ -572,17 +479,8 @@ class JournalVoucher extends Model
             $prevAdj = (float) \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $advId)
                 ->where('voucher_no', $this->jv_no)
                 ->sum('amount');
+            // remaining_amount is already reduced by every DPV and JV that used this advance
             $available += $prevAdj;
-
-            // Also deduct any pending/approved DPV refunds on this customer advance
-            $dpvRefunded = (float) \App\Models\PaymentVoucherData::where('customer_advance_id', $advId)
-                ->whereHas('paymentVoucher', function ($q) {
-                    $q->whereNull('deleted_at');
-                    $q->where('am_approval_status', '!=', 'rejected');
-                })
-                ->sum('amount');
-
-            $available = max(0, $available - $dpvRefunded);
 
             if ($requiredDebit > $available + 0.01) {
                 return "Cannot approve Journal Voucher {$this->jv_no}: Excess Payment {$adv->voucher_no} only has Rs. " . number_format($available, 2) . " available balance, but this voucher attempts to adjust Rs. " . number_format($requiredDebit, 2) . ".";

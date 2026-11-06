@@ -501,6 +501,10 @@ if (!function_exists("getLoadingProgramBalance")) {
                 if (!isset($doCapacities[$d_id]))
                     continue;
 
+                // A truck not yet weighed can't load against a closed DO
+                if (!$item->secondWeighbridge && delivery_order_is_closed_sale($dosDict[$d_id] ?? null))
+                    continue;
+
                 $available = max(0, $doCapacities[$d_id] - $doUsed[$d_id]);
                 $consumed = min($remainingQty, $available);
 
@@ -513,7 +517,9 @@ if (!function_exists("getLoadingProgramBalance")) {
         }
 
         // Update cache for the specific request
-        $balanceCache[$cacheKey] = max(0, $doCapacities[$delivery_order_id] - $doUsed[$delivery_order_id]);
+        $balanceCache[$cacheKey] = delivery_order_is_closed_sale($dosDict[$delivery_order_id] ?? null)
+            ? 0
+            : max(0, $doCapacities[$delivery_order_id] - $doUsed[$delivery_order_id]);
 
         return $balanceCache[$cacheKey];
     }
@@ -1124,16 +1130,19 @@ function delivery_order_balance($sale_order_data_id)
 
         if ($isActive) {
             // When DO is active, another truck/LP can still be created under this DO,
-            // so it holds its full DO bags
-            $spentBags += max((float) ($doData->no_of_bags ?? 0), $dcBags);
+            // so it holds its bags (less the part its money was already taken out for)
+            $spentBags += max(delivery_order_line_allowed_share($do->id, (float) ($doData->no_of_bags ?? 0)), $dcBags);
         } else {
             // When DO is not active (closed / inactive), no more trucks can be made,
-            // so only the actual dispatched DC bags are counted
-            $spentBags += $dcBags;
+            // so only the DC bags and the bags of a weighed truck still going are counted
+            $weighedQty = delivery_order_line_weighed_qty($do->id, $doData);
+            $bagSize = (float) ($doData->bag_size ?: ($soData->bag_size ?: 50));
+            $spentBags += $dcBags + ($bagSize > 0 ? $weighedQty / $bagSize : 0);
         }
     }
 
     $able_to_spend = (float) $soData->no_of_bags;
+    $spentBags += $able_to_spend * sale_order_adjusted_ratio($soData);
     $balance = $able_to_spend - $spentBags;
 
     // If there is still QTY balance remaining, ensure at least proportional bags are available
@@ -1219,6 +1228,11 @@ function get_delivery_order_refund_stats($delivery_order_id)
 
     $totalRefundedAmount = max($dpvRefund + $jvAdjusted, $settlementAdjusted);
 
+    // Money taken out at SO level beyond what was free leaves this DO short: its goods can't go without it
+    if (!$isExport && $do->so_id && $do->do_status !== 'closed') {
+        $totalRefundedAmount += app(\App\Services\SaleAdvanceBalanceService::class)->doMoneyShortfall($do->id);
+    }
+
     $refundedQty = 0;
     $refundedBags = 0;
     $isFullyRefunded = false;
@@ -1257,6 +1271,25 @@ function get_delivery_order_refund_stats($delivery_order_id)
         'remaining_allowed_bags' => $remainingAllowedBags,
         'remaining_allowed_value' => $remainingAllowedValue,
     ];
+}
+
+/** Export orders have their own flow and aren't part of the sale DO close rule. */
+function delivery_order_is_closed_sale($delivery_order): bool
+{
+    return $delivery_order && $delivery_order->do_status === 'closed' && $delivery_order->type !== 'export_order';
+}
+
+/** This DO line's part of the qty weighed at Second Weighbridge that has no challan yet. */
+function delivery_order_line_weighed_qty($delivery_order_id, $doData): float
+{
+    $weighed = app(\App\Services\SaleAdvanceBalanceService::class)->weighedQtyWithoutChallan([$delivery_order_id])[$delivery_order_id] ?? 0;
+    if ($weighed <= 0) {
+        return 0;
+    }
+
+    $doQty = (float) DeliveryOrderData::where('delivery_order_id', $delivery_order_id)->sum('qty');
+
+    return $doQty > 0 ? $weighed * ((float) $doData->qty / $doQty) : 0;
 }
 
 function delivery_order_has_loading_program($delivery_order_id)
@@ -1311,6 +1344,9 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
     foreach ($deliveryOrders as $do) {
         if (!$do)
             continue;
+        // Truck on two DOs: a closed DO adds nothing, only the open DO's qty can still load
+        if (delivery_order_is_closed_sale($do))
+            continue;
         $refundStats = get_delivery_order_refund_stats($do->id);
         $allowedQty = (float) $refundStats['remaining_allowed_qty'];
 
@@ -1329,7 +1365,7 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
 {
     $delivery_order = DeliveryOrder::withoutGlobalScopes()->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])->find($delivery_order_id);
-    if (!$delivery_order)
+    if (!$delivery_order || delivery_order_is_closed_sale($delivery_order))
         return 0;
 
     $refundStats = get_delivery_order_refund_stats($delivery_order_id);
@@ -1447,38 +1483,8 @@ function receipt_voucher_balance($reference_id, $type = "sale_order", $exclude_r
             })
             ->sum('journal_voucher_details.credit_amount');
 
-        $debitJvs = (float) \Illuminate\Support\Facades\DB::table('journal_voucher_details')
-            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-            ->whereNull('journal_vouchers.deleted_at')
-            ->whereNull('journal_voucher_details.deleted_at')
-            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
-            ->where(function ($q) use ($reference_id, $soDoIds) {
-                $q->where('journal_voucher_details.sales_order_id', $reference_id);
-                if (!empty($soDoIds)) {
-                    $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
-                }
-            })
-            ->sum('journal_voucher_details.debit_amount');
-
-        if ($creditJvs > $debitJvs) {
-            $total_spent += ($creditJvs - $debitJvs);
-        } else {
-            $total_spent += ($debitJvs - $creditJvs);
-        }
-
-        $dpvAmount = (float) \App\Models\PaymentVoucherData::where(function ($q) use ($reference_id, $soDoIds) {
-                $q->where('sales_order_id', $reference_id);
-                if (!empty($soDoIds)) {
-                    $q->orWhereIn('delivery_order_id', $soDoIds);
-                }
-            })
-            ->whereHas('paymentVoucher', function ($q) {
-                $q->whereNull('deleted_at');
-                $q->where('am_approval_status', '!=', 'rejected');
-            })
-            ->sum('amount');
-
-        $total_spent += $dpvAmount;
+        // A debit or refund takes the same value off the order and off the money received, so it doesn't change the room left.
+        $total_spent += $creditJvs;
     } else {
         $total_overall_amount = SalesInvoiceData::where('sales_invoice_id', $reference_id)
             ->selectRaw('SUM(net_amount) as total')
@@ -2771,26 +2777,46 @@ function delivery_order_qty_used($sale_order_data_id)
 
         if ($isActive) {
             // When DO is active, another truck/LP can still be made for this DO,
-            // so it holds its full DO quantity
-            $spent += max((float) $doData->qty, $dcQty);
+            // so it holds its quantity (less the part its money was already taken out for)
+            $spent += max(delivery_order_line_allowed_share($do->id, (float) $doData->qty), $dcQty);
         } else {
             // When DO is not active (closed / inactive), no more trucks can be made,
-            // so only the actual dispatched DC quantity is considered spent!
-            $spent += $dcQty;
+            // so only the DC qty and the qty of a weighed truck still going are spent
+            $spent += $dcQty + delivery_order_line_weighed_qty($do->id, $doData);
         }
     }
 
-    // Add quantity refunded via Direct Payment Voucher for Sale so it cannot be re-ordered
-    $refundedAmount = (float) \App\Models\PaymentVoucherData::where('sales_order_id', $soData->sale_order_id)
-        ->whereHas('paymentVoucher', function ($q) {
-            $q->whereNull('deleted_at');
-        })
-        ->sum('amount');
+    // Money taken out by a refund (DPV) or an adjustment (JV) takes its quantity off the order for good.
+    return $spent + ((float) $soData->qty * sale_order_adjusted_ratio($soData));
+}
 
-    $rate = (float) $soData->rate;
-    $refundedQty = ($rate > 0) ? ($refundedAmount / $rate) : 0;
+/**
+ * Share of this SO line that is gone because its money left through a DPV or JV (0 to 1).
+ * The amount is spread over the SO lines by value, so each line loses its own part.
+ */
+function sale_order_adjusted_ratio($soData): float
+{
+    $soValue = (float) SalesOrderData::where('sale_order_id', $soData->sale_order_id)->sum(\Illuminate\Support\Facades\DB::raw('qty * rate'));
+    if ($soValue <= 0) {
+        return 0;
+    }
 
-    return $spent + $refundedQty;
+    $adjusted = app(\App\Services\SaleAdvanceBalanceService::class)->soAdjustedAmount((int) $soData->sale_order_id);
+
+    return min(1, $adjusted / $soValue);
+}
+
+/**
+ * Part of a DO line's qty/bags still allowed after refunds and adjustments on that DO.
+ */
+function delivery_order_line_allowed_share($delivery_order_id, float $lineValue): float
+{
+    $stats = get_delivery_order_refund_stats($delivery_order_id);
+    if ((float) $stats['total_qty'] <= 0) {
+        return $lineValue;
+    }
+
+    return $lineValue * ((float) $stats['remaining_allowed_qty'] / (float) $stats['total_qty']);
 }
 
 function delivery_order_qty_balance($sale_order_data_id)

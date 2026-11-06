@@ -598,13 +598,15 @@ $(document).ready(function() {
             } else {
                 // No DOs created yet - direct SO sale return allowed
                 const soRemAmt = parseFloat(resp.so_remaining_amount) || 0;
-                $doSelect.empty().append(new Option('No DO - Full SO Return (Rs. ' + resp.so_formatted_remaining + ')', ''));
+                $doSelect.empty().append(new Option(resp.so_blocked_message ? 'SO Open - Refund Not Allowed' : 'No DO - Full SO Return (Rs. ' + resp.so_formatted_remaining + ')', ''));
                 $doSelect.trigger('change.select2');
 
                 $row.find('.sale-raw-rem-bal').val(soRemAmt);
                 $row.find('.sale-rem-bal').val(soRemAmt > 0 ? soRemAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
                 $row.find('.sale-amount-input').attr('max', soRemAmt.toFixed(2));
-                $doNote.html('<i class="ft-check text-success"></i> No DOs created. Full SO returnable: Rs. ' + resp.so_formatted_remaining).show();
+                $doNote.html(resp.so_blocked_message
+    ? '<i class="ft-alert-triangle text-warning"></i> ' + resp.so_blocked_message
+    : '<i class="ft-check text-success"></i> SO returnable: Rs. ' + resp.so_formatted_remaining).show();
 
                 if (soRemAmt > 0 && !$row.find('.sale-amount-input').val()) {
                     $row.find('.sale-amount-input').val(soRemAmt.toFixed(2));

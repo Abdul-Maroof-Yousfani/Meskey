@@ -159,6 +159,15 @@ class SecondWeighBridgeController extends Controller
             return response()->json(['errors' => ['loading_slip_id' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.']], 422);
         }
 
+        if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->allDeliveryOrdersClosed()) {
+            return response()->json(['errors' => ['loading_slip_id' => 'The Delivery Order linked to this Loading Slip has been closed. Operations are locked.']], 422);
+        }
+
+        if ($loadingSlip->mustReduceForClosedDeliveryOrder()) {
+            $openBalance = $loadingSlip->loadingProgramItem->openQtyBalance();
+            return response()->json(['errors' => ['loading_slip_id' => 'A Delivery Order of this truck is closed. Only ' . number_format($openBalance, 2) . ' kg can go, but the Loading Slip is for ' . number_format((float) $loadingSlip->kilogram, 2) . ' kg. Please reduce the Loading Slip first.']], 422);
+        }
+
         $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
         if (!$firstWeighbridge) {
             return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
@@ -373,6 +382,11 @@ class SecondWeighBridgeController extends Controller
             return response()->json(['errors' => ['loading_slip_id' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.']], 422);
         }
 
+        // Weighed qty is what goes against a closed DO, so its weight can't change any more
+        if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->hasAnyClosedDeliveryOrder()) {
+            return response()->json(['errors' => ['loading_slip_id' => 'A Delivery Order linked to this Loading Slip has been closed. Second Weighbridge cannot be changed.']], 422);
+        }
+
         $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
         if (!$firstWeighbridge) {
             return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
@@ -500,6 +514,7 @@ class SecondWeighBridgeController extends Controller
             if ($saleOrderId) {
                 $deliveryOrders = DeliveryOrder::where('so_id', $saleOrderId)
                     ->where('am_approval_status', 'approved')
+                    ->where('do_status', '!=', 'closed')
                     ->with('customer')
                     ->get();
             }
@@ -547,6 +562,7 @@ class SecondWeighBridgeController extends Controller
 
         $deliveryOrders = DeliveryOrder::where('so_id', $request->sale_order_id)
             ->where('am_approval_status', 'approved')
+            ->where('do_status', '!=', 'closed')
             ->whereHas('firstWeighbridge')
             ->whereDoesntHave('secondWeighbridge')
             ->with('customer', 'delivery_order_data.item')

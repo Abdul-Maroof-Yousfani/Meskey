@@ -202,10 +202,11 @@ class SaleOrderController extends Controller
         $sellerData = $this->getSellerDropdownData($sale_order->parent_user_id);
         $sellers = $sellerData['sellers'];
         $sellerError = $sellerData['sellerError'];
+        $defaultSellerId = $sellerData['defaultSellerId'];
         $balanceQuantity = $this->calculateBalanceQuantity($sale_order);
         $isClosed = $sale_order->isClosed();
         $preSaleInspections = PreSaleInspection::where('status', 'active')->latest('id')->get();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed', 'sellers', 'sellerError', 'preSaleInspections'));
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed', 'defaultSellerId', 'sellers', 'sellerError', 'preSaleInspections'));
     }
 
     public function view(Request $request, int $id)
@@ -366,18 +367,8 @@ class SaleOrderController extends Controller
             }
         }
 
-        if ($request->filled('parent_user_id')) {
-            $parentUser = User::find($request->parent_user_id);
-            if (!$parentUser || !$parentUser->can('Seller')) {
-                $pName = $parentUser?->name ?? 'Parent';
-                return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
-            }
-            $payload['parent_user_id'] = $request->parent_user_id;
-        } elseif ($authUser && !$authUser->parent_user_id && $authUser->can('Seller')) {
-            $payload['parent_user_id'] = $authUser->id;
-        } else {
-            $payload['parent_user_id'] = null;
-        }
+        // Sell By is read only on the form: the seller always comes from the logged-in user
+        $payload['parent_user_id'] = $this->getSellerDropdownData()['defaultSellerId'];
         $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
 
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
@@ -768,6 +759,11 @@ class SaleOrderController extends Controller
                 }
 
                 DB::commit();
+
+                if ($deliveryDateChanged) {
+                    \App\Services\SaleNotificationService::sendSaleOrderDateAmendmentNotification($sales_order->fresh(), $newDeliveryDate);
+                }
+
                 $msg = $deliveryDateChanged
                     ? 'Sale Order delivery date amendment submitted for re-approval.'
                     : 'Sale Order Contract Status updated successfully.';
@@ -795,19 +791,9 @@ class SaleOrderController extends Controller
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
 
-            // Seller / Sell By (parent_user_id) validation
-            if ($request->has('parent_user_id')) {
-                if ($request->filled('parent_user_id')) {
-                    $parentUser = User::find($request->parent_user_id);
-                    if (!$parentUser || !$parentUser->can('Seller')) {
-                        $pName = $parentUser?->name ?? 'Parent';
-                        return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
-                    }
-                    $payload['parent_user_id'] = $request->parent_user_id;
-                } else {
-                    $payload['parent_user_id'] = null;
-                }
-            }
+            // Sell By is read only on the form: a saved seller stays, an SO without one gets the logged-in user's seller
+            $payload['parent_user_id'] = $sales_order->parent_user_id
+                ?: $this->getSellerDropdownData()['defaultSellerId'];
             if ($request->has('seller_commission_per_kg')) {
                 $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
             }
@@ -943,7 +929,8 @@ class SaleOrderController extends Controller
             }
 
             // If the Sale Order was reverted, resubmit after edit back to Stage 1
-            if ($sales_order->so_approval_stage === 'reverted' || $sales_order->am_approval_status === 'reverted') {
+            $wasResubmitted = $sales_order->so_approval_stage === 'reverted' || $sales_order->am_approval_status === 'reverted';
+            if ($wasResubmitted) {
                 $sales_order->resubmitAfterEdit();
             }
 
@@ -974,6 +961,10 @@ class SaleOrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        if ($wasResubmitted) {
+            \App\Services\SaleNotificationService::sendSaleOrderResubmittedNotification($sales_order->fresh());
         }
 
         return response()->json(['data' => 'Sale Order has been updated']);

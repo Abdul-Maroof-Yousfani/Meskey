@@ -179,12 +179,20 @@ class DeliveryChallanController extends Controller
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
         $delivery_orders = DeliveryOrder::select("delivery_order.id", "delivery_order.reference_no")
-            ->where('delivery_order.do_status', 'active')
             ->whereDoesntHaveClosedSaleOrder()
             ->join('loading_programs', 'delivery_order.id', '=', 'loading_programs.delivery_order_id')
             ->join('loading_program_items', 'loading_programs.id', '=', 'loading_program_items.loading_program_id')
             ->join('loading_slips', 'loading_program_items.id', '=', 'loading_slips.loading_program_item_id')
             ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
+            // A closed DO only stays here while a weighed truck of it still needs its DC
+            ->where(function ($q) {
+                $q->where('delivery_order.do_status', 'active')
+                    ->orWhereNotExists(function ($sub) {
+                        $sub->select(DB::raw(1))
+                            ->from('delivery_challan_data')
+                            ->whereColumn('delivery_challan_data.ticket_id', 'loading_program_items.id');
+                    });
+            })
             ->when(!$isSuperAdmin, function($q) use ($locations) {
                 $q->whereIn('loading_program_items.arrival_location_id', $locations);
             })
@@ -207,11 +215,9 @@ class DeliveryChallanController extends Controller
 
         // delivery order's delivery date should not be greater than date
         $delivery_order = DeliveryOrder::find($do_id);
-        if ($delivery_order && $delivery_order->isClosed()) {
-            return response()->json([
-                'error' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.',
-                'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
-            ], 422);
+        if ($closedError = $this->closedOrderChallanError($request)) {
+            DB::rollBack();
+            return response()->json(['error' => $closedError, 'message' => $closedError], 422);
         }
 
         if (is_array($request->ticket_id)) {
@@ -543,11 +549,9 @@ class DeliveryChallanController extends Controller
         // delivery order's delivery date should not be greater than date
 
         $delivery_order = DeliveryOrder::find($do_id);
-        if ($delivery_order && $delivery_order->isClosed()) {
-            return response()->json([
-                'error' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.',
-                'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
-            ], 422);
+        if ($closedError = $this->closedOrderChallanError($request)) {
+            DB::rollBack();
+            return response()->json(['error' => $closedError, 'message' => $closedError], 422);
         }
 
         if (is_array($request->ticket_id)) {
@@ -1147,14 +1151,6 @@ class DeliveryChallanController extends Controller
             ->where("customer_id", $customer_id)
             ->where("am_approval_status", "approved")
             ->whereDoesntHaveClosedSaleOrder()
-            ->where(function ($q) use ($request) {
-                $q->where('do_status', 'active');
-                if ($request->delivery_challan_id) {
-                    $q->orWhereHas('delivery_challans', function ($sq) use ($request) {
-                        $sq->where('delivery_challans.id', $request->delivery_challan_id);
-                    });
-                }
-            })
             ->whereHas('loadingPrograms.loadingProgramItems', function($query) use ($isSuperAdmin, $locations) {
                 // Ticket must have a loading slip with second weighbridge
                 $query->whereHas('loadingSlip.secondWeighbridge')
@@ -1197,6 +1193,60 @@ class DeliveryChallanController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * A closed Sale Order locks everything. A closed DO only allows the qty a truck has already been weighed for.
+     */
+    private function closedOrderChallanError(Request $request): ?string
+    {
+        $doIds = array_filter(explode(',', (string) $request->delivery_order_id));
+        $orders = DeliveryOrder::with('salesOrder')->whereIn('id', $doIds)->get();
+
+        foreach ($orders as $order) {
+            if ($order->salesOrder && $order->salesOrder->isClosed()) {
+                return 'The Sale Order for this Delivery Challan has been closed. Operations are locked.';
+            }
+        }
+
+        $closedOrders = $orders->where('do_status', 'closed')->keyBy('id');
+        if ($closedOrders->isEmpty()) {
+            return null;
+        }
+
+        $rowQty = [];
+        foreach ((array) $request->do_data_id as $index => $doDataId) {
+            $doId = \App\Models\Sales\DeliveryOrderData::where('id', $doDataId)->value('delivery_order_id');
+            if (!$closedOrders->has($doId)) {
+                continue;
+            }
+            $ticketId = $request->ticket_id[$index] ?? null;
+            if (!$ticketId) {
+                return "Delivery Order {$closedOrders[$doId]->reference_no} is closed. A challan on it needs a truck that has completed Second Weighbridge.";
+            }
+            $key = "{$ticketId}_{$doId}";
+            $rowQty[$key] = ($rowQty[$key] ?? 0) + (float) ($request->qty[$index] ?? 0);
+        }
+
+        if (empty($rowQty) && empty($request->do_data_id)) {
+            return 'The Delivery Order for this Delivery Challan has been closed. Operations are locked.';
+        }
+
+        foreach ($rowQty as $key => $qty) {
+            [$ticketId, $doId] = explode('_', $key);
+            $weighed = (float) DB::table('sales_second_weighbridge_items as i')
+                ->join('sales_second_weighbridges as w', 'w.id', '=', 'i.second_weighbridge_id')
+                ->join('loading_slips as s', 's.id', '=', 'w.loading_slip_id')
+                ->where('s.loading_program_item_id', $ticketId)
+                ->where('i.delivery_order_id', $doId)
+                ->sum('i.net_weight');
+
+            if ($qty > $weighed + 0.01) {
+                return "Delivery Order {$closedOrders[$doId]->reference_no} is closed. Challan qty (" . number_format($qty, 2) . ") cannot exceed the qty weighed against it (" . number_format($weighed, 2) . ").";
+            }
+        }
+
+        return null;
     }
 
     public function getItems(Request $request) {
@@ -1322,7 +1372,7 @@ class DeliveryChallanController extends Controller
                 'loadingSlip.secondWeighbridge'
             ])
             ->whereDoesntHaveClosedSaleOrder()
-            ->WhereDeliveryStatusNotClosed()
+            ->whereHas('deliveryOrders') // A weighed truck still gets its DC after the DO is closed
             ->whereHas("loadingSlip.secondWeighbridge")
             ->when(!$isSuperAdmin, function ($q) use ($locations) {
                 $q->whereIn('arrival_location_id', $locations);

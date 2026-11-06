@@ -1271,7 +1271,8 @@ function get_sale_orders() {
         url: "{{ route('sales.get.delivery-order.getSoAgainstCustomer') }}",
         method: "GET",
         data: {
-            customer_id: customer_id
+            customer_id: customer_id,
+            delivery_order_id: "{{ $delivery_order->id }}"
         },
         dataType: "json",
         success: function(res) {
@@ -1425,7 +1426,8 @@ function get_receipt_vouchers() {
         method: "GET",
         data: {
             customer_id: customer_id,
-            sale_order_id: sale_order_id
+            sale_order_id: sale_order_id,
+            delivery_order_id: "{{ $delivery_order->id }}"
         },
         dataType: "json",
         success: function(res) {
@@ -1529,6 +1531,7 @@ function get_so_items() {
         method: "GET",
         data: {
             so_id: soId,
+            delivery_order_id: "{{ $delivery_order->id }}"
         },
         dataType: "html",
         success: function(res) {
@@ -1598,7 +1601,7 @@ function checkDoStatus(selectElement) {
     if (selectElement.value === 'closed') {
         Swal.fire({
             title: 'Are you sure?',
-            text: "Closing this Delivery Order will make it inaccessible in all modules. This action cannot be reversed later.",
+            text: "Closing this Delivery Order stops its trucks at their current step. Qty that has reached Second Weighbridge or a Delivery Challan will still go. This action cannot be reversed later.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',

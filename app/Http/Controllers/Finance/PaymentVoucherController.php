@@ -636,266 +636,64 @@ class PaymentVoucherController extends Controller
         ]);
     }
 
+    private function saleBalances(): \App\Services\SaleAdvanceBalanceService
+    {
+        return app(\App\Services\SaleAdvanceBalanceService::class);
+    }
+
+    private function saleExclusions($excludeVoucherNo = null, $excludePvId = null, $excludeJvId = null): array
+    {
+        return ['pv_no' => $excludeVoucherNo, 'pv' => $excludePvId, 'jv' => $excludeJvId];
+    }
+
     /**
-     * Calculate the true total net advance available across the entire Sales Order (and all its DOs),
-     * taking into account all approved RVs, credit JVs, dispatches, previous DPV refunds, and JV debits.
+     * Total advance left on the Sales Order and all its DOs (received - dispatched - refunds - JV debits).
      */
     public function getSalesOrderTotalNetAdvance($soId, $excludeVoucherNo = null, $excludePvId = null, $excludeJvId = null)
     {
         $soId = is_object($soId) ? $soId->id : $soId;
 
-        // 1. All DO IDs belonging to this SO (where not rejected)
-        $soDoIds = DB::table('delivery_order')
-            ->where('so_id', $soId)
-            ->where('am_approval_status', '!=', 'rejected')
-            ->pluck('id')
-            ->toArray();
-
-        // 2. All approved RVs linked to this SO or attached to its DOs
-        $directRvItems = DB::table('receipt_voucher_items')
-            ->join('receipt_vouchers', 'receipt_vouchers.id', '=', 'receipt_voucher_items.receipt_voucher_id')
-            ->whereNull('receipt_vouchers.deleted_at')
-            ->where('receipt_vouchers.am_approval_status', 'approved')
-            ->where('receipt_voucher_items.reference_type', 'sale_order')
-            ->where('receipt_voucher_items.reference_id', $soId)
-            ->select('receipt_voucher_items.receipt_voucher_id', 'receipt_voucher_items.net_amount', 'receipt_vouchers.created_at')
-            ->get();
-
-        $rvMap = [];
-        $rvDates = [];
-        foreach ($directRvItems as $it) {
-            $rvMap[$it->receipt_voucher_id] = (float) $it->net_amount;
-            $rvDates[$it->receipt_voucher_id] = $it->created_at;
-        }
-
-        if (!empty($soDoIds)) {
-            $doRvs = DB::table('delivery_order_receipt_voucher as dorv')
-                ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
-                ->whereNull('rv.deleted_at')
-                ->where('rv.am_approval_status', 'approved')
-                ->whereIn('dorv.delivery_order_id', $soDoIds)
-                ->select('dorv.receipt_voucher_id', 'dorv.amount', 'rv.created_at')
-                ->get();
-
-            foreach ($doRvs as $dorv) {
-                if (!isset($rvMap[$dorv->receipt_voucher_id])) {
-                    $rvMap[$dorv->receipt_voucher_id] = (float) $dorv->amount;
-                    $rvDates[$dorv->receipt_voucher_id] = $dorv->created_at;
-                } else {
-                    $rvMap[$dorv->receipt_voucher_id] = max($rvMap[$dorv->receipt_voucher_id], (float) $dorv->amount);
-                }
-            }
-        }
-
-        // 3. Any credit JVs to this SO (where advance was transferred IN)
-        $creditJvRecords = DB::table('journal_voucher_details')
-            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-            ->whereNull('journal_vouchers.deleted_at')
-            ->whereNull('journal_voucher_details.deleted_at')
-            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
-            ->where(function ($q) use ($soId, $soDoIds) {
-                $q->where('journal_voucher_details.sales_order_id', $soId);
-                if (!empty($soDoIds)) {
-                    $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
-                }
-            })
-            ->when($excludeJvId, function ($q) use ($excludeJvId) {
-                $q->where('journal_vouchers.id', '!=', $excludeJvId);
-            })
-            ->select('journal_voucher_details.id', 'journal_voucher_details.credit_amount', 'journal_vouchers.created_at')
-            ->get();
-
-        $creditJvs = (float) $creditJvRecords->sum('credit_amount');
-        foreach ($creditJvRecords as $cjv) {
-            if ($cjv->credit_amount > 0) {
-                $rvDates[] = $cjv->created_at;
-            }
-        }
-
-        $totalSoAdvance = array_sum($rvMap) + $creditJvs;
-
-        $isFallbackUsed = false;
-        // If no RV or credit JV advance was recorded, fallback to SO item total amount
-        if ($totalSoAdvance <= 0) {
-            $soItemsTotal = (float) DB::table('sales_order_data')
-                ->where('sale_order_id', $soId)
-                ->sum(DB::raw('qty * rate'));
-            $totalSoAdvance = $soItemsTotal;
-            $isFallbackUsed = true;
-        }
-
-        // 4. Dispatched goods value across all DOs of this SO
-        $totalDispatched = 0;
-        if (!empty($soDoIds)) {
-            $doDataRows = DB::table('delivery_order_data')->whereIn('delivery_order_id', $soDoIds)->get();
-            foreach ($doDataRows as $dod) {
-                $dcQty = (float) DB::table('delivery_challan_data')
-                    ->join('delivery_challans', 'delivery_challans.id', '=', 'delivery_challan_data.delivery_challan_id')
-                    ->where('delivery_challans.am_approval_status', '!=', 'rejected')
-                    ->where('delivery_challan_data.do_data_id', $dod->id)
-                    ->sum('delivery_challan_data.qty');
-                $totalDispatched += $dcQty * (float) $dod->rate;
-            }
-        }
-
-        // 5. Previous DPV refunds across SO and DOs
-        $dpvRows = PaymentVoucherData::where(function ($q) use ($soId, $soDoIds) {
-                $q->where('sales_order_id', $soId);
-                if (!empty($soDoIds)) {
-                    $q->orWhereIn('delivery_order_id', $soDoIds);
-                }
-            })
-            ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo, $excludePvId) {
-                $q->whereNull('deleted_at');
-                $q->where('am_approval_status', '!=', 'rejected');
-                if ($excludeVoucherNo) {
-                    $q->where('unique_no', '!=', $excludeVoucherNo);
-                }
-                if ($excludePvId) {
-                    $q->where('id', '!=', $excludePvId);
-                }
-            })
-            ->with(['paymentVoucher'])
-            ->get();
-
-        $totalRefunded = 0;
-        if ($isFallbackUsed) {
-            $totalRefunded = (float) $dpvRows->sum('amount');
-        } else {
-            $earliestAdvanceDate = !empty($rvDates) ? min($rvDates) : null;
-            foreach ($dpvRows as $dpv) {
-                if (!empty($dpv->delivery_order_id)) {
-                    $totalRefunded += (float) $dpv->amount;
-                } elseif ($earliestAdvanceDate && $dpv->paymentVoucher && $dpv->paymentVoucher->created_at >= $earliestAdvanceDate) {
-                    $totalRefunded += (float) $dpv->amount;
-                }
-            }
-        }
-
-        // 5b. DPV "Journal Voucher" rows that refunded one of the credit JV lines counted above as
-        // this SO's advance. Those rows are saved without sales_order_id, so step 5 misses them;
-        // without this the same money could be refunded again through the SO/DO row.
-        $creditJvDetailIds = $creditJvRecords->where('credit_amount', '>', 0)->pluck('id')->all();
-        if (!empty($creditJvDetailIds)) {
-            $totalRefunded += (float) PaymentVoucherData::where(function ($q) use ($creditJvDetailIds) {
-                    $q->whereIn('journal_voucher_detail_id', $creditJvDetailIds)
-                      ->orWhere(function ($sq) use ($creditJvDetailIds) {
-                          $sq->where('reference_type', 'journal_voucher')
-                             ->whereIn('reference_id', $creditJvDetailIds);
-                      });
-                })
-                ->whereNull('sales_order_id')
-                ->whereNull('delivery_order_id')
-                ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo, $excludePvId) {
-                    $q->whereNull('deleted_at');
-                    $q->where('am_approval_status', '!=', 'rejected');
-                    if ($excludeVoucherNo) {
-                        $q->where('unique_no', '!=', $excludeVoucherNo);
-                    }
-                    if ($excludePvId) {
-                        $q->where('id', '!=', $excludePvId);
-                    }
-                })
-                ->sum('amount');
-        }
-
-        // 6. JV debits / adjustments across SO, DOs, and linked RVs
-        $rvIds = array_keys($rvMap);
-        $totalJvDebits = (float) DB::table('journal_voucher_details')
-            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-            ->whereNull('journal_vouchers.deleted_at')
-            ->whereNull('journal_voucher_details.deleted_at')
-            ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
-            ->when($excludeJvId, function ($q) use ($excludeJvId) {
-                $q->where('journal_vouchers.id', '!=', $excludeJvId);
-            })
-            ->where(function ($q) use ($soId, $soDoIds, $rvIds) {
-                $q->where('journal_voucher_details.sales_order_id', $soId);
-                if (!empty($soDoIds)) {
-                    $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
-                }
-                if (!empty($rvIds)) {
-                    $q->orWhereIn('journal_voucher_details.receipt_voucher_id', $rvIds);
-                }
-            })
-            ->sum('journal_voucher_details.debit_amount');
-
-        $soNetAvailable = max(0, $totalSoAdvance - $totalDispatched - $totalRefunded - $totalJvDebits);
-        return round($soNetAvailable, 2);
-    }
-
-    public function getSalesOrderRemainingAdvance($salesOrder, $excludeVoucherNo = null, $excludePvId = null, $excludeJvId = null)
-    {
-        $soId = is_object($salesOrder) ? $salesOrder->id : $salesOrder;
-        $soNetAvailable = $this->getSalesOrderTotalNetAdvance($soId, $excludeVoucherNo, $excludePvId, $excludeJvId);
-
-        // Check if there are active DOs
-        $activeDos = DB::table('delivery_order')
-            ->where('so_id', $soId)
-            ->where('am_approval_status', '!=', 'rejected')
-            ->where('do_status', 'active')
-            ->get();
-
-        if ($activeDos->isEmpty()) {
-            return round($soNetAvailable, 2);
-        }
-
-        // Advance attached to active DOs that hasn't been refunded yet
-        $activeDoIds = $activeDos->pluck('id')->toArray();
-        $attachedToActive = (float) DB::table('delivery_order_receipt_voucher')
-            ->whereIn('delivery_order_id', $activeDoIds)
-            ->sum('amount');
-
-        // JV credit balance consumed by active DOs (stored in settlement_adjustments against the DO number)
-        // is held by those DOs exactly like attached RV advance. Only JVs whose credit line is counted in
-        // this SO's advance pool (see getSalesOrderTotalNetAdvance step 3) are taken into account.
-        $activeDoRefs = $activeDos->pluck('reference_no')->filter()->values()->toArray();
-        if (!empty($activeDoRefs)) {
-            $soDoIds = DB::table('delivery_order')
-                ->where('so_id', $soId)
-                ->where('am_approval_status', '!=', 'rejected')
-                ->pluck('id')
-                ->toArray();
-
-            $soPoolJvIds = DB::table('journal_voucher_details')
-                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                ->whereNull('journal_vouchers.deleted_at')
-                ->whereNull('journal_voucher_details.deleted_at')
-                ->where('journal_vouchers.am_approval_status', '!=', 'rejected')
-                ->where('journal_voucher_details.credit_amount', '>', 0)
-                ->where(function ($q) use ($soId, $soDoIds) {
-                    $q->where('journal_voucher_details.sales_order_id', $soId);
-                    if (!empty($soDoIds)) {
-                        $q->orWhereIn('journal_voucher_details.delivery_order_id', $soDoIds);
-                    }
-                })
-                ->distinct()
-                ->pluck('journal_vouchers.id')
-                ->toArray();
-
-            if (!empty($soPoolJvIds)) {
-                $attachedToActive += (float) DB::table('settlement_adjustments')
-                    ->where('reference_type', 'journal_voucher')
-                    ->whereIn('reference_id', $soPoolJvIds)
-                    ->whereIn('voucher_no', $activeDoRefs)
-                    ->sum('amount');
-            }
-        }
-
-        $directSoRemaining = max(0, $soNetAvailable - $attachedToActive);
-        return round(min($directSoRemaining, $soNetAvailable), 2);
+        return $this->saleBalances()->netAdvance((int) $soId, $this->saleExclusions($excludeVoucherNo, $excludePvId, $excludeJvId));
     }
 
     /**
-     * A customer's credit JV line that carries sales_order_id / delivery_order_id is the same money
-     * that getSalesOrderTotalNetAdvance() counts as that SO's advance. Refunding it through a
-     * "Journal Voucher" row must therefore also stay within (and consume) the SO's refundable pool,
-     * otherwise the same amount can be paid once as JV refund and again as SO/DO refund.
+     * Part of the advance that no open DO is holding.
+     */
+    public function getSalesOrderFreeAdvance($soId, $excludeVoucherNo = null, $excludePvId = null, $excludeJvId = null)
+    {
+        $soId = is_object($soId) ? $soId->id : $soId;
+
+        return $this->saleBalances()->freeAdvance((int) $soId, $this->saleExclusions($excludeVoucherNo, $excludePvId, $excludeJvId));
+    }
+
+    /**
+     * Refundable through a Sales Order row of a DPV: 0 until the Sales Order is closed.
+     */
+    public function getSalesOrderRemainingAdvance($salesOrder, $excludeVoucherNo = null, $excludePvId = null, $excludeJvId = null)
+    {
+        $soId = is_object($salesOrder) ? $salesOrder->id : $salesOrder;
+
+        return $this->saleBalances()->soRefundable((int) $soId, $this->saleExclusions($excludeVoucherNo, $excludePvId, $excludeJvId));
+    }
+
+    /**
+     * A customer's credit JV line that carries sales_order_id / delivery_order_id is that order's advance.
+     * Refunding it through a "Journal Voucher" row follows the same open/closed rule and shares the same balance.
      *
      * @return array{so_id:int, available:float}|null  null when the JV line is not tied to any SO/DO
      */
     public function getJvDetailLinkedSoPool($jvDetail, $excludeVoucherNo = null, $excludePvId = null): ?array
     {
+        if (!empty($jvDetail->delivery_order_id)) {
+            $soId = (int) DB::table('delivery_order')->where('id', $jvDetail->delivery_order_id)->value('so_id');
+            if ($soId) {
+                return [
+                    'so_id' => $soId,
+                    'available' => (float) $this->saleBalances()->doRefundable($jvDetail->delivery_order_id, $this->saleExclusions($excludeVoucherNo, $excludePvId)),
+                ];
+            }
+        }
+
         if (!empty($jvDetail->sales_order_id)) {
             $soId = (int) $jvDetail->sales_order_id;
             return [
@@ -904,108 +702,46 @@ class PaymentVoucherController extends Controller
             ];
         }
 
-        if (!empty($jvDetail->delivery_order_id)) {
-            $soId = (int) DB::table('delivery_order')->where('id', $jvDetail->delivery_order_id)->value('so_id');
-            if ($soId) {
-                return [
-                    'so_id' => $soId,
-                    'available' => (float) $this->getSalesOrderTotalNetAdvance($soId, $excludeVoucherNo, $excludePvId),
-                ];
-            }
-        }
-
         return null;
     }
 
     /**
-     * Calculate returnable refund amount for a Delivery Order,
-     * ensuring it is strictly capped by the Sales Order's remaining net advance.
+     * Refundable through a Delivery Order row of a DPV: 0 until the DO (or its Sales Order) is closed.
      */
     public function getDeliveryOrderRemainingRefundAmount($deliveryOrder, $excludeVoucherNo = null, $excludePvId = null, $excludeJvId = null)
     {
-        $do = is_object($deliveryOrder) ? $deliveryOrder : DeliveryOrder::with(['delivery_order_data.item'])->find($deliveryOrder);
-        if (!$do) return 0;
+        $doId = is_object($deliveryOrder) ? $deliveryOrder->id : $deliveryOrder;
 
-        // Active DOs with an associated Loading Program cannot be refunded via DPV unless closed
-        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
-            return 0;
-        }
-
-        $totalDoQty = 0;
-        $totalDcQty = 0;
-        $totalRemainingQty = 0;
-        $totalRemainingAmount = 0;
-        $totalDispatchedValue = 0;
-
-        foreach ($do->delivery_order_data as $itemData) {
-            $iDoQty = (float) $itemData->qty;
-            $iDcQty = (float) DeliveryChallanData::where('do_data_id', $itemData->id)
-                ->whereHas('deliveryChallan', function ($q) {
-                    $q->where('am_approval_status', '!=', 'rejected');
-                })
-                ->sum('qty');
-
-            $iRemQty = max(0, $iDoQty - $iDcQty);
-            $iRate = (float) $itemData->rate;
-            $iRemAmt = $iRemQty * $iRate;
-
-            $totalDoQty += $iDoQty;
-            $totalDcQty += $iDcQty;
-            $totalRemainingQty += $iRemQty;
-            $totalRemainingAmount += $iRemAmt;
-            $totalDispatchedValue += $iDcQty * $iRate;
-        }
-
-        // Attached cash advance to this DO from approved RVs
-        $attachedRvAmount = (float) DB::table('delivery_order_receipt_voucher as dorv')
-            ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
-            ->whereNull('rv.deleted_at')
-            ->where('rv.am_approval_status', 'approved')
-            ->where('dorv.delivery_order_id', $do->id)
-            ->sum('dorv.amount');
-
-        if ($attachedRvAmount > 0) {
-            $remainingAttachedAdvance = max(0, $attachedRvAmount - $totalDispatchedValue);
-            $totalRemainingAmount = max($totalRemainingAmount, $remainingAttachedAdvance);
-        }
-
-        // Deduct previous DPV refunds for this DO
-        $alreadyRefunded = (float) PaymentVoucherData::where('delivery_order_id', $do->id)
-            ->whereHas('paymentVoucher', function ($q) use ($excludeVoucherNo, $excludePvId) {
-                $q->whereNull('deleted_at');
-                $q->where('am_approval_status', '!=', 'rejected');
-                if ($excludeVoucherNo) {
-                    $q->where('unique_no', '!=', $excludeVoucherNo);
-                }
-                if ($excludePvId) {
-                    $q->where('id', '!=', $excludePvId);
-                }
-            })
-            ->sum('amount');
-
-        // Deduct previous JV adjustments for this DO
-        $alreadyJvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $do->id)
-            ->whereHas('journalVoucher', function ($q) use ($excludeJvId) {
-                $q->whereNull('deleted_at');
-                $q->where('am_approval_status', '!=', 'rejected');
-                if ($excludeJvId) {
-                    $q->where('id', '!=', $excludeJvId);
-                }
-            })
-            ->sum('debit_amount');
-
-        $totalDeductions = $alreadyRefunded + $alreadyJvAdjusted;
-        $totalRemainingAmount = max(0, $totalRemainingAmount - $totalDeductions);
-
-        // Cap by parent Sales Order's true net remaining advance pool
-        if ($do->so_id) {
-            $soNetAvailable = $this->getSalesOrderTotalNetAdvance($do->so_id, $excludeVoucherNo, $excludePvId, $excludeJvId);
-            $totalRemainingAmount = min($totalRemainingAmount, $soNetAvailable);
-        }
-
-        return round(max(0, $totalRemainingAmount), 2);
+        return $this->saleBalances()->doRefundable($doId, $this->saleExclusions($excludeVoucherNo, $excludePvId, $excludeJvId));
     }
 
+    /**
+     * Stops a Sale Order / DO refund row unless the order is closed and belongs to the selected customer.
+     */
+    private function assertSaleRefundAllowed($rowNumber, $customerAccountId, $soId, $doId = null): void
+    {
+        $so = SalesOrder::withoutGlobalScopes()->where('id', $soId)->lockForUpdate()->first();
+        if (!$so) {
+            throw new \Exception("Row #{$rowNumber}: Sales Order was not found.");
+        }
+
+        $customer = $this->resolveCustomerFromAccountId($customerAccountId);
+        if (!$customer || (int) $so->customer_id !== (int) $customer->id) {
+            throw new \Exception("Row #{$rowNumber}: Sales Order ({$so->reference_no}) does not belong to the selected customer.");
+        }
+
+        if ($doId) {
+            $do = DeliveryOrder::withoutGlobalScopes()->find($doId);
+            if (!$do || (int) $do->so_id !== (int) $so->id) {
+                throw new \Exception("Row #{$rowNumber}: The selected Delivery Order does not belong to Sales Order ({$so->reference_no}).");
+            }
+            if (!$this->saleBalances()->isDoReleased($doId)) {
+                throw new \Exception("Row #{$rowNumber}: Payment cannot be issued for Delivery Order ({$do->reference_no}) because it is open. Please close the DO first.");
+            }
+        } elseif (!$so->isClosed()) {
+            throw new \Exception("Row #{$rowNumber}: Payment cannot be issued for Sales Order ({$so->reference_no}) because it is open. Please close the SO first, or refund against a closed Delivery Order.");
+        }
+    }
     public function getSoDeliveryOrders(Request $request, $soId)
     {
         $salesOrder = SalesOrder::with(['sales_order_data.item'])->findOrFail($soId);
@@ -1023,11 +759,10 @@ class PaymentVoucherController extends Controller
 
         $dos = [];
         foreach ($deliveryOrders as $do) {
-            // Active DOs with an associated Loading Program cannot be refunded via DPV unless closed
-            if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+            // Only a closed DO (or a DO of a closed SO) can be refunded
+            if (!$this->saleBalances()->isDoReleased($do->id)) {
                 continue;
             }
-
             $totalDoQty = 0;
             $totalDcQty = 0;
             foreach ($do->delivery_order_data as $itemData) {
@@ -1081,6 +816,7 @@ class PaymentVoucherController extends Controller
             'so_remaining_qty' => round($soRemainingQty, 2),
             'so_remaining_amount' => round($soRemainingAmount, 2),
             'so_formatted_remaining' => number_format($soRemainingAmount, 2),
+            'so_blocked_message' => $salesOrder->isClosed() ? null : "Sale Order is open. Refund is allowed only after closing the SO, or against a closed DO.",
             'has_dos' => count($dos) > 0,
             'delivery_orders' => $dos
         ]);
@@ -1090,10 +826,10 @@ class PaymentVoucherController extends Controller
     {
         $do = DeliveryOrder::with(['delivery_order_data.item'])->findOrFail($doId);
 
-        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
+        if (!$this->saleBalances()->isDoReleased($do->id)) {
             return response()->json([
                 'success' => false,
-                'message' => "Delivery Order ({$do->reference_no}) is active and has an associated Loading Program. Payment cannot be refunded unless DO is closed."
+                'message' => "Delivery Order ({$do->reference_no}) is open. Payment cannot be refunded unless the DO is closed."
             ], 422);
         }
 
@@ -1359,13 +1095,11 @@ class PaymentVoucherController extends Controller
                     }
                     $doId = !empty($request->delivery_order_id[$index]) ? $request->delivery_order_id[$index] : null;
 
+                    $this->assertSaleRefundAllowed($index + 1, $request->customer_account_id, $soId, $doId);
+
                     $maxAllowed = 0;
                     if ($doId) {
                         $do = DeliveryOrder::with(['delivery_order_data'])->findOrFail($doId);
-
-                        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
-                            throw new \Exception("Row #" . ($index + 1) . ": Payment cannot be issued for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to refund.");
-                        }
 
                         // Rows of this voucher already inserted above are excluded here and counted via the batch arrays instead.
                         $rawDoMax = $this->getDeliveryOrderRemainingRefundAmount($do, null, $paymentVoucher->id);
@@ -1373,7 +1107,7 @@ class PaymentVoucherController extends Controller
                         $soBatchUsed = $usedSoAdvanceInBatch[$soId] ?? 0;
 
                         $remDo = max(0, $rawDoMax - $doBatchUsed);
-                        $remSo = max(0, $this->getSalesOrderTotalNetAdvance($soId, null, $paymentVoucher->id) - $soBatchUsed);
+                        $remSo = max(0, $this->getSalesOrderFreeAdvance($soId, null, $paymentVoucher->id) - $soBatchUsed);
                         $maxAllowed = min($remDo, $remSo);
 
                         $refType = 'delivery_order';
@@ -1412,9 +1146,6 @@ class PaymentVoucherController extends Controller
                         'delivery_order_id' => $doId,
                     ]);
 
-                    // Note: do_status is intentionally kept active per user requirement; lock is enforced at Second Weighbridge
-
-                    // DO and SO statuses are managed through their standard dispatch/fulfillment flows
                 }
 
                 $totalAmount += $netAmount;
@@ -1661,20 +1392,18 @@ class PaymentVoucherController extends Controller
                     }
                     $doId = !empty($request->delivery_order_id[$index]) ? $request->delivery_order_id[$index] : null;
 
+                    $this->assertSaleRefundAllowed($index + 1, $request->customer_account_id, $soId, $doId);
+
                     $maxAllowed = 0;
                     if ($doId) {
                         $do = DeliveryOrder::with(['delivery_order_data'])->findOrFail($doId);
-
-                        if ($do->do_status === 'active' && delivery_order_has_loading_program($do->id)) {
-                            throw new \Exception("Row #" . ($index + 1) . ": Payment cannot be issued for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to refund.");
-                        }
 
                         $rawDoMax = $this->getDeliveryOrderRemainingRefundAmount($do, $payment_voucher->unique_no, $payment_voucher->id);
                         $doBatchUsed = $usedDoAdvanceInBatch[$doId] ?? 0;
                         $soBatchUsed = $usedSoAdvanceInBatch[$soId] ?? 0;
 
                         $remDo = max(0, $rawDoMax - $doBatchUsed);
-                        $remSo = max(0, $this->getSalesOrderTotalNetAdvance($soId, $payment_voucher->unique_no, $payment_voucher->id) - $soBatchUsed);
+                        $remSo = max(0, $this->getSalesOrderFreeAdvance($soId, $payment_voucher->unique_no, $payment_voucher->id) - $soBatchUsed);
                         $maxAllowed = min($remDo, $remSo);
 
                         $refType = 'delivery_order';
@@ -1713,9 +1442,6 @@ class PaymentVoucherController extends Controller
                         'delivery_order_id' => $doId,
                     ]);
 
-                    // Note: do_status is intentionally kept active per user requirement; lock is enforced at Second Weighbridge
-
-                    // DO and SO statuses are managed through their standard dispatch/fulfillment flows
                 }
 
                 $totalAmount += $netAmount;

@@ -113,6 +113,10 @@ class LoadingSlip extends Model
         if (!$loadingProgramItem) {
             return true;
         }
+
+        if ($this->mustReduceForClosedDeliveryOrder()) {
+            return true;
+        }
         
         // If there's an accepted dispatch QC, editing is not allowed
         if ($loadingProgramItem->hasAcceptedDispatchQc()) {
@@ -122,6 +126,21 @@ class LoadingSlip extends Model
         // If no dispatch QC exists or latest is rejected, editing is allowed
         return true;
     }
+
+    /**
+     * A DO of the truck was closed after this slip was made, so the slip is now for more than can go.
+     * It has to come down before weighing, even after Dispatch QC, because bags and labour are taken from it.
+     */
+    public function mustReduceForClosedDeliveryOrder(): bool
+    {
+        $item = $this->loadingProgramItem;
+        if (!$item || $this->secondWeighbridge || !$item->hasAnyClosedDeliveryOrder() || $item->allDeliveryOrdersClosed()) {
+            return false;
+        }
+
+        return (float) $this->kilogram > $item->openQtyBalance() + 0.01;
+    }
+
     public function scopeWhereDoStatusNotClosed($query){
         return $query->whereHas('loadingProgramItem.deliveryOrders', function ($q) {
             $q->where('do_status', '!=', 'closed');

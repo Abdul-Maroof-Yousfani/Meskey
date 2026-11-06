@@ -181,6 +181,10 @@ class DispatchQCController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
+        if ($ticketItem && $ticketItem->allDeliveryOrdersClosed()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Delivery Order linked to this ticket has been closed. Operations are locked.']], 422);
+        }
+
         // Check if the ticket already has an accepted dispatch QC
         $loadingProgramItem = LoadingProgramItem::with(['dispatchQcs', 'loadingSlip.logs'])->findOrFail($request->loading_program_item_id);
 
@@ -408,6 +412,10 @@ class DispatchQCController extends Controller
         }
         if ($ticketItem->hasClosedSaleOrder()) {
             return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
+        }
+
+        if ($ticketItem && $ticketItem->allDeliveryOrdersClosed()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Delivery Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
         // Check if the ticket already has an accepted dispatch QC (excluding current one)

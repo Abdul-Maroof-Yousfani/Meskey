@@ -577,6 +577,10 @@ class PaymentVoucher extends Model
                 $so = $item->salesOrder ?? \App\Models\Sales\SalesOrder::find($item->sales_order_id);
                 $soRef = $so ? ($so->reference_no ?: "SO #{$item->sales_order_id}") : "SO #{$item->sales_order_id}";
 
+                if ($so && !$so->isClosed()) {
+                    return "Cannot approve Payment Voucher {$this->unique_no}: Sales Order {$soRef} is open. Please close the SO first.";
+                }
+
                 // Calculate remaining advance on SO excluding THIS voucher's amount
                 $remAdvance = $pvController->getSalesOrderRemainingAdvance($item->sales_order_id, $this->unique_no, $this->id);
                 $soAccumulated[$item->sales_order_id] = ($soAccumulated[$item->sales_order_id] ?? 0) + $amount;
@@ -591,6 +595,10 @@ class PaymentVoucher extends Model
                 $do = $item->deliveryOrder ?? \App\Models\Sales\DeliveryOrder::find($item->delivery_order_id);
                 $doRef = $do ? ($do->reference_no ?: "DO #{$item->delivery_order_id}") : "DO #{$item->delivery_order_id}";
 
+                if (!app(\App\Services\SaleAdvanceBalanceService::class)->isDoReleased($item->delivery_order_id)) {
+                    return "Cannot approve Payment Voucher {$this->unique_no}: Delivery Order {$doRef} is open. Please close the DO first.";
+                }
+
                 $doAvailable = $pvController->getDeliveryOrderRemainingRefundAmount($do, $this->unique_no, $this->id);
                 $doAccumulated[$item->delivery_order_id] = ($doAccumulated[$item->delivery_order_id] ?? 0) + $amount;
 
@@ -600,10 +608,10 @@ class PaymentVoucher extends Model
 
                 if ($do && $do->so_id) {
                     $soAccumulated[$do->so_id] = ($soAccumulated[$do->so_id] ?? 0) + $amount;
-                    $soNetTotal = $pvController->getSalesOrderTotalNetAdvance($do->so_id, $this->unique_no, $this->id);
+                    $soNetTotal = $pvController->getSalesOrderFreeAdvance($do->so_id, $this->unique_no, $this->id);
                     if ($soAccumulated[$do->so_id] > $soNetTotal + 0.01) {
                         $soRef = \App\Models\Sales\SalesOrder::find($do->so_id)->reference_no ?? ("SO #" . $do->so_id);
-                        return "Cannot approve Payment Voucher {$this->unique_no}: The total refund for Delivery Order(s) and Sales Order {$soRef} exceeds the net remaining advance balance of Rs. " . number_format($soNetTotal, 2) . ".";
+                        return "Cannot approve Payment Voucher {$this->unique_no}: The total refund for Delivery Order(s) and Sales Order {$soRef} exceeds the free advance balance of Rs. " . number_format($soNetTotal, 2) . ".";
                     }
                 }
             }
@@ -618,17 +626,8 @@ class PaymentVoucher extends Model
                 $adjThis = (float) \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $item->customer_advance_id)
                     ->where('voucher_no', $this->unique_no)
                     ->sum('amount');
+                // remaining_amount is already reduced by every DPV and JV that used this advance
                 $available += $adjThis;
-
-                // Deduct any other non-rejected DPV refunds on this customer advance
-                $otherDpv = (float) \App\Models\PaymentVoucherData::where('customer_advance_id', $item->customer_advance_id)
-                    ->where('payment_voucher_id', '!=', $this->id)
-                    ->whereHas('paymentVoucher', function ($q) {
-                        $q->whereNull('deleted_at');
-                        $q->where('am_approval_status', '!=', 'rejected');
-                    })
-                    ->sum('amount');
-                $available = max(0, $available - $otherDpv);
 
                 if ($amount > $available + 0.01) {
                     return "Cannot approve Payment Voucher {$this->unique_no}: Excess Payment {$advRef} only has Rs. " . number_format($available, 2) . " available balance, but this voucher refunds Rs. " . number_format($amount, 2) . ".";
@@ -1196,46 +1195,6 @@ class PaymentVoucher extends Model
         // Revert settlement_adjustments created for this voucher
         \Illuminate\Support\Facades\DB::table('settlement_adjustments')->where('voucher_no', $this->unique_no)->delete();
 
-        // If DOs or SOs were auto-closed by this DPV, re-open them if undelivered items exist
-        if ($this->module_type === 'dpv_for_sale') {
-            foreach ($this->paymentVoucherData as $item) {
-                if ($item->delivery_order_id) {
-                    $do = \App\Models\Sales\DeliveryOrder::with('delivery_order_data')->find($item->delivery_order_id);
-                    if ($do && $do->do_status === 'closed') {
-                        $hasPending = false;
-                        foreach ($do->delivery_order_data as $dod) {
-                            $dcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $dod->id)
-                                ->whereHas('deliveryChallan', function ($q) {
-                                    $q->where('am_approval_status', '!=', 'rejected');
-                                })
-                                ->sum('qty');
-                            if ((float)$dod->qty - $dcQty > 0.01) {
-                                $hasPending = true;
-                                break;
-                            }
-                        }
-                        if ($hasPending) {
-                            $do->update(['do_status' => 'active']);
-                        }
-                    }
-                }
-                if ($item->sales_order_id) {
-                    $so = \App\Models\Sales\SalesOrder::with('sales_order_data')->find($item->sales_order_id);
-                    if ($so && $so->status === 'closed') {
-                        $hasPendingSo = false;
-                        foreach ($so->sales_order_data as $sod) {
-                            if (function_exists('delivery_order_qty_balance') && delivery_order_qty_balance($sod->id) > 0.01) {
-                                $hasPendingSo = true;
-                                break;
-                            }
-                        }
-                        if ($hasPendingSo) {
-                            $so->update(['status' => 'approved', 'contract_status' => 'active']);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     protected function onApprovalReverted()

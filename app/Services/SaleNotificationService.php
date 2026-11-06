@@ -14,12 +14,69 @@ class SaleNotificationService
      */
     public static function sendSaleOrderCreatedNotification(SalesOrder $salesOrder): void
     {
+        self::notifyStage1Approvers($salesOrder, 'created Sale Order:');
+    }
+
+    /**
+     * A reverted Sale Order was edited and is back at Stage 1.
+     */
+    public static function sendSaleOrderResubmittedNotification(SalesOrder $salesOrder): void
+    {
+        self::notifyStage1Approvers($salesOrder, 'edited and resubmitted Sale Order:', auth()->user());
+    }
+
+    /**
+     * A delivery date change on an approved Sale Order sent it back to Stage 1.
+     */
+    public static function sendSaleOrderDateAmendmentNotification(SalesOrder $salesOrder, ?string $newDate = null): void
+    {
+        $change = $newDate ? 'changed delivery date to ' . e($newDate) . ' on Sale Order:' : 'changed delivery date on Sale Order:';
+
+        self::notifyStage1Approvers($salesOrder, $change, auth()->user());
+    }
+
+    /**
+     * Tell whoever created the Sale Order what happened to it: approved, reverted or rejected.
+     */
+    public static function sendSaleOrderDecisionNotification(SalesOrder $salesOrder, string $decision, ?string $comments = null, bool $isDateAmendment = false): void
+    {
+        try {
+            $creator = $salesOrder->created_by ? User::find($salesOrder->created_by) : null;
+            $actor = auth()->user();
+            if (!$creator || $creator->status !== 'active' || (int) $creator->id === (int) $actor?->id) {
+                return;
+            }
+
+            $what = $isDateAmendment ? 'the delivery date change on Sale Order:' : 'Sale Order:';
+            $after = match (true) {
+                $decision === 'approved' && !$isDateAmendment => ' (Final Approved)',
+                $decision === 'reverted' && !$isDateAmendment => ' (Please edit and resubmit)',
+                $isDateAmendment && $decision !== 'approved' => ' (Original delivery date retained)',
+                default => '',
+            };
+            $reason = $comments ? ' Remarks: ' . e(\Illuminate\Support\Str::limit($comments, 200)) : '';
+
+            $message = self::soMessage($salesOrder, $actor?->name ?? 'User', "{$decision} {$what}", $after . $reason);
+
+            NotificationService::send(collect([$creator]), $message, 'Sale Order ' . ucfirst($decision), self::soUrl($salesOrder), $actor?->id);
+        } catch (\Throwable $e) {
+            Log::error('Sale Order Decision Notification Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Parent, and siblings / children who can approve at the Sale Order's factory.
+     * The parent gets it for every factory, since all the child's Sale Orders are on his list.
+     */
+    private static function notifyStage1Approvers(SalesOrder $salesOrder, string $action, ?User $actor = null): void
+    {
         try {
             $creatorId = $salesOrder->created_by ?: auth()->id();
             $creator = $creatorId ? User::find($creatorId) : auth()->user();
             if (!$creator) {
                 return;
             }
+            $actor = $actor ?: $creator;
 
             // 1. Collect potential recipient family members (Parent, Siblings, Children)
             $candidateUserIds = collect();
@@ -33,6 +90,9 @@ class SaleNotificationService
                     ->where('id', '!=', $creator->id)
                     ->pluck('id');
                 $candidateUserIds = $candidateUserIds->merge($siblingIds);
+            } else {
+                // A creator with no parent approves his own Sale Order, so he needs to hear when someone else sends it back
+                $candidateUserIds->push($creator->id);
             }
 
             // (c) If Sale Order has a specific Sell By / Parent user different from creator
@@ -44,9 +104,9 @@ class SaleNotificationService
             $childIds = User::where('parent_user_id', $creator->id)->pluck('id');
             $candidateUserIds = $candidateUserIds->merge($childIds);
 
-            // Clean candidate IDs (unique, not empty, exclude creator himself)
+            // Clean candidate IDs (unique, not empty, nobody is told about his own action)
             $candidateUserIds = $candidateUserIds
-                ->filter(fn($id) => !empty($id) && (int)$id !== (int)$creator->id)
+                ->filter(fn($id) => !empty($id) && (int)$id !== (int)$actor->id)
                 ->unique()
                 ->values()
                 ->all();
@@ -64,7 +124,7 @@ class SaleNotificationService
 
             // 3. Fetch candidate users and filter strictly by:
             //    - Permission: sale-order-approval (or super-admin)
-            //    - Location: must be assigned to the Sale Order's factory/location
+            //    - Location: must be assigned to the Sale Order's factory/location, except the parent
             $candidateUsers = User::whereIn('id', $candidateUserIds)
                 ->where('status', 'active')
                 ->get();
@@ -74,13 +134,14 @@ class SaleNotificationService
                 // - Parent user is naturally authorized to approve by hierarchy
                 // - Siblings / Children require 'sale-order-approval' permission (or super-admin)
                 $isParent = (!empty($creator->parent_user_id) && (int)$user->id === (int)$creator->parent_user_id)
-                    || (!empty($salesOrder->parent_user_id) && (int)$user->id === (int)$salesOrder->parent_user_id);
+                    || (!empty($salesOrder->parent_user_id) && (int)$user->id === (int)$salesOrder->parent_user_id)
+                    || (empty($creator->parent_user_id) && (int)$user->id === (int)$creator->id);
 
-                $hasPermission = $isParent
-                    || ($user->user_type === 'super-admin')
-                    || $user->can('sale-order-approval');
+                if ($isParent) {
+                    return true;
+                }
 
-                if (!$hasPermission) {
+                if ($user->user_type !== 'super-admin' && !$user->can('sale-order-approval')) {
                     return false;
                 }
 
@@ -98,18 +159,26 @@ class SaleNotificationService
             }
 
             // 4. Build notification payload
-            $userName = $creator->name ?? 'System';
-            $soNo = $salesOrder->reference_no ?? ('SO#' . $salesOrder->id);
-            $customerName = $salesOrder->customer?->name;
-            $customerText = $customerName ? " for: <strong>{$customerName}</strong>" : "";
-            $targetUrl = route('sales.sale-order.index', ['view_id' => $salesOrder->id]);
+            $message = self::soMessage($salesOrder, $actor->name ?? 'System', $action, ' (Pending Approval)');
 
-            $message = '<a href="' . $targetUrl . '" style="color: inherit; text-decoration: none;"><strong>' . $userName . '</strong> created Sale Order: <strong>' . $soNo . '</strong>' . $customerText . ' (Pending Approval)</a>';
-
-            NotificationService::send($recipients, $message, 'Sale Order Approval Required', $targetUrl, $creator->id);
+            NotificationService::send($recipients, $message, 'Sale Order Approval Required', self::soUrl($salesOrder), $actor->id);
         } catch (\Throwable $e) {
             Log::error('Sale Order Notification Error: ' . $e->getMessage());
         }
+    }
+
+    private static function soUrl(SalesOrder $salesOrder): string
+    {
+        return route('sales.sale-order.index', ['view_id' => $salesOrder->id]);
+    }
+
+    private static function soMessage(SalesOrder $salesOrder, string $userName, string $action, string $after): string
+    {
+        $soNo = $salesOrder->reference_no ?? ('SO#' . $salesOrder->id);
+        $customerName = $salesOrder->customer?->name;
+        $customerText = $customerName ? " for: <strong>{$customerName}</strong>" : "";
+
+        return '<a href="' . self::soUrl($salesOrder) . '" style="color: inherit; text-decoration: none;"><strong>' . $userName . '</strong> ' . $action . ' <strong>' . $soNo . '</strong>' . $customerText . $after . '</a>';
     }
 
     /**
