@@ -392,7 +392,7 @@
                             <div class="form-group">
                                 <label>Stuffing (MTs):</label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][stuffing_in_container]"
-                                    class="form-control stuffing" step="0.01"
+                                    class="form-control stuffing" step="0.001"
                                     value="{{ $packingItem->stuffing_in_container }}">
                             </div>
                         </div>
@@ -1088,6 +1088,10 @@
                         buildSpecsTable(data.specifications);
                     }, 900);
 
+                    // Inspection By from Export Order
+                    if (Array.isArray(data.inspection_company_id) && data.inspection_company_id.length > 0) {
+                        $('select[name="inspection_company_id[]"]').val(data.inspection_company_id.map(String)).trigger('change');
+                    }
                     if (data.packing_items && data.packing_items.length > 0) {
                         addPackingRowsFromExportOrder(data.packing_items);
                     }

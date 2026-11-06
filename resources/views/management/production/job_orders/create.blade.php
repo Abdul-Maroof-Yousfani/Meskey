@@ -333,7 +333,7 @@
                         <div class="form-group">
                             <label>Stuffing (MTs):</label>
                             <input type="number" name="packing_items[0][stuffing_in_container]" 
-                                value="0" class="form-control stuffing" step="0.01" min="0">
+                                value="0" class="form-control stuffing" step="0.001" min="0">
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -805,6 +805,10 @@
                 $('#export-order-quantity-info').html(alertHtml).show();
 
                 // Rebuild packing rows
+                // Inspection By from Export Order
+                if (Array.isArray(data.inspection_company_id) && data.inspection_company_id.length > 0) {
+                    $('select[name="inspection_company_id[]"]').val(data.inspection_company_id.map(String)).trigger('change');
+                }
                 addPackingRowsFromExportOrder(data.packing_items);
                 if (!data.packing_items || data.packing_items.length === 0) {
                     let fumigationVal = data.fumigation_company_id || data.fumigation_by;
