@@ -406,7 +406,8 @@
                                 <div>
                                     {{ $statusLabel }}
                                     @if ($innerData['request']->is_auto_approved == 'yes')
-                                        <span class="badge badge-info ml-1" title="Auto approved: slabs matched the previous QC">
+                                        <span class="badge badge-info ml-1"
+                                            title="Auto approved: slabs matched the previous QC">
                                             <i class="fa fa-check-circle"></i> Auto Approved
                                         </span>
                                     @endif
@@ -443,7 +444,8 @@
                             <div>
                                 {{ $arrivalSamplingRequest->is_re_sampling == 'yes' ? 'Current ' . ucwords($arrivalSamplingRequest->sampling_type) . ' Resampling' : 'Current ' . $arrivalSamplingRequest->sampling_type . ' Checklist' }}
                                 @if ($arrivalSamplingRequest->is_auto_approved == 'yes')
-                                    <span class="badge badge-info ml-1" title="Auto approved: slabs matched the previous QC">
+                                    <span class="badge badge-info ml-1"
+                                        title="Auto approved: slabs matched the previous QC">
                                         <i class="fa fa-check-circle"></i> Auto Approved
                                     </span>
                                 @endif
@@ -1040,7 +1042,7 @@
                                                     name="checklist_value[]" value="{{ $displayValue }}" placeholder="%"
                                                     readonly>
                                                 <input type="hidden" name="actual_checklist_value[]"
-                                                    value="{{ $slab->checklist_value ?? 0 }}">
+                                                    value="{{ $slab->actual_checklist_value ?? 0 }}">
                                                 <input type="hidden" name="relief_deduction[]"
                                                     value="{{ $slab->relief_deduction ?? 0 }}">
                                                 <div class="input-group-append">
