@@ -452,6 +452,12 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Fumigation Dosage:</label>
+                                <input type="text" class="form-control fumigation-dosage" value="{{ $jobOrder->exportOrder->fumigation_dosage ?? '' }}" readonly placeholder="From Export Order">
+                            </div>
+                        </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Attachment:</label>
@@ -1118,8 +1124,30 @@
 
         updateFumigationRequirement();
 
+        // Fumigation Dosage comes from export_orders.fumigation_dosage of the selected export order
+        var fumigationDosageCache = {};
+        function refreshFumigationDosage() {
+            let eoId = $('#hidden_export_order_id').val() || $('#exportOrderSelect').val();
+            if (!eoId) {
+                $('.fumigation-dosage').val('');
+                return;
+            }
+            if (fumigationDosageCache.hasOwnProperty(eoId)) {
+                $('.fumigation-dosage').val(fumigationDosageCache[eoId] || '');
+                return;
+            }
+            $.get('{{ url("production/get-export-order-details") }}/' + eoId, function(data) {
+                fumigationDosageCache[eoId] = data.fumigation_dosage || '';
+                let currentId = $('#hidden_export_order_id').val() || $('#exportOrderSelect').val();
+                if (String(currentId) === String(eoId)) {
+                    $('.fumigation-dosage').val(fumigationDosageCache[eoId]);
+                }
+            });
+        }
+
         function updateFumigationRequirement() {
             let hasExportOrder = !!$('#exportOrderSelect').val() || !!$('#hidden_export_order_id').val();
+            refreshFumigationDosage();
             
             $('.packing-item').each(function() {
                 let formGroup = $(this).find('select[name*="[fumigation_company_id][]"]').closest('.form-group');

@@ -1178,6 +1178,7 @@ class JobOrderController extends Controller
             'fumigation_company_id' => $exportOrder->fumigation_by,
             'fumigation_by'       => $exportOrder->fumigation_by,
             'fumigation_type'     => $exportOrder->fumigation_type,
+            'fumigation_dosage'   => $exportOrder->fumigation_dosage,
             'inspection_company_id' => array_values(array_filter((array) ($exportOrder->inspection_by ?? []))),
             'specifications'      => $exportOrder->specifications->map(function ($s) {
                 return [

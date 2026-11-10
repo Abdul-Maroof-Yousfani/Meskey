@@ -74,7 +74,7 @@ Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderT
 Route::get('/export-order/{id}/print', [ExportOrderController::class, 'print'])->name('export-order.print');
 
 // export filing documents
-Route::resource('export-filing', ExportFilingController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+Route::resource('export-filing', ExportFilingController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 Route::post('/get-export-filing', [ExportFilingController::class, 'getList'])->name('get.export-filing');
 
 // c freight

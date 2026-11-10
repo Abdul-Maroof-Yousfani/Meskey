@@ -792,7 +792,7 @@ class ExportDeliveryChallanController extends Controller
             $items[] = [
                 'item_id' => $itemId,
                 'qty' => $qty,
-                'rate' => round((float) ($request->rate[$index] ?? 0), 2),
+                'rate' => $this->exportOrderRateForDoRow($doDataId),
                 'brand_id' => $request->brand_id[$index] ?? null,
                 'no_of_bags' => $noOfBags,
                 'bag_size' => $bagSize,
@@ -831,6 +831,27 @@ class ExportDeliveryChallanController extends Controller
             'total_labour_amount' => round($totalLabourAmount, 2),
             'available_qty_mt' => $availableQtyMt,
         ];
+    }
+
+    /**
+     * Rate per ton from the export order packing row matching this DO row
+     * (same brand, else same bag size, else the first row). Not sent from the form.
+     */
+    protected function exportOrderRateForDoRow(int $doDataId): float
+    {
+        $doRow = \App\Models\Export\ExportDeliveryOrderPackingItem::with('deliveryOrder.exportOrder.packingItems')->find($doDataId);
+        if (!$doRow) {
+            return 0;
+        }
+
+        $eoPackings = $doRow->deliveryOrder?->exportOrder?->packingItems ?? collect();
+        $bagSize = round((float) ($doRow->bag_size ?? 0), 3);
+
+        $eoPacking = $eoPackings->firstWhere('brand_id', $doRow->brand_id)
+            ?? $eoPackings->first(fn ($p) => round((float) $p->bag_size, 3) === $bagSize)
+            ?? $eoPackings->first();
+
+        return round((float) ($eoPacking->rate ?? 0), 2);
     }
 
     protected function getSecondWeighbridgeQtyMt(int $ticketId): float

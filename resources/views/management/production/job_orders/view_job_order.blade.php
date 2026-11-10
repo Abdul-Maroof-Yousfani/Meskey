@@ -288,8 +288,12 @@
                                 <td>
                                     {{ $item->fumigation_type ? ucfirst($item->fumigation_type) : ($jobOrder->fumigation_type ? ucfirst($jobOrder->fumigation_type) : '-') }}
                                 </td>
+                                <th class="text-uppercase bg-light">Fumigation Dosage</th>
+                                <td>{{ $jobOrder->exportOrder->fumigation_dosage ?? '-' }}</td>
+                            </tr>
+                            <tr>
                                 <th class="text-uppercase bg-light">Attachment</th>
-                                <td>
+                                <td colspan="7">
                                     @if($item->attachment)
                                         <a href="{{ asset('storage/' . $item->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">
                                             <i class="ft-file"></i> View

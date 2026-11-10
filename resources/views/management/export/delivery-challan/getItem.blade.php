@@ -60,7 +60,10 @@
             $eo_packing = $eo_packings->firstWhere('brand_id', $brand_id)
                 ?? $eo_packings->firstWhere('bag_size', $bag_size)
                 ?? $eo_packings->first();
-            $rate = round((float) ($eo_packing->rate ?? 0), 2);
+            // Saved rate if any, otherwise the export order rate
+            $rate = ($existingRow && (float) $existingRow->rate > 0)
+                ? round((float) $existingRow->rate, 2)
+                : round((float) ($eo_packing->rate ?? 0), 2);
             $row_key = 'T' . $ticket_id . 'P' . $packingItem->id;
             $proportion = ($grand_total_mt > 0 && (float) $packingItem->metric_tons > 0)
                 ? ((float) $packingItem->metric_tons / $grand_total_mt)
@@ -141,12 +144,13 @@
             <td>
                 <input type="number" name="qty[]" value="{{ $initial_qty }}" class="form-control qty" min="0" step="0.001" oninput="syncBagsFromQty(this)" readonly>
             </td>
+            {{-- Rate is not sent to the browser; the controller takes it from the export order on save --}}
             {{-- <td>
                 <input type="number" name="rate[]" value="{{ $rate }}" class="form-control rate" readonly>
             </td> --}}
-            <td style="display: none;">
+            {{-- <td style="display: none;">
                 <input type="text" value="{{ $eo_packing->rate_per_maund ?? '' }}" class="form-control" readonly>
-            </td>
+            </td> --}}
             {{-- <td>
                 <input type="text" name="amount[]" value="{{ number_format($initial_qty * $rate, 2, '.', '') }}" class="form-control amount" readonly>
             </td> --}}

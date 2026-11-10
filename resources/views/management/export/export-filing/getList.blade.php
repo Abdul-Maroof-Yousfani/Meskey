@@ -28,6 +28,9 @@
                     <a class="info p-1 text-center position-relative"
                         onclick="openModal(this,'{{ route('export-filing.show', $filing->id) }}','View Filing', true)">
                         <i class="ft-eye font-medium-3"></i></a>
+                    <a class="info p-1 text-center position-relative"
+                        onclick="openModal(this,'{{ route('export-filing.edit', $filing->id) }}','Edit Filing')">
+                        <i class="ft-edit font-medium-3"></i></a>
                     <a onclick="deletemodal('{{ route('export-filing.destroy', $filing->id) }}','{{ route('get.export-filing') }}')"
                         class="danger p-1 text-center mr-2 position-relative">
                         <i class="ft-x font-medium-3"></i>

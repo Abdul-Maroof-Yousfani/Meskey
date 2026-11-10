@@ -767,6 +767,25 @@ class ExportOrderController extends Controller
         $shipmentDateFrom = $q?->shipment_date_from ?? $q->shipment_delivery_date_from;
         $shipmentDateTo = $q?->shipment_date_to ?? $q->shipment_delivery_date_to;
 
+        // Export sauda packing rows have no stuffing/containers; those are saved on the quotation.
+        // Match rows by position: rate comes from the sauda (quotation rate if empty),
+        // stuffing and containers come from the quotation.
+        $quotationPackingItems = $quotation ? $quotation->packingItems()->orderBy('id')->get()->values() : collect();
+        $packingItems = $q->packingItems->sortBy('id')->values()->map(function ($item, $index) use ($quotationPackingItems) {
+            $row = $item->toArray();
+            $quotationItem = $quotationPackingItems->get($index);
+
+            if ($quotationItem) {
+                if (!(float) ($row['rate'] ?? 0)) {
+                    $row['rate'] = $quotationItem->rate;
+                }
+                $row['stuffing_in_container'] = $quotationItem->stuffing_in_container;
+                $row['no_of_containers'] = $quotationItem->no_of_containers;
+            }
+
+            return $row;
+        });
+
         return response()->json([
             'quotation_id' => $quotation?->id,
             'export_soda_id' => $q->id,
@@ -796,7 +815,7 @@ class ExportOrderController extends Controller
             'commission_percentage' => $q->commission_percentage,
             'commission_amount_per_ton' => $q->commission_amount_per_ton,
             'commission' => $q->commission,
-            'packing_items' => $q->packingItems,
+            'packing_items' => $packingItems,
             'specifications' => $specs,
         ]);
     }

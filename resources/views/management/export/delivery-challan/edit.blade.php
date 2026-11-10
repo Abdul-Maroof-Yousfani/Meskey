@@ -182,9 +182,9 @@
                             <th>Packing</th>
                             <th>No. of Bags</th>
                             <th>Quantity (MT)</th>
-                            <th>Rate per MT</th>
+                            <th style="display:none;">Rate per MT</th>
                             <th style="display:none;">Rate per Mond</th>
-                            <th>Amount</th>
+                            <th style="display:none;">Amount</th>
                             <th>Labour Rate</th>
                             <th>Labour Amount</th>
                             <th>Brand</th>

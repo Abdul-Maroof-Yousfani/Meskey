@@ -146,8 +146,16 @@
     });
 
     $(document).ready(function () {
-        // Initial setup
-        $('.select2').select2({ width: '100%' });
+        // Initial setup. Dropdowns live inside the modal so they move with it when it scrolls.
+        $('#ajaxSubmit .select2').select2({ width: '100%', dropdownParent: $('#modal-sidebar') });
+
+        // Select2 blocks the modal's scroll while a dropdown is open. Multi-selects stay open
+        // after picking an option, so the modal looked stuck. Remove that block on open.
+        $(document).off('select2:open.loadingProgram').on('select2:open.loadingProgram', function () {
+            setTimeout(function () {
+                $('#modal-sidebar').add($('#modal-sidebar').parents()).off('scroll.select2');
+            }, 0);
+        });
 
         $('#export_order_id').change(function () {
             if (window.isUpdatingUI) return;
@@ -264,7 +272,6 @@
                     if (response.success) {
                         window.isUpdatingUI = true;
                         $('#exportOrderDataContainer').html(response.html).show();
-                        $('.select2').select2({ width: '100%' });
 
                         if (response.delivery_orders) {
                             window.allFetchedDOs = response.delivery_orders;
@@ -286,6 +293,8 @@
                 },
                 complete: function () {
                     window.isSelectingEO = false;
+                    // Remove any Select2 scroll lock left on the modal, so it can scroll again
+                    $('#modal-sidebar').add($('#modal-sidebar').parents()).off('scroll.select2');
                 },
                 error: function () {
                     Swal.close();
