@@ -19,6 +19,7 @@ class ExportOrderPackingSubItem extends Model
         'export_order_packing_item_id',
         'bag_type_id',
         'bag_size_id',
+        'packing_size',
         'no_of_primary_bags',
         'no_of_bags',
         'empty_bags',
@@ -36,6 +37,7 @@ class ExportOrderPackingSubItem extends Model
     ];
 
     protected $casts = [
+        'packing_size' => 'decimal:2',
         'no_of_primary_bags' => 'integer',
         'no_of_bags' => 'integer',
         'empty_bags' => 'integer',

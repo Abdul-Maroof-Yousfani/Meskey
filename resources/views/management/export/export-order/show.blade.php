@@ -670,14 +670,7 @@
                 <tr>
                     <td style="font-weight:bold;vertical-align:middle;">HS CODE</td>
                     <td>
-                        <select class="form-control select2" disabled>
-                            <option value="">Select</option>
-                            @foreach ($hscodes as $hs)
-                                <option value="{{ $hs->id }}"
-                                    {{ $exportOrder->hs_code_id == $hs->id ? 'selected' : '' }}>
-                                    {{ $hs->code }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" class="form-control" value="{{ $exportOrder->hs_code_display }}" disabled>
                     </td>
                 </tr>
                 <tr>
@@ -937,6 +930,7 @@
                                             <tr>
                                                 <th style="min-width: 150px;">Bag Type</th>
                                                 <th style="min-width: 120px;">Bag Size</th>
+                                                <th style="min-width: 120px;">Packing Size (kg)</th>
                                                 <th style="min-width: 150px;">Primary Bags fit in master bag</th>
                                                 <th style="min-width: 90px;">No. of Bags</th>
                                                 <th style="min-width: 90px;">Empty Bags</th>
@@ -960,6 +954,9 @@
                                                     <td class="p-1"><input type="text"
                                                             class="form-control form-control-sm"
                                                             value="{{ $sub->bagSize->size ?? '-' }}" readonly></td>
+                                                    <td class="p-1"><input type="text"
+                                                            class="form-control form-control-sm"
+                                                            value="{{ $sub->packing_size ?? 0 }}" readonly></td>
                                                     <td class="p-1"><input type="text"
                                                             class="form-control form-control-sm"
                                                             value="{{ $sub->no_of_primary_bags }}" readonly></td>

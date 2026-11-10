@@ -99,7 +99,9 @@ class ExportOrderRequest extends FormRequest
             'origin_country_id' => ['required', 'exists:countries,id'],
             'port_of_discharge_id' => ['required', 'exists:ports,id'],
             'port_of_loading_id' => ['required', 'exists:ports,id'],
-            'hs_code_id' => ['required', 'exists:hs_codes,id'],
+            // HS code comes from the selected product (products.hs_code)
+            'product_hs_code' => ['required', 'string', 'max:255'],
+            'hs_code_id' => ['nullable', 'exists:hs_codes,id'],
             'currency_id' => ['required', 'exists:currencies,id'],
             'broker_id' => ['required', 'exists:brokers,id'],
 
@@ -186,6 +188,7 @@ class ExportOrderRequest extends FormRequest
             'fumigation_by' => ['required', 'array', 'min:1'],
             'fumigation_by.*' => ['required', 'exists:fumigation_companies,id'],
             'fumigation_type' => ['nullable', 'string', 'max:100'],
+            'fumigation_dosage' => ['nullable', 'string', 'max:100'],
             'inspection_by' => ['required', 'array', 'min:1'],
             'inspection_by.*' => ['required', 'exists:inspection_companies,id'],
 
@@ -243,6 +246,7 @@ class ExportOrderRequest extends FormRequest
             'packing_items.*.sub_items' => ['nullable', 'array'],
             'packing_items.*.sub_items.*.bag_type_id' => ['nullable', 'exists:bag_types,id'],
             'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:sizes,id'],
+            'packing_items.*.sub_items.*.packing_size' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.no_of_primary_bags' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.no_of_bags' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.empty_bags' => ['nullable', 'numeric', 'min:0'],
@@ -316,7 +320,7 @@ class ExportOrderRequest extends FormRequest
             // 'port_of_discharge_id.required' => 'Port of discharge is required',
             // 'port_of_loading_id.required' => 'Port of loading is required',
 
-            'hs_code_id.required' => 'HS code is required',
+            'product_hs_code.required' => 'HS code is required. Set the HS Code on the selected product first.',
             'currency_id.required' => 'Currency is required',
             'broker_id.required' => 'Broker is required',
 

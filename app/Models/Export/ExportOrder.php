@@ -205,9 +205,16 @@ class ExportOrder extends Model
         return $this->belongsTo(ModeOfTransport::class, 'mode_of_transport_id');
     }
 
+    // Old orders only: HS code from the hs_codes table. New orders use product_hs_code.
     public function hsCode()
     {
         return $this->belongsTo(HsCode::class, 'hs_code_id');
+    }
+
+    // HS code to show: the product's code saved on the order, else the old hs_codes one
+    public function getHsCodeDisplayAttribute(): ?string
+    {
+        return $this->product_hs_code ?: $this->hsCode?->code;
     }
 
     public function incoterm()

@@ -269,6 +269,7 @@ class ProductController extends Controller
                         'bag_weight_for_purchasing' => $parentProduct->bag_weight_for_purchasing,
                         'product_type'              => $head->head_type_slug === 'by' ? 'raw_material' : ($parentProduct->product_type ?? 'finish_good'),
                         'description'               => $parentProduct->description,
+                        'hs_code'                   => $parentProduct->hs_code,
                         'status'                    => 'active',
                         'name'                      => $childName,
                         'product_category_flags'    => $head->head_type_slug,

@@ -358,10 +358,26 @@ class ExportLoadingProgramController extends Controller
 
         $sBillNo = $loadingProgram->s_bill_no ?: $loadingProgram->loadingProgramItems->first()?->s_bill_no;
 
+        // Transporter from the selected export order's logistics; used to auto-select and lock the item transporter
+        $logisticsTransporter = \App\Models\Sales\Logistics::with('items.transporter')
+            ->whereIn('export_order_id', $ExportOrders->pluck('id'))
+            ->get()
+            ->flatMap->items
+            ->pluck('transporter')
+            ->filter()
+            ->first();
+
+        $transporters = \App\Models\Master\Transporter::where('status', 'active')->get();
+        // Make sure the logistics transporter is in the list even if it is inactive
+        if ($logisticsTransporter && !$transporters->contains('id', $logisticsTransporter->id)) {
+            $transporters->push($logisticsTransporter);
+        }
+
         return view('management.export.loading-program.complete.edit', [
             'loadingProgram' => $loadingProgram,
             'ExportOrders' => $ExportOrders,
-            'Transporters' => \App\Models\Master\Transporter::where('status', 'active')->get(),
+            'Transporters' => $transporters,
+            'logisticsTransporterId' => $logisticsTransporter?->id,
             'arrivalLocations' => $arrivalLocations,
             'subArrivalLocations' => $subArrivalLocations,
             'doBalanceQty' => round($doBalanceQty, 3),

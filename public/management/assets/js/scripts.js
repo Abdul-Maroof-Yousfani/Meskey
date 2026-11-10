@@ -3039,3 +3039,32 @@ $(document).ready(function () {
   PLACE HERE YOUR OWN JAVASCRIPT CODE IF NEEDED
   WE WILL RELEASE FUTURE UPDATES SO IN ORDER TO NOT OVERWRITE YOUR JAVASCRIPT CODE PLEASE CONSIDER WRITING YOUR SCRIPT HERE.  */
 })(window);
+
+/* ===== START: Select2 modal scroll fix (added 2026-11-06) =====
+ * Problem: Select2 4.0.11 locks the modal's scroll position while a dropdown is open.
+ * If Select2 is re-initialised or destroyed while that dropdown is open, the lock is
+ * never removed, so the modal keeps jumping back up while scrolling.
+ * Fix: close an open dropdown first (closing removes the lock), then run Select2 as usual.
+ * To undo: delete everything from START to END.
+ */
+(function ($) {
+    if (!$ || !$.fn || !$.fn.select2) return;
+
+    var originalSelect2 = $.fn.select2;
+
+    $.fn.select2 = function (options) {
+        if (options === undefined || typeof options === 'object' || options === 'destroy') {
+            this.each(function () {
+                var instance = $(this).data('select2');
+                if (instance && typeof instance.isOpen === 'function' && instance.isOpen()) {
+                    instance.close();
+                }
+            });
+        }
+        return originalSelect2.apply(this, arguments);
+    };
+
+    // Keep Select2's own properties (defaults, amd) on the wrapper
+    $.extend($.fn.select2, originalSelect2);
+})(window.jQuery);
+/* ===== END: Select2 modal scroll fix ===== */

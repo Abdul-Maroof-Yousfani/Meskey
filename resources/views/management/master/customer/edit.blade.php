@@ -205,7 +205,7 @@
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
-                 <label><span class="text-danger required-asterisk">*</span>Owner Mobile No:</label>
+                 <label><span class="text-danger required-asterisk local-only-required">*</span>Owner Mobile No:</label>
                  <input type="text" name="owner_mobile_no" placeholder="03001234567"
                      value="{{ old('owner_mobile_no', $customer->owner_mobile_no) }}" class="form-control"
                      autocomplete="off" maxlength="11" />
@@ -214,7 +214,7 @@
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
-                 <label><span class="text-danger required-asterisk">*</span>Owner CNIC:</label>
+                 <label><span class="text-danger required-asterisk local-only-required">*</span>Owner CNIC:</label>
                  <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
                      value="{{ old('owner_cnic_no', $customer->owner_cnic_no) }}" class="form-control cnic-input"
                      autocomplete="off" maxlength="15" />
@@ -527,6 +527,14 @@
  </form>
 
  <script>
+    // Mobile No and CNIC are optional for international customers
+    function toggleLocalOnlyRequired() {
+        let isInternational = $('select[name="type"]').val() === 'international';
+        $('.local-only-required').toggle(!isInternational);
+    }
+    $(document).off('change', 'select[name="type"]').on('change', 'select[name="type"]', toggleLocalOnlyRequired);
+    toggleLocalOnlyRequired();
+
      $(document).ready(function() {
 
          $(document).off('input', '.cnic-input').on('input', '.cnic-input', function() {

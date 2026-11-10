@@ -28,6 +28,31 @@ class ExportLoadingSlip extends LoadingSlip
         return $this->belongsTo(ExportDeliveryOrder::class, "delivery_order_id");
     }
 
+    /**
+     * Weight of the empty + extra bags on this slip.
+     * Per-bag weight is "Min Weight Empty Bags (G)" from the export order's packing details.
+     */
+    public function extraEmptyBagsWeightInfo(): array
+    {
+        $item = $this->loadingProgramItem;
+        $exportOrder = $this->deliveryOrder?->exportOrder
+            ?? $item?->exportOrders?->first()
+            ?? $item?->exportLoadingProgram?->exportOrders?->first()
+            ?? $item?->exportLoadingProgram?->exportOrder;
+
+        $perBagWeightG = (float) optional(
+            $exportOrder?->packingItems->first(fn ($packingItem) => (float) $packingItem->min_weight_empty_bags > 0)
+        )->min_weight_empty_bags;
+
+        $bags = (int) $this->empty_bags + (int) $this->extra_bags;
+
+        return [
+            'bags' => $bags,
+            'per_bag_weight_g' => $perBagWeightG,
+            'weight_kg' => round($bags * $perBagWeightG / 1000, 2),
+        ];
+    }
+
     public function secondWeighbridge()
     {
         return $this->hasOne(ExportSecondWeighbridge::class, 'loading_slip_id');

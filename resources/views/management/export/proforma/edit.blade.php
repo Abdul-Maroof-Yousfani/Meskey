@@ -558,14 +558,7 @@
                     <tr>
                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">HS CODE</td>
                         <td style="width: 70%;">
-                            <select name="hs_code_id" class="form-control select2" disabled>
-                                <option value="">Select</option>
-                                @foreach ($hscodes as $hs)
-                                    <option value="{{ $hs->id }}"
-                                        {{ old('hs_code_id', $exportOrder->hs_code_id) == $hs->id ? 'selected' : '' }}>
-                                        {{ $hs->code }}</option>
-                                @endforeach
-                            </select>
+                            <input type="text" class="form-control" value="{{ $exportOrder->hs_code_display }}" disabled>
                         </td>
                     </tr>
                     <tr>

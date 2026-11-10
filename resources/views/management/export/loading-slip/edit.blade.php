@@ -73,10 +73,18 @@
             </div>
 
             <div class="row">
-                <div class="col-xs-12 col-sm-6 col-md-6">
+                <div class="col-xs-12 col-sm-3 col-md-3">
                     <div class="form-group">
                         <label>Empty Bags:</label>
-                        <input type="text" name="empty_bags" id="empty_bags" value="{{ $loadingSlip->empty_bags }}" class="form-control" placeholder="Enter Empty Bags">
+                        <input type="number" name="empty_bags" id="empty_bags" value="{{ $loadingSlip->empty_bags }}" class="form-control" min="0" max="{{ $extraEmptyBags['available_empty_bags'] }}" placeholder="Enter Empty Bags">
+                        <small class="text-muted">Available Empty Bags: {{ $extraEmptyBags['available_empty_bags'] }}</small>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-3 col-md-3">
+                    <div class="form-group">
+                        <label>Extra Bags:</label>
+                        <input type="number" name="extra_bags" id="extra_bags" value="{{ $loadingSlip->extra_bags }}" class="form-control" min="0" max="{{ $extraEmptyBags['available_extra_bags'] }}" placeholder="Enter Extra Bags">
+                        <small class="text-muted">Available Extra Bags: {{ $extraEmptyBags['available_extra_bags'] }}</small>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">

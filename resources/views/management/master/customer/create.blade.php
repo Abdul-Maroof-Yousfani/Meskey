@@ -123,7 +123,7 @@
 
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
-                <label><span class="text-danger required-asterisk">*</span>Owner Mobile No:</label>
+                <label><span class="text-danger required-asterisk local-only-required">*</span>Owner Mobile No:</label>
                 <input type="text" name="owner_mobile_no" placeholder="03001234567" class="form-control"
                     autocomplete="off" maxlength="11" />
                 <small class="text-muted">Enter 11 digit mobile number</small>
@@ -132,7 +132,7 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
-                <label><span class="text-danger required-asterisk">*</span>Owner CNIC:</label>
+                <label><span class="text-danger required-asterisk local-only-required">*</span>Owner CNIC:</label>
                 <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
                     class="form-control cnic-input" autocomplete="off" maxlength="15" />
                 <small class="text-muted">Format: 12345-1234567-1</small>
@@ -349,6 +349,14 @@
 
 
 <script>
+    // Mobile No and CNIC are optional for international customers
+    function toggleLocalOnlyRequired() {
+        let isInternational = $('select[name="type"]').val() === 'international';
+        $('.local-only-required').toggle(!isInternational);
+    }
+    $(document).off('change', 'select[name="type"]').on('change', 'select[name="type"]', toggleLocalOnlyRequired);
+    toggleLocalOnlyRequired();
+
     function toggleRemoveButton() {
         if ($('#card-container .clonecard').length === 1) {
             $('#card-container .clonecard .remove-card').hide();

@@ -67,10 +67,16 @@
             </div>
 
             <div class="row">
-                <div class="col-xs-12 col-sm-6 col-md-6">
+                <div class="col-xs-12 col-sm-3 col-md-3">
                     <div class="form-group">
                         <label>Empty Bags:</label>
                         <input type="text" value="{{ $loadingSlip->empty_bags ?? 'N/A' }}" disabled class="form-control" readonly />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-3 col-md-3">
+                    <div class="form-group">
+                        <label>Extra Bags:</label>
+                        <input type="text" value="{{ $loadingSlip->extra_bags ?? 'N/A' }}" disabled class="form-control" readonly />
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">

@@ -173,10 +173,15 @@
                                         class="form-control form-control-sm" value="{{ $item->contact_details }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
-                                    <select name="loading_program_items[{{ $index }}][transporter_id]" class="form-control form-control-sm select2 transporter-select" @disabled($item->exportFirstWeighbridge)>
+                                    @php
+                                        // Weighed rows keep their saved transporter; others take the logistics transporter
+                                        $lockToLogistics = $logisticsTransporterId && !$item->exportFirstWeighbridge;
+                                        $rowTransporterId = $lockToLogistics ? $logisticsTransporterId : $item->transporter_id;
+                                    @endphp
+                                    <select name="loading_program_items[{{ $index }}][transporter_id]" class="form-control form-control-sm select2 transporter-select {{ $lockToLogistics ? 'autofill-locked' : '' }}" @disabled($item->exportFirstWeighbridge || $lockToLogistics)>
                                         <option value="">Select Transporter</option>
                                         @foreach($Transporters as $transporter)
-                                            <option value="{{ $transporter->id }}" @selected($item->transporter_id == $transporter->id)>{{ $transporter->name }}</option>
+                                            <option value="{{ $transporter->id }}" @selected($rowTransporterId == $transporter->id)>{{ $transporter->name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
@@ -221,10 +226,10 @@
                                         class="form-control form-control-sm" value="">
                                 </td>
                                 <td>
-                                    <select name="loading_program_items[0][transporter_id]" class="form-control form-control-sm select2 transporter-select">
+                                    <select name="loading_program_items[0][transporter_id]" class="form-control form-control-sm select2 transporter-select {{ $logisticsTransporterId ? 'autofill-locked' : '' }}" @disabled($logisticsTransporterId)>
                                         <option value="">Select Transporter</option>
                                         @foreach($Transporters as $transporter)
-                                            <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
+                                            <option value="{{ $transporter->id }}" @selected($logisticsTransporterId == $transporter->id)>{{ $transporter->name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
@@ -273,6 +278,18 @@
     
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
+
+        // Transporter from the export order's logistics (null when none)
+        const logisticsTransporterId = @json($logisticsTransporterId);
+
+        // Locked transporter selects are disabled, so enable them for the submit and lock them again right after
+        $('#ajaxSubmit').on('submit', function() {
+            const $locked = $(this).find('select.autofill-locked');
+            $locked.prop('disabled', false);
+            setTimeout(function() {
+                $locked.prop('disabled', true).trigger('change.select2');
+            }, 0);
+        });
 
         // Initial state logic
         const initialEOIds = $('#export_order_id').val();
@@ -513,6 +530,11 @@
             `;
             $('#itemsList').append(itemHtml);
             const $newRow = $('#itemsList tr.item-row').last();
+            // New rows also get the export order's logistics transporter, locked
+            if (logisticsTransporterId) {
+                $newRow.find('.transporter-select').val(logisticsTransporterId)
+                    .prop('disabled', true).addClass('autofill-locked');
+            }
             $newRow.find('.select2').select2({ width: '100%' });
         }
 

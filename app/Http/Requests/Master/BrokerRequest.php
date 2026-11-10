@@ -64,6 +64,7 @@ class BrokerRequest extends FormRequest
 
         return [
             'company_id' => 'required|exists:companies,id',
+            'broker_type' => 'required|in:local,international',
             'unique_no' => 'nullable|string|max:255|unique:brokers,unique_no' . ($brokerId ? ",$brokerId" : ''),
             'company_name' => [
                 'required',

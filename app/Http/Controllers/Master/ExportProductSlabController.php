@@ -48,7 +48,17 @@ class ExportProductSlabController extends Controller
         $products = Product::where('status', 1)->get();
         $slab_types = ProductSlabType::where('status', 'active')->get();
 
-        return view('management.master.export_product_slab.create', compact('products', 'slab_types'));
+        // Products that already have export slabs, used to clone their config
+        $referenceSlabs = ExportProductSlab::exportEnabled()
+            ->whereHas('product')
+            ->with('product')
+            ->select('product_id')
+            ->groupBy('product_id')
+            ->get()
+            ->sortBy(fn ($item) => $item->product->name ?? '')
+            ->values();
+
+        return view('management.master.export_product_slab.create', compact('products', 'slab_types', 'referenceSlabs'));
     }
 
     public function getByProduct($productId)

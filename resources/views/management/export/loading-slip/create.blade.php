@@ -181,10 +181,18 @@
             </div>
 
             <div class="row">
-                <div class="col-xs-12 col-sm-6 col-md-6">
+                <div class="col-xs-12 col-sm-3 col-md-3">
                     <div class="form-group">
                         <label>Empty Bags:</label>
-                        <input type="text" name="empty_bags" id="empty_bags" class="form-control" placeholder="Enter Empty Bags">
+                        <input type="number" name="empty_bags" id="empty_bags" class="form-control" min="0" max="${data.available_empty_bags ?? 0}" placeholder="Enter Empty Bags">
+                        <small class="text-muted">Available Empty Bags: ${data.available_empty_bags ?? 0}</small>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-3 col-md-3">
+                    <div class="form-group">
+                        <label>Extra Bags:</label>
+                        <input type="number" name="extra_bags" id="extra_bags" class="form-control" min="0" max="${data.available_extra_bags ?? 0}" placeholder="Enter Extra Bags">
+                        <small class="text-muted">Available Extra Bags: ${data.available_extra_bags ?? 0}</small>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">

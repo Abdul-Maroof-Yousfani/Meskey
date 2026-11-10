@@ -274,7 +274,8 @@ class ExportDeliveryOrderController extends Controller
                     'fumigation_by' => $fumigation_by,
                     'phyto_certificate' => $exportOrder->packingItems->pluck('phyto_certificate')->flatten()->unique()->values(),
                     'carton_supplier' => $exportOrder->packingItems->pluck('carton_supplier')->filter()->first(),
-                    'fumigation_tablets' => $exportOrder->packingItems->pluck('fumigation_tablets')->filter()->first(),
+                    // From the export order's Fumigation Dosage field
+                    'fumigation_dosage' => $exportOrder->fumigation_dosage,
                     'fumigation_ref_no' => $exportOrder->packingItems->pluck('fumigation_ref_no')->filter()->first(),
                 ], $cFreightAutofill)
             ]
@@ -409,7 +410,7 @@ class ExportDeliveryOrderController extends Controller
                 'inspection_by' => $request->has('inspection_by_hidden') ? $request->inspection_by_hidden : ($request->has('inspection_by') ? json_encode($request->inspection_by) : null),
                 'phyto_certificate' => $request->has('phyto_certificate') ? json_encode($request->phyto_certificate) : null,
                 'carton_supplier' => $request->carton_supplier,
-                'fumigation_tablets' => $request->fumigation_tablets,
+                'fumigation_dosage' => $request->fumigation_dosage,
                 'fumigation_ref_no' => $request->fumigation_ref_no,
             ]);
 
@@ -891,7 +892,7 @@ class ExportDeliveryOrderController extends Controller
                 'inspection_by' => $request->has('inspection_by_hidden') ? $request->inspection_by_hidden : ($request->has('inspection_by') ? json_encode($request->inspection_by) : null),
                 'phyto_certificate' => $request->has('phyto_certificate') ? json_encode($request->phyto_certificate) : null,
                 'carton_supplier' => $request->carton_supplier,
-                'fumigation_tablets' => $request->fumigation_tablets,
+                'fumigation_dosage' => $request->fumigation_dosage,
                 'fumigation_ref_no' => $request->fumigation_ref_no,
             ]);
 

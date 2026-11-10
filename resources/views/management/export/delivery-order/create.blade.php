@@ -111,15 +111,23 @@
                             </select>
                             <span class="text-danger error-message" id="error_locations_0_location_id"></span>
                         </td>
-                        <td>
-                            <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled>
-                                <option value="">Select Factory</option>
-                            </select>
+                       <td>
+                            <div class="overflow-auto d-flex justify-content-center align-items-center" style="height: 80px;">
+                                <select name="locations[0][arrival_ids][]"
+                                    class="form-control select2 arrival-select"
+                                    multiple disabled>
+                                    <option value="">Select Factory</option>
+                                </select>
+                            </div>
                         </td>
                         <td>
-                            <select name="locations[0][storage_ids][]" class="form-control select2 storage-select" multiple disabled>
-                                <option value="">Select Section</option>
-                            </select>
+                            <div class="overflow-auto d-flex justify-content-center align-items-center" style="height: 80px;">
+                                <select name="locations[0][storage_ids][]"
+                                    class="form-control select2 storage-select"
+                                    multiple disabled>
+                                    <option value="">Select Section</option>
+                                </select>
+                            </div>
                         </td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-danger remove-location-row" style="display: none;"><i class="ft-trash font-medium-1"></i></button>
@@ -145,14 +153,18 @@
                     <span class="text-danger error-message" id="error_locations_INDEX_location_id"></span>
                 </td>
                 <td>
-                    <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple disabled>
-                        <option value="">Select Factory</option>
-                    </select>
+                    <div class="overflow-auto d-flex justify-content-center align-items-center" style="height: 80px;">
+                        <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple disabled>
+                            <option value="">Select Factory</option>
+                        </select>
+                    </div>
                 </td>
                 <td>
-                    <select name="locations[INDEX][storage_ids][]" class="form-control storage-select" multiple disabled>
-                        <option value="">Select Section</option>
-                    </select>
+                    <div class="overflow-auto d-flex justify-content-center align-items-center" style="height: 80px;">
+                        <select name="locations[INDEX][storage_ids][]" class="form-control storage-select" multiple disabled>
+                            <option value="">Select Section</option>
+                        </select>
+                    </div>
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-danger remove-location-row"><i class="ft-trash font-medium-1"></i></button>
@@ -702,8 +714,8 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Fumigation Tablets:</label>
-                        <input type="text" name="fumigation_tablets" id="fumigation_tablets" class="form-control">
+                        <label>Fumigation Dosage:</label>
+                        <input type="text" name="fumigation_dosage" id="fumigation_dosage" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -957,6 +969,27 @@
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
 
+        // Logistics & Shipment: lock a field when the export order filled it, unlock it when empty.
+        // Inputs use readonly; selects use disabled and are re-enabled on submit below.
+        function lockIfAutofilled(selector, value) {
+            const $el = $(selector);
+            const filled = Array.isArray(value) ? value.length > 0 : (value !== null && value !== undefined && String(value).trim() !== '');
+            if ($el.is('select')) {
+                $el.prop('disabled', filled).toggleClass('autofill-locked', filled).trigger('change.select2');
+            } else {
+                $el.prop('readonly', filled);
+            }
+        }
+
+        // Disabled selects are not submitted, so enable them for the submit and lock them again right after
+        $('#ajaxSubmit').on('submit', function() {
+            const $locked = $(this).find('select.autofill-locked');
+            $locked.prop('disabled', false);
+            setTimeout(function() {
+                $locked.prop('disabled', true).trigger('change.select2');
+            }, 0);
+        });
+
         // Track Form-E remaining qty for packing row autofill
         var currentFormERemainingMt = 0;
         var currentFormETotalMt = 0;
@@ -1100,6 +1133,14 @@
                             if(response.data.autofill.estimated_payment_date) $('#estimated_payment_date').val(response.data.autofill.estimated_payment_date);
                             if(response.data.autofill.freight_amount) $('#freight_amount').val(response.data.autofill.freight_amount);
 
+                            // Lock these only when the export order filled them
+                            lockIfAutofilled('#vessel_name', response.data.autofill.vessel_name);
+                            lockIfAutofilled('#vessel_eta', response.data.autofill.vessel_eta);
+                            lockIfAutofilled('#vessel_etd', response.data.autofill.vessel_etd);
+                            lockIfAutofilled('#shipping_line', response.data.autofill.shipping_line);
+                            lockIfAutofilled('#estimated_payment_date', response.data.autofill.estimated_payment_date);
+                            lockIfAutofilled('#freight_amount', response.data.autofill.freight_amount);
+
                             // Populate Logistics Transporters
                             let transporterSelect = $('#transporter_id');
                             transporterSelect.empty().attr('name', 'transporter_id[]').prop('multiple', true);
@@ -1109,6 +1150,7 @@
                                 });
                             }
                             transporterSelect.trigger('change');
+                            lockIfAutofilled('#transporter_id', response.data.autofill.logistics_transporters);
                         }
                             if(response.data.autofill.inspection_by && response.data.autofill.inspection_by.length > 0) {
                                 $('#inspection_by').val(response.data.autofill.inspection_by).trigger('change');
@@ -1131,15 +1173,20 @@
                             } else {
                                 $('#phyto_certificate').val([]).trigger('change');
                             }
-                            
+
                             if(response.data.autofill.carton_supplier) $('#carton_supplier').val(response.data.autofill.carton_supplier);
                             else $('#carton_supplier').val('');
-                            
-                            if(response.data.autofill.fumigation_tablets) $('#fumigation_tablets').val(response.data.autofill.fumigation_tablets);
-                            else $('#fumigation_tablets').val('');
+
+                            if(response.data.autofill.fumigation_dosage) $('#fumigation_dosage').val(response.data.autofill.fumigation_dosage);
+                            else $('#fumigation_dosage').val('');
                             
                             if(response.data.autofill.fumigation_ref_no) $('#fumigation_ref_no').val(response.data.autofill.fumigation_ref_no);
                             else $('#fumigation_ref_no').val('');
+
+                            lockIfAutofilled('#phyto_certificate', response.data.autofill.phyto_certificate);
+                            lockIfAutofilled('#carton_supplier', response.data.autofill.carton_supplier);
+                            lockIfAutofilled('#fumigation_dosage', response.data.autofill.fumigation_dosage);
+                            lockIfAutofilled('#fumigation_ref_no', response.data.autofill.fumigation_ref_no);
                         // After packing rows are added, apply Form-E qty (overrides EO qty)
                         if (currentFormERemainingMt > 0) {
                             applyFormEQtyToPackingRows(currentFormERemainingMt);
@@ -1242,7 +1289,9 @@
             $('[data-name="origin_country_id"]').html('<option value="'+data.origin_country_id+'" selected>'+(data.origin_country ? data.origin_country.name : '')+'</option>').trigger('change.select2');
             $('[data-name="port_of_discharge_id"]').html('<option value="'+data.port_of_discharge_id+'" selected>'+(data.port_of_discharge ? data.port_of_discharge.name : '')+'</option>').trigger('change.select2');
             $('[data-name="port_of_loading_id"]').html('<option value="'+data.port_of_loading_id+'" selected>'+(data.port_of_loading ? data.port_of_loading.name : '')+'</option>').trigger('change.select2');
-            $('[data-name="hs_code_id"]').html('<option value="'+data.hs_code_id+'" selected>'+(data.hs_code ? data.hs_code.code : '')+'</option>').trigger('change.select2');
+            // HS Code comes from the selected product (products.hs_code); older orders fall back to their saved code
+            const hsCodeText = (data.product && data.product.hs_code) || data.product_hs_code || (data.hs_code ? data.hs_code.code : '');
+            $('[data-name="hs_code_id"]').html('<option value="'+(data.hs_code_id || '')+'" selected>'+hsCodeText+'</option>').trigger('change.select2');
             $('[data-name="currency_id"]').html('<option value="'+data.currency_id+'" selected>'+(data.currency ? data.currency.currency_name : '')+'</option>').trigger('change.select2');
 
             // Specs - Align with Export Order Show style

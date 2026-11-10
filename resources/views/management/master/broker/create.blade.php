@@ -4,6 +4,15 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.broker') }}" />
 
     <div class="row ">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Broker Type:</label>
+                <select name="broker_type" class="form-control" required>
+                    <option value="local" {{ old('broker_type', 'local') == 'local' ? 'selected' : '' }}>Local</option>
+                    <option value="international" {{ old('broker_type') == 'international' ? 'selected' : '' }}>International</option>
+                </select>
+            </div>
+        </div>
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Company Detail

@@ -81,6 +81,19 @@
         </div>
     </div>
 
+    {{-- Shown only when the ticket's export order has fumigation --}}
+    <div id="dosageSection" class="row" style="display: none;">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">Dosage</h6>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-4">
+            <div class="form-group">
+                <label>Dosage:</label>
+                <input type="number" name="dosage" id="dosage" class="form-control" step="1" placeholder="Enter Dosage">
+            </div>
+        </div>
+    </div>
+
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -182,6 +195,8 @@
                             $('#info_brand').val(response.data.brand);
                             $('#ticketInfo').show();
                             $('#itemsSection').show();
+                            $('#dosage').val('');
+                            $('#dosageSection').toggle(!!response.data.has_fumigation);
                         }
                     },
                     error: function() {
@@ -192,6 +207,8 @@
             } else {
                 $('#ticketInfo').hide();
                 $('#itemsSection').hide();
+                $('#dosage').val('');
+                $('#dosageSection').hide();
             }
         });
     });

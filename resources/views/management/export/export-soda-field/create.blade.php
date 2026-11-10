@@ -183,7 +183,7 @@
                                 <select name="packing_items[0][bag_packing_id]" class="form-control select2">
                                     <option value="">Packing</option>
                                     @foreach ($bagPackings as $packing)
-                                        <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                                        <option value="{{ $packing->id }}" data-value="{{ $packing->value }}">{{ $packing->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
@@ -197,7 +197,7 @@
                             </td> --}}
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size"
-                                    step="0.01" value="0" min="0">
+                                    step="0.01" value="0" min="0" readonly>
                             </td>
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][metric_tons]"
@@ -263,6 +263,18 @@
 
 <script>
     $(document).ready(function() {
+        // Shipment Date To cannot be before Shipment Date From
+        function syncShipmentDates() {
+            let from = $('input[name="shipment_date_from"]');
+            let to = $('input[name="shipment_date_to"]');
+            to.attr('min', from.val() || null);
+            if (from.val() && to.val() && to.val() < from.val()) {
+                to.val('');
+                Swal.fire('Invalid Date', 'Shipment Date To cannot be before Shipment Date From.', 'warning');
+            }
+        }
+        $('input[name="shipment_date_from"], input[name="shipment_date_to"]').on('change', syncShipmentDates);
+
         $('.select2').select2({
             width: '100%'
         });
@@ -292,6 +304,30 @@
             setTimeout(() => {
                 buyerSelect.select2('open');
             }, 100);
+        });
+
+        // ---- PACKING SIZE FROM SELECTED PACKING ----
+        // Packing Size (kg) comes from bag_packings.value and is locked.
+        // If the selected packing has no value saved, the user can type it.
+        function applyPackingSize(row, isUserChange) {
+            let select = row.find('select[name*="[bag_packing_id]"]');
+            let value = select.find('option:selected').data('value');
+            let input = row.find('.bag-size');
+            if (value !== undefined && value !== null && value !== '') {
+                input.val(value).prop('readonly', true);
+            } else if (select.val()) {
+                if (isUserChange) input.val(0);
+                input.prop('readonly', false);
+            } else {
+                if (isUserChange) input.val(0);
+                input.prop('readonly', true);
+            }
+        }
+
+        $(document).on('change', 'select[name*="[bag_packing_id]"]', function() {
+            let row = $(this).closest('tr');
+            applyPackingSize(row, true);
+            calculateRowFromMT(row);
         });
 
         // ---- ROW LEVEL CALCULATIONS ----
@@ -441,7 +477,23 @@
             }
         }
 
+        // Buyer, Commodity, Incoterm and Payment Term come from the quotation, so lock them.
+        // Disabled selects are not submitted, so a hidden input carries the value.
+        function lockQuotationField(select, value) {
+            let name = select.attr('name');
+            select.prop('disabled', true);
+            select.siblings('input.quotation-lock[name="' + name + '"]').remove();
+            select.after('<input type="hidden" class="quotation-lock" name="' + name + '" value="' + value + '">');
+        }
+
+        function unlockQuotationFields() {
+            $('#buyer_id, select[name="product_id"], select[name="incoterm_id"], select[name="mode_of_term_id"]').prop('disabled', false);
+            $('input.quotation-lock').remove();
+            $('input[name="buyer_type"]').prop('disabled', false);
+        }
+
         function clearFormFields() {
+            unlockQuotationFields();
             $('#buyer_id').val('').trigger('change.select2');
             $('select[name="product_id"]').val('').trigger('change.select2');
             $('input[name="shipment_date_from"]').val('');
@@ -464,6 +516,8 @@
         }
 
         function fillFormFromData(data) {
+            unlockQuotationFields();
+
             // Buyer
             if (data.buyer_id) {
                 if ($('#buyer_id option[value="' + data.buyer_id + '"]').length === 0) {
@@ -477,11 +531,14 @@
                     });
                 }
                 $('#buyer_id').val(data.buyer_id).trigger('change.select2');
+                lockQuotationField($('#buyer_id'), data.buyer_id);
+                $('input[name="buyer_type"]').prop('disabled', true);
             }
 
             // Commodity / Product
             if (data.product_id) {
                 $('select[name="product_id"]').val(data.product_id).trigger('change.select2');
+                lockQuotationField($('select[name="product_id"]'), data.product_id);
             }
 
             // Shipment Dates
@@ -493,13 +550,16 @@
             if (dateTo) {
                 $('input[name="shipment_date_to"]').val(dateTo);
             }
+            syncShipmentDates();
 
             // Export Details (Incoterm & Payment Term)
             if (data.incoterm_id) {
                 $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change.select2');
+                lockQuotationField($('select[name="incoterm_id"]'), data.incoterm_id);
             }
             if (data.mode_of_term_id) {
                 $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change.select2');
+                lockQuotationField($('select[name="mode_of_term_id"]'), data.mode_of_term_id);
             }
 
             // Commission
@@ -562,6 +622,7 @@
                 row.find('.rates_mnd').val(item.rate_per_maund || 0);
                 row.find('.amount').val(item.amount || 0);
 
+                applyPackingSize(row, false);
                 calculateRowFromMT(row);
                 if (item.rate) {
                     row.find('.rates').val(item.rate);

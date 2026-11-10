@@ -28,6 +28,7 @@ class LoadingSlip extends Model
         'labour',
         'seal_no',
         'empty_bags',
+        'extra_bags',
         'created_by',
         'company_id'
     ];

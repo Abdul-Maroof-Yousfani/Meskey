@@ -69,6 +69,7 @@ class ExportOuterItemController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
+            'dosage' => 'nullable|integer',
             'items' => 'required|array|min:1',
             'items.*.item_name' => 'required|string',
             'items.*.weight' => 'required|numeric|min:0',
@@ -94,6 +95,8 @@ class ExportOuterItemController extends Controller
                 ]);
             }
 
+            $this->saveDosage(LoadingProgramItem::findOrFail($request->loading_program_item_id), $request);
+
             DB::commit();
             return response()->json(['success' => 'Outer Items saved successfully.'], 201);
         } catch (\Exception $e) {
@@ -114,12 +117,15 @@ class ExportOuterItemController extends Controller
             'Slica jel'
         ];
 
-        return view('management.export.outer-item.edit', compact('ticket', 'itemOptions'));
+        $hasFumigation = $this->ticketHasFumigation($ticket);
+
+        return view('management.export.outer-item.edit', compact('ticket', 'itemOptions', 'hasFumigation'));
     }
 
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
+            'dosage' => 'nullable|integer',
             'items' => 'required|array|min:1',
             'items.*.item_name' => 'required|string',
             'items.*.weight' => 'required|numeric|min:0',
@@ -148,6 +154,8 @@ class ExportOuterItemController extends Controller
                 ]);
             }
 
+            $this->saveDosage($ticket, $request);
+
             DB::commit();
             return response()->json(['success' => 'Outer Items updated successfully.'], 200);
         } catch (\Exception $e) {
@@ -175,7 +183,38 @@ class ExportOuterItemController extends Controller
             'data' => [
                 'truck_number' => $ticket->truck_number,
                 'container_number' => $ticket->container_number,
+                'has_fumigation' => $this->ticketHasFumigation($ticket),
             ]
         ]);
+    }
+
+    /**
+     * Dosage is kept only when the ticket's export order has fumigation.
+     */
+    private function saveDosage(LoadingProgramItem $ticket, Request $request): void
+    {
+        $ticket->update([
+            'dosage' => $this->ticketHasFumigation($ticket) && $request->filled('dosage') ? (int) $request->dosage : null,
+        ]);
+    }
+
+    /**
+     * True when any export order on the ticket has a fumigation type or fumigation company.
+     */
+    private function ticketHasFumigation(LoadingProgramItem $ticket): bool
+    {
+        $ticket->loadMissing(['exportOrders', 'exportLoadingProgram.exportOrders', 'exportLoadingProgram.exportOrder']);
+
+        $exportOrders = $ticket->exportOrders;
+        if ($exportOrders->isEmpty()) {
+            $exportOrders = $ticket->exportLoadingProgram?->exportOrders ?? collect();
+        }
+        if ($exportOrders->isEmpty() && $ticket->exportLoadingProgram?->exportOrder) {
+            $exportOrders = collect([$ticket->exportLoadingProgram->exportOrder]);
+        }
+
+        return $exportOrders->contains(function ($order) {
+            return filled($order->fumigation_type) || !empty(array_filter((array) $order->fumigation_by));
+        });
     }
 }

@@ -6,8 +6,8 @@
                         <th width="12%">DC No</th>
                         <th width="18%">Customer</th>
                         <th width="25%">Commodity/Product</th>
-                        <th width="10%" class="text-right">Qty(MT)</th>
-                        <th width="10%" class="text-right">Amount</th>
+                        {{-- <th width="10%" class="text-right">Qty(MT)</th>
+                        <th width="10%" class="text-right">Amount</th> --}}
                         <th width="10%">Date</th>
                         <th width="8%">Status</th>
                         <th width="7%">Action</th>
@@ -40,13 +40,13 @@
                                     <strong>{{ $itemRow['name'] }}</strong>
                                 </td>
 
-                                <td class="text-right align-middle">
+                                {{-- <td class="text-right align-middle">
                                     {{ number_format((float) $itemRow['qty'], 3) }}
                                 </td>
 
                                 <td class="text-right align-middle">
                                     {{ number_format((float) $itemRow['amount'], 2) }}
-                                </td>
+                                </td> --}}
 
                                 {{-- Date & Status - Show only on first row --}}
                                 @if($isFirstRow)

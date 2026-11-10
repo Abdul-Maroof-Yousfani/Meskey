@@ -136,20 +136,20 @@
                 <input type="hidden" name="bag_size[]" value="{{ $bag_size }}" class="bag_size">
             </td>
             <td>
-                <input type="number" name="no_of_bags[]" value="{{ $initial_bags }}" class="form-control no_of_bags" min="0" step="1" oninput="syncQtyFromBags(this)">
+                <input type="number" name="no_of_bags[]" value="{{ $initial_bags }}" class="form-control no_of_bags" min="0" step="1" oninput="syncQtyFromBags(this)" readonly>
             </td>
             <td>
-                <input type="number" name="qty[]" value="{{ $initial_qty }}" class="form-control qty" min="0" step="0.001" oninput="syncBagsFromQty(this)">
+                <input type="number" name="qty[]" value="{{ $initial_qty }}" class="form-control qty" min="0" step="0.001" oninput="syncBagsFromQty(this)" readonly>
             </td>
-            <td>
+            {{-- <td>
                 <input type="number" name="rate[]" value="{{ $rate }}" class="form-control rate" readonly>
-            </td>
+            </td> --}}
             <td style="display: none;">
                 <input type="text" value="{{ $eo_packing->rate_per_maund ?? '' }}" class="form-control" readonly>
             </td>
-            <td>
+            {{-- <td>
                 <input type="text" name="amount[]" value="{{ number_format($initial_qty * $rate, 2, '.', '') }}" class="form-control amount" readonly>
-            </td>
+            </td> --}}
             <td>
                 <input type="number" name="item_labour_rate[]" value="{{ $labour_rate_val }}" class="form-control item_labour_rate" readonly>
             </td>

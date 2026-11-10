@@ -16,6 +16,7 @@ class Broker extends Model
     protected $fillable = [
         'company_id',
         'unique_no',
+        'broker_type',
         'name',
         'account_id',
         'company_name',

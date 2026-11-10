@@ -232,7 +232,15 @@
     </h6>
 </div>
 
-<div class="col-xs-12 col-sm-3 col-md-3">
+<div class="col-xs-12 col-sm-3 col-md-2">
+    <div class="form-group">
+        <label>Dosage:</label>
+        {{-- Entered on the export Outer Items form --}}
+        <input type="text" id="dosage_display" value="{{ $LoadingSlip->loadingProgramItem->dosage ?? 'N/A' }}" readonly class="form-control" />
+    </div>
+</div>
+
+<div class="col-xs-12 col-sm-3 col-md-2">
     <div class="form-group">
         <label>First Weight(KG):</label>
         <input type="text" name="first_weight_display" id="first_weight_display"
@@ -242,7 +250,7 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-3 col-md-3">
+<div class="col-xs-12 col-sm-3 col-md-2">
     <div class="form-group">
         <label>Second Weight(KG):</label>
         <input type="number" name="second_weight" id="second_weight" placeholder="Enter Second Weight"
@@ -251,7 +259,7 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-3 col-md-3">
+<div class="col-xs-12 col-sm-3 col-md-2">
     @php
         $outerWeight = $LoadingSlip->loadingProgramItem->outerItems->sum('total_weight');
     @endphp
@@ -261,7 +269,21 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-3 col-md-3">
+<div class="col-xs-12 col-sm-3 col-md-2">
+    @php
+        $bagsInfo = $LoadingSlip->extraEmptyBagsWeightInfo();
+        $slipBags = $bagsInfo['bags'];
+        $perBagWeightG = $bagsInfo['per_bag_weight_g'];
+        $extraEmptyBagsWeight = $bagsInfo['weight_kg'];
+    @endphp
+    <div class="form-group">
+        <label>Extra / Empty Bags Weight(KG):</label>
+        <input type="text" id="extra_empty_bags_weight" value="{{ number_format($extraEmptyBagsWeight, 2, '.', '') }}" readonly class="form-control" />
+        <small class="text-muted">{{ $slipBags }} bags x {{ number_format($perBagWeightG, 2, '.', '') }} g</small>
+    </div>
+</div>
+
+<div class="col-xs-12 col-sm-3 col-md-2">
     <div class="form-group">
         <label>Net Weight(KG):</label>
         <input type="text" name="net_weight" id="net_weight" placeholder="Net Weight"
@@ -277,12 +299,14 @@
                 <button class="btn btn-primary" type="button">Balance (KG)</button>
             </div>
             @php
-                $baseBalance = (isset($SecondWeighbridge) && isset($SecondWeighbridge->balance_kg))
-                    ? ($SecondWeighbridge->balance_kg + $SecondWeighbridge->net_weight)
-                    : get_second_weighbridge_balance_kg($LoadingSlip);
-                $balance = (isset($SecondWeighbridge) && isset($SecondWeighbridge->balance_kg))
-                    ? $SecondWeighbridge->balance_kg
-                    : get_second_weighbridge_balance_kg($LoadingSlip);
+                // Net weight includes the empty/extra bags, so the balance allows for their weight too.
+                // On edit, this weighbridge's own net weight is added back (same as the update() check).
+                $baseBalance = get_second_weighbridge_balance_kg($LoadingSlip)
+                    + (isset($SecondWeighbridge) ? (float) $SecondWeighbridge->net_weight : 0)
+                    + $extraEmptyBagsWeight;
+                $balance = isset($SecondWeighbridge)
+                    ? $baseBalance - (float) $SecondWeighbridge->net_weight
+                    : $baseBalance;
                 $baseBalanceMt = $baseBalance / 1000;
                 $balanceMt = $balance / 1000;
             @endphp
@@ -319,10 +343,16 @@
             },
             dataType: 'json',
             success: function (response) {
-                $("#weight_difference").val(response);
-                $("#weight_difference_mt").val((parseFloat(response || 0) / 1000).toFixed(3));
-                $("#weight_difference").attr('data-base-balance', parseFloat(response || 0).toFixed(2));
-                $("#weight_difference_mt").attr('data-base-balance-mt', (parseFloat(response || 0) / 1000).toFixed(3));
+                // Add the empty/extra bags weight, same as the server-side balance
+                const bagsWeight = parseFloat($('#extra_empty_bags_weight').val()) || 0;
+                const base = (parseFloat(response || 0) || 0) + bagsWeight;
+                $("#weight_difference").val(base.toFixed(2));
+                $("#weight_difference_mt").val((base / 1000).toFixed(3));
+                $("#weight_difference").attr('data-base-balance', base.toFixed(2)).data('base-balance', base);
+                $("#weight_difference_mt").attr('data-base-balance-mt', (base / 1000).toFixed(3));
+                if ($('#second_weight').val()) {
+                    $('#second_weight').trigger('input');
+                }
             }
         });
     }

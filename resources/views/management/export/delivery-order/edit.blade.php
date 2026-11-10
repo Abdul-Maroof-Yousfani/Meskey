@@ -913,8 +913,8 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Fumigation Tablets:</label>
-                        <input type="text" name="fumigation_tablets" id="fumigation_tablets" class="form-control" value="{{ $deliveryOrder->fumigation_tablets }}">
+                        <label>Fumigation Dosage:</label>
+                        <input type="text" name="fumigation_dosage" id="fumigation_dosage" class="form-control" value="{{ $deliveryOrder->fumigation_dosage }}">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -1304,7 +1304,7 @@
             $('#snap_origin_country_edit').val(data.origin_country ? data.origin_country.name : '');
             $('#snap_port_of_discharge_edit').val(data.port_of_discharge ? data.port_of_discharge.name : '');
             $('#snap_port_of_loading_edit').val(data.port_of_loading ? data.port_of_loading.name : '');
-            $('#snap_hs_code_edit').val(data.hs_code ? data.hs_code.code : '');
+            $('#snap_hs_code_edit').val((data.product && data.product.hs_code) || data.product_hs_code || (data.hs_code ? data.hs_code.code : ''));
             $('#snap_partial_payment_edit').val(data.partial_payment || '');
             $('#snap_transhipment_edit').val(data.transhipment || '');
             $('#snap_part_shipment_edit').val(data.part_shipment || '');

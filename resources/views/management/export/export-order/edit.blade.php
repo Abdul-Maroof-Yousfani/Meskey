@@ -374,6 +374,14 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label>Fumigation Dosage:</label>
+                                <input type="text" name="fumigation_dosage" class="form-control"
+                                    value="{{ old('fumigation_dosage', $exportOrder->fumigation_dosage) }}"
+                                    placeholder="Fumigation Dosage">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label>Inspection By:</label>
                                 <select name="inspection_by[]" class="form-control select2" multiple required>
                                     @foreach ($inspectionCompanies as $company)
@@ -493,7 +501,7 @@
                     <select name="product_id" class="form-control select2" id="productSelect">
                         <option value="">Select Product</option>
                         @foreach ($products as $product)
-                            <option value="{{ $product->id }}"
+                            <option value="{{ $product->id }}" data-hs-code="{{ $product->hs_code }}"
                                 {{ old('product_id', $exportOrder->product_id) == $product->id ? 'selected' : '' }}>
                                 {{ $product->name }}
                             </option>
@@ -971,13 +979,15 @@
                     <tr>
                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">HS CODE</td>
                         <td style="width: 70%;">
-                            <select name="hs_code_id" class="form-control select2">
-                                <option value="">Select</option>
-                                @foreach ($hscodes as $hs)
-                                    <option value="{{ $hs->id }}"
-                                        {{ old('hs_code_id', $exportOrder->hs_code_id) == $hs->id ? 'selected' : '' }}>
-                                        {{ $hs->code }}
-                                    </option>
+                            {{-- Filled from the selected product's HS code and locked --}}
+                            @php
+                                $selectedHsCode = old('product_hs_code', $exportOrder->product_hs_code ?: ($exportOrder->product?->hs_code ?: $exportOrder->hsCode?->code));
+                                $hsOptions = $hscodes->when($selectedHsCode && !$hscodes->contains($selectedHsCode), fn($c) => $c->push($selectedHsCode));
+                            @endphp
+                            <select name="product_hs_code" class="form-control select2" disabled>
+                                <option value="">Select Product First</option>
+                                @foreach ($hsOptions as $hs)
+                                    <option value="{{ $hs }}" {{ $selectedHsCode == $hs ? 'selected' : '' }}>{{ $hs }}</option>
                                 @endforeach
                             </select>
                         </td>
@@ -1129,7 +1139,7 @@
                                         @foreach ($bagPackings as $packing)
                                             <option value="{{ $packing->id }}"
                                                 {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}
-                                                data-size="{{ preg_replace('/[^0-9.]/', '', $packing->name) }}">
+                                                data-size="{{ $packing->value }}">
                                                 {{ $packing->name }}</option>
                                         @endforeach
                                     </select>
@@ -1196,7 +1206,7 @@
                                     <label>Bag Size (kg):</label>
                                     <input type="number" name="packing_items[{{ $pIdx }}][bag_size]"
                                         class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}"
-                                        required>
+                                        required readonly>
                                 </div>
                             </div>
 
@@ -1296,7 +1306,7 @@
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
-                                    <label>Min Weight Empty Bags:</label>
+                                    <label>Min Weight Empty Bags (G):</label>
                                     <input type="number"
                                         name="packing_items[{{ $pIdx }}][min_weight_empty_bags]"
                                         class="form-control" step="0.01" required
@@ -1322,6 +1332,7 @@
                                                 <tr>
                                                     <th style="min-width: 150px;">Bag Type</th>
                                                     <th style="min-width: 120px;">Bag Size</th>
+                                                    <th style="min-width: 120px;">Packing Size (kg)</th>
                                                     <th style="min-width: 150px;">Primary Bags fit in master bag</th>
                                                     <th style="min-width: 90px;">No. of Bags</th>
                                                     <th style="min-width: 90px;">Empty Bags</th>
@@ -1367,6 +1378,11 @@
                                                                 @endforeach
                                                             </select>
                                                         </td>
+                                                        <td><input type="number"
+                                                                name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][packing_size]"
+                                                                class="form-control form-control-sm sub-packing-size"
+                                                                value="{{ $sub->packing_size ?? 0 }}" min="0"
+                                                                step="0.01"></td>
                                                         <td><input type="number"
                                                                 name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][no_of_primary_bags]"
                                                                 class="form-control form-control-sm sub-no-of-primary-bags"
@@ -1510,7 +1526,7 @@
         $form.data('eo-edit-initialized', true);
 
         $form.on('submit', function() {
-            $('select[name="buyer_id"], select[name="product_id"]').prop('disabled', false);
+            $('select[name="buyer_id"], select[name="product_id"], select[name="product_hs_code"]').prop('disabled', false);
         });
 
         function updateDocumentsList() {
@@ -1724,6 +1740,18 @@
         }
 
         // Product selection
+        // HS CODE follows the selected product (products.hs_code) and stays locked.
+        // attr() is used, not data(), so a code like "1006.30" is not turned into a number.
+        function syncProductHsCode() {
+            const code = $('#productSelect').find(':selected').attr('data-hs-code') || '';
+            const hsSelect = $('select[name="product_hs_code"]');
+            if (code && hsSelect.find('option').filter(function() { return this.value === code; }).length === 0) {
+                hsSelect.append(new Option(code, code));
+            }
+            hsSelect.val(code).trigger('change.select2');
+        }
+        $('#productSelect').on('change', syncProductHsCode);
+
         $('#productSelect').on('change', function() {
             var productId = $(this).val();
             var productName = $(this).find(':selected').text();
@@ -1773,7 +1801,7 @@
             $('input[name="shipment_delivery_date_from"]').val('');
             $('input[name="shipment_delivery_date_to"]').val('');
 
-            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="hs_code_id"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]')
+            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="product_hs_code"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]')
                 .val('').trigger('change');
 
             $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate')
@@ -1854,6 +1882,7 @@
 
                 // Set numeric inputs
                 if (item.bag_size) row.find('input.bag-size').val(item.bag_size);
+                applyPackingSize(row, false);
                 if (item.metric_tons) row.find('input.metric-tons').val(item.metric_tons);
                 if (item.no_of_bags) row.find('input.no_of_bags').val(item.no_of_bags);
                 if (item.extra_bags) row.find('input.extra-bags').val(item.extra_bags);
@@ -1915,7 +1944,6 @@
                 .trigger('change.select2');
             if (data.port_of_loading_id) $('select[name="port_of_loading_id"]').val(data.port_of_loading_id).trigger(
                 'change.select2');
-            if (data.hs_code_id) $('select[name="hs_code_id"]').val(data.hs_code_id).trigger('change.select2');
             if (data.partial_payment) $('select[name="partial_payment"]').val(data.partial_payment).trigger(
                 'change.select2');
             if (data.transhipment) $('select[name="transhipment"]').val(data.transhipment).trigger('change.select2');
@@ -2061,6 +2089,7 @@
 
             // Resets
             newRow.find('input[type="number"]').val(0);
+            newRow.find('.bag-size').prop('readonly', true);
             newRow.find('input[type="text"], input[type="date"]').val('');
             newRow.find('input[type="hidden"]').val('');
 
@@ -2113,6 +2142,7 @@
                             @endforeach
                         </select>
                     </td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][packing_size]" class="form-control form-control-sm sub-packing-size" value="0" min="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_primary_bags]" class="form-control form-control-sm sub-no-of-primary-bags" value="0"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_bags]" class="form-control form-control-sm sub-no-of-bags" value="0" readonly></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags]" class="form-control form-control-sm sub-empty-bags" value="0"></td>
@@ -2186,9 +2216,9 @@
             });
 
         $(document).off('input',
-            '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage'
+            '.sub-packing-size, .sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage'
         ).on('input',
-            '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage',
+            '.sub-packing-size, .sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage',
             function() {
                 const subRow = $(this).closest('tr');
                 const mainRow = $(this).closest('.packing-item');
@@ -2206,6 +2236,42 @@
             calculateSubItemNoOfBags(subRow, mainRow);
         });
 
+        // Bag Size (kg) comes from bag_packings.value and is locked.
+        // If the selected packing has no value saved, the user can type it.
+        window.applyPackingSize = function(row, isUserChange) {
+            const select = row.find('.bag-packing-id');
+            const value = select.find('option:selected').data('size');
+            const input = row.find('.bag-size');
+            if (value !== undefined && value !== null && value !== '') {
+                input.val(value).prop('readonly', true);
+            } else if (select.val()) {
+                if (isUserChange) input.val(0);
+                input.prop('readonly', false);
+            } else {
+                if (isUserChange) input.val(0);
+                input.prop('readonly', true);
+            }
+        };
+
+        $(document).off('change', '.bag-packing-id').on('change', '.bag-packing-id', function() {
+            const row = $(this).closest('.packing-item');
+            applyPackingSize(row, true);
+            row.find('.bag-size').trigger('input');
+        });
+
+        // Existing rows: take the size from their packing, recalc only if it changed.
+        // Deferred so every input handler below is bound first.
+        setTimeout(function() {
+            $('#packingItemsContainer .packing-item').each(function() {
+                const row = $(this);
+                const before = parseFloat(row.find('.bag-size').val()) || 0;
+                applyPackingSize(row, false);
+                if ((parseFloat(row.find('.bag-size').val()) || 0) !== before) {
+                    row.find('.bag-size').trigger('input');
+                }
+            });
+        }, 0);
+
         $(document).on('input', '.no_of_bags, .bag-size', function() {
             const mainRow = $(this).closest('.packing-item');
             mainRow.find('.sub-packing-item').each(function() {
@@ -2214,6 +2280,15 @@
         });
 
         function calculateSubItemNoOfBags(subRow, mainRow, source = 'manual') {
+            // Primary bags = Packing Size (kg) / main row Bag Size (kg)
+            // e.g. 50 kg master bag / 1 kg primary bag = 50 bags
+            const packingSize = parseFloat(subRow.find('.sub-packing-size').val()) || 0;
+            const mainBagSize = parseFloat(mainRow.find('.bag-size').val()) || 0;
+            if (packingSize > 0 && mainBagSize > 0) {
+                // small epsilon so 50 / 0.1 gives 500, not 499
+                subRow.find('.sub-no-of-primary-bags').val(Math.floor(packingSize / mainBagSize + 1e-9));
+            }
+
             const noOfBagsMain = parseInt(mainRow.find('.no_of_bags').val()) || 0;
             const noOfPrimaryBags = parseInt(subRow.find('.sub-no-of-primary-bags').val()) || 0;
 

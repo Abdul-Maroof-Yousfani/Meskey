@@ -297,6 +297,10 @@
 
         $('#ajaxSubmit').on('submit', function() {
             $('#location').prop('disabled', false);
+            // Disabled fields are not submitted, so re-enable the active Port of Loading select
+            if ($('#to_location_select').attr('name')) {
+                $('#to_location_select').prop('disabled', false);
+            }
         });
 
         function initTransporterSelect(selector) {
@@ -470,6 +474,10 @@
                     toLocationValue,
                     'Select Port of Loading'
                 );
+                // Lock Port of Loading once it is auto-filled from the export order
+                if ($('#to_location_select').val()) {
+                    $('#to_location_select').prop('disabled', true);
+                }
             } else {
                 $('#to_location_label').text('To Location');
                 $('#to_location_select_wrapper').hide();
@@ -700,6 +708,9 @@
                 $('#location').prop('disabled', $('#type').val() !== 'export_order');
                 $('#to_location_input').val('');
                 populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
+                if ($('#type').val() === 'export_order') {
+                    $('#to_location_select').prop('disabled', false);
+                }
                 populateSelectOptions($('#factory'), [], [], 'Select Factory', true);
                 $('#itemsBody').empty();
                 rowCount = 0;

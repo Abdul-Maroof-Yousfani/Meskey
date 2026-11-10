@@ -51,9 +51,9 @@
                                             <th width="12%">DC No</th>
                                             <th width="18%">Customer</th>
                                             <th width="25%">Commodity/Product</th>
-                                            <th width="10%" class="text-right">Qty(MT)</th>
-                                            <th width="10%" class="text-right">Rate</th>
-                                            <th width="10%" class="text-right">Amount</th>
+                                            {{-- <th width="10%" class="text-right">Qty(MT)</th> --}}
+                                            {{-- <th width="10%" class="text-right">Rate</th>
+                                            <th width="10%" class="text-right">Amount</th> --}}
                                             <th width="10%">Date</th>
                                             <th width="8%">Status</th>
                                             <th width="7%">Action</th>

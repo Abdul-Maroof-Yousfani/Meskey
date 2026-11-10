@@ -130,14 +130,20 @@ class CFreightController extends Controller
             'cutoff_cy' => 'required|date',
             'etd' => 'required|date',
             'eta' => 'required|date',
+            'remarks' => 'nullable|string',
         ]);
 
         try {
             DB::beginTransaction();
 
+            // Quantity parts: requested containers + approved rate's container size
+            $approvedRate = $cFreight->rates()->where('is_approved', 1)->first();
+
             $cFreight->update([
                 'booking_no' => $request->booking_no,
                 'bl_number' => $request->bl_number ?: '-',
+                'containers' => $cFreight->requested_containers,
+                'container_size' => $approvedRate->container_size ?? null,
                 'quantity' => $request->quantity,
                 'shipping_line' => $request->shipping_line,
                 't_s' => $request->t_s,
@@ -146,6 +152,7 @@ class CFreightController extends Controller
                 'cutoff_cy' => $request->cutoff_cy,
                 'etd' => $request->etd,
                 'eta' => $request->eta,
+                'remarks' => $request->remarks,
                 'through_logistic' => $request->through_logistic,
                 'return_port' => $request->return_port,
                 'status' => 'Booked'

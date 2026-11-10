@@ -4,13 +4,24 @@
     <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}" />
 
     <div class="row form-mar">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="form-group">
                 <label>Product:</label>
                 <select class="form-control select2" name="product_id" id="product_id_c">
                     <option value="">Select Product</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}">{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Reference Slab: <small class="text-muted">(Optional - Details clone karne ke liye)</small></label>
+                <select class="form-control select2" id="reference_slab_id">
+                    <option value="">Select Reference Slab</option>
+                    @foreach ($referenceSlabs as $slab)
+                        <option value="{{ $slab->product_id }}">{{ $slab->product->name ?? 'N/A' }} (Export Slab)</option>
                     @endforeach
                 </select>
             </div>
@@ -67,9 +78,8 @@
             $input.prop('readonly', !isChecked);
         });
 
-        $('#product_id_c').on('change', function() {
-            var productId = $(this).val();
-
+        // Load export slabs of a product into the form
+        function loadExportSlabs(productId) {
             // Reset all switches and inputs first
             $('.slab-enable-switch').prop('checked', false);
             $('input[name*="[prefill_spec_value]"]').val('').prop('readonly', true);
@@ -77,6 +87,8 @@
             if (!productId) {
                 return;
             }
+
+            $('#slabs-container').css('opacity', '0.5');
 
             var url = "{{ route('export-product-slab.by-product', ':id') }}".replace(':id', productId);
             $.ajax({
@@ -103,8 +115,23 @@
                 },
                 error: function(xhr) {
                     console.error('Error fetching export slabs for product:', xhr);
+                },
+                complete: function() {
+                    $('#slabs-container').css('opacity', '1');
                 }
             });
+        }
+
+        $('#product_id_c').on('change', function() {
+            // Product change par reference reset karo
+            $('#reference_slab_id').val('').trigger('change.select2');
+            loadExportSlabs($(this).val());
+        });
+
+        // Reference Slab se export slabs clone karo
+        $('#reference_slab_id').on('change', function() {
+            var refProductId = $(this).val();
+            loadExportSlabs(refProductId || $('#product_id_c').val());
         });
     });
 </script>

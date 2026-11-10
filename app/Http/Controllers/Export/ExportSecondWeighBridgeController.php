@@ -104,7 +104,8 @@ class ExportSecondWeighBridgeController extends Controller
             return response()->json('Second Weight can not be less than First Weight', 422);
         }
 
-        $balance = get_second_weighbridge_balance_kg($loadingSlip);
+        // Net weight includes the empty/extra bags, so allow for their weight in the balance
+        $balance = get_second_weighbridge_balance_kg($loadingSlip) + $loadingSlip->extraEmptyBagsWeightInfo()['weight_kg'];
         if ($net_weight > $balance) {
             return response()->json('Your total remaining net weight balance for all associated DOs on this ticket is: ' . number_format($balance, 2), 422);
         }
@@ -275,7 +276,8 @@ class ExportSecondWeighBridgeController extends Controller
             }
 
             $current_balance = get_second_weighbridge_balance_kg($loadingSlip);
-            $available_balance = $current_balance + $secondWeighbridge->net_weight;
+            $available_balance = $current_balance + $secondWeighbridge->net_weight
+                + $loadingSlip->extraEmptyBagsWeightInfo()['weight_kg'];
 
             if ($net_weight > $available_balance) {
                 DB::rollBack();

@@ -38,6 +38,11 @@
 
 @php
     $hasApprovedRate = $cFreight->rates->where('is_approved', 1)->count() > 0;
+    $approvedRate = $cFreight->rates->firstWhere('is_approved', 1);
+    // Default quantity: "<Req. Containers> X <approved Container Size>", e.g. "2 X 20FT"
+    $defaultQuantity = $approvedRate
+        ? trim(($cFreight->requested_containers ?? '') . ' X ' . ($approvedRate->container_size ?? ''))
+        : '';
 @endphp
 
     <!-- Rates Section (Image 2) -->
@@ -170,7 +175,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Quantity <span class="text-danger">*</span></label>
-                                    <input type="text" name="quantity" class="form-control" value="{{ $cFreight->quantity }}" required>
+                                    <input type="text" name="quantity" class="form-control" value="{{ $defaultQuantity ?: $cFreight->quantity }}" required readonly>
                                 </div>
                             </div>
                             
@@ -178,20 +183,17 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Shipping Line <span class="text-danger">*</span></label>
-                                    <input type="text" name="shipping_line" class="form-control" value="{{ $cFreight->shipping_line }}" required>
+                                    <input type="text" name="shipping_line" class="form-control" value="{{ $approvedRate->shipping_line ?? $cFreight->shipping_line }}" required readonly>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Through Logistic <span class="text-danger">*</span></label>
-                                    <select name="through_logistic" class="form-control select2" required>
-                                        <option value="">Select Company</option>
-                                        @foreach($shipmentCompanies as $company)
-                                            <option value="{{ $company->name }}" {{ $cFreight->through_logistic == $company->name ? 'selected' : '' }}>
-                                                {{ $company->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @php $rateThirdParty = trim($approvedRate->third_party ?? ''); @endphp
+                                    {{-- Lock only when the approved rate has a Third Party; otherwise let the user type it --}}
+                                    <input type="text" name="through_logistic" class="form-control"
+                                        value="{{ $rateThirdParty !== '' ? $rateThirdParty : $cFreight->through_logistic }}"
+                                        required {{ $rateThirdParty !== '' ? 'readonly' : '' }}>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -246,6 +248,12 @@
                                 <div class="form-group">
                                     <label>ETA <span class="text-danger">*</span></label>
                                     <input type="date" name="eta" class="form-control" value="{{ $cFreight->eta }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label>Remarks</label>
+                                    <textarea name="remarks" class="form-control" rows="1" placeholder="Remarks">{{ $cFreight->remarks }}</textarea>
                                 </div>
                             </div>
                         </div>

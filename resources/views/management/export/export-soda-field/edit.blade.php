@@ -2,6 +2,15 @@
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-soda-field') }}" />
+    @php
+        // Fields that come from the quotation are locked when the sauda is linked to one.
+        // Disabled selects are not submitted, so hidden inputs carry the values.
+        $fromQuotation = (bool) $exportSodaField->linked_quotation_id;
+        $lockBuyer = $fromQuotation && $exportSodaField->buyer_id;
+        $lockProduct = $fromQuotation && $exportSodaField->product_id;
+        $lockIncoterm = $fromQuotation && $exportSodaField->incoterm_id;
+        $lockTerm = $fromQuotation && $exportSodaField->mode_of_term_id;
+    @endphp
 
     <div class="row form-mar p-2">
         <div class="col-8">
@@ -24,11 +33,11 @@
                     <div class="form-group">
                         <label>Party Name (Buyer):</label>
                         <div class="buyer-type-filter mb-1" style="font-size: 12px;">
-                            <label class="mr-2"><input type="radio" name="buyer_type" value="all" checked> All</label>
-                            <label class="mr-2"><input type="radio" name="buyer_type" value="local"> Local</label>
-                            <label class="mr-2"><input type="radio" name="buyer_type" value="international"> International</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="all" checked @disabled($lockBuyer)> All</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="local" @disabled($lockBuyer)> Local</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="international" @disabled($lockBuyer)> International</label>
                         </div>
-                        <select name="buyer_id" id="buyer_id" class="form-control select2" required>
+                        <select name="buyer_id" id="buyer_id" class="form-control select2" required @disabled($lockBuyer)>
                             <option value="">Select Buyer</option>
                             @foreach ($users as $user)
                                 <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }} data-type="{{ strtolower($user->type) }}">
@@ -36,18 +45,24 @@
                                 </option>
                             @endforeach
                         </select>
+                        @if ($lockBuyer)
+                            <input type="hidden" name="buyer_id" value="{{ $exportSodaField->buyer_id }}">
+                        @endif
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Commodity:</label>
-                        <select name="product_id" class="form-control select2" required>
+                        <select name="product_id" class="form-control select2" required @disabled($lockProduct)>
                             <option value="">Select Product</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}" {{ $exportSodaField->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
                             @endforeach
                         </select>
+                        @if ($lockProduct)
+                            <input type="hidden" name="product_id" value="{{ $exportSodaField->product_id }}">
+                        @endif
                     </div>
                 </div>
 
@@ -101,23 +116,29 @@
                     <tr>
                         <td style="width: 40%; font-weight: bold; vertical-align: middle;">INCO TERM</td>
                         <td>
-                            <select name="incoterm_id" class="form-control select2">
+                            <select name="incoterm_id" class="form-control select2" @disabled($lockIncoterm)>
                                 <option value="">Select IncoTerm</option>
                                 @foreach ($incoterms as $incoterm)
                                     <option value="{{ $incoterm->id }}" {{ $exportSodaField->incoterm_id == $incoterm->id ? 'selected' : '' }}>{{ $incoterm->name }}</option>
                                 @endforeach
                             </select>
+                            @if ($lockIncoterm)
+                                <input type="hidden" name="incoterm_id" value="{{ $exportSodaField->incoterm_id }}">
+                            @endif
                         </td>
                     </tr>
                     <tr>
                         <td style="font-weight: bold; vertical-align: middle;">PAYMENT TERM</td>
                         <td>
-                            <select name="mode_of_term_id" class="form-control select2">
+                            <select name="mode_of_term_id" class="form-control select2" @disabled($lockTerm)>
                                 <option value="">Select Payment Term</option>
                                 @foreach ($modeofterms as $term)
                                     <option value="{{ $term->id }}" {{ $exportSodaField->mode_of_term_id == $term->id ? 'selected' : '' }}>{{ $term->name }}</option>
                                 @endforeach
                             </select>
+                            @if ($lockTerm)
+                                <input type="hidden" name="mode_of_term_id" value="{{ $exportSodaField->mode_of_term_id }}">
+                            @endif
                         </td>
                     </tr>
                 </table>
@@ -168,13 +189,13 @@
                                 <select name="packing_items[{{ $i }}][bag_packing_id]" class="form-control select2">
                                     <option value="">Packing</option>
                                     @foreach ($bagPackings as $packing)
-                                        <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}>{{ $packing->name }}</option>
+                                        <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }} data-value="{{ $packing->value }}">{{ $packing->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
 
                             <td class="p-2">
-                                <input type="number" name="packing_items[{{ $i }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $item->bag_size ?? 0 }}" min="0">
+                                <input type="number" name="packing_items[{{ $i }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $item->bag_size ?? 0 }}" min="0" readonly>
                             </td>
                             <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][metric_tons]" class="form-control metric-tons" value="{{ $item->metric_tons ?? 0 }}" step="0.001" min="0">
@@ -245,6 +266,19 @@
 
 <script>
 $(document).ready(function() {
+    // Shipment Date To cannot be before Shipment Date From
+    function syncShipmentDates() {
+        let from = $('input[name="shipment_date_from"]');
+        let to = $('input[name="shipment_date_to"]');
+        to.attr('min', from.val() || null);
+        if (from.val() && to.val() && to.val() < from.val()) {
+            to.val('');
+            Swal.fire('Invalid Date', 'Shipment Date To cannot be before Shipment Date From.', 'warning');
+        }
+    }
+    $('input[name="shipment_date_from"], input[name="shipment_date_to"]').on('change', syncShipmentDates);
+    $('input[name="shipment_date_to"]').attr('min', $('input[name="shipment_date_from"]').val() || null);
+
     $('.select2').select2({ width: '100%'});
 
     // ---- BUYER FILTER LOGIC ----
@@ -279,6 +313,40 @@ $(document).ready(function() {
     if (initialBuyerType) {
         // $('input[name="buyer_type"][value="' + initialBuyerType + '"]').prop('checked', true).trigger('change');
     }
+
+    // ---- PACKING SIZE FROM SELECTED PACKING ----
+    // Packing Size (kg) comes from bag_packings.value and is locked.
+    // If the selected packing has no value saved, the user can type it.
+    function applyPackingSize(row, isUserChange) {
+        let select = row.find('select[name*="[bag_packing_id]"]');
+        let value = select.find('option:selected').data('value');
+        let input = row.find('.bag-size');
+        if (value !== undefined && value !== null && value !== '') {
+            input.val(value).prop('readonly', true);
+        } else if (select.val()) {
+            if (isUserChange) input.val(0);
+            input.prop('readonly', false);
+        } else {
+            if (isUserChange) input.val(0);
+            input.prop('readonly', true);
+        }
+    }
+
+    $(document).on('change', 'select[name*="[bag_packing_id]"]', function() {
+        let row = $(this).closest('tr');
+        applyPackingSize(row, true);
+        calculateRowFromMT(row);
+    });
+
+    // Existing rows: take the size from their packing, recalc only if it changed
+    $('#packingItems tr.packing-item').each(function() {
+        let row = $(this);
+        let before = parseFloat(row.find('.bag-size').val()) || 0;
+        applyPackingSize(row, false);
+        if ((parseFloat(row.find('.bag-size').val()) || 0) !== before) {
+            calculateRowFromMT(row);
+        }
+    });
 
     // ---- ROW LEVEL CALCULATIONS ----
     $(document).on('input', '.metric-tons, .bag-size', function() {

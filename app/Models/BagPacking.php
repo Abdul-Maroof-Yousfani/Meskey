@@ -9,7 +9,11 @@ class BagPacking extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'value'];
+
+    protected $casts = [
+        'value' => 'float',
+    ];
 
     protected $appends = ['size'];
 

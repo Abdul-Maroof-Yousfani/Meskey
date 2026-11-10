@@ -4,6 +4,7 @@
             <th class="col-sm-1">Image </th>
             <th class="col-sm-1">Type </th>
             <th class="col-sm-3">Name </th>
+            <th class="col-sm-1">HS Code</th>
             <th class="col-sm-3">Parent</th>
             <th class="col-sm-1">Product Type</th>
             <th class="col-sm-1">Category</th>
@@ -33,6 +34,7 @@
                             <br><small class="text-muted"><i class="ft-tag"></i> {{ $parent->unique_no }}</small>
                         @endif
                     </td>
+                    <td><small>{{ $parent->hs_code ?? '--' }}</small></td>
                     <td>—</td>
                     <td><small>{{ formatEnumValue($parent->product_type) ?? '--' }}</small></td>
                     <td><small>{{ $parent->category?->name ?? (function_exists('get_category_name') && $parent->category_id ? get_category_name($parent->category_id) : '--') }}</small></td>
@@ -76,6 +78,7 @@
                                 <br><small class="text-muted pl-3"><i class="ft-tag"></i> {{ $child->unique_no }}</small>
                             @endif
                         </td>
+                        <td><small>{{ $child->hs_code ?? '--' }}</small></td>
                         <td>{{ $parent->name }}</td>
                         <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
                         <td><small>{{ $child->category?->name ?? $parent->category?->name ?? (function_exists('get_category_name') && $child->category_id ? get_category_name($child->category_id) : '--') }}</small></td>

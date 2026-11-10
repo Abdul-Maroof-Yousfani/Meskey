@@ -114,8 +114,6 @@
                 <label class="form-label">Labour:</label>
                 <select name="labour" id="labour" class="form-control select2">
                     <option value="">Select Labours</option>
-                    <option value="1">Labour 1</option>
-                    <option value="2">Labour 2</option>
                 </select>
                 <input type="hidden" name="labour_rate" id="labour_rate" value="0">
             </div>
@@ -141,7 +139,7 @@
         </div>
     </div>
 
-    <div class="row form-mar">
+    {{-- <div class="row form-mar">
         <div class="col-md-4">
             <div class="info-box">
                 <span class="label">Second Weighbridge Qty (MT)</span>
@@ -160,7 +158,7 @@
                 <span class="value" id="remaining_qty_mt">0.000</span>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="row form-mar">
         <div class="col-md-12">
@@ -173,9 +171,9 @@
                             <th>Packing</th>
                             <th>No. of Bags</th>
                             <th>Quantity (MT)</th>
-                            <th>Rate per MT</th>
+                            {{-- <th>Rate per MT</th> --}}
                             <th style="display:none;">Rate per Mond</th>
-                            <th>Amount</th>
+                            {{-- <th>Amount</th> --}}
                             <th>Labour Rate</th>
                             <th>Labour Amount</th>
                             <th>Brand</th>

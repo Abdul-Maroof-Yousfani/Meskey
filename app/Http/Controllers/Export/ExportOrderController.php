@@ -71,13 +71,13 @@ class ExportOrderController extends Controller
         $bagColors = Color::where('status', 1)->get();
         $users = Customer::get();
         $banks = Bank::where('status', 1)->get();
-        $brokers = Broker::where('status', 1)->get();
+        $brokers = Broker::where('status', 1)->where('broker_type','international')->get();
         $incoterms = IncoTerm::where('status', 1)->get();
         $modeofterms = ModeOfTerm::where('status', 1)->get();
         $modeoftransport = ModeOfTransport::where('status', 1)->get();
         $countries = Country::get();
         $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
+        $hscodes = $this->productHsCodes();
         $currencies = Currency::where('status', 1)->get();
         $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
@@ -294,7 +294,7 @@ class ExportOrderController extends Controller
         $modeoftransport = ModeOfTransport::where('status', 1)->get();
         $countries = Country::get();
         $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
+        $hscodes = $this->productHsCodes();
         $currencies = Currency::where('status', 1)->get();
         $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
@@ -360,7 +360,7 @@ class ExportOrderController extends Controller
         $modeoftransport = ModeOfTransport::where('status', 1)->get();
         $countries = Country::get();
         $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
+        $hscodes = $this->productHsCodes();
         $currencies = Currency::where('status', 1)->get();
         $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
@@ -942,6 +942,16 @@ class ExportOrderController extends Controller
             'opt_documents' => $opt_documents,
             'documents' => $re_documents->concat($opt_documents)->values(),
         ]);
+    }
+
+    // Distinct HS codes saved on products (products.hs_code), for the HS CODE dropdown
+    private function productHsCodes()
+    {
+        return Product::whereNotNull('hs_code')
+            ->where('hs_code', '!=', '')
+            ->distinct()
+            ->orderBy('hs_code')
+            ->pluck('hs_code');
     }
 
     private function numberToWords($number, $appendCurrency = true)

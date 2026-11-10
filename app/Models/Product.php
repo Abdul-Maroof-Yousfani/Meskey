@@ -30,6 +30,7 @@ class Product extends Model
         'image',
         'price',
         'name',
+        'hs_code',
         'is_bag',
         'product_category_flags',
     ];

@@ -40,6 +40,8 @@ class CustomerRequest extends FormRequest
             ? $customerParam->id
             : ($customerParam ?? $this->customer);
 
+        $isInternational = strtolower((string) $this->input('type')) === 'international';
+
         $checkDuplicateCustomer = function ($attribute, $value, $fail) use ($companyId, $customerId) {
             $companyName = trim($this->input('company_name') ?? '');
             $ownerName = trim($this->input('owner_name') ?? '');
@@ -79,8 +81,9 @@ class CustomerRequest extends FormRequest
                 'max:255',
                 $checkDuplicateCustomer,
             ],
-            'owner_mobile_no' => 'required|string|max:11|regex:/^[0-9]{11}$/',
-            'owner_cnic_no' => 'required|string|regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/',
+            // International customers may not have a local mobile number or CNIC
+            'owner_mobile_no' => [$isInternational ? 'nullable' : 'required', 'string', 'max:11', 'regex:/^[0-9]{11}$/'],
+            'owner_cnic_no' => [$isInternational ? 'nullable' : 'required', 'string', 'regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/'],
             'next_to_kin' => 'nullable|string|max:255',
             'next_to_kin_mobile_no' => 'nullable|string|max:11|regex:/^[0-9]{11}$/',
             'owner_bank_detail' => 'nullable|string|max:255',

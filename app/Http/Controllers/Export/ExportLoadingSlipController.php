@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ExportLoadingSlipController extends Controller
 {
@@ -97,16 +98,23 @@ class ExportLoadingSlipController extends Controller
             'gala' => 'required|array|min:1',
             'gala.*' => 'required|string|max:255',
             'no_of_bags' => 'required|integer|min:1',
-            'empty_bags' => 'nullable|string|max:255',
+            'empty_bags' => 'nullable|integer|min:0',
+            'extra_bags' => 'nullable|integer|min:0',
             'bag_size' => 'required|numeric|min:0',
             'kilogram' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
             'company_id' => 'required|numeric',
-            'seal_no' => 'required|string|max:255',
+            // Unique among export loading slips only (the table is shared with sales loading slips)
+            'seal_no' => [
+                'required', 'string', 'max:255',
+                Rule::unique('loading_slips', 'seal_no')->where('type', 'export_loading_slip'),
+            ],
             'stacks' => 'required|array|min:1',
             'stacks.*.bag_type' => 'required|string',
             'stacks.*.packing_size' => 'required|string',
             'stacks.*.input_size' => 'required|string',
+        ], [
+            'seal_no.unique' => 'This Seal No is already used in another loading slip.',
         ]);
 
         if ($validator->fails()) {
@@ -137,6 +145,11 @@ class ExportLoadingSlipController extends Controller
                 }
             }
 
+            if ($errors = $this->extraEmptyBagErrors($request, $deliveryOrders)) {
+                DB::rollBack();
+                return response()->json(['errors' => $errors], 422);
+            }
+
             $loadingSlip = ExportLoadingSlip::create([
                 'loading_program_item_id' => $request->loading_program_item_id,
                 'customer' => $request->customer,
@@ -147,6 +160,7 @@ class ExportLoadingSlipController extends Controller
                 'gala' => $this->encodeStoredMultiValue($request->gala),
                 'no_of_bags' => $request->no_of_bags,
                 'empty_bags' => $request->empty_bags,
+                'extra_bags' => $request->extra_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
                 'delivery_order_id' => $deliveryOrders->first()?->id,
@@ -220,7 +234,9 @@ class ExportLoadingSlipController extends Controller
             return (string) ($item->bag_size ?? '0');
         })->unique()->values();
 
-        return view('management.export.loading-slip.edit', compact('loadingSlip', 'Orders', 'canEdit', 'rejectedDispatchQc', 'bagTypes', 'packingSizes', 'selectedGalas'));
+        $extraEmptyBags = $this->getExtraEmptyBagSummary($deliveryOrders, $loadingSlip);
+
+        return view('management.export.loading-slip.edit', compact('loadingSlip', 'Orders', 'canEdit', 'rejectedDispatchQc', 'bagTypes', 'packingSizes', 'selectedGalas', 'extraEmptyBags'));
     }
 
     public function update(Request $request, string $id)
@@ -237,15 +253,22 @@ class ExportLoadingSlipController extends Controller
                 'gala' => 'required|array|min:1',
                 'gala.*' => 'required|string|max:255',
                 'no_of_bags' => 'required|integer|min:1',
-                'empty_bags' => 'nullable|string|max:255',
+                'empty_bags' => 'nullable|integer|min:0',
+                'extra_bags' => 'nullable|integer|min:0',
                 'bag_size' => 'required|numeric|min:0',
                 'kilogram' => 'required|numeric|min:0',
                 'remarks' => 'nullable|string',
-                'seal_no' => 'required|string|max:255',
+                // Unique among export loading slips, ignoring this slip itself
+                'seal_no' => [
+                    'required', 'string', 'max:255',
+                    Rule::unique('loading_slips', 'seal_no')->where('type', 'export_loading_slip')->ignore($id),
+                ],
                 'stacks' => 'required|array|min:1',
                 'stacks.*.bag_type' => 'required|string',
                 'stacks.*.packing_size' => 'required|string',
                 'stacks.*.input_size' => 'required|string',
+            ], [
+                'seal_no.unique' => 'This Seal No is already used in another loading slip.',
             ]);
 
             if ($validator->fails()) {
@@ -285,6 +308,11 @@ class ExportLoadingSlipController extends Controller
                 }
             }
 
+            if ($errors = $this->extraEmptyBagErrors($request, $deliveryOrders, $loadingSlip)) {
+                DB::rollBack();
+                return response()->json(['errors' => $errors], 422);
+            }
+
             $rejectedDispatchQc = $loadingSlip->loadingProgramItem?->latestRejectedExportDispatchQc;
             if ($rejectedDispatchQc) {
                 LoadingSlipLog::create([
@@ -316,6 +344,7 @@ class ExportLoadingSlipController extends Controller
                 'gala' => $this->encodeStoredMultiValue($request->gala),
                 'no_of_bags' => $request->no_of_bags,
                 'empty_bags' => $request->empty_bags,
+                'extra_bags' => $request->extra_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
                 'remarks' => $request->remarks,
@@ -389,6 +418,7 @@ class ExportLoadingSlipController extends Controller
         $summary = $this->summarizeOrders($orders);
         $deliveryOrders = $this->resolveDeliveryOrders($LoadingProgramItem)->unique('id');
         $bagSummary = $this->getBagSummary($deliveryOrders);
+        $extraEmptyBags = $this->getExtraEmptyBagSummary($deliveryOrders);
 
         return response()->json([
             'success' => true,
@@ -404,6 +434,8 @@ class ExportLoadingSlipController extends Controller
                 'total_bags' => $bagSummary['total_bags'],
                 'used_bags' => $bagSummary['used_bags'],
                 'remaining_bags' => $bagSummary['remaining_bags'],
+                'available_empty_bags' => $extraEmptyBags['available_empty_bags'],
+                'available_extra_bags' => $extraEmptyBags['available_extra_bags'],
                 'is_pohanch' => false,
                 'bag_types' => $deliveryOrders->flatMap(function ($do) {
                     return $do->exportPackingItems;
@@ -694,6 +726,56 @@ class ExportLoadingSlipController extends Controller
             'total_bags' => $totalBags,
             'used_bags' => $usedBags,
             'remaining_bags' => max($totalBags - $usedBags, 0),
+        ];
+    }
+
+    /**
+     * Empty / extra bags entered on the slip must not exceed what is still available.
+     */
+    private function extraEmptyBagErrors(Request $request, Collection $deliveryOrders, ?ExportLoadingSlip $ignoreSlip = null): array
+    {
+        $available = $this->getExtraEmptyBagSummary($deliveryOrders, $ignoreSlip);
+        $errors = [];
+
+        if ((int) $request->empty_bags > $available['available_empty_bags']) {
+            $errors['empty_bags'] = ["Available empty bags are {$available['available_empty_bags']}."];
+        }
+        if ((int) $request->extra_bags > $available['available_extra_bags']) {
+            $errors['extra_bags'] = ["Available extra bags are {$available['available_extra_bags']}."];
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Empty / extra bags come from the export order's Packing Details.
+     * Available = export order total minus what other loading slips of that order already used.
+     */
+    private function getExtraEmptyBagSummary(Collection $deliveryOrders, ?ExportLoadingSlip $ignoreSlip = null): array
+    {
+        $exportOrderIds = $deliveryOrders->pluck('export_order_id')->filter()->unique()->values();
+
+        if ($exportOrderIds->isEmpty()) {
+            return ['available_empty_bags' => 0, 'available_extra_bags' => 0];
+        }
+
+        $exportOrders = \App\Models\Export\ExportOrder::with('packingItems')->whereIn('id', $exportOrderIds)->get();
+        $totalEmpty = (int) $exportOrders->sum(fn ($order) => $order->packingItems->sum('empty_bags'));
+        $totalExtra = (int) $exportOrders->sum(fn ($order) => $order->packingItems->sum('extra_bags'));
+
+        $usedQuery = ExportLoadingSlip::whereHas('deliveryOrder', function ($q) use ($exportOrders) {
+            $q->whereIn('export_order_id', $exportOrders->pluck('id'));
+        });
+        if ($ignoreSlip) {
+            $usedQuery->where('id', '!=', $ignoreSlip->id);
+        }
+
+        $usedEmpty = (int) (clone $usedQuery)->sum('empty_bags');
+        $usedExtra = (int) (clone $usedQuery)->sum('extra_bags');
+
+        return [
+            'available_empty_bags' => max($totalEmpty - $usedEmpty, 0),
+            'available_extra_bags' => max($totalExtra - $usedExtra, 0),
         ];
     }
 

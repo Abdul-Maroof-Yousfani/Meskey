@@ -72,6 +72,10 @@ class ExportSodaFieldController extends Controller
         $request->validate([
             'buyer_id' => 'required',
             'product_id' => 'required',
+            'shipment_date_from' => 'nullable|date',
+            'shipment_date_to' => 'nullable|date|after_or_equal:shipment_date_from',
+        ], [
+            'shipment_date_to.after_or_equal' => 'Shipment Date To cannot be before Shipment Date From.',
         ]);
 
         DB::beginTransaction();
@@ -176,6 +180,10 @@ class ExportSodaFieldController extends Controller
         $request->validate([
             'buyer_id' => 'required',
             'product_id' => 'required',
+            'shipment_date_from' => 'nullable|date',
+            'shipment_date_to' => 'nullable|date|after_or_equal:shipment_date_from',
+        ], [
+            'shipment_date_to.after_or_equal' => 'Shipment Date To cannot be before Shipment Date From.',
         ]);
 
         DB::beginTransaction();

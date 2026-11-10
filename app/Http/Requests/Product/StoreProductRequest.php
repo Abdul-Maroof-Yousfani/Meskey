@@ -29,6 +29,7 @@ class StoreProductRequest extends FormRequest
                     ->where('company_id', $this->input('company_id') ?? $this->company_id)
                     ->whereNull('deleted_at'),
             ],
+            'hs_code' => 'required|string|max:255',
             'description' => 'nullable|string',
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -53,6 +54,7 @@ class StoreProductRequest extends FormRequest
             'unique_no.required' => 'The unique number is required.',
             'unique_no.unique' => 'This unique number already exists.',
             'name.required' => 'The product name is required.',
+            'hs_code.required' => 'The HS Code is required.',
             'name.unique' => 'The product name has already been taken.',
             'image.image' => 'The file must be an image.',
             'image.max' => 'The image size must be less than 2MB.',
