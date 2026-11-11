@@ -58,8 +58,10 @@ class SaleAdvanceBalanceService
         $dos = DB::table('delivery_order')
             ->where('so_id', $soId)
             ->where('am_approval_status', '!=', 'rejected')
-            ->get(['id', 'reference_no', 'do_status']);
+            ->get(['id', 'reference_no', 'do_status', 'am_approval_status']);
         $doIds = $dos->pluck('id')->all();
+        // Only an approved DO consumes the advance attached to it. A pending / reverted DO reserves nothing.
+        $approvedDoIds = $dos->where('am_approval_status', 'approved')->pluck('id')->all();
 
         // Money in: RVs
         $rvLinks = $this->rvLinksForSo($soId);
@@ -69,12 +71,12 @@ class SaleAdvanceBalanceService
             ->where('rv.am_approval_status', 'approved')
             ->whereIn('dorv.delivery_order_id', $doIds)
             ->orderBy('dorv.id')
-            ->get(['dorv.delivery_order_id', 'dorv.receipt_voucher_id', 'dorv.amount']);
+            ->get(['dorv.delivery_order_id', 'dorv.receipt_voucher_id', 'dorv.amount', 'dorv.withhold_amount']);
 
         $received = array_sum($rvLinks);
         foreach ($attachedRows->groupBy('receipt_voucher_id') as $rvId => $rows) {
             if (!isset($rvLinks[$rvId])) {
-                $received += (float) $rows->filter(fn ($r) => $r->delivery_order_id != $excludeDoId)->sum('amount');
+                $received += (float) $rows->filter(fn ($r) => $r->delivery_order_id != $excludeDoId && in_array($r->delivery_order_id, $approvedDoIds))->sum('amount');
             }
         }
 
@@ -93,17 +95,35 @@ class SaleAdvanceBalanceService
             ->groupBy('delivery_order_id')
             ->select('delivery_order_id', DB::raw('SUM(qty * rate) as total'))
             ->pluck('total', 'delivery_order_id')->all();
-        $refundedByDo = empty($doIds) ? [] : $this->dpvLines($x)
-            ->whereIn('d.delivery_order_id', $doIds)
-            ->groupBy('d.delivery_order_id')
-            ->select('d.delivery_order_id', DB::raw($this->dpvAmountSql() . ' as total'))
-            ->pluck('total', 'delivery_order_id')->all();
-        $jvDebitByDo = empty($doIds) ? [] : $this->jvLines($x)
-            ->where('d.debit_amount', '>', 0)
-            ->whereIn('d.delivery_order_id', $doIds)
-            ->groupBy('d.delivery_order_id')
-            ->select('d.delivery_order_id', DB::raw('SUM(d.debit_amount) as total'))
-            ->pluck('total', 'delivery_order_id')->all();
+        // A DO edited after a JV / DPV on its line picked its RVs again from what was left, so that earlier
+        // outflow is already out of its new advance: it counts against the SO / RVs, not the DO a second time.
+        $attachedAt = $this->doAttachTimes($doIds);
+        $refundedByDo = [];
+        $jvDebitByDo = [];
+        $preAttachByDo = [];
+        $splitByAttach = function ($rows, array &$own) use ($attachedAt, &$preAttachByDo) {
+            foreach ($rows as $r) {
+                $at = $attachedAt[$r->delivery_order_id] ?? null;
+                if ($at && $r->created_at < $at) {
+                    $preAttachByDo[$r->delivery_order_id] = ($preAttachByDo[$r->delivery_order_id] ?? 0) + (float) $r->total;
+                } else {
+                    $own[$r->delivery_order_id] = ($own[$r->delivery_order_id] ?? 0) + (float) $r->total;
+                }
+            }
+        };
+        if (!empty($doIds)) {
+            $splitByAttach($this->dpvLines($x)
+                ->whereIn('d.delivery_order_id', $doIds)
+                ->groupBy('d.delivery_order_id', 'p.created_at')
+                ->select('d.delivery_order_id', 'p.created_at', DB::raw($this->dpvAmountSql() . ' as total'))
+                ->get(), $refundedByDo);
+            $splitByAttach($this->jvLines($x)
+                ->where('d.debit_amount', '>', 0)
+                ->whereIn('d.delivery_order_id', $doIds)
+                ->groupBy('d.delivery_order_id', 'j.created_at')
+                ->select('d.delivery_order_id', 'j.created_at', DB::raw('SUM(d.debit_amount) as total'))
+                ->get(), $jvDebitByDo);
+        }
         $settledByRef = $this->settlementByDoRef($dos->pluck('reference_no')->filter()->all(), $x);
 
         $doRows = [];
@@ -112,7 +132,12 @@ class SaleAdvanceBalanceService
             if ($excludeDoId && $do->id == $excludeDoId) {
                 continue;
             }
-            $attached = (float) $attachedRows->where('delivery_order_id', $do->id)->sum('amount')
+            $released = $soClosed || $do->do_status === 'closed';
+            $approved = $do->am_approval_status === 'approved';
+            $consuming = $approved && !$released;
+            // A pending DO has not split its RV yet: the withhold it marked is still part of what it picked
+            $withholdIncluded = (!$approved && !$released) ? (float) $attachedRows->where('delivery_order_id', $do->id)->sum('withhold_amount') : 0.0;
+            $attached = (float) $attachedRows->where('delivery_order_id', $do->id)->sum('amount') + $withholdIncluded
                 + (float) ($settledByRef[$do->reference_no] ?? 0)
                 + (float) $creditLines->where('delivery_order_id', $do->id)->sum('credit_amount');
             $dispatched = (float) ($dispatchedByDo[$do->id] ?? 0);
@@ -122,11 +147,11 @@ class SaleAdvanceBalanceService
             // A DO made without selecting an RV still needs the SO's money for its goods
             $goodsRemaining = max(0, (float) ($goodsByDo[$do->id] ?? 0) - $dispatched - $refunded - $jvDebit);
             $remaining = max($attachedRemaining, $goodsRemaining);
-            $released = $soClosed || $do->do_status === 'closed';
 
-            $doRows[$do->id] = compact('attached', 'dispatched', 'refunded', 'jvDebit', 'attachedRemaining', 'remaining', 'released');
+            $preAttachOut = (float) ($preAttachByDo[$do->id] ?? 0);
+            $doRows[$do->id] = compact('attached', 'dispatched', 'refunded', 'jvDebit', 'attachedRemaining', 'remaining', 'released', 'approved', 'consuming', 'withholdIncluded', 'preAttachOut');
             $doRows[$do->id]['reference_no'] = $do->reference_no;
-            if (!$released) {
+            if ($consuming) {
                 $held += $remaining;
             }
         }
@@ -214,11 +239,64 @@ class SaleAdvanceBalanceService
             return 0.0;
         }
 
-        return round(min($row['remaining'], $s['free']), 2);
+        return round(min($row['remaining'], $s['free'], $this->doBacking($soId, $doId, $s, $x)), 2);
+    }
+
+    /**
+     * What a DO that holds nothing (closed, or never approved) can still give back: its RV money that the RV
+     * still has. Once the DO is closed its RV is free again, so if that RV's money was moved (JV / DPV) the DO
+     * can't give it a second time. JV-credit advance on the DO is not split per RV and stays as it is.
+     */
+    private function doBacking(int $soId, $doId, array $s, array $x, array $otherRvDebits = []): float
+    {
+        $row = $s['dos'][$doId];
+        if ($row['consuming'] || $row['attached'] <= self::EPS) {
+            return $row['remaining'];
+        }
+
+        $rvRows = DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+            ->whereNull('rv.deleted_at')
+            ->where('rv.am_approval_status', 'approved')
+            ->where('dorv.delivery_order_id', $doId)
+            ->orderBy('dorv.id')
+            ->get(['dorv.receipt_voucher_id', 'dorv.amount', 'dorv.withhold_amount']);
+        if ($row['withholdIncluded'] > 0) {
+            $rvRows = $rvRows->map(function ($r) {
+                $r->amount = (float) $r->amount + (float) $r->withhold_amount;
+                return $r;
+            });
+        }
+        $rvSum = (float) $rvRows->sum('amount');
+        $used = $row['dispatched'] + $row['refunded'] + $row['jvDebit'];
+
+        $ledger = $this->rvLedger($soId, $x);
+        $budget = min($rvSum, $used);
+        $backing = 0.0;
+        $rvLeftByRv = [];
+        foreach ($rvRows as $r) {
+            $take = min((float) $r->amount, $budget);
+            $budget -= $take;
+            $rvLeftByRv[$r->receipt_voucher_id] = ($rvLeftByRv[$r->receipt_voucher_id] ?? 0) + ((float) $r->amount - $take);
+        }
+        foreach ($rvLeftByRv as $rvId => $left) {
+            if (isset($ledger[$rvId])) {
+                // $otherRvDebits: the same RV debited directly on another line of the voucher being saved
+                $backing += min($left, max(0, $ledger[$rvId]['available'] - ($otherRvDebits[$rvId] ?? 0)));
+            } elseif ($row['approved']) {
+                // RV of another order brought in by this DO: it stays with the DO
+                $backing += $left;
+            }
+        }
+
+        $nonRv = max(0, $row['attached'] - $rvSum);
+        $backing += max(0, $nonRv - max(0, $used - $rvSum));
+
+        return round(min($row['remaining'], $backing), 2);
     }
 
     /** Delivery Order line of a JV: open orders allowed, except an open DO that already has a Loading Program. */
-    public function doJvAvailable($doId, array $x = []): float
+    public function doJvAvailable($doId, array $x = [], array $otherRvDebits = []): float
     {
         $soId = (int) DB::table('delivery_order')->where('id', $doId)->value('so_id');
         if (!$soId) {
@@ -232,10 +310,10 @@ class SaleAdvanceBalanceService
         if (!$row['released'] && delivery_order_has_loading_program($doId)) {
             return 0.0;
         }
-        $withoutThisHold = $row['released'] ? $s['held'] : $s['held'] - $row['remaining'];
+        $withoutThisHold = $row['consuming'] ? $s['held'] - $row['remaining'] : $s['held'];
         $available = max(0, $s['net'] - $withoutThisHold);
 
-        return round(min($row['remaining'], $available), 2);
+        return round(min($row['remaining'], $available, $this->doBacking($soId, $doId, $s, $x, $otherRvDebits)), 2);
     }
 
     /**
@@ -265,8 +343,8 @@ class SaleAdvanceBalanceService
 
             foreach ($rows->groupBy('delivery_order_id') as $doId => $doRvRows) {
                 $do = $s['dos'][$doId];
-                // An open DO keeps everything attached to it. A closed DO only keeps what it really used.
-                $budget = $do['released']
+                // An open approved DO keeps everything attached to it. A closed or not yet approved DO only keeps what it really used.
+                $budget = !$do['consuming']
                     ? min((float) $doRvRows->sum('amount'), $do['dispatched'] + $do['refunded'] + $do['jvDebit'])
                     : (float) $doRvRows->sum('amount');
                 foreach ($doRvRows as $row) {
@@ -286,7 +364,8 @@ class SaleAdvanceBalanceService
         unset($row);
 
         // SO level adjustments don't name an RV: spread them oldest RV first
-        $left = $this->soLevelOutflow($soId, $x);
+        // plus JV / DPV taken on a DO line before that DO picked its RVs again (see summary)
+        $left = $this->soLevelOutflow($soId, $x) + array_sum(array_column($s['dos'], 'preAttachOut'));
         foreach ($ledger as $rvId => &$row) {
             if ($left <= 0) {
                 break;
@@ -324,7 +403,7 @@ class SaleAdvanceBalanceService
 
         $attachedTotal = (float) DB::table('delivery_order_receipt_voucher as dorv')
             ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
-            ->where('do_tbl.am_approval_status', '!=', 'rejected')
+            ->where('do_tbl.am_approval_status', 'approved')
             ->where('dorv.receipt_voucher_id', $rvId)
             ->sum('dorv.amount');
 
@@ -355,6 +434,58 @@ class SaleAdvanceBalanceService
         $x = $excludeDoId ? ['do' => $excludeDoId] : [];
 
         return (float) ($this->rvLedger($soId, $x)[$rvId]['available'] ?? 0);
+    }
+
+    /**
+     * A DO takes its advance only when it is approved. By then the RV money it picked may already be used by
+     * another DO, a JV or a DPV, so check it again before approval.
+     */
+    public function doApprovalError($doId): ?string
+    {
+        $do = DB::table('delivery_order')->where('id', $doId)->first(['id', 'so_id', 'reference_no', 'am_approval_status', 'do_status']);
+        if (!$do || !$do->so_id || $do->am_approval_status === 'approved' || $do->do_status === 'closed') {
+            return null;
+        }
+        $soId = (int) $do->so_id;
+        $s = $this->summary($soId);
+        $row = $s['dos'][$doId] ?? null;
+        if (!$row || $row['released']) {
+            return null;
+        }
+
+        $rvRows = DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
+            ->whereNull('rv.deleted_at')
+            ->where('rv.am_approval_status', 'approved')
+            ->where('dorv.delivery_order_id', $doId)
+            ->groupBy('rv.id', 'rv.unique_no')
+            ->select('rv.id', 'rv.unique_no', DB::raw('SUM(dorv.amount) as amount'))
+            ->get();
+        $ledger = $this->rvLedger($soId);
+
+        $needFree = 0.0;
+        foreach ($rvRows as $rv) {
+            if (!isset($ledger[$rv->id])) {
+                continue;
+            }
+            $need = (float) $rv->amount;
+            $available = (float) $ledger[$rv->id]['available'];
+            if ($need > $available + self::EPS) {
+                return "Delivery Order {$do->reference_no} can not be approved: it takes " . number_format($need, 2)
+                    . " from Receipt Voucher {$rv->unique_no}, but that RV has only " . number_format($available, 2)
+                    . ' left now (used by another DO, JV or DPV). Please edit the DO and select the receipt vouchers again.';
+            }
+            $needFree += $need;
+        }
+        $needFree += max(0, $row['attached'] - $row['withholdIncluded'] - (float) $rvRows->sum('amount'));
+
+        if ($needFree > $s['free'] + self::EPS) {
+            return "Delivery Order {$do->reference_no} can not be approved: its advance (" . number_format($needFree, 2)
+                . ") is more than the free advance left on Sales Order {$this->soRef($soId)} (" . number_format($s['free'], 2)
+                . '). Please edit the DO and select the receipt vouchers again.';
+        }
+
+        return null;
     }
 
     /** Room for more advance on the SO. A debit lowers both order value and money, so it doesn't change this. */
@@ -390,7 +521,7 @@ class SaleAdvanceBalanceService
 
         // Only money that has really gone counts: an unapproved JV must not stop a truck
         $s = $this->summary($soId, ['approved_only' => true]);
-        $open = array_filter($s['dos'], fn ($row) => !$row['released']);
+        $open = array_filter($s['dos'], fn ($row) => $row['consuming']);
         $missing = array_sum(array_column($open, 'attachedRemaining')) - $s['net'];
         if ($missing <= self::EPS) {
             return 0.0;
@@ -464,7 +595,8 @@ class SaleAdvanceBalanceService
             if (!$released && delivery_order_has_loading_program($doId)) {
                 return "Adjustment cannot be made for Delivery Order ({$do->reference_no}) because it is active and has an associated Loading Program. Please close the DO first if you wish to adjust.";
             }
-            $available = $this->doJvAvailable($doId, $x);
+            // A closed / unapproved DO only gives back its RV money, so an RV line on that RV in this JV shares it
+            $available = $this->doJvAvailable($doId, $x, $rvDebit);
             if ($amount > $available + self::EPS) {
                 return 'The entered amount (' . number_format($amount, 2) . ") for Delivery Order {$do->reference_no} exceeds its remaining advance balance of " . number_format($available, 2) . '.';
             }
@@ -710,6 +842,32 @@ class SaleAdvanceBalanceService
         }
 
         return $result;
+    }
+
+    /**
+     * When each DO last picked its RVs (DO edit deletes and re-inserts them). Null when the DO has no RV rows.
+     *
+     * @return array<int, string> delivery_order_id => datetime
+     */
+    private function doAttachTimes(array $doIds): array
+    {
+        if (empty($doIds)) {
+            return [];
+        }
+
+        return DB::table('delivery_order_receipt_voucher')
+            ->whereIn('delivery_order_id', $doIds)
+            ->whereNotNull('created_at')
+            ->groupBy('delivery_order_id')
+            ->select('delivery_order_id', DB::raw('MIN(created_at) as at'))
+            ->pluck('at', 'delivery_order_id')
+            ->all();
+    }
+
+    /** Public form for one DO, used where DO adjustments are counted outside this service. */
+    public function doAttachedAt($doId): ?string
+    {
+        return $this->doAttachTimes([$doId])[$doId] ?? null;
     }
 
     /** @return array<string, float> DO reference_no => JV credit consumed by that DO */

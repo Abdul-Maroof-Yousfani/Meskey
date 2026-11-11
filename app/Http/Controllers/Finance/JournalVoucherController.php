@@ -252,13 +252,22 @@ class JournalVoucherController extends Controller
                 })
                 ->values();
 
+            // SOs / DOs already on the JV being edited stay listed so its rows keep their selection
+            $usedInThisJv = $excludeJvId
+                ? JournalVoucherDetail::where('journal_voucher_id', $excludeJvId)->whereNull('deleted_at')->get(['sales_order_id', 'delivery_order_id'])
+                : collect();
             $salesOrders = SalesOrder::where('customer_id', $customer->id)
                 ->where('am_approval_status', 'approved')
                 ->select('id', 'reference_no', 'status')
                 ->latest('id')
                 ->get()
-                ->map(function($so) use ($excludeJvId) {
-                    $remAdvance = $this->getSalesOrderRemainingAdvance($so->id, $excludeJvId);
+                ->map(function($so) use ($excludeJvId, $saleBalances, $usedInThisJv) {
+                    $summary = $saleBalances->summary((int) $so->id, ['jv' => $excludeJvId]);
+                    // A closed SO with nothing left can't give or take anything: don't offer it
+                    if ($summary['so_closed'] && $summary['net'] <= 0.01 && !$usedInThisJv->contains('sales_order_id', $so->id)) {
+                        return null;
+                    }
+                    $remAdvance = $summary['free'];
                     $statusLabel = $so->status ? ' (' . ucfirst($so->status) . ')' : '';
                     return [
                         'id' => $so->id,
@@ -269,7 +278,9 @@ class JournalVoucherController extends Controller
                         'text' => $so->reference_no . $statusLabel . ($remAdvance > 0 ? ' (Rem: Rs. ' . number_format($remAdvance, 2) . ')' : ''),
                         'type' => 'sales_order'
                     ];
-                });
+                })
+                ->filter()
+                ->values();
 
             // Customer's Approved Credit JVs
             $custAccIds = [$account->id];
@@ -667,9 +678,17 @@ class JournalVoucherController extends Controller
             })
             ->get();
 
+        $usedDoIds = $excludeJvId
+            ? JournalVoucherDetail::where('journal_voucher_id', $excludeJvId)->whereNull('deleted_at')->whereNotNull('delivery_order_id')->pluck('delivery_order_id')->all()
+            : [];
+
         $dos = [];
         foreach ($deliveryOrders as $do) {
             $totalRemainingAmount = $this->getDeliveryOrderRemainingAdvance($do, $excludeJvId);
+            // A closed DO (or a DO of a closed SO) with nothing left can't give or take anything: don't offer it
+            if ($totalRemainingAmount <= 0.01 && $this->saleBalances()->isDoReleased($do->id) && !in_array($do->id, $usedDoIds)) {
+                continue;
+            }
             $firstRate = (float) ($do->delivery_order_data->first()->rate ?? 1);
             $totalRemainingQty = $firstRate > 0 ? round($totalRemainingAmount / $firstRate, 2) : 0;
 
@@ -1039,6 +1058,41 @@ class JournalVoucherController extends Controller
     }
 
     /**
+     * Error when a JV debit on a Receipt Voucher is more than the RV still has. Names the JVs that already
+     * adjusted the RV and the amount that can still be adjusted.
+     */
+    private function rvAdjustableError($rvId, float $debitAmount, $excludeJvId = null, $lineNo = null): ?string
+    {
+        $available = $this->saleBalances()->rvRemaining($rvId, ['jv' => $excludeJvId]);
+        if (round($debitAmount, 2) <= round($available + 0.01, 2)) {
+            return null;
+        }
+
+        $rvNo = DB::table('receipt_vouchers')->where('id', $rvId)->value('unique_no') ?: "RV #{$rvId}";
+        $usedIn = DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->where('journal_voucher_details.receipt_voucher_id', $rvId)
+            ->where('journal_voucher_details.debit_amount', '>', 0)
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->where(function ($q) {
+                $q->whereNull('journal_vouchers.am_approval_status')
+                  ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+            })
+            ->when($excludeJvId, fn ($q) => $q->where('journal_vouchers.id', '!=', $excludeJvId))
+            ->groupBy('journal_vouchers.jv_no')
+            ->select('journal_vouchers.jv_no', DB::raw('SUM(journal_voucher_details.debit_amount) as total'))
+            ->get()
+            ->map(fn ($r) => "{$r->jv_no}: " . number_format($r->total, 2))
+            ->implode(', ');
+
+        return ($lineNo ? "Line {$lineNo}: " : '')
+            . "The entered amount (" . number_format($debitAmount, 2) . ") for Receipt Voucher {$rvNo} exceeds its remaining adjustable balance of "
+            . number_format($available, 2) . "."
+            . ($usedIn ? " Already adjusted in {$usedIn}." : '');
+    }
+
+    /**
      * Validate Journal Entries for account ownership and RV balance limits.
      */
     protected function validateJournalEntries(Request $request, $excludeJvId = null)
@@ -1086,26 +1140,13 @@ class JournalVoucherController extends Controller
                     return "Line " . ($index + 1) . ": Receipt Voucher {$rv->unique_no} does not belong to the selected account.";
                 }
 
-                // Check if Receiving is already created for this Receipt Voucher
-                $existingJv = DB::table('journal_voucher_details')
-                    ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                    ->where('journal_voucher_details.receipt_voucher_id', $rvId)
-                    ->whereNull('journal_voucher_details.deleted_at')
-                    ->whereNull('journal_vouchers.deleted_at')
-                    ->where(function ($q) {
-                        $q->whereNull('journal_vouchers.am_approval_status')
-                          ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
-                    })
-                    ->when($excludeJvId, function ($q) use ($excludeJvId) {
-                        $q->where('journal_vouchers.id', '!=', $excludeJvId);
-                    })
-                    ->select('journal_vouchers.id', 'journal_vouchers.jv_no')
-                    ->first();
-
-                if ($existingJv) {
-                    return "Receiving has already been created for Receipt Voucher {$rv->unique_no} (in Journal Voucher {$existingJv->jv_no}).";
+                // An RV may be adjusted in more than one JV, but only up to what is still left on it
+                if ($debitAmount > 0) {
+                    $rvError = $this->rvAdjustableError($rvId, $debitAmount, $excludeJvId, $index + 1);
+                    if ($rvError) {
+                        return $rvError;
+                    }
                 }
-
             }
 
             if (!empty($detail['customer_advance_id'])) {
@@ -1439,27 +1480,18 @@ class JournalVoucherController extends Controller
 
         try {
             DB::transaction(function () use ($request, $totalDebits, $totalCredits) {
-                // Concurrency safety check: Ensure no other tab has created Receiving for any selected RV
+                // Concurrency safety: lock each selected RV, then re-check its balance so two tabs can not over-adjust it
+                $rvDebits = [];
                 foreach ($request->details as $detail) {
-                    if (!empty($detail['receipt_voucher_id'])) {
-                        $rvId = $detail['receipt_voucher_id'];
-                        $alreadyCreated = DB::table('journal_voucher_details')
-                            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                            ->where('journal_voucher_details.receipt_voucher_id', $rvId)
-                            ->whereNull('journal_voucher_details.deleted_at')
-                            ->whereNull('journal_vouchers.deleted_at')
-                            ->where(function ($q) {
-                                $q->whereNull('journal_vouchers.am_approval_status')
-                                  ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
-                            })
-                            ->lockForUpdate()
-                            ->exists();
-
-                        if ($alreadyCreated) {
-                            $rv = ReceiptVoucher::find($rvId);
-                            $rvNo = $rv ? $rv->unique_no : $rvId;
-                            throw new \Exception("Receiving is already created for Receipt Voucher {$rvNo}.");
-                        }
+                    if (!empty($detail['receipt_voucher_id']) && (float) ($detail['debit_amount'] ?? 0) > 0) {
+                        $rvDebits[$detail['receipt_voucher_id']] = ($rvDebits[$detail['receipt_voucher_id']] ?? 0) + round((float) $detail['debit_amount'], 2);
+                    }
+                }
+                foreach ($rvDebits as $rvId => $rvDebit) {
+                    ReceiptVoucher::where('id', $rvId)->lockForUpdate()->first();
+                    $rvError = $this->rvAdjustableError($rvId, $rvDebit, null);
+                    if ($rvError) {
+                        throw new \Exception($rvError);
                     }
                 }
 
@@ -1930,28 +1962,18 @@ class JournalVoucherController extends Controller
 
         try {
             DB::transaction(function () use ($request, $journalVoucher, $totalDebits, $totalCredits) {
-                // Concurrency safety check
+                // Concurrency safety: lock each selected RV, then re-check its balance so two tabs can not over-adjust it
+                $rvDebits = [];
                 foreach ($request->details as $detail) {
-                    if (!empty($detail['receipt_voucher_id'])) {
-                        $rvId = $detail['receipt_voucher_id'];
-                        $alreadyCreated = DB::table('journal_voucher_details')
-                            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-                            ->where('journal_voucher_details.receipt_voucher_id', $rvId)
-                            ->where('journal_vouchers.id', '!=', $journalVoucher->id)
-                            ->whereNull('journal_voucher_details.deleted_at')
-                            ->whereNull('journal_vouchers.deleted_at')
-                            ->where(function ($q) {
-                                $q->whereNull('journal_vouchers.am_approval_status')
-                                  ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
-                            })
-                            ->lockForUpdate()
-                            ->exists();
-
-                        if ($alreadyCreated) {
-                            $rv = ReceiptVoucher::find($rvId);
-                            $rvNo = $rv ? $rv->unique_no : $rvId;
-                            throw new \Exception("Receiving is already created for Receipt Voucher {$rvNo}.");
-                        }
+                    if (!empty($detail['receipt_voucher_id']) && (float) ($detail['debit_amount'] ?? 0) > 0) {
+                        $rvDebits[$detail['receipt_voucher_id']] = ($rvDebits[$detail['receipt_voucher_id']] ?? 0) + round((float) $detail['debit_amount'], 2);
+                    }
+                }
+                foreach ($rvDebits as $rvId => $rvDebit) {
+                    ReceiptVoucher::where('id', $rvId)->lockForUpdate()->first();
+                    $rvError = $this->rvAdjustableError($rvId, $rvDebit, $journalVoucher->id);
+                    if ($rvError) {
+                        throw new \Exception($rvError);
                     }
                 }
 

@@ -401,6 +401,15 @@ class DeliveryOrder extends Model
         }
     }
 
+    /**
+     * Called by the approval module before approving. A pending DO reserves no advance, so the RV money
+     * it picked has to still be there when it is approved.
+     */
+    public function validateBeforeApproval(): ?string
+    {
+        return app(\App\Services\SaleAdvanceBalanceService::class)->doApprovalError($this->id);
+    }
+
     public function isClosed(): bool
     {
         if ($this->do_status === 'closed') {

@@ -182,7 +182,7 @@
                     <div class="form-group">
                         <label class="form-label">Receipt Vouchers:</label>
                         <select name="receipt_vouchers[]" id="receipt_vouchers"
-                            onchange="add_advance_amount();" class="form-control select2"
+                            onchange="keepSavedQty = false; add_advance_amount();" class="form-control select2"
                             multiple>
                             <option value="">Select Receipt Vouchers</option>
 
@@ -219,7 +219,7 @@
                     <div class="form-group">
                         <label class="form-label">Withhold %:</label>
                         <input type="number" step="any" id="withhold_percentage" value="10"
-                            class="form-control" onkeyup="calculate_withhold_by_percentage(this)" onchange="calculate_withhold_by_percentage(this)">
+                            class="form-control" onkeyup="keepSavedQty = false; calculate_withhold_by_percentage(this)" onchange="keepSavedQty = false; calculate_withhold_by_percentage(this)">
                     </div>
                 </div>
                 <div class="col-md-2 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
@@ -227,7 +227,7 @@
                         <label class="form-label">Withhold Amount:</label>
                         <input type="number" step="any" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
                             id="withhold_amount"
-                            class="form-control" onkeyup="calculate_percentage_by_withhold(this)" onchange="calculate_percentage_by_withhold(this)">
+                            class="form-control" onkeyup="keepSavedQty = false; calculate_percentage_by_withhold(this)" onchange="keepSavedQty = false; calculate_percentage_by_withhold(this)">
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
@@ -272,7 +272,7 @@
                     <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
                         <label class="form-label">Journal Vouchers:</label>
-                        <select name="journal_vouchers[]" id="journal_vouchers" onchange="add_advance_amount()" class="form-control select2" multiple>
+                        <select name="journal_vouchers[]" id="journal_vouchers" onchange="keepSavedQty = false; add_advance_amount()" class="form-control select2" multiple>
                             <!-- Options will be populated via AJAX and pre-selected JVs from backend -->
                             @if(isset($journal_vouchers))
                                 @foreach ($journal_vouchers as $jv)
@@ -433,7 +433,7 @@
                                         value="{{ round($data->qty) }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
                                         data-qty-balance="{{ delivery_order_qty_balance($data->so_data_id) + $data->qty }}"
                                         min="0" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
-                                        onchange="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
+                                        onchange="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10 && in_array($delivery_order->am_approval_status, ['approved', 'rejected']))>
                                      
                                     <input type="hidden" name="current_qty[]" id="current_qty_{{ $index }}" value="{{ round($data->qty) }}">
  
@@ -613,6 +613,10 @@
 var isInitialLoad = true;
 var so_amount = 0; // Global variable for sale order amount
 var isAdvancedPayment = false; // Track if current SO has advance payment
+// A pending / reverted DO can still be changed: its qty stays editable
+var qtyEditable = @json(!in_array($delivery_order->am_approval_status, ['approved', 'rejected']));
+// While the page opens, keep the saved qty (only cut it down if the advance no longer covers it)
+var keepSavedQty = qtyEditable;
 
 $(document).ready(function() {
     $('.select2').select2();
@@ -951,46 +955,85 @@ function change_withhold_amount() {
         totalAmount = do_amount;
     }
 
-    const qtyBalance = parseFloat($("#qty_0").data("qty-balance"));
-    let rate = $("#rate_0").val() || $("#rate_per_mond_0").val() || 0;
-    let bag_size = $("#bag_size_0").val() || 0;
+    const maxQty = maxDoQty();
+    const hasAdvance = !(advance === 0 && jv_amount === 0 && withhold === 0);
 
-    if (advance === 0 && jv_amount === 0 && withhold === 0) {
-        if (!isNaN(qtyBalance) && rate > 0) {
-            $("#qty_0").val(qtyBalance);
-            $("#qty_0").prop("readonly", false);
-            $("#amount_0").val((parseFloat(rate) * parseFloat(qtyBalance)).toFixed(0));
-
-            if (bag_size > 0) {
-                const no_of_bags = Math.round(parseFloat(qtyBalance) / parseFloat(bag_size));
-                $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
-            }
-        }
-    } else {
-        let remaining_amount = (advance + jv_amount) - withhold;
-        if (remaining_amount < 0) remaining_amount = 0;
-
-        if (rate > 0) {
-            let qtyVal = remaining_amount / rate;
-            
-            if (!isNaN(qtyBalance) && qtyVal > qtyBalance) {
-                qtyVal = qtyBalance;
-            }
-
-            qtyVal = Math.round(qtyVal);
-
-            $("#qty_0").val(qtyVal);
-            $("#qty_0").prop("readonly", true);
-            $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
-            
-            if (bag_size > 0) {
-                const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-                $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
-            }
-        }
+    if (maxQty !== null) {
+        const currentQty = parseFloat($("#qty_0").val()) || 0;
+        // Advance / withhold changed: fill qty like the create page. While the page opens, keep the saved qty.
+        const qtyVal = (keepSavedQty && currentQty <= maxQty) ? currentQty : maxQty;
+        set_qty(qtyVal);
     }
+    $("#qty_0").prop("readonly", hasAdvance && !qtyEditable);
 
     update_withhold_for_rv();
+}
+
+// Most qty this DO can take: what the advance covers after withhold, and never more than the SO balance
+function maxDoQty() {
+    const withhold = parseFloat($("#withhold_amount").val()) || 0;
+    const advance = parseFloat($("#advance_amount").val()) || 0;
+    const jv_amount = parseFloat($("#jv_amount").val()) || 0;
+    const qtyBalance = parseFloat($("#qty_0").data("qty-balance"));
+    const rate = parseFloat($("#rate_0").val() || $("#rate_per_mond_0").val()) || 0;
+
+    if (rate <= 0) {
+        return null;
+    }
+    if (advance === 0 && jv_amount === 0 && withhold === 0) {
+        return isNaN(qtyBalance) ? null : qtyBalance;
+    }
+
+    let remaining_amount = (advance + jv_amount) - withhold;
+    if (remaining_amount < 0) remaining_amount = 0;
+    let qtyVal = remaining_amount / rate;
+    if (!isNaN(qtyBalance) && qtyVal > qtyBalance) {
+        qtyVal = qtyBalance;
+    }
+    return Math.round(qtyVal);
+}
+
+function set_qty(qtyVal) {
+    const rate = parseFloat($("#rate_0").val() || $("#rate_per_mond_0").val()) || 0;
+    const bag_size = parseFloat($("#bag_size_0").val()) || 0;
+    $("#qty_0").val(qtyVal);
+    $("#amount_0").val((rate * parseFloat(qtyVal)).toFixed(0));
+    if (bag_size > 0) {
+        const no_of_bags = Math.round(parseFloat(qtyVal) / bag_size);
+        $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+    }
+}
+
+// Typed qty can be lowered freely, but not above what the advance / SO balance allows
+function check_balance(el, bagsId) {
+    const maxQty = isAdvancedPayment ? maxDoQty() : parseFloat($(el).data("qty-balance"));
+    const qtyVal = parseFloat($(el).val()) || 0;
+    if (maxQty !== null && !isNaN(maxQty) && qtyVal > maxQty) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Quantity cannot be more than ' + maxQty + ' (covered by the advance after withhold / remaining SO balance).',
+        });
+        $(el).val(maxQty);
+        calc(el);
+    }
+}
+
+// Pending / reverted DO: the selected RVs may have less money now (a JV / DPV / other DO used it), so take today's amounts
+function refresh_advance_from_vouchers() {
+    let rv_sum = 0;
+    $("#receipt_vouchers option:selected").each(function () {
+        if ($(this).val()) {
+            rv_sum += parseFloat($(this).data("amount")) || 0;
+        }
+    });
+    const jv_sum = parseFloat($("#jv_amount").val()) || 0;
+    $("#advance_amount").val(rv_sum > 0 ? Math.round(rv_sum) : 0);
+
+    const withhold = parseFloat($("#withhold_amount").val()) || 0;
+    if (withhold > rv_sum + jv_sum) {
+        $("#withhold_amount").val(Math.round(rv_sum + jv_sum));
+    }
 }
 
 function update_withhold_for_rv() {
@@ -1214,7 +1257,13 @@ function calc(el) {
     amount.val((qtyVal * rateVal).toFixed(0));
     
     calculate_so_withhold();
-    
+
+    // Qty typed by the user: keep it (check_balance caps it), don't refill it from the advance
+    if (isAdvancedPayment && qty.is(el)) {
+        update_withhold_for_rv();
+        return;
+    }
+
     // ✅ Update withhold calculations when amount changes
     if (isAdvancedPayment) {
         const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
@@ -1370,8 +1419,11 @@ function get_so_detail() {
             
             setTimeout(function() {
                 if (isAdvancedPayment) {
+                    if (qtyEditable) {
+                        refresh_advance_from_vouchers();
+                    }
                     const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
-                    if (withholdAmount > 0) {
+                    if (withholdAmount > 0 || qtyEditable) {
                         calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
                     }
                 }

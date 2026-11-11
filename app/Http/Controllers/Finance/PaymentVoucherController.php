@@ -613,11 +613,18 @@ class PaymentVoucherController extends Controller
             ]);
         }
 
+        $excludeVoucherNo = $request->query('exclude_voucher_no');
         $salesOrders = SalesOrder::where('customer_id', $customer->id)
             ->where('am_approval_status', 'approved')
             ->select('id', 'reference_no', 'status')
             ->latest('id')
             ->get()
+            // A closed SO with nothing left to refund is not offered (the DPV being edited keeps its own SOs)
+            ->filter(function ($so) use ($excludeVoucherNo) {
+                $s = $this->saleBalances()->summary((int) $so->id, $this->saleExclusions($excludeVoucherNo));
+                return !($s['so_closed'] && $s['net'] <= 0.01);
+            })
+            ->values()
             ->map(function ($so) {
                 $statusLabel = $so->status ? ' (' . ucfirst($so->status) . ')' : '';
                 return [

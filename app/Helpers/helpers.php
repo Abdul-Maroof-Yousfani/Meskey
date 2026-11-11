@@ -1207,17 +1207,28 @@ function get_delivery_order_refund_stats($delivery_order_id)
         }
     }
 
+    // A DO edited after a JV / DPV on it picked its RVs again from what was left, so that earlier
+    // adjustment is already out of its advance and must not cut its deliverable qty a second time
+    $attachedAt = (!$isExport && $do->so_id) ? app(\App\Services\SaleAdvanceBalanceService::class)->doAttachedAt($do->id) : null;
+
     $dpvRefund = (float) \App\Models\PaymentVoucherData::where('delivery_order_id', $do->id)
-        ->whereHas('paymentVoucher', function ($q) {
+        ->whereHas('paymentVoucher', function ($q) use ($attachedAt) {
             $q->whereNull('deleted_at');
             $q->where('am_approval_status', '!=', 'rejected');
+            if ($attachedAt) {
+                $q->where('created_at', '>=', $attachedAt);
+            }
         })
         ->sum('amount');
 
     $jvAdjusted = (float) \App\Models\JournalVoucherDetail::where('delivery_order_id', $do->id)
-        ->whereHas('journalVoucher', function ($q) {
+        ->where('debit_amount', '>', 0)
+        ->whereHas('journalVoucher', function ($q) use ($attachedAt) {
             $q->whereNull('deleted_at');
             $q->where('am_approval_status', '!=', 'rejected');
+            if ($attachedAt) {
+                $q->where('created_at', '>=', $attachedAt);
+            }
         })
         ->sum('debit_amount');
 

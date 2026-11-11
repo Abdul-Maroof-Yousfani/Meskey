@@ -575,7 +575,7 @@ $(document).ready(function() {
         let advData = null, soData = null, bankData = null, jvData = null;
 
         const p1 = $.get(`${advancesUrlTemplate.replace('__ID__', custAccId)}?exclude_voucher_no=${currentVoucherNo}`).done(r => { advData = r; });
-        const p2 = $.get(sosUrlTemplate.replace('__ID__', custAccId)).done(r => { soData = r; });
+        const p2 = $.get(`${sosUrlTemplate.replace('__ID__', custAccId)}?exclude_voucher_no=${currentVoucherNo}`).done(r => { soData = r; });
         const p3 = $.get(banksUrlTemplate.replace('__ID__', custAccId)).done(r => { bankData = r; });
         const p4 = $.get(`${jvsUrlTemplate.replace('__ID__', custAccId)}?exclude_pv_id={{ $payment_voucher->id }}`).done(r => { jvData = r; });
 
