@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 class StockReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('check.company:report-stock-report');
+    }
+
     /**
      * Display the Stock Report filter interface.
      */

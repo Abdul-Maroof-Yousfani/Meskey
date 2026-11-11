@@ -1459,6 +1459,14 @@
                                 Reports</span></a>
                     </li>
                     @endcanAccess
+                    @canAccess('report-stock-report')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('reports.stock-report') }}"
+                            onclick="loadPageContent('{{ route('reports.stock-report') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span>Stock
+                                Report</span></a>
+                    </li>
+                    @endcanAccess
                     @canAccess('report-indicative-price')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('indicative-prices.reports') }}"
