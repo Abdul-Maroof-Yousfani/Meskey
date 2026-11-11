@@ -1813,6 +1813,7 @@
             $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate')
                 .val('');
             $('#commission_percentage, #commission_amount_per_ton, #commission').val('');
+            commissionMode = null;
 
             let container = $('#packingItemsContainer');
             let firstRow = container.find('.packing-item').first();
@@ -1958,8 +1959,8 @@
                 .trigger('change.select2');
 
             // Export sidebar numeric fields
-            if (data.advance_payment) $('input[name="advance_payment"]').val(data.advance_payment);
-            if (data.payment_days) $('input[name="payment_days"]').val(data.payment_days);
+            if (data.advance_payment !== null && data.advance_payment !== undefined) $('input[name="advance_payment"]').val(data.advance_payment);
+            if (data.payment_days !== null && data.payment_days !== undefined) $('input[name="payment_days"]').val(data.payment_days);
             if (data.currency_id) $('select[name="currency_id"]').val(data.currency_id).trigger('change.select2');
             if (data.currency_rate) $('input[name="currency_rate"], #currencyRate').val(data.currency_rate);
 
@@ -1968,6 +1969,7 @@
                 addPackingRowsFromData(data.packing_items);
             }
 
+            commissionMode = null;
             $('#commission_percentage').val(data.commission_percentage || 0);
             $('#commission_amount_per_ton').val(data.commission_amount_per_ton || 0);
             $('#commission').val(data.commission || 0);
@@ -2431,6 +2433,10 @@
             calculateGrandTotals();
         }
 
+        // Which commission field the user typed last ("percentage" or "per_ton"); that one stays fixed.
+        // Unknown (page load / sauda fill) = keep amount per ton, so a rounded % (0.33) cannot change it (2 -> 1.98).
+        var commissionMode = null;
+
         function calculateGrandTotals() {
             let grandAmount = 0;
             let grandMT = 0;
@@ -2442,11 +2448,16 @@
             let percentage = parseFloat($('#commission_percentage').val()) || 0;
             let amtPerTon = parseFloat($('#commission_amount_per_ton').val()) || 0;
 
-            if (percentage > 0) {
+            let hasPercentage = percentage > 0;
+            let hasPerTon = amtPerTon > 0;
+            let usePercentage = commissionMode === 'percentage' ? hasPercentage
+                : (commissionMode === 'per_ton' ? !hasPerTon : (hasPercentage && !hasPerTon));
+
+            if (usePercentage) {
                 let commission = (grandAmount * percentage) / 100;
                 $('#commission').val(commission.toFixed(2));
                 $('#commission_amount_per_ton').val(grandMT > 0 ? (commission / grandMT).toFixed(2) : 0);
-            } else if (amtPerTon > 0) {
+            } else if (hasPerTon) {
                 let commission = grandMT * amtPerTon;
                 $('#commission').val(commission.toFixed(2));
                 $('#commission_percentage').val(grandAmount > 0 ? ((commission / grandAmount) * 100).toFixed(2) : 0);
@@ -2454,6 +2465,7 @@
         }
 
         $(document).on('input', '#commission_percentage, #commission_amount_per_ton', function() {
+            commissionMode = this.id === 'commission_percentage' ? 'percentage' : 'per_ton';
             calculateGrandTotals();
         });
 

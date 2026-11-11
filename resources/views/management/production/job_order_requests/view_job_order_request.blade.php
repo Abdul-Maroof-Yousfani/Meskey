@@ -136,6 +136,7 @@
                             <th>Total MT</th>
                             <th>Containers</th>
                             <th>Fumigation Type</th>
+                            <th>Fumigation Dosage</th>
                             <th>Attachment</th>
                         </tr>
                     </thead>
@@ -153,6 +154,7 @@
                             <td>{{ number_format($pi->metric_tons, 3) }}</td>
                             <td>{{ $pi->no_of_containers }}</td>
                             <td>{{ $pi->fumigation_type ? ucfirst($pi->fumigation_type) : ($request->fumigation_type ? ucfirst($request->fumigation_type) : '-') }}</td>
+                            <td>{{ $pi->fumigation_dosage ?: ($request->exportOrder->fumigation_dosage ?? '-') }}</td>
                             <td>
                                 @if($pi->attachment)
                                     <a href="{{ asset('storage/' . $pi->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">

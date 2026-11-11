@@ -37,6 +37,7 @@ class JobOrderRequestPackingItem extends Model
         'delivery_date',
         'fumigation_company_id',
         'fumigation_type',
+        'fumigation_dosage',
         'min_weight_empty_bags',
         'extra_bags_percentage',
         'empty_bags_percentage',

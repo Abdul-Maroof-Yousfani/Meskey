@@ -214,6 +214,11 @@ class JobOrderRequestFormRequest extends FormRequest
                 'string',
                 'max:150'
             ],
+            'packing_items.*.fumigation_dosage' => [
+                'nullable',
+                'string',
+                'max:100'
+            ],
             'fumigation_type' => [
                 'nullable',
                 'string',

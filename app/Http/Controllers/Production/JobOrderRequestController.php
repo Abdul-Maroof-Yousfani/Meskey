@@ -729,6 +729,7 @@ class JobOrderRequestController extends Controller
                 'delivery_date'         => $pi->delivery_date ? Carbon::parse($pi->delivery_date)->format('Y-m-d') : null,
                 'fumigation_company_id' => $fumigationCompanies,
                 'fumigation_type'       => $pi->fumigation_type ?: $jobOrderRequest->fumigation_type,
+                'fumigation_dosage'     => $pi->fumigation_dosage,
                 'attachment'            => $pi->attachment ? asset('storage/' . $pi->attachment) : null,
                 'attachment_path'         => $pi->attachment,
                 'sub_items'             => $subItems,
