@@ -1818,9 +1818,10 @@
             let container = $('#packingItemsContainer');
             let firstRow = container.find('.packing-item').first();
             container.find('.packing-item').not(':first').remove();
-            firstRow.find('input').val(0);
-            firstRow.find('select').val('').trigger('change.select2');
             firstRow.find('.sub-packing-items-container').empty();
+            firstRow.find('input').not('[type="file"]').val(0);
+            firstRow.find('input[type="file"]').val('');
+            firstRow.find('select').val('').trigger('change.select2');
 
             reindexAll();
             calculateGrandTotals();
@@ -1850,7 +1851,9 @@
                     row.find('.select2-container').remove();
                     row.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id')
                         .show();
-                    row.find('input').val(0);
+                    row.find('.sub-packing-items-container').empty();
+                    row.find('input').not('[type="file"]').val(0);
+                    row.find('input[type="file"]').val('');
                     row.find('input[type="date"]').val('');
                     row.find('select').val('');
                     row.find('.sub-packing-items-container').empty().attr('data-index', index);

@@ -208,6 +208,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label>Fumigation Dosage:</label>
+                        <input type="text" class="form-control"
+                            value="{{ filled($exportOrder->fumigation_dosage) ? $exportOrder->fumigation_dosage : '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label>Inspection By:</label>
                         @php
                             $iNames = [];

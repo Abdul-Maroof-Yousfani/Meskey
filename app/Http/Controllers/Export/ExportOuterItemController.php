@@ -81,6 +81,10 @@ class ExportOuterItemController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        if ($dosageError = $this->dosageLimitError(LoadingProgramItem::findOrFail($request->loading_program_item_id), $request)) {
+            return response()->json(['errors' => ['dosage' => [$dosageError]]], 422);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -117,7 +121,8 @@ class ExportOuterItemController extends Controller
             'Slica jel'
         ];
 
-        $hasFumigation = $this->ticketHasFumigation($ticket);
+        // Dosage input only when fumigation exists and other trucks haven't used up the export order's dosage
+        $hasFumigation = $this->ticketHasFumigation($ticket) && !$this->dosageFull($ticket);
 
         return view('management.export.outer-item.edit', compact('ticket', 'itemOptions', 'hasFumigation'));
     }
@@ -135,6 +140,10 @@ class ExportOuterItemController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($dosageError = $this->dosageLimitError(LoadingProgramItem::findOrFail($id), $request)) {
+            return response()->json(['errors' => ['dosage' => [$dosageError]]], 422);
         }
 
         try {
@@ -183,7 +192,7 @@ class ExportOuterItemController extends Controller
             'data' => [
                 'truck_number' => $ticket->truck_number,
                 'container_number' => $ticket->container_number,
-                'has_fumigation' => $this->ticketHasFumigation($ticket),
+                'has_fumigation' => $this->ticketHasFumigation($ticket) && !$this->dosageFull($ticket),
             ]
         ]);
     }
@@ -194,7 +203,7 @@ class ExportOuterItemController extends Controller
     private function saveDosage(LoadingProgramItem $ticket, Request $request): void
     {
         $ticket->update([
-            'dosage' => $this->ticketHasFumigation($ticket) && $request->filled('dosage') ? (int) $request->dosage : null,
+            'dosage' => $this->ticketHasFumigation($ticket) && !$this->dosageFull($ticket) && $request->filled('dosage') ? (int) $request->dosage : null,
         ]);
     }
 
@@ -202,6 +211,71 @@ class ExportOuterItemController extends Controller
      * True when any export order on the ticket has a fumigation type or fumigation company.
      */
     private function ticketHasFumigation(LoadingProgramItem $ticket): bool
+    {
+        return $this->ticketExportOrders($ticket)->contains(function ($order) {
+            return filled($order->fumigation_type) || !empty(array_filter((array) $order->fumigation_by));
+        });
+    }
+
+    /**
+     * True when other trucks of the same export order(s) have already used up the
+     * export order's fumigation dosage (e.g. EO dosage 10, first truck got 10).
+     */
+    private function dosageFull(LoadingProgramItem $ticket): bool
+    {
+        $remaining = $this->dosageRemaining($ticket);
+
+        return $remaining !== null && $remaining <= 0;
+    }
+
+    /**
+     * Dosage still available for this ticket: EO dosage minus what other trucks of the
+     * same export order already used. Null when the EO has no numeric dosage (no limit).
+     */
+    private function dosageRemaining(LoadingProgramItem $ticket): ?float
+    {
+        $orders = $this->ticketExportOrders($ticket)->filter(function ($order) {
+            return is_numeric($order->fumigation_dosage) && (float) $order->fumigation_dosage > 0;
+        });
+
+        if ($orders->isEmpty()) {
+            return null;
+        }
+
+        return $orders->map(function ($order) use ($ticket) {
+            $used = LoadingProgramItem::where('id', '!=', $ticket->id)
+                ->whereNotNull('dosage')
+                ->where(function ($q) use ($order) {
+                    $q->whereHas('exportOrders', fn ($eo) => $eo->where('export_orders.id', $order->id))
+                        ->orWhereHas('exportLoadingProgram', function ($lp) use ($order) {
+                            $lp->where('export_order_id', $order->id)
+                                ->orWhereHas('exportOrders', fn ($eo) => $eo->where('export_orders.id', $order->id));
+                        });
+                })
+                ->sum('dosage');
+
+            return (float) $order->fumigation_dosage - (float) $used;
+        })->min();
+    }
+
+    /**
+     * Error message when the entered dosage is more than what is left on the export order.
+     */
+    private function dosageLimitError(LoadingProgramItem $ticket, Request $request): ?string
+    {
+        if (!$request->filled('dosage') || !$this->ticketHasFumigation($ticket)) {
+            return null;
+        }
+
+        $remaining = $this->dosageRemaining($ticket);
+        if ($remaining === null || (float) $request->dosage <= $remaining) {
+            return null;
+        }
+
+        return 'Dosage limit exceeded. Only ' . max(0, $remaining) . ' dosage is remaining for this export order.';
+    }
+
+    private function ticketExportOrders(LoadingProgramItem $ticket)
     {
         $ticket->loadMissing(['exportOrders', 'exportLoadingProgram.exportOrders', 'exportLoadingProgram.exportOrder']);
 
@@ -213,8 +287,6 @@ class ExportOuterItemController extends Controller
             $exportOrders = collect([$ticket->exportLoadingProgram->exportOrder]);
         }
 
-        return $exportOrders->contains(function ($order) {
-            return filled($order->fumigation_type) || !empty(array_filter((array) $order->fumigation_by));
-        });
+        return $exportOrders;
     }
 }
