@@ -304,12 +304,12 @@
                                 <select name="packing_items[{{ $i }}][bag_packing_id]" class="form-control select2">
                                     <option value="">Packing</option>
                                     @foreach ($bagPackings as $packing)
-                                        <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}>{{ $packing->name }}</option>
+                                        <option value="{{ $packing->id }}" data-size="{{ $packing->value }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}>{{ $packing->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[{{ $i }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}" min="0">
+                                <input type="number" name="packing_items[{{ $i }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}" min="0" readonly>
                             </td>
                             <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][metric_tons]" class="form-control metric-tons" value="{{ $item->metric_tons }}" step="0.001" min="0">
@@ -361,12 +361,12 @@
                                 <select name="packing_items[0][bag_packing_id]" class="form-control select2">
                                     <option value="">Packing</option>
                                     @foreach ($bagPackings as $packing)
-                                        <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                                        <option value="{{ $packing->id }}" data-size="{{ $packing->value }}">{{ $packing->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
+                                <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0" readonly>
                             </td>
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
@@ -494,6 +494,13 @@ $(document).ready(function() {
     $(document).on('input', '.metric-tons, .bag-size', function() {
         let row = $(this).closest('tr');
         calculateRowFromMT(row);
+    });
+
+    // Fill Packing Size (kg) from the selected packing (e.g. "50 kg" -> 50)
+    $(document).on('change', 'select[name*="[bag_packing_id]"]', function() {
+        let size = parseFloat($(this).find('option:selected').data('size'));
+        // Packings without a size (carton, jumbo bags) reset to 0
+        $(this).closest('tr').find('.bag-size').val(!isNaN(size) && size > 0 ? size : 0).trigger('input');
     });
 
     $(document).on('input', '.maunds', function() {
@@ -624,7 +631,11 @@ $(document).ready(function() {
     }
 
     // ---- COMMISSION CALCULATIONS ----
+    // Which commission field the user typed last ("percentage" or "per_ton"); that one stays fixed
+    var commissionMode = null;
+
     $(document).on('input', '#commission_percentage', function() {
+        commissionMode = 'percentage';
         let totalAmount = 0;
         let totalMt = 0;
         $('#packingItems tr.packing-item').each(function() {
@@ -641,6 +652,7 @@ $(document).ready(function() {
     });
 
     $(document).on('input', '#commission_amount_per_ton', function() {
+        commissionMode = 'per_ton';
         let totalAmount = 0;
         let totalMt = 0;
         $('#packingItems tr.packing-item').each(function() {
@@ -660,12 +672,18 @@ $(document).ready(function() {
         let percentage = parseFloat($('#commission_percentage').val());
         let amtPerTon = parseFloat($('#commission_amount_per_ton').val());
         
-        if (!isNaN(percentage) && percentage > 0) {
+        let hasPercentage = !isNaN(percentage) && percentage > 0;
+        let hasPerTon = !isNaN(amtPerTon) && amtPerTon > 0;
+        // Keep the field the user typed; if unknown (page load / sauda fill), prefer amount per ton
+        let usePercentage = commissionMode === 'percentage' ? hasPercentage
+            : (commissionMode === 'per_ton' ? !hasPerTon : (hasPercentage && !hasPerTon));
+
+        if (usePercentage) {
             let commission = (totalAmount * percentage) / 100;
             let calculatedAmtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
             $('#commission').val(commission.toFixed(2));
             $('#commission_amount_per_ton').val(calculatedAmtPerTon.toFixed(2));
-        } else if (!isNaN(amtPerTon) && amtPerTon > 0) {
+        } else if (hasPerTon) {
             let commission = totalMt * amtPerTon;
             let calculatedPercentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
             $('#commission').val(commission.toFixed(2));
@@ -707,6 +725,7 @@ $(document).ready(function() {
 
     // Export Sauda Autofill
     $('select[name="export_soda_id"]').on('change', function() {
+        commissionMode = null;
         var saudaId = $(this).val();
         if (saudaId) {
             $.get('{{ route('quotation.get-sauda-details', '') }}/' + saudaId, function(data) {
@@ -760,12 +779,12 @@ $(document).ready(function() {
                     <select name="packing_items[${index}][bag_packing_id]" class="form-control select2">
                         <option value="">Packing</option>
                         @foreach ($bagPackings as $packing)
-                            <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                            <option value="{{ $packing->id }}" data-size="{{ $packing->value }}">{{ $packing->name }}</option>
                         @endforeach
                     </select>
                 </td>
                 <td class="p-2">
-                    <input type="number" name="packing_items[${index}][bag_size]" class="form-control bag-size" step="0.01" value="${item.bag_size || 0}" min="0">
+                    <input type="number" name="packing_items[${index}][bag_size]" class="form-control bag-size" step="0.01" value="${item.bag_size || 0}" min="0" readonly>
                 </td>
                 <td class="p-2">
                     <input type="number" name="packing_items[${index}][metric_tons]" class="form-control metric-tons" value="${item.metric_tons || 0}" step="0.001" min="0">

@@ -60,7 +60,7 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>Export Soda#:</label>
+                                            <label>Export Soda#: <span class="text-danger" id="exportSodaRequiredStar" style="display:none;">*</span></label>
                                             <select name="export_soda_id" id="exportSodaSelect"
                                                 class="form-control select2">
                                                 <option value="">Select Export Soda</option>
@@ -1678,6 +1678,15 @@
                             const allExportSodaOptions = $('#exportSodaSelect option').clone();
                             let isFiltering = false;
 
+                            // Export Soda is required once a quotation is selected
+                            function toggleExportSodaRequired() {
+                                let hasQuotation = !!$('#quotationSelect').val();
+                                $('#exportSodaRequiredStar').toggle(hasQuotation);
+                                $('#exportSodaSelect').prop('required', hasQuotation);
+                            }
+                            $('#quotationSelect').on('change change.select2', toggleExportSodaRequired);
+                            toggleExportSodaRequired();
+
                             // When Quotation is selected, filter Export Soda dropdown
                             $('#quotationSelect').on('change', function() {
                                 if (isFiltering) return;
@@ -2391,7 +2400,13 @@
                     }
 
                     $('#ajaxSubmit').on('submit', function() {
-                        $('select[name="buyer_id"], select[name="product_id"], select[name="product_hs_code"]').prop('disabled', false);
+                        // Disabled fields are not submitted, so enable them only while the
+                        // form data is collected, then lock them again (e.g. after a validation error)
+                        let locked = $('select[name="buyer_id"], select[name="product_id"], select[name="product_hs_code"]').filter(':disabled');
+                        locked.prop('disabled', false);
+                        setTimeout(function() {
+                            locked.prop('disabled', true);
+                        }, 0);
                     });
 
                     $(document).on('click', '#btn_marking_attachment', function() {

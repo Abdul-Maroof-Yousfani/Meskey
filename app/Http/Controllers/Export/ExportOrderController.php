@@ -79,7 +79,7 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = $this->productHsCodes();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
+        $exportSodas = $this->availableExportSodas();
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
@@ -362,7 +362,7 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = $this->productHsCodes();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda'])->where('status', '!=', 'rejected')->latest()->get();
+        $exportSodas = $this->availableExportSodas($exportOrder->export_soda_id);
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
@@ -961,6 +961,39 @@ class ExportOrderController extends Controller
             'opt_documents' => $opt_documents,
             'documents' => $re_documents->concat($opt_documents)->values(),
         ]);
+    }
+
+    /**
+     * Export saudas that still have quantity left for export orders.
+     * Used = MT of all export orders on the sauda (deleted / rejected orders not counted).
+     * An order may go over the sauda qty, but once nothing is left the sauda is hidden.
+     * $keepSodaId keeps the sauda of the order being edited in the list.
+     */
+    private function availableExportSodas($keepSodaId = null)
+    {
+        $usedBySoda = DB::table('export_order_packing_items as p')
+            ->join('export_orders as o', 'o.id', '=', 'p.export_order_id')
+            ->whereNull('o.deleted_at')
+            ->whereNotNull('o.export_soda_id')
+            ->where(function ($q) {
+                $q->whereNull('o.am_approval_status')->orWhere('o.am_approval_status', '!=', 'rejected');
+            })
+            ->groupBy('o.export_soda_id')
+            ->selectRaw('o.export_soda_id as soda_id, SUM(p.metric_tons) as used_mt')
+            ->pluck('used_mt', 'soda_id');
+
+        return ExportSodaField::with(['buyer', 'product', 'quotation', 'quotationBySoda', 'packingItems'])
+            ->where('status', '!=', 'rejected')
+            ->latest()
+            ->get()
+            ->filter(function ($soda) use ($usedBySoda, $keepSodaId) {
+                if ($keepSodaId && $soda->id == $keepSodaId) {
+                    return true;
+                }
+                $remaining = (float) $soda->packingItems->sum('metric_tons') - (float) ($usedBySoda[$soda->id] ?? 0);
+                return $remaining > 0.0005;
+            })
+            ->values();
     }
 
     // Distinct HS codes saved on products (products.hs_code), for the HS CODE dropdown

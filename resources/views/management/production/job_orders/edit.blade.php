@@ -429,7 +429,7 @@
                                         : (is_string($packingItem->fumigation_company_id) ? (json_decode($packingItem->fumigation_company_id, true) ?? []) : []);
                                     $savedFumigation = collect($savedFumigation)->flatten()->map(fn($v) => (string)$v)->all();
                                 @endphp
-                                <select name="packing_items[{{ $packingIndex }}][fumigation_company_id][]" class="form-control select2" multiple data-placeholder="Select Fumigation Company">
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_company_id][]" class="form-control select2 fumigation-locked" multiple data-placeholder="Select Fumigation Company">
                                     <option value="null" {{ in_array('null', $savedFumigation) ? 'selected' : '' }} {{ !empty($jobOrder->export_order_id) ? 'disabled style=display:none;' : '' }}>N/A</option>
                                     @foreach($fumigationCompanies as $company)
                                         <option value="{{ $company->id }}" {{ in_array((string)$company->id, $savedFumigation) ? 'selected' : '' }}>
@@ -442,7 +442,7 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>Fumigation Type:</label>
-                                <select name="packing_items[{{ $packingIndex }}][fumigation_type]" class="form-control select2">
+                                <select name="packing_items[{{ $packingIndex }}][fumigation_type]" class="form-control select2 fumigation-locked">
                                     <option value="" {{ (empty($packingItem->fumigation_type) && empty(old("packing_items.{$packingIndex}.fumigation_type"))) ? 'selected' : '' }}>Select Fumigation Type</option>
                                     @foreach($fumigationTypes as $fType)
                                         <option value="{{ $fType }}" {{ ($packingItem->fumigation_type == $fType || old("packing_items.{$packingIndex}.fumigation_type") == $fType) ? 'selected' : '' }}>
@@ -455,7 +455,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Fumigation Dosage:</label>
-                                <input type="text" class="form-control fumigation-dosage" value="{{ $jobOrder->exportOrder->fumigation_dosage ?? '' }}" readonly placeholder="From Export Order">
+                                <input type="text" name="packing_items[{{ $packingIndex }}][fumigation_dosage]" class="form-control fumigation-dosage" value="{{ $packingItem->fumigation_dosage ?: ($jobOrder->exportOrder->fumigation_dosage ?? '') }}" {{ !empty($jobOrder->exportOrder->fumigation_dosage) ? 'readonly' : '' }} placeholder="Enter dosage">
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -1126,21 +1126,32 @@
 
         // Fumigation Dosage comes from export_orders.fumigation_dosage of the selected export order
         var fumigationDosageCache = {};
+        // Dosage from the export order is locked; without it the field stays open for the user
+        function applyFumigationDosage(value) {
+            $('.fumigation-dosage').each(function () {
+                if (value) {
+                    $(this).val(value).prop('readonly', true).addClass('dosage-auto');
+                } else {
+                    if ($(this).hasClass('dosage-auto')) $(this).val('');
+                    $(this).prop('readonly', false).removeClass('dosage-auto');
+                }
+            });
+        }
         function refreshFumigationDosage() {
             let eoId = $('#hidden_export_order_id').val() || $('#exportOrderSelect').val();
             if (!eoId) {
-                $('.fumigation-dosage').val('');
+                applyFumigationDosage('');
                 return;
             }
             if (fumigationDosageCache.hasOwnProperty(eoId)) {
-                $('.fumigation-dosage').val(fumigationDosageCache[eoId] || '');
+                applyFumigationDosage(fumigationDosageCache[eoId] || '');
                 return;
             }
             $.get('{{ url("production/get-export-order-details") }}/' + eoId, function(data) {
                 fumigationDosageCache[eoId] = data.fumigation_dosage || '';
                 let currentId = $('#hidden_export_order_id').val() || $('#exportOrderSelect').val();
                 if (String(currentId) === String(eoId)) {
-                    $('.fumigation-dosage').val(fumigationDosageCache[eoId]);
+                    applyFumigationDosage(fumigationDosageCache[eoId]);
                 }
             });
         }
@@ -2310,4 +2321,78 @@
     });
 
     updateFumigationRequirement();
+</script>
+<style>
+    /* Fumigation By / Type: locked (like Fumigation Dosage) only after they are auto filled from the export order */
+    select.fumigation-is-locked + .select2-container .select2-selection {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    select.fumigation-is-locked + .select2-container .select2-selection__choice__remove {
+        display: none;
+    }
+</style>
+<script>
+    // Locked = an export order is selected and the field got its value from the auto fill.
+    // Before auto fill (or if the export order had no value) the field stays open for the user.
+    function fumigationHasExportOrder() {
+        return !!($('#exportOrderSelect').val() || $('#hidden_export_order_id').val());
+    }
+
+    function refreshFumigationLocks() {
+        let hasEo = fumigationHasExportOrder();
+        $('select.fumigation-locked').each(function () {
+            let val = $(this).val();
+            let hasValue = Array.isArray(val) ? val.length > 0 : !!val;
+            let userSet = $(this).data('fumigationUserSet') === true;
+            $(this).toggleClass('fumigation-is-locked', hasEo && hasValue && !userSet);
+        });
+    }
+
+    // Readonly for select2: block opening and removing tags, but keep the value submitted (not disabled)
+    $(document).off('select2:opening.fumigationLock select2:unselecting.fumigationLock')
+        .on('select2:opening.fumigationLock select2:unselecting.fumigationLock', 'select.fumigation-locked', function (e) {
+            if ($(this).hasClass('fumigation-is-locked')) {
+                e.preventDefault();
+            }
+        });
+
+    // A value the user picks by hand stays editable
+    $(document).off('select2:select.fumigationLock select2:unselect.fumigationLock')
+        .on('select2:select.fumigationLock select2:unselect.fumigationLock', 'select.fumigation-locked', function () {
+            $(this).data('fumigationUserSet', true);
+            refreshFumigationLocks();
+        });
+
+    $(document).off('change.fumigationLock', 'select.fumigation-locked').on('change.fumigationLock', 'select.fumigation-locked', function () {
+        refreshFumigationLocks();
+    });
+
+    // New export order = new auto fill, so forget hand-picked flags
+    $(document).off('change.fumigationLock', '#exportOrderSelect').on('change.fumigationLock', '#exportOrderSelect', function () {
+        $('select.fumigation-locked').removeData('fumigationUserSet');
+        setTimeout(refreshFumigationLocks, 0);
+    });
+
+    // A newly added packing row copies the auto filled values from the first row
+    $(document).off('click.fumigationLock', '#addPackingItem').on('click.fumigationLock', '#addPackingItem', function () {
+        setTimeout(function () {
+            let first = $('.packing-item').first();
+            let firstBy = first.find('select[name*="[fumigation_company_id]"]');
+            let firstType = first.find('select[name*="[fumigation_type]"]');
+            $('.packing-item').not(first).each(function () {
+                let by = $(this).find('select[name*="[fumigation_company_id]"]');
+                let type = $(this).find('select[name*="[fumigation_type]"]');
+                by.removeData('fumigationUserSet');
+                type.removeData('fumigationUserSet');
+                if (!(by.val() || []).length && firstBy.hasClass('fumigation-is-locked')) by.val(firstBy.val()).trigger('change');
+                if (!type.val() && firstType.hasClass('fumigation-is-locked')) type.val(firstType.val()).trigger('change');
+            });
+            refreshFumigationLocks();
+        }, 150);
+    });
+
+    $(function () {
+        refreshFumigationLocks();
+    });
 </script>

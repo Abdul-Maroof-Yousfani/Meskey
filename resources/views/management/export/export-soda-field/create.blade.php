@@ -12,7 +12,7 @@
                         <select name="quotation_id" class="form-control select2">
                             <option value="">Select Quotation</option>
                             @foreach ($quotations as $quotation)
-                                <option value="{{ $quotation->id }}">{{ $quotation->id }} -
+                                <option value="{{ $quotation->id }}">
                                     {{ $quotation->buyer->name ?? 'N/A' }}
                                     ({{ $quotation->product->name ?? '' }})
                                 </option>
@@ -412,7 +412,11 @@
         }
 
         // ---- COMMISSION CALCULATIONS ----
+        // Which commission field the user typed last ("percentage" or "per_ton"); that one stays fixed
+        var commissionMode = null;
+
         $(document).on('input', '#commission_percentage', function() {
+            commissionMode = 'percentage';
             let totalAmount = 0;
             let totalMt = 0;
             $('#packingItems tr.packing-item').each(function() {
@@ -429,6 +433,7 @@
         });
 
         $(document).on('input', '#commission_amount_per_ton', function() {
+            commissionMode = 'per_ton';
             let totalAmount = 0;
             let totalMt = 0;
             $('#packingItems tr.packing-item').each(function() {
@@ -448,12 +453,18 @@
             let percentage = parseFloat($('#commission_percentage').val());
             let amtPerTon = parseFloat($('#commission_amount_per_ton').val());
 
-            if (!isNaN(percentage) && percentage > 0) {
+            let hasPercentage = !isNaN(percentage) && percentage > 0;
+            let hasPerTon = !isNaN(amtPerTon) && amtPerTon > 0;
+            // Keep the field the user typed; if unknown (page load / quotation fill), prefer amount per ton
+            let usePercentage = commissionMode === 'percentage' ? hasPercentage
+                : (commissionMode === 'per_ton' ? !hasPerTon : (hasPercentage && !hasPerTon));
+
+            if (usePercentage) {
                 let commission = (totalAmount * percentage) / 100;
                 let calculatedAmtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
                 $('#commission').val(commission.toFixed(2));
                 $('#commission_amount_per_ton').val(calculatedAmtPerTon.toFixed(2));
-            } else if (!isNaN(amtPerTon) && amtPerTon > 0) {
+            } else if (hasPerTon) {
                 let commission = totalMt * amtPerTon;
                 let calculatedPercentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
                 $('#commission').val(commission.toFixed(2));
@@ -493,6 +504,7 @@
         }
 
         function clearFormFields() {
+            commissionMode = null;
             unlockQuotationFields();
             $('#buyer_id').val('').trigger('change.select2');
             $('select[name="product_id"]').val('').trigger('change.select2');
@@ -516,6 +528,7 @@
         }
 
         function fillFormFromData(data) {
+            commissionMode = null;
             unlockQuotationFields();
 
             // Buyer

@@ -82,8 +82,13 @@ class BrokerRequest extends FormRequest
 
 
 
-            'owner_mobile_no' => 'required|string|max:11|regex:/^[0-9]{11}$/',
-            'owner_cnic_no' => 'required|string|regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/',
+            // Required (Pakistani format) for local brokers, optional for international brokers
+            'owner_mobile_no' => $this->input('broker_type') === 'international'
+                ? 'nullable|string|max:20'
+                : 'required|string|max:11|regex:/^[0-9]{11}$/',
+            'owner_cnic_no' => $this->input('broker_type') === 'international'
+                ? 'nullable|string|max:30'
+                : 'required|string|regex:/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/',
             'next_to_kin' => 'nullable|string|max:255',
             'next_to_kin_mobile_no' => 'nullable|string|max:11|regex:/^[0-9]{11}$/',
 

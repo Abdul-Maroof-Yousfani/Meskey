@@ -158,18 +158,18 @@
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
-                 <label>Owner Mobile No:</label>
+                 <label><span class="text-danger owner-required-star">*</span>Owner Mobile No:</label>
                  <input type="text" name="owner_mobile_no" placeholder="03001234567"
-                     value="{{ old('owner_mobile_no', $broker->owner_mobile_no) }}" class="form-control"
+                     value="{{ old('owner_mobile_no', $broker->owner_mobile_no) }}" class="form-control no-required-mark"
                      autocomplete="off" maxlength="11" />
                  <small class="text-muted">Enter 11 digit mobile number</small>
              </div>
          </div>
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
-                 <label>Owner CNIC:</label>
+                 <label><span class="text-danger owner-required-star">*</span>Owner CNIC:</label>
                  <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
-                     value="{{ old('owner_cnic_no', $broker->owner_cnic_no) }}" class="form-control cnic-input"
+                     value="{{ old('owner_cnic_no', $broker->owner_cnic_no) }}" class="form-control cnic-input no-required-mark"
                      autocomplete="off" maxlength="15" />
                  <small class="text-muted">Format: 12345-1234567-1</small>
              </div>
@@ -506,3 +506,13 @@
          toggleRemoveButton2();
      });
  </script>
+
+<script>
+    // Owner Mobile No & CNIC are required only for local brokers
+    function toggleOwnerRequiredStar() {
+        let isInternational = $('select[name="broker_type"]').val() === 'international';
+        $('.owner-required-star').toggle(!isInternational);
+    }
+    $(document).off('change.ownerStar').on('change.ownerStar', 'select[name="broker_type"]', toggleOwnerRequiredStar);
+    toggleOwnerRequiredStar();
+</script>

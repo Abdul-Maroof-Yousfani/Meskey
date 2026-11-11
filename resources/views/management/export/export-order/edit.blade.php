@@ -1526,7 +1526,13 @@
         $form.data('eo-edit-initialized', true);
 
         $form.on('submit', function() {
-            $('select[name="buyer_id"], select[name="product_id"], select[name="product_hs_code"]').prop('disabled', false);
+            // Disabled fields are not submitted, so enable them only while the
+            // form data is collected, then lock them again (e.g. after a validation error)
+            let locked = $('select[name="buyer_id"], select[name="product_id"], select[name="product_hs_code"]').filter(':disabled');
+            locked.prop('disabled', false);
+            setTimeout(function() {
+                locked.prop('disabled', true);
+            }, 0);
         });
 
         function updateDocumentsList() {
