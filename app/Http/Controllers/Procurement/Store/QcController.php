@@ -220,16 +220,22 @@ class QcController extends Controller
     public function deleteQc(Request $request) {
         $id = $request->id;
 
-        $bag_qc = PurchaseBagQC::find($id);
-        
-
-        $bag_qc->delete();
-
-        return response()->json("Purchase Bag Qc has been deleted!");
+        return $this->deleteQcWithPostings(PurchaseBagQC::find($id));
     }
     public function updateAmounts(QCAmountRequest $request) {
         $id  = $request->id;
         $qc = PurchaseBagQC::find($id);
+
+        if (!$qc) {
+            return response()->json(["message" => "QC not found."], 404);
+        }
+
+        // Stock and ledger are posted from these quantities at approval; they can't change afterwards.
+        $status = strtolower($qc->am_approval_status ?? 'pending');
+        if (in_array($status, ['approved', 'rejected'])) {
+            return response()->json(["message" => "This QC is already {$status}; quantities cannot be changed."], 422);
+        }
+
         $qc->update($request->validated());
 
         return response()->json("Qc has been updated");
@@ -495,13 +501,46 @@ class QcController extends Controller
 
     private function autoApproveQc(PurchaseBagQC $qc): void
     {
+        // Ledger can't be posted (e.g. item has no inventory account): leave it pending for manual approval.
+        if ($qc->validateBeforeApproval()) {
+            return;
+        }
+
         $qc->am_approval_status = "approved";
         $qc->is_auto_approved = 1;
         $qc->am_change_made = 1;
         $qc->save();
 
-        approve_qc($qc);
-        $qc->postStockIn();
+        $qc->postApproval();
+    }
+
+    /**
+     * An approved QC can only be removed while nothing was built on it (no bill, no rejection return);
+     * its stock-in and GRN accrual are reversed with it.
+     */
+    private function deleteQcWithPostings(?PurchaseBagQC $qc)
+    {
+        if (!$qc) {
+            return response()->json(["message" => "QC not found."], 404);
+        }
+
+        $grnLine = $qc->grn;
+        if ($grnLine && $grnLine->bill()->exists()) {
+            return response()->json(["message" => "A purchase bill exists for this GRN item. Delete the bill first."], 422);
+        }
+        if ($grnLine && \App\Models\Procurement\Store\RejectionReturnItem::where('item_id', $grnLine->item_id)
+                ->whereHas('rejectionReturn', fn ($q) => $q->where('grn_id', $grnLine->purchase_order_receiving_id))
+                ->exists()) {
+            return response()->json(["message" => "A rejection return exists for this GRN item. Delete it first."], 422);
+        }
+
+        DB::transaction(function () use ($qc) {
+            app(\App\Services\StoreLedgerService::class)->reverseQc($qc);
+            $qc->bags()->delete();
+            $qc->delete();
+        });
+
+        return response()->json("Purchase Bag Qc has been deleted!");
     }
 
     private function saveQcBags(PurchaseBagQC $qc, bool $isBag, $net_weights, $bag_weights): void
@@ -563,9 +602,7 @@ class QcController extends Controller
     }
     public function destroy(int $id) {
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
-        
-        $purchase_receiving_data->qc()->delete();
 
-        return response()->json("Qc has been deleted!");
+        return $this->deleteQcWithPostings($purchase_receiving_data?->qc);
     }
 }

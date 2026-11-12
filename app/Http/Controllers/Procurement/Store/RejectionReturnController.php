@@ -37,7 +37,7 @@ class RejectionReturnController extends Controller
                 'truck_no' => $return->truck_no,
                 'supplier' => $return->supplier->name ?? 'N/A',
                 'date' => $return->date,
-                'status' => $return->am_approval_status ?? 'approved',
+                'status' => $return->am_approval_status ?? 'pending',
                 'request_rowspan' => count($items) ?: 1,
                 'items' => $items
             ];
@@ -77,7 +77,9 @@ class RejectionReturnController extends Controller
                 'supplier_id' => $grn->supplier_id,
                 'company_id' => auth()->user()->current_company_id,
                 'created_by' => auth()->user()->id,
-                'am_approval_status' => 'approved',
+                // Stock-out and ledger post on approval (RejectionReturn::onApprovalComplete).
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
                 'remarks' => $request->remarks,
             ]);
 
@@ -146,11 +148,17 @@ class RejectionReturnController extends Controller
 
             $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::findOrFail($id);
 
+            if ($rejectionReturn->isLocked()) {
+                DB::rollBack();
+                return response()->json(['status' => 'error', 'message' => 'Rejection Return is already approved or rejected.'], 422);
+            }
+
             if ($error = $this->validateReturnQty($request, (int) $rejectionReturn->grn_id, (int) $rejectionReturn->id)) {
                 DB::rollBack();
                 return response()->json(['status' => 'error', 'message' => $error], 422);
             }
 
+            // An edited (including reverted) return goes back to the approvers as pending.
             $rejectionReturn->update([
                 'date' => $request->purchase_date,
                 'truck_no' => $request->truck_no,
@@ -158,8 +166,9 @@ class RejectionReturnController extends Controller
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
+            $rejectionReturn->ensureApprovalRows();
 
-            // Item sync: remove old items with their stock-out/ledger rows, then re-add
+            // Item sync (nothing is posted before approval; clearItems also removes any old-style rows)
             $rejectionReturn->clearItems();
             foreach ($request->item_id as $index => $itemId) {
                 if (isset($request->qty[$index]) && $request->qty[$index] > 0) {
@@ -189,6 +198,12 @@ class RejectionReturnController extends Controller
     public function gateOut($id)
     {
         $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::with(['items.item', 'grn.supplier', 'creator'])->findOrFail($id);
+
+        // Bags may leave the gate only after the return is approved (that is when the stock-out posts).
+        if ($rejectionReturn->am_approval_status !== 'approved') {
+            abort(403, 'Gate out pass is available only after the Rejection Return is approved.');
+        }
+
         return view('management.procurement.store.purchase-return.rejection_gate_out', compact('rejectionReturn'));
     }
 
@@ -197,7 +212,12 @@ class RejectionReturnController extends Controller
         try {
             DB::beginTransaction();
             $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::findOrFail($id);
-            // Removes the stock-out too, so the bags are back in stock.
+
+            if ($rejectionReturn->isLocked()) {
+                DB::rollBack();
+                return response()->json(['status' => 'error', 'message' => 'Rejection Return is already approved or rejected.'], 422);
+            }
+
             $rejectionReturn->clearItems();
             $rejectionReturn->delete();
             DB::commit();

@@ -4,8 +4,8 @@ namespace App\Models\Procurement\Store;
 
 use App\Http\Requests\Procurement\PurchaseRequest;
 use App\Models\Master\Supplier;
+use App\Services\StoreLedgerService;
 use App\Traits\HasApproval;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
@@ -14,39 +14,34 @@ use App\Models\Procurement\Store\PurchaseBillData;
 
 class PurchaseBill extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory, HasApproval {
+        onApprovalComplete as protected traitOnApprovalComplete;
+    }
+
+    /** Ledger is posted only when the bill is fully approved. */
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+        app(StoreLedgerService::class)->postPurchaseBill($this);
+    }
+
+    public function validateBeforeApproval(): ?string
+    {
+        foreach ($this->bill_data as $line) {
+            $qc = $line->PurchaseOrderReceivingData?->qc;
+            if ($qc && $qc->am_approval_status !== 'approved') {
+                return "QC of item #{$line->item_id} is not approved yet. Approve the QC before the bill.";
+            }
+        }
+
+        return app(StoreLedgerService::class)->validate(fn () => app(StoreLedgerService::class)->buildBillEntries($this));
+    }
 
     protected $guarded = [
         "id",
         "created_at",
         "updated_at"
     ];
-
-
-    public static function booted() {
-        // static::updated(function($bill) {
-        //     $column = $bill->getApprovalModule()->approval_column ?? 'am_approval_status';
-        //     if ($bill->isDirty($column) && $bill->{$column} === 'approved') {
-        //         foreach($bill->bill_data as $data) {
-        //             $supplier = Supplier::select("id", "account_id")->find($bill->supplier_id);
-        //             if ($supplier && $supplier->account_id) {
-        //                  createTransaction(
-        //                     $data->final_amount,
-        //                     $supplier->account_id,
-        //                     5,
-        //                     $bill->bill_no,
-        //                     'credit',
-        //                     'no',
-        //                     [
-        //                         'payment_against' => "Purchase Bill",
-        //                         'remarks' => $data->description ?? "Purchase Bill"
-        //                     ] 
-        //                 );
-        //             }
-        //         }
-        //     }
-        // });
-    }
 
 
     protected $table = "purchase_bills";

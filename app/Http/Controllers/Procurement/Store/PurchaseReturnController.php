@@ -10,6 +10,7 @@ use App\Models\Procurement\Store\PurchaseReturn;
 use App\Models\Procurement\Store\PurchaseReturnData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Services\StoreLedgerService;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseReturnController extends Controller
@@ -159,12 +160,9 @@ class PurchaseReturnController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Validate date is not before any of the selected purchase bills' dates
-            $purchaseBills = PurchaseBill::whereIn('id', $request->purchase_bill_ids)->get();
-            foreach ($purchaseBills as $bill) {
-                if (strtotime($bill->bill_date) > strtotime($request->date)) {
-                    return response()->json("Return date cannot be before purchase bill date: " . $bill->bill_date . " for bill " . $bill->bill_no, 422);
-                }
+            if ($error = $this->validateReturnDate($request)) {
+                DB::rollBack();
+                return response()->json($error, 422);
             }
 
             $purchaseReturn = PurchaseReturn::create([
@@ -181,31 +179,9 @@ class PurchaseReturnController extends Controller
             // Attach the selected purchase bills
             $purchaseReturn->purchaseBills()->attach($request->purchase_bill_ids);
 
-            foreach ($request->item_id as $index => $item_id) {
-                $balance = getAvailableReturnBalance($request->bill_data_id[$index]);
-
-                if ($request->quantity[$index] > $balance) {
-                    return response()->json("Available balance is $balance. You cannot exceed this balance", 422);
-                }
-
-                // Get discount information from purchase bill data
-                $billData = PurchaseBillData::find($request->bill_data_id[$index]);
-
-                $purchaseReturn->purchase_return_data()->create([
-                    'purchase_bill_data_id' => $request->bill_data_id[$index],
-                    'item_id' => $item_id,
-                    'quantity' => $request->quantity[$index],
-                    'rate' => $request->rate[$index],
-                    'gross_amount' => $request->gross_amount[$index],
-                    'tax_percent' => $request->tax_percent[$index] ?? 0,
-                    'tax_amount' => $request->tax_amount[$index] ?? 0,
-                    'discount_percent' => $billData->discount_percent ?? 0,
-                    'discount_amount' => $request->discount_amount[$index] ?? 0,
-                    'deduction' => $request->deduction[$index] ?? 0,
-                    'deduction_per_piece' => $request->deduction_per_piece[$index] ?? 0,
-                    'net_amount' => $request->net_amount[$index],
-                    'description' => $request->description[$index],
-                ]);
+            if ($error = $this->saveReturnLines($purchaseReturn, $request)) {
+                DB::rollBack();
+                return response()->json($error, 422);
             }
 
             DB::commit();
@@ -218,8 +194,7 @@ class PurchaseReturnController extends Controller
 
     public function update(PurchaseReturnRequest $request, int $id)
     {
-        DB::beginTransaction();
-        $purchaseReturn = PurchaseReturn::find($id);
+        $purchaseReturn = PurchaseReturn::findOrFail($id);
 
         if($purchaseReturn->am_approval_status == "approved" || $purchaseReturn->am_approval_status == "rejected") {
             return response()->json([
@@ -228,14 +203,18 @@ class PurchaseReturnController extends Controller
             ], 422);
         }
 
+        DB::beginTransaction();
         try {
-            // Validate date is not before any of the selected purchase bills' dates
-            $purchaseBills = PurchaseBill::whereIn('id', $request->purchase_bill_ids)->get();
-            foreach ($purchaseBills as $bill) {
-                if (strtotime($bill->bill_date) > strtotime($request->date)) {
-                    return response()->json("Return date cannot be before purchase bill date: " . $bill->bill_date . " for bill " . $bill->bill_no, 422);
-                }
+            if ($error = $this->validateReturnDate($request)) {
+                DB::rollBack();
+                return response()->json($error, 422);
             }
+
+            // Entries an older version of this module posted on save (before pr_no can change).
+            // Stock and ledger now post on approval only.
+            $ledger = app(StoreLedgerService::class);
+            $ledger->clearLegacyReturnEntries($purchaseReturn);
+            $ledger->clearPurchaseReturnStock($purchaseReturn);
 
             $purchaseReturn->update([
                 'pr_no' => $request->pr_no,
@@ -253,30 +232,9 @@ class PurchaseReturnController extends Controller
 
             $purchaseReturn->purchase_return_data()->delete();
 
-            foreach ($request->item_id as $index => $item_id) {
-                $balance = getAvailableReturnBalance($request->bill_data_id[$index], $id);
-
-                if ($request->quantity[$index] > $balance) {
-                    return response()->json("Available balance is $balance. You cannot exceed this balance", 422);
-                }
-
-                // Get discount information from purchase bill data
-                $billData = PurchaseBillData::find($request->bill_data_id[$index]);
-                $purchaseReturn->purchase_return_data()->create([
-                    'purchase_bill_data_id' => $request->bill_data_id[$index],
-                    'item_id' => $item_id,
-                    'quantity' => $request->quantity[$index],
-                    'rate' => $request->rate[$index],
-                    'gross_amount' => $request->gross_amount[$index],
-                    'tax_percent' => $request->tax_percent[$index] ?? 0,
-                    'tax_amount' => $request->tax_amount[$index] ?? 0,
-                    'discount_percent' => $billData->discount_percent ?? 0,
-                    'discount_amount' => $request->discount_amount[$index] ?? 0,
-                    'deduction' => $request->deduction[$index] ?? 0,
-                    'deduction_per_piece' => $request->deduction_per_piece[$index] ?? 0,
-                    'net_amount' => $request->net_amount[$index],
-                    'description' => $request->description[$index],
-                ]);
+            if ($error = $this->saveReturnLines($purchaseReturn, $request, $id)) {
+                DB::rollBack();
+                return response()->json($error, 422);
             }
 
             DB::commit();
@@ -295,10 +253,70 @@ class PurchaseReturnController extends Controller
                 'message' => 'Purchase Return is already approved or rejected.',
             ], 422);
         }
-        
-        $purchaseReturn->purchase_return_data()->delete();
-        $purchaseReturn->delete();
+
+        DB::transaction(function () use ($purchaseReturn) {
+            $ledger = app(StoreLedgerService::class);
+            $ledger->clearLegacyReturnEntries($purchaseReturn);
+            $ledger->clearPurchaseReturnStock($purchaseReturn);
+            $purchaseReturn->purchase_return_data()->delete();
+            $purchaseReturn->delete();
+        });
 
         return response()->json("Purchase Return has been deleted!");
+    }
+
+    private function validateReturnDate(Request $request): ?string
+    {
+        $purchaseBills = PurchaseBill::whereIn('id', $request->purchase_bill_ids ?? [])->get();
+        foreach ($purchaseBills as $bill) {
+            if (strtotime($bill->bill_date) > strtotime($request->date)) {
+                return "Return date cannot be before purchase bill date: " . $bill->bill_date . " for bill " . $bill->bill_no;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Creates the return lines. Qty is checked against the bill balance; discount and tax %
+     * come from the bill line and every amount is recalculated here (not taken from the browser).
+     */
+    private function saveReturnLines(PurchaseReturn $purchaseReturn, Request $request, ?int $excludeReturnId = null): ?string
+    {
+        foreach ($request->item_id as $index => $item_id) {
+            $billData = PurchaseBillData::find($request->bill_data_id[$index] ?? null);
+            if (!$billData) {
+                return "Bill line not found for row " . ($index + 1) . ".";
+            }
+            if ($billData->purchaseBill?->am_approval_status !== 'approved') {
+                return "Purchase return can only be made against an approved purchase bill.";
+            }
+
+            $quantity = (float) ($request->quantity[$index] ?? 0);
+            $balance = getAvailableReturnBalance($billData->id, $excludeReturnId);
+            if ($quantity <= 0 || $quantity > $balance) {
+                return "Available balance is $balance. You cannot exceed this balance";
+            }
+
+            // rate, discount % and tax % are read-only on the form and always come from the bill line
+            $rate = (float) $billData->rate;
+            $amounts = StoreLedgerService::calculateReturnLine(
+                $quantity,
+                $rate,
+                (float) ($billData->discount_percent ?? 0),
+                (float) ($billData->tax_percent ?? 0),
+                (float) ($request->deduction_per_piece[$index] ?? 0)
+            );
+
+            $purchaseReturn->purchase_return_data()->create([
+                'purchase_bill_data_id' => $billData->id,
+                'item_id' => $billData->item_id,
+                'quantity' => $quantity,
+                'rate' => $rate,
+                'description' => $request->description[$index] ?? null,
+            ] + $amounts);
+        }
+
+        return null;
     }
 }

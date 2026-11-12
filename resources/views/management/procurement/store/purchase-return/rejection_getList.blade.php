@@ -7,8 +7,9 @@
             <th style="width: 15%;" class="text-left">Supplier</th>
             <th style="width: 15%;" class="text-left">Item</th>
             <th style="width: 10%;" class="text-left">Rate</th>
-            <th style="width: 15%;" class="text-left">Rejected Qty</th>
-            <th style="width: 15%;" class="text-left">Action</th>
+            <th style="width: 12%;" class="text-left">Rejected Qty</th>
+            <th style="width: 8%;" class="text-left">Status</th>
+            <th style="width: 10%;" class="text-left">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -47,16 +48,32 @@
                         </td>
 
                         @if ($isFirstRow)
+                            @php
+                                $status = strtolower($requestGroup['status'] ?? 'pending');
+                                $badge = match(true) {
+                                    $status === 'approved' => 'badge-success',
+                                    $status === 'rejected' => 'badge-danger',
+                                    $status === 'reverted' => 'badge-info',
+                                    default => 'badge-warning',
+                                };
+                                $editable = !in_array($status, ['approved', 'rejected']);
+                            @endphp
+                            <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="vertical-align: middle;">
+                                <span class="badge {{ $badge }} px-2 py-1">{{ ucfirst($status) }}</span>
+                            </td>
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="vertical-align: middle;">
                                 <div class="d-flex flex-column align-items-start" style="gap: 4px;">
                                     <a onclick="openModal(this, '{{ route('store.rejection-return.view', $requestGroup['id']) }}', 'View Return', false, '80%')"
                                         class="bg-primary text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
                                         View
                                     </a>
+                                    @if ($status === 'approved')
                                     <a href="{{ route('store.rejection-return.gate-out', $requestGroup['id']) }}" target="_blank"
                                         class="bg-success text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
                                         Gate Out
                                     </a>
+                                    @endif
+                                    @if ($editable)
                                     <a onclick="openModal(this,'{{ route('store.rejection-return.edit', $requestGroup['id']) }}','Edit Return',false,'80%')"
                                         class="bg-warning text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
                                         Edit
@@ -65,6 +82,7 @@
                                         class="bg-danger text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
                                         Delete
                                     </a>
+                                    @endif
                                 </div>
                             </td>
                             @php $isFirstRow = false; @endphp
@@ -74,7 +92,7 @@
             @endforeach
         @else
             <tr>
-                <td colspan="7" class="text-center py-5">
+                <td colspan="9" class="text-center py-5">
                     <p class="text-muted">No rejection returns found.</p>
                 </td>
             </tr>

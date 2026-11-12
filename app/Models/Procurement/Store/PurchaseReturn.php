@@ -6,45 +6,36 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\StoreLedgerService;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Master\Account\Stock;
 
 
 class PurchaseReturn extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory;
     protected $table = "purchase_returns";
     protected $guarded = [
         "id",
         "created_at",
         "updated_at"
     ];
-    public static function booted() {
-        static::updated(function($return) {
-            $column = $return->getApprovalModule()->approval_column ?? 'am_approval_status';
-            if ($return->isDirty($column) && $return->{$column} === 'approved') {
-                foreach($return->purchase_return_data as $data) {
-                    $supplier = Supplier::select("id", "account_id")->find($return->supplier_id);
-                    $product = Product::select("id", "account_id")->find($data->item_id);
-                    $amount = $data->net_amount;
-
-                    Stock::create([
-                        'product_id' => $data->item_id,
-                        'voucher_type' => 'purchase_return',
-                        'voucher_no' => $return->pr_no,
-                        'qty' => $data->quantity,
-                        'type' => 'stock-out',
-                        'narration' => 'Purchase Return',
-                        'price' => $amount,
-                        'avg_price_per_kg' => $amount,
-                    ]);
-                }
-            }
-        });
+    use HasApproval {
+        onApprovalComplete as protected traitOnApprovalComplete;
     }
 
+    /** Stock-out and ledger are posted only when the return is fully approved. */
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+        app(StoreLedgerService::class)->postPurchaseReturn($this);
+    }
+
+    public function validateBeforeApproval(): ?string
+    {
+        return app(StoreLedgerService::class)->validate(fn () => app(StoreLedgerService::class)->buildPurchaseReturnEntries($this));
+    }
 
 
     public function supplier() 

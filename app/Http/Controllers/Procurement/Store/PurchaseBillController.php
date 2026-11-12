@@ -13,6 +13,7 @@ use App\Models\Procurement\Store\PurchaseBillData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Procurement\Store\PurchaseOrderReceivingData;
 use App\Models\Procurement\Store\PurchaseRequest;
+use App\Services\StoreLedgerService;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
@@ -391,25 +392,14 @@ class PurchaseBillController extends Controller
         $reference_no = $request->reference_no;
         $description = $request->purchase_bill_description ?? "";
         $items = $request->item_id;
-        $descriptions = $request->description;
-        $qty = $request->qty;
-        $rate = $request->rate;
-        $gross_amount = $request->gross_amount;
-        $taxes = $request->tax_id;
-        $net_amount = $request->net_amount;
-        $discounts = $request->discount_id;
-        $discount_amounts = $request->discount_amount;
-        $deduction = $request->deduction;
-        $final_amount = $request->final_amount;
-        $tax_amount = $request->tax_amount;
-        $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
-        $deduction_per_piece = $request->deduction_per_piece;
-        $accepted_qty = $request->accepted_qty;
-        $rejected_qty = $request->rejected_qty;
 
         DB::beginTransaction();
 
         try {
+            // Entries an older version of this module posted on save (before bill_no can change).
+            // The ledger now posts on approval only.
+            app(StoreLedgerService::class)->clearLegacyBillEntries($purchaseBill);
+
             $purchaseBill->update([
                 'purchase_order_receiving_id' => $purchaseOrderReceiving->id,
                 'bill_no' => $reference_no,
@@ -425,23 +415,7 @@ class PurchaseBillController extends Controller
             $purchaseBill->bill_data()->delete();
 
             foreach ($items as $index => $item) {
-                $purchaseBill->bill_data()->create([
-                    'item_id' => $items[$index],
-                    'purchase_order_receiving_data_id' => $purchase_order_receiving_data_id[$index],
-                    'description' => $descriptions[$index],
-                    'qty' => $qty[$index],
-                    'rate' => $rate[$index],
-                    'gross_amount' => $gross_amount[$index],
-                    'tax_percent' => $taxes[$index],
-                    'tax_amount' => $tax_amount[$index],
-                    'deduction_per_piece' => $deduction_per_piece[$index],
-                    'net_amount' => $net_amount[$index],
-                    'discount_percent' => $discounts[$index],
-                    'discount_amount' => $discount_amounts[$index],
-                    'deduction' => $deduction[$index],
-                    'final_amount' => $final_amount[$index],
-                    'accepted_qty' => $accepted_qty[$index],
-                    'rejected_qty' => $rejected_qty[$index],
+                $purchaseBill->bill_data()->create($this->billLinePayload($request, $index) + [
                     'am_approval_status' => 'pending',
                     'am_change_mode' => 1,
                 ]);
@@ -464,23 +438,8 @@ class PurchaseBillController extends Controller
         $reference_no = $request->reference_no;
         $description = $request->purchase_bill_description ?? "";
         $items = $request->item_id;
-        $descriptions = $request->description;
-        $qty = $request->qty;
-        $rate = $request->rate;
-        $gross_amount = $request->gross_amount;
-        $taxes = $request->tax_id;
-        $net_amount = $request->net_amount;
-        $discounts = $request->discount_id;
-        $discount_amounts = $request->discount_amount;
-        $deduction = $request->deduction;
-        $final_amount = $request->final_amount;
         $bill_date = $request->purchase_bill_date;
         $supplier_id = $request->supplier_id;
-        $tax_amount = $request->tax_amount;
-        $deduction_per_piece = $request->deduction_per_piece;
-        $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
-        $rejected_qty = $request->rejected_qty;
-        $accepted_qty = $request->accepted_qty;
 
         DB::beginTransaction();
 
@@ -503,29 +462,11 @@ class PurchaseBillController extends Controller
             ]);
 
             foreach ($items as $index => $item) {
-                $purchase_bill->bill_data()->create([
-                    'item_id' => $items[$index],
-                    'purchase_order_receiving_data_id' => $purchase_order_receiving_data_id[$index],
-                    'description' => $descriptions[$index],
-                    'qty' => $qty[$index],
-                    'rate' => $rate[$index],
-                    'gross_amount' => $gross_amount[$index],
-                    'tax_percent' => $taxes[$index],
-                    'tax_amount' => $tax_amount[$index],
-                    'deduction_per_piece' => $deduction_per_piece[$index],
-                    'net_amount' => $net_amount[$index],
-                    'discount_percent' => $discounts[$index],
-                    'discount_amount' => $discount_amounts[$index],
-                    'deduction' => $deduction[$index],
-                    'final_amount' => $final_amount[$index],
-                    'rejected_qty' => $rejected_qty[$index],
-                    'accepted_qty' => $accepted_qty[$index],
+                $purchase_bill->bill_data()->create($this->billLinePayload($request, $index) + [
                     'am_approval_status' => 'pending',
                     'am_change_mode' => 1,
                 ]);
             }
-
-        
 
             DB::commit();
 
@@ -574,9 +515,38 @@ class PurchaseBillController extends Controller
             ], 422);
         }
 
-        $purchase_bill->bill_data()->delete();
-        $purchase_bill->delete();
+        DB::transaction(function () use ($purchase_bill) {
+            app(StoreLedgerService::class)->clearLegacyBillEntries($purchase_bill);
+            $purchase_bill->bill_data()->delete();
+            $purchase_bill->delete();
+        });
 
         return response()->json('Purchase bill has been deleted!');
+    }
+
+    /**
+     * Bill line as stored. Qty, rate and deduction come from the QC/PO and every amount is
+     * recalculated here, so the browser's totals can never unbalance the ledger.
+     */
+    private function billLinePayload(Request $request, int $index): array
+    {
+        $grnLineId = $request->purchase_order_receiving_data_id[$index] ?? null;
+        $grnLine = PurchaseOrderReceivingData::with('qc', 'purchase_order_data')->find($grnLineId);
+        if (!$grnLine) {
+            throw new \RuntimeException('GRN item not found for bill line ' . ($index + 1) . '.');
+        }
+
+        $amounts = StoreLedgerService::calculateBillLine(
+            $grnLine,
+            (float) ($request->discount_id[$index] ?? 0),
+            (float) ($request->tax_id[$index] ?? 0),
+            isset($request->qty[$index]) ? min((float) $request->qty[$index], (float) $grnLine->qty) : null
+        );
+
+        return [
+            'item_id' => $grnLine->item_id,
+            'purchase_order_receiving_data_id' => $grnLine->id,
+            'description' => $request->description[$index] ?? null,
+        ] + $amounts;
     }
 }

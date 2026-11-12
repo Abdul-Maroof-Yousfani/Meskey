@@ -2,11 +2,9 @@
 
 namespace App\Models\Procurement\Store;
 
-use App\Models\Master\Account\Stock;
-use App\Models\Master\Account\Transaction;
 use App\Models\Master\Supplier;
-use App\Models\Product;
 use App\Models\User;
+use App\Services\StoreLedgerService;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,9 +13,42 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RejectionReturn extends Model
 {
-    use SoftDeletes, HasApproval;
+    use SoftDeletes, HasApproval {
+        onApprovalComplete as protected traitOnApprovalComplete;
+    }
 
     protected $guarded = ['id'];
+
+    /** Stock-out and ledger are posted only when the return is fully approved. */
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+        app(StoreLedgerService::class)->postRejectionReturn($this);
+    }
+
+    /** Pending / reverted returns can still be edited or deleted; approved and rejected ones are locked. */
+    public function isLocked(): bool
+    {
+        return in_array(strtolower((string) $this->am_approval_status), ['approved', 'rejected']);
+    }
+
+    /**
+     * A return saved before approvers were assigned to the module has no approval rows,
+     * so nobody could ever approve it. Create them for the current cycle when missing.
+     */
+    public function ensureApprovalRows(): void
+    {
+        $module = $this->getApprovalModule();
+        if ($module && !$this->approvalRows()->where('module_id', $module->id)
+                ->where('approval_cycle', $this->getCurrentApprovalCycle())->exists()) {
+            $this->createApprovalRows();
+        }
+    }
+
+    public function validateBeforeApproval(): ?string
+    {
+        return app(StoreLedgerService::class)->validate(fn () => app(StoreLedgerService::class)->buildRejectionReturnEntries($this));
+    }
 
     public function supplier(): BelongsTo
     {
@@ -45,20 +76,7 @@ class RejectionReturn extends Model
      */
     public function clearItems(): void
     {
-        $itemIds = $this->items()->pluck('id');
-
-        if ($itemIds->isNotEmpty()) {
-            Stock::where('parentable_type', RejectionReturnItem::class)
-                ->whereIn('parentable_id', $itemIds)
-                ->delete();
-        }
-
-        if ($this->return_no) {
-            Transaction::where('transaction_voucher_type_id', 9)
-                ->where('voucher_no', $this->return_no)
-                ->delete();
-        }
-
+        app(StoreLedgerService::class)->reverseRejectionReturn($this);
         $this->items()->delete();
     }
 

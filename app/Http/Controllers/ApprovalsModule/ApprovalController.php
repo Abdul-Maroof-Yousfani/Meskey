@@ -148,7 +148,16 @@ class ApprovalController extends Controller
             }
         }
 
-        $approved = $record->approve($request->comments);
+        // Approval and whatever it posts (stock, ledger) succeed or fail together.
+        try {
+            $approved = \Illuminate\Support\Facades\DB::transaction(fn () => $record->approve($request->comments));
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => 'Approval failed: ' . $e->getMessage(),
+            ], 422);
+        }
 
         if ($approved) {
             $nextStage = method_exists($record, 'getCurrentPendingStage') ? $record->getCurrentPendingStage() : null;

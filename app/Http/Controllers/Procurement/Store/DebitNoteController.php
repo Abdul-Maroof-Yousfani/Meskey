@@ -10,8 +10,10 @@ use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Master\Supplier;
+use App\Services\StoreLedgerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DebitNoteController extends Controller
 {
@@ -27,34 +29,22 @@ class DebitNoteController extends Controller
         return view("management.procurement.store.debit-note.create", compact("suppliers"));
     }
     public function store(DebitNoteRequest $request) {
-        $debitNote = DebitNote::create([
-            'grn_id' => $request->grn_id,
-            'bill_id' => $request->bill_id,
-            'reference_number' => $request->reference_number,
-            'transaction_date' => $request->transaction_date,
-            'created_by' => auth()->user()->id,
-            "am_change_made" => 1
-        ]);
-
-        // Create debit note items
-        if ($request->has('item_id')) {
-            foreach ($request->item_id as $key => $itemId) {
-                DebitNoteData::create([
-                    'debit_note_id' => $debitNote->id,
-                    'grn_id' => $request->grn_id,
-                    'bill_id' => $request->bill_id,
-                    'purchase_bill_data_id' => $request->bill_data_id[$key],
-                    'item_id' => $itemId,
-                    'grn_qty' => $request->grn_qty[$key],
-                    'debit_note_quantity' => $request->debit_note_quantity[$key],
-                    'rate' => $request->rate[$key],
-                    'amount' => $request->amount[$key],
-                    'am_approval_status' => 'pending',
-                    'am_change_made' => 1,
-                    
-                ]);
-            }
+        if ($error = $this->validateDebitNoteLines($request)) {
+            return response()->json(['success' => false, 'message' => $error], 422);
         }
+
+        DB::transaction(function () use ($request) {
+            $debitNote = DebitNote::create([
+                'grn_id' => $request->grn_id,
+                'bill_id' => $request->bill_id,
+                'reference_number' => $request->reference_number,
+                'transaction_date' => $request->transaction_date,
+                'created_by' => auth()->user()->id,
+                "am_change_made" => 1
+            ]);
+
+            $this->saveDebitNoteLines($debitNote, $request, 1);
+        });
 
         return response()->json([
             'success' => "Debit Note has been created successfully!",
@@ -73,43 +63,104 @@ class DebitNoteController extends Controller
             ], 422);
         }
 
-        // Update debit note main data
-        $debitNote->update([
-            'grn_id' => $request->grn_id,
-            'bill_id' => $request->bill_id,
-            'reference_number' => $request->reference_number,
-            'transaction_date' => $request->transaction_date,
-            "am_approval_status" => "pending",
-            "am_change_made" => 1
-        ]);
-
-        // Delete existing debit note data items
-        $debitNote->debit_note_data()->delete();
-
-        // Create new debit note items
-        if ($request->has('item_id')) {
-            foreach ($request->item_id as $key => $itemId) {
-                DebitNoteData::create([
-                    'debit_note_id' => $debitNote->id,
-                    'grn_id' => $request->grn_id,
-                    'bill_id' => $request->bill_id,
-                    'purchase_bill_data_id' => $request->bill_data_id[$key],
-                    'item_id' => $itemId,
-                    'grn_qty' => $request->grn_qty[$key],
-                    'debit_note_quantity' => $request->debit_note_quantity[$key],
-                    'rate' => $request->rate[$key],
-                    'amount' => $request->amount[$key],
-                    'am_approval_status' => 'pending',
-                    'am_change_made' => 0,
-                ]);
-            }
+        if ($error = $this->validateDebitNoteLines($request, (int) $debitNote->id)) {
+            return response()->json(['success' => false, 'message' => $error], 422);
         }
+
+        DB::transaction(function () use ($request, $debitNote) {
+            $debitNote->update([
+                'grn_id' => $request->grn_id,
+                'bill_id' => $request->bill_id,
+                'reference_number' => $request->reference_number,
+                'transaction_date' => $request->transaction_date,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
+            ]);
+
+            $debitNote->debit_note_data()->delete();
+            $this->saveDebitNoteLines($debitNote, $request, 0);
+        });
 
         return response()->json([
             'success' => "Debit Note has been updated successfully!",
             'message' => 'Debit Note updated successfully',
             'redirect' => route('store.debit-note.index')
         ]);
+    }
+
+    /**
+     * Debit note qty per bill line may not exceed: bill qty - other debit notes - purchase returns
+     * (rejected documents are ignored). Each line must belong to the selected bill.
+     */
+    private function validateDebitNoteLines(Request $request, ?int $excludeDebitNoteId = null): ?string
+    {
+        $requested = [];
+        foreach ($request->item_id ?? [] as $key => $itemId) {
+            $billDataId = (int) ($request->bill_data_id[$key] ?? 0);
+            $requested[$billDataId] = ($requested[$billDataId] ?? 0) + (float) ($request->debit_note_quantity[$key] ?? 0);
+        }
+
+        if (array_sum($requested) <= 0) {
+            return 'Please enter a debit note quantity for at least one item.';
+        }
+
+        if (PurchaseBill::where('id', $request->bill_id)->value('am_approval_status') !== 'approved') {
+            return 'Debit note can only be made against an approved purchase bill.';
+        }
+
+        foreach ($requested as $billDataId => $qty) {
+            $billLine = PurchaseBillData::find($billDataId);
+            if (!$billLine || (int) $billLine->purchase_bill_id !== (int) $request->bill_id) {
+                return 'Selected item does not belong to the selected bill.';
+            }
+
+            $otherDebitNotes = (float) DebitNoteData::where('purchase_bill_data_id', $billDataId)
+                ->whereHas('debit_note', function ($q) use ($excludeDebitNoteId) {
+                    $q->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'))
+                        ->when($excludeDebitNoteId, fn ($q) => $q->where('id', '!=', $excludeDebitNoteId));
+                })
+                ->sum('debit_note_quantity');
+
+            $returned = (float) \App\Models\Procurement\Store\PurchaseReturnData::where('purchase_bill_data_id', $billDataId)
+                ->whereHas('purchase_return', fn ($q) => $q->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected')))
+                ->sum('quantity');
+
+            $allowed = max(0, (float) $billLine->qty - $otherDebitNotes - $returned);
+            if ($qty > $allowed + 0.0001) {
+                $name = $billLine->item->name ?? "Item #{$billLine->item_id}";
+                return "Debit note qty for '{$name}' ({$qty}) exceeds the available balance ({$allowed}).";
+            }
+        }
+
+        return null;
+    }
+
+    /** Rate comes from the bill line and amount = qty x rate (not taken from the browser). */
+    private function saveDebitNoteLines(DebitNote $debitNote, Request $request, int $changeMade): void
+    {
+        foreach ($request->item_id ?? [] as $key => $itemId) {
+            $qty = (float) ($request->debit_note_quantity[$key] ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $billLine = PurchaseBillData::find($request->bill_data_id[$key]);
+            $amounts = StoreLedgerService::calculateDebitNoteLine($billLine, $qty);
+
+            DebitNoteData::create([
+                'debit_note_id' => $debitNote->id,
+                'grn_id' => $request->grn_id,
+                'bill_id' => $request->bill_id,
+                'purchase_bill_data_id' => $billLine->id,
+                'item_id' => $billLine->item_id,
+                'grn_qty' => $request->grn_qty[$key] ?? 0,
+                'debit_note_quantity' => $qty,
+                'rate' => $amounts['rate'],
+                'amount' => $amounts['gross_amount'],
+                'am_approval_status' => 'pending',
+                'am_change_made' => $changeMade,
+            ]);
+        }
     }
 
     public function show($id) {
