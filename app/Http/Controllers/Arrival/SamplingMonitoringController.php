@@ -185,10 +185,13 @@ class SamplingMonitoringController extends Controller
         $authUserCompany = $request->company_id;
         $saudaTypes = SaudaType::all();
 
+        // Other QCs of this ticket; the opened one is shown in its own "Current" tab
         $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
             ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
             ->where('approved_status', '!=', 'pending')
+            ->where('id', '!=', $id)
             ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
@@ -196,7 +199,15 @@ class SamplingMonitoringController extends Controller
             ->where('approved_status', '!=', 'pending')
             ->where('id', '!=', $id)
             ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
+
+        // Position of every QC in time order, so the tabs follow the list order
+        $tabOrder = $allInitialRequests->concat($allInnerRequests)->push($arrivalSamplingRequest)
+            ->sortBy(fn ($r) => sprintf('%012d-%012d', $r->created_at?->timestamp ?? 0, $r->id))
+            ->values()
+            ->mapWithKeys(fn ($r, $i) => [$r->id => $i + 1])
+            ->all();
 
         $initialRequestsData = [];
         foreach ($allInitialRequests as $initialReq) {
@@ -239,6 +250,7 @@ class SamplingMonitoringController extends Controller
         return view('management.arrival.sampling_monitoring.edit', [
             'initialRequestsData' => $initialRequestsData,
             'innerRequestsData' => $innerRequestsData,
+            'tabOrder' => $tabOrder,
             'samplingRequests' => ArrivalSamplingRequest::where('sampling_type', 'initial')->get(),
             'saudaTypes' => $saudaTypes,
             'arrivalPurchaseOrders' => $arrivalPurchaseOrders,
@@ -297,10 +309,13 @@ class SamplingMonitoringController extends Controller
         $authUserCompany = $request->company_id;
         $saudaTypes = SaudaType::all();
 
+        // Other QCs of this ticket; the opened one is shown in its own "Current" tab
         $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
             ->where('arrival_ticket_id', $arrivalSamplingRequest->arrival_ticket_id)
             ->where('approved_status', '!=', 'pending')
+            ->where('id', '!=', $id)
             ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         $allInnerRequests = ArrivalSamplingRequest::where('sampling_type', 'inner')
@@ -308,7 +323,15 @@ class SamplingMonitoringController extends Controller
             ->where('approved_status', '!=', 'pending')
             ->where('id', '!=', $id)
             ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
+
+        // Position of every QC in time order, so the tabs follow the list order
+        $tabOrder = $allInitialRequests->concat($allInnerRequests)->push($arrivalSamplingRequest)
+            ->sortBy(fn ($r) => sprintf('%012d-%012d', $r->created_at?->timestamp ?? 0, $r->id))
+            ->values()
+            ->mapWithKeys(fn ($r, $i) => [$r->id => $i + 1])
+            ->all();
 
         $initialRequestsData = [];
         foreach ($allInitialRequests as $initialReq) {
@@ -351,6 +374,7 @@ class SamplingMonitoringController extends Controller
         return view('management.arrival.sampling_monitoring.edit_test', [
             'initialRequestsData' => $initialRequestsData,
             'innerRequestsData' => $innerRequestsData,
+            'tabOrder' => $tabOrder,
             'samplingRequests' => ArrivalSamplingRequest::where('sampling_type', 'initial')->get(),
             'saudaTypes' => $saudaTypes,
             'arrivalPurchaseOrders' => $arrivalPurchaseOrders,

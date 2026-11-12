@@ -501,6 +501,7 @@ function filterationCommon(
       );
 
       renderLoadingTable("#filteredData table", 12);
+      $("#filterForm").find('input[name="page"]').val(1);
       var formData = $("#filterForm").serialize();
 
       updateUrlParams(formData);
@@ -542,6 +543,7 @@ function filterationCommon(
       );
 
       renderLoadingTable("#filteredData table", 12);
+      $("#" + formId).find('input[name="page"]').val(1);
       var formData = $("#" + formId).serialize();
 
       updateUrlParams(formData);
@@ -559,6 +561,7 @@ function filterationCommon(
       picker.show();
 
       renderLoadingTable("#filteredData table", 12);
+      $("#" + formId).find('input[name="page"]').val(1);
       var formData = $("#" + formId).serialize();
 
       updateUrlParams(formData);
@@ -583,6 +586,11 @@ function filterationCommon(
             $("#" + appenddiv).find("table") || $("#" + appenddiv),
             12,
           );
+        }
+        // A new filter or search starts again from page 1;
+        // the old page number may not exist in the new result
+        if ($this.attr("name") !== "page") {
+          $("#" + formId).find('input[name="page"]').val(1);
         }
         var formData = $("#" + formId).serialize();
         updateUrlParams(formData);

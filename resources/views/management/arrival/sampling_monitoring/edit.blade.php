@@ -21,13 +21,20 @@
 
     $previousInnerRequest = null;
 
-    if (isset($innerRequestsData) && count($innerRequestsData)) {
-        $previousInnerRequest = $innerRequestsData[count($innerRequestsData) - 1];
-    } elseif (isset($initialRequestsData) && count($initialRequestsData)) {
-        $previousInnerRequest = $initialRequestsData[count($initialRequestsData) - 1];
+    // Tabs follow time order; only QCs before the opened one count as "previous"
+    $tabOrder = $tabOrder ?? [];
+    $currentTabPos = $tabOrder[$arrivalSamplingRequest->id] ?? PHP_INT_MAX;
+    $isBeforeCurrent = fn ($data) => ($tabOrder[$data['request']->id] ?? 0) < $currentTabPos;
+    $prevInitialRequestsData = array_values(array_filter($initialRequestsData ?? [], $isBeforeCurrent));
+    $prevInnerRequestsData = array_values(array_filter($innerRequestsData ?? [], $isBeforeCurrent));
+
+    if (count($prevInnerRequestsData)) {
+        $previousInnerRequest = $prevInnerRequestsData[count($prevInnerRequestsData) - 1];
+    } elseif (count($prevInitialRequestsData)) {
+        $previousInnerRequest = $prevInitialRequestsData[count($prevInitialRequestsData) - 1];
     }
 
-    $lastInnerRequest = !empty($innerRequestsData) ? $innerRequestsData[count($innerRequestsData) - 1] : null;
+    $lastInnerRequest = !empty($prevInnerRequestsData) ? $prevInnerRequestsData[count($prevInnerRequestsData) - 1] : null;
 @endphp
 <form action="{{ route('sampling-monitoring.update', $arrivalSamplingRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
@@ -368,7 +375,7 @@
                                         $statusLabel = 'Initial QC';
                                 }
                             @endphp
-                            <li class="nav-item">
+                            <li class="nav-item" style="order: {{ $tabOrder[$initialData['request']->id] ?? 0 }}">
                                 <a class="nav-link" id="initial-{{ $index }}-tab" data-toggle="tab" href="#initial-{{ $index }}"
                                     role="tab" aria-controls="initial-{{ $index }}" aria-selected="false">
                                     <div>{{ $statusLabel }}</div>
@@ -400,7 +407,7 @@
                                     $statusLabel = 'Inner QC';
                             }
                         @endphp
-                        <li class="nav-item">
+                        <li class="nav-item" style="order: {{ $tabOrder[$innerData['request']->id] ?? 0 }}">
                             <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab" href="#inner-{{ $index }}"
                                 role="tab" aria-controls="inner-{{ $index }}" aria-selected="false">
                                 <div>
@@ -438,7 +445,7 @@
                         }
                     @endphp
 
-                    <li class="nav-item">
+                    <li class="nav-item" style="order: {{ $tabOrder[$arrivalSamplingRequest->id] ?? 9999 }}">
                         <a class="nav-link active" id="current-inner-tab" data-toggle="tab" href="#current-inner"
                             role="tab" aria-controls="current-inner" aria-selected="true">
                             <div>
@@ -992,8 +999,8 @@
 
                                         $previousChecklistValue = null;
 
-                                        if (!empty($innerRequestsData)) {
-                                            $lastInnerRequestData = $innerRequestsData[count($innerRequestsData) - 1];
+                                        if (!empty($prevInnerRequestsData)) {
+                                            $lastInnerRequestData = $prevInnerRequestsData[count($prevInnerRequestsData) - 1];
                                             foreach ($lastInnerRequestData['results'] as $lastSlab) {
                                                 if ($lastSlab->slabType->id == $slab->slabType->id) {
                                                     $previousChecklistValue = $lastSlab->checklist_value;
@@ -1002,8 +1009,8 @@
                                             }
                                         }
 
-                                        if ($previousChecklistValue === null && !empty($initialRequestsData)) {
-                                            $lastInitialData = $initialRequestsData[count($initialRequestsData) - 1];
+                                        if ($previousChecklistValue === null && !empty($prevInitialRequestsData)) {
+                                            $lastInitialData = $prevInitialRequestsData[count($prevInitialRequestsData) - 1];
                                             foreach ($lastInitialData['results'] as $initialSlab) {
                                                 if ($initialSlab->slabType->id == $slab->slabType->id) {
                                                     $previousChecklistValue = $initialSlab->checklist_value;
