@@ -358,19 +358,28 @@ class ExportLoadingProgramController extends Controller
 
         $sBillNo = $loadingProgram->s_bill_no ?: $loadingProgram->loadingProgramItems->first()?->s_bill_no;
 
-        // Transporter from the selected export order's logistics; used to auto-select and lock the item transporter
-        $logisticsTransporter = \App\Models\Sales\Logistics::with('items.transporter')
+        // Transporters from the selected export order's logistics. Only when there is exactly one
+        // is it auto-selected and locked; with more than one the user picks it.
+        $logisticsTransporters = \App\Models\Sales\Logistics::with('items.transporter')
             ->whereIn('export_order_id', $ExportOrders->pluck('id'))
             ->get()
             ->flatMap->items
             ->pluck('transporter')
             ->filter()
-            ->first();
+            ->unique('id')
+            ->values();
+        $logisticsTransporter = $logisticsTransporters->count() === 1 ? $logisticsTransporters->first() : null;
 
-        $transporters = \App\Models\Master\Transporter::where('status', 'active')->get();
-        // Make sure the logistics transporter is in the list even if it is inactive
-        if ($logisticsTransporter && !$transporters->contains('id', $logisticsTransporter->id)) {
-            $transporters->push($logisticsTransporter);
+        // Dropdown shows only the logistics transporters; all active ones only when the EO has no logistics
+        $transporters = $logisticsTransporters->isNotEmpty()
+            ? $logisticsTransporters->values()
+            : \App\Models\Master\Transporter::where('status', 'active')->get();
+
+        // Keep a transporter already saved on an item visible, even if it is not in the list
+        $savedTransporterIds = $loadingProgram->loadingProgramItems->pluck('transporter_id')->filter()->unique()
+            ->reject(fn ($id) => $transporters->contains('id', $id));
+        if ($savedTransporterIds->isNotEmpty()) {
+            $transporters = $transporters->merge(\App\Models\Master\Transporter::whereIn('id', $savedTransporterIds)->get())->values();
         }
 
         return view('management.export.loading-program.complete.edit', [

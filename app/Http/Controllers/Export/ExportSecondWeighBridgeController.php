@@ -105,7 +105,8 @@ class ExportSecondWeighBridgeController extends Controller
         }
 
         // Net weight includes the empty/extra bags, so allow for their weight in the balance
-        $balance = get_second_weighbridge_balance_kg($loadingSlip) + $loadingSlip->extraEmptyBagsWeightInfo()['weight_kg'];
+        // Bags of already weighed trucks are added back too (helper)
+        $balance = export_second_weighbridge_balance_kg($loadingSlip) + $loadingSlip->extraEmptyBagsWeightInfo()['weight_kg'];
         if ($net_weight > $balance) {
             return response()->json('Your total remaining net weight balance for all associated DOs on this ticket is: ' . number_format($balance, 2), 422);
         }
@@ -129,25 +130,7 @@ class ExportSecondWeighBridgeController extends Controller
 
         $secondWeighbridge = ExportSecondWeighbridge::create($requestData);
 
-        $remainingWeight = $net_weight;
-        $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
-
-        foreach ($deliveryOrders as $do) {
-            if ($remainingWeight <= 0) {
-                break;
-            }
-
-            $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
-            if ($doBalance > 0) {
-                $deduct = min($doBalance, $remainingWeight);
-                SecondWeighbridgeItem::create([
-                    'second_weighbridge_id' => $secondWeighbridge->id,
-                    'delivery_order_id' => $do->id,
-                    'net_weight' => $deduct,
-                ]);
-                $remainingWeight -= $deduct;
-            }
-        }
+        $this->allocateNetWeight($secondWeighbridge, $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem), (float) $net_weight);
 
         return response()->json(['success' => 'Export Second Weighbridge created successfully.', 'data' => $secondWeighbridge], 201);
     }
@@ -275,7 +258,7 @@ class ExportSecondWeighBridgeController extends Controller
                 return response()->json('Second Weight can not be less than First Weight', 422);
             }
 
-            $current_balance = get_second_weighbridge_balance_kg($loadingSlip);
+            $current_balance = export_second_weighbridge_balance_kg($loadingSlip, $secondWeighbridge->id);
             $available_balance = $current_balance + $secondWeighbridge->net_weight
                 + $loadingSlip->extraEmptyBagsWeightInfo()['weight_kg'];
 
@@ -296,25 +279,7 @@ class ExportSecondWeighBridgeController extends Controller
             $secondWeighbridge->update($updateData);
 
             $secondWeighbridge->items()->delete();
-            $remainingWeight = $net_weight;
-            $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
-
-            foreach ($deliveryOrders as $do) {
-                if ($remainingWeight <= 0) {
-                    break;
-                }
-
-                $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
-                if ($doBalance > 0) {
-                    $deduct = min($doBalance, $remainingWeight);
-                    SecondWeighbridgeItem::create([
-                        'second_weighbridge_id' => $secondWeighbridge->id,
-                        'delivery_order_id' => $do->id,
-                        'net_weight' => $deduct,
-                    ]);
-                    $remainingWeight -= $deduct;
-                }
-            }
+            $this->allocateNetWeight($secondWeighbridge, $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem), (float) $net_weight);
 
             DB::commit();
 
@@ -442,7 +407,49 @@ class ExportSecondWeighBridgeController extends Controller
 
     public function getBalanceAgainstSecondWeighbridge(Request $request)
     {
-        return get_second_weighbridge_balance_by_delivery_order_kg($request->delivery_order_id);
+        return get_second_weighbridge_balance_by_delivery_order_kg($request->delivery_order_id)
+            + export_weighed_bags_weight_kg([$request->delivery_order_id]);
+    }
+
+    /**
+     * Split the truck's net weight over its DOs. Each DO's room includes the bags of trucks
+     * already weighed on it; whatever is left (this truck's own bags) goes on the last DO used.
+     */
+    private function allocateNetWeight(ExportSecondWeighbridge $secondWeighbridge, $deliveryOrders, float $netWeight): void
+    {
+        $remainingWeight = $netWeight;
+        $lastItem = null;
+
+        foreach ($deliveryOrders as $do) {
+            if ($remainingWeight <= 0) {
+                break;
+            }
+
+            $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id)
+                + export_weighed_bags_weight_kg([$do->id], $secondWeighbridge->id);
+            if ($doBalance > 0) {
+                $deduct = min($doBalance, $remainingWeight);
+                $lastItem = SecondWeighbridgeItem::create([
+                    'second_weighbridge_id' => $secondWeighbridge->id,
+                    'delivery_order_id' => $do->id,
+                    'net_weight' => $deduct,
+                ]);
+                $remainingWeight -= $deduct;
+            }
+        }
+
+        // Ticket balance was already checked, so the leftover is only this truck's bags weight
+        if ($remainingWeight > 0.0001) {
+            if ($lastItem) {
+                $lastItem->update(['net_weight' => $lastItem->net_weight + $remainingWeight]);
+            } elseif ($firstDo = $deliveryOrders->first()) {
+                SecondWeighbridgeItem::create([
+                    'second_weighbridge_id' => $secondWeighbridge->id,
+                    'delivery_order_id' => $firstDo->id,
+                    'net_weight' => $remainingWeight,
+                ]);
+            }
+        }
     }
 
     private function resolveDeliveryOrders($item): \Illuminate\Support\Collection

@@ -301,7 +301,8 @@
             @php
                 // Net weight includes the empty/extra bags, so the balance allows for their weight too.
                 // On edit, this weighbridge's own net weight is added back (same as the update() check).
-                $baseBalance = get_second_weighbridge_balance_kg($LoadingSlip)
+                // Bags of already weighed trucks are added back as well (export_second_weighbridge_balance_kg).
+                $baseBalance = export_second_weighbridge_balance_kg($LoadingSlip, isset($SecondWeighbridge) ? $SecondWeighbridge->id : null)
                     + (isset($SecondWeighbridge) ? (float) $SecondWeighbridge->net_weight : 0)
                     + $extraEmptyBagsWeight;
                 $balance = isset($SecondWeighbridge)

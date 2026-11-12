@@ -1461,6 +1461,65 @@ function get_second_weighbridge_balance_by_delivery_order_kg($delivery_order_id)
     return $overallQuantitiesKg - $spentQuantitiesKg;
 }
 
+/**
+ * Export only: empty/extra bags weight of trucks already weighed (second weighbridge) on these DOs.
+ * Their net weight includes the bags, so this is added back to the DO balance:
+ * Balance = DO qty + bags of weighed trucks - net weight of weighed trucks.
+ * Each weighbridge's bags count once, on the DO that got its first allocation.
+ */
+function export_weighed_bags_weight_kg(array $deliveryOrderIds, $excludeSecondWeighbridgeId = null): float
+{
+    $deliveryOrderIds = array_values(array_filter(array_map('intval', $deliveryOrderIds)));
+    if (empty($deliveryOrderIds)) {
+        return 0;
+    }
+
+    $weighbridgeIds = \App\Models\Sales\SecondWeighbridgeItem::whereIn('delivery_order_id', $deliveryOrderIds)
+        ->when($excludeSecondWeighbridgeId, fn ($q) => $q->where('second_weighbridge_id', '!=', $excludeSecondWeighbridgeId))
+        ->distinct()
+        ->pluck('second_weighbridge_id');
+
+    if ($weighbridgeIds->isEmpty()) {
+        return 0;
+    }
+
+    $countedIds = \App\Models\Sales\SecondWeighbridgeItem::whereIn('second_weighbridge_id', $weighbridgeIds)
+        ->orderBy('id')
+        ->get(['id', 'second_weighbridge_id', 'delivery_order_id'])
+        ->groupBy('second_weighbridge_id')
+        ->filter(fn ($items) => in_array((int) $items->first()->delivery_order_id, $deliveryOrderIds, true))
+        ->keys();
+
+    return (float) \App\Models\Export\ExportSecondWeighbridge::with('loadingSlip')
+        ->whereIn('id', $countedIds)
+        ->get()
+        ->sum(fn ($wb) => $wb->loadingSlip ? (float) $wb->loadingSlip->extraEmptyBagsWeightInfo()['weight_kg'] : 0);
+}
+
+/**
+ * Export only: ticket balance in KG with the bags of already weighed trucks added back.
+ * Pass the weighbridge being edited so its own bags aren't counted twice.
+ */
+function export_second_weighbridge_balance_kg(LoadingSlip $loadingSlip, $excludeSecondWeighbridgeId = null): float
+{
+    $item = $loadingSlip->loadingProgramItem;
+    $deliveryOrderIds = collect();
+
+    if ($item) {
+        $deliveryOrderIds = $item->deliveryOrders()->withoutGlobalScopes()->pluck('delivery_order.id');
+        if ($item->exportLoadingProgram) {
+            $deliveryOrderIds = $deliveryOrderIds
+                ->merge($item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->pluck('delivery_order.id'))
+                ->push($item->exportLoadingProgram->deliveryOrder?->id);
+        }
+    } elseif ($loadingSlip->delivery_order_id) {
+        $deliveryOrderIds->push($loadingSlip->delivery_order_id);
+    }
+
+    return (float) get_second_weighbridge_balance_kg($loadingSlip)
+        + export_weighed_bags_weight_kg($deliveryOrderIds->filter()->unique()->all(), $excludeSecondWeighbridgeId);
+}
+
 
 function receipt_voucher_balance($reference_id, $type = "sale_order", $exclude_receipt_voucher_id = null)
 {
