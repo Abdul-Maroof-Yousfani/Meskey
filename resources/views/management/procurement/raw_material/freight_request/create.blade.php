@@ -458,8 +458,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Commission Amount</label>
-                <input type="text" class="form-control bg-light commission-amount" name="commission_amount"
-                    value="{{ $commission_amount }}" readonly placeholder="Commission Amount">
+                <input type="text" class="form-control commission-amount" name="commission_amount"
+                    value="{{ $commission_amount }}" {{ $param }} placeholder="Commission Amount">
             </div>
         </div>
     </div>
@@ -846,6 +846,18 @@
         // });
 
         calculateNetShortageDeduction()
+
+        // Commission: the field typed last (% or amount) drives the other one.
+        // Bound before .editable-field so the mode is set before the summary recalculates.
+        var commissionMode = 'percent';
+        $('.commission-percent').on('input', function () {
+            commissionMode = 'percent';
+        });
+        $('.commission-amount').on('input', function () {
+            commissionMode = 'amount';
+            calculatePaymentSummary();
+        });
+
         $('.editable-field').on('input', calculatePaymentSummary);
 
         // Freight calculations
@@ -966,21 +978,40 @@
 
 
 
-            const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
-            //  const freightRs = parseFloat($('.freight-rs').val()) || 0;
             let grossAfterDeductAmount = grossAmount - godownPenalty - totalLabour;
+            let commissionPercent = 0;
+            let commissionAmountttt = 0;
 
-            if (commissionPercent > 0) {
-                const commissionAmount = (grossAfterDeductAmount * commissionPercent) / 100;
-                $('.commission-amount').val(commissionAmount.toFixed(4));
-                $(".total_commision").val(commissionAmount.toFixed(4));
+            // Commission can be at most 100% of the base
+            let maxCommission = Math.max(0, grossAfterDeductAmount);
 
+            if (commissionMode === 'amount') {
+                // Amount typed: work out the % from it
+                commissionAmountttt = parseFloat($('.commission-amount').val()) || 0;
+                if (commissionAmountttt < 0) {
+                    commissionAmountttt = 0;
+                    $('.commission-amount').val(0);
+                } else if (commissionAmountttt > maxCommission) {
+                    commissionAmountttt = maxCommission;
+                    $('.commission-amount').val(maxCommission.toFixed(4));
+                }
+                commissionPercent = maxCommission > 0 ? (commissionAmountttt / maxCommission) * 100 : 0;
+                $('.commission-percent').val(commissionPercent.toFixed(4));
             } else {
-                $('.commission-amount').val('0');
-                $(".total_commision").val('0');
-
+                // % typed: work out the amount from it (kept between 0 and 100)
+                commissionPercent = parseFloat($('.commission-percent').val()) || 0;
+                if (commissionPercent > 100) {
+                    commissionPercent = 100;
+                    $('.commission-percent').val(100);
+                } else if (commissionPercent < 0) {
+                    commissionPercent = 0;
+                    $('.commission-percent').val(0);
+                }
+                commissionAmountttt = (grossAfterDeductAmount * commissionPercent) / 100;
+                $('.commission-amount').val(commissionPercent > 0 ? commissionAmountttt.toFixed(4) : '0');
             }
-            var commissionAmountttt = (grossAfterDeductAmount * commissionPercent) / 100;
+            $(".total_commision").val(commissionPercent > 0 || commissionAmountttt > 0 ? commissionAmountttt.toFixed(4) : '0');
+
             let netAmount = grossAmount - godownPenalty - commissionAmountttt - totalLabour;
             console.log(grossAmount, godownPenalty, commissionAmountttt, totalLabour, netAmount);
 
