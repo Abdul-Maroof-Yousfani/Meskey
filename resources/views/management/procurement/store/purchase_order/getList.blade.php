@@ -134,39 +134,32 @@
                             {{-- Actions --}}
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex flex-column align-items-start" style="gap: 5px;">
-                                        @php
-                                            $currentApprovalStatus =
-                                                $supplierRow['data']
-                                                    ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
-                                                    'am_approval_status'};
-                                            $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
-                                            $shouldDisableApproval =
-                                                $requestGroup['has_approved_item'] && !$isCurrentApproved;
-                                        @endphp
+                                    @php
+                                        $currentApprovalStatus =
+                                            $supplierRow['data']
+                                                ?->{$supplierRow['data']->getApprovalModule()->approval_column ??
+                                                'am_approval_status'};
+                                        $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
+                                        $shouldDisableApproval =
+                                            $requestGroup['has_approved_item'] && !$isCurrentApproved;
+                                    @endphp
 
-                                        {{-- View Approval --}}
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', ['id' => $supplierRow['data']->purchase_order->id, 'listRefresh' => route('store.get.purchase-order')]) }}', 'View Purchase Order', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 90px;">
-                                            Approval
-                                        </a>
+                                    {{-- View Approval --}}
+                                    <a class="info p-1 text-center position-relative" title="Approval"
+                                        onclick="openModal(this, '{{ route('store.purchase-order.approvals', ['id' => $supplierRow['data']->purchase_order->id, 'listRefresh' => route('store.get.purchase-order')]) }}', 'View Purchase Order', false, '100%')">
+                                        <i class="ft-check-square font-medium-3"></i></a>
 
-                                        {{-- Edit/Delete (only if not approved or rejected) --}}
-                                        @if($requestGroup['created_by_id'] == auth()->user()->id)
-
-                                            @if ($requestGroup['has_pending_item'])
-                                                <a onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '100%')"
-                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 90px;">
-                                                    Edit
-                                                </a>
-
-                                                <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $supplierRow['data']->purchase_order->id) }}', '{{ route('store.get.purchase-order') }}')"
-                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; min-width: 90px;">
-                                                    Delete
-                                                </a>
-                                            @endif
+                                    {{-- Edit/Delete (only if not approved or rejected) --}}
+                                    @if($requestGroup['created_by_id'] == auth()->user()->id)
+                                        @if ($requestGroup['has_pending_item'])
+                                            <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                                onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '100%')">
+                                                <i class="ft-edit font-medium-3"></i></a>
+                                            <a class="danger p-1 text-center mr-2 position-relative" title="Delete"
+                                                onclick="deletemodal('{{ route('store.purchase-order.destroy', $supplierRow['data']->purchase_order->id) }}', '{{ route('store.get.purchase-order') }}')">
+                                                <i class="ft-x font-medium-3"></i></a>
                                         @endif
-                                    </div>
+                                    @endif
                                 </td>
 
                                 @php $isFirstRequestRow = false; @endphp

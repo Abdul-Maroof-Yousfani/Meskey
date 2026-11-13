@@ -114,32 +114,25 @@
                             </td>
 
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                <div class="d-flex flex-column align-items-start" style="gap: 5px;">
-                                    @if ($requestGroup['request_status'] !== 'approved')
-                                        <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; width: 90px;">
-                                            Approval
-                                        </a>
-                                    @else
-                                        <span class="bg-success text-white p-1 text-center position-relative" 
-                                              onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
-                                              style="border-radius: 4px; width: 90px; cursor: pointer;">
-                                            Approved
-                                        </span>
+                                @if ($requestGroup['request_status'] !== 'approved')
+                                    <a class="info p-1 text-center position-relative" title="Approval"
+                                        onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')">
+                                        <i class="ft-check-square font-medium-3"></i></a>
+                                @else
+                                    <a class="success p-1 text-center position-relative" title="Approved"
+                                        onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')">
+                                        <i class="ft-check-circle font-medium-3"></i></a>
+                                @endif
+                                @if($requestGroup['created_by_id'] == auth()->user()->id)
+                                    @if($requestGroup['has_pending'])
+                                        <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                            onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')">
+                                            <i class="ft-edit font-medium-3"></i></a>
+                                        <a class="danger p-1 text-center position-relative" title="Delete"
+                                            onclick="deletemodal('{{ route('store.purchase-request.destroy', $requestGroup['request_data']->id) }}','{{ route('store.get.purchase-request') }}')">
+                                            <i class="ft-x font-medium-3"></i></a>
                                     @endif
-                                    @if($requestGroup['created_by_id'] == auth()->user()->id)
-                                        @if($requestGroup['has_pending'])
-                                            <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')"
-                                                class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; width: 90px;">
-                                                Edit
-                                            </a>
-                                            <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $requestGroup['request_data']->id) }}','{{ route('store.get.purchase-request') }}')"
-                                                class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; width: 90px;">
-                                                Delete
-                                            </a>
-                                        @endif
-                                    @endif
-                                </div>
+                                @endif
                             </td>
                             @php $isFirstRequestRow = false; @endphp
 

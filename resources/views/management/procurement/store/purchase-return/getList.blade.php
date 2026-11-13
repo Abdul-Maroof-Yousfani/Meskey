@@ -124,26 +124,19 @@
 
                                         {{-- Action - Show only on first row --}}
                                         <td rowspan="{{ $rowspan }}" class="text-center align-middle">
-                                            <div class="btn-group" role="group">
-                                                <a
-                                                   class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('store.purchase-return.view', ['id' => $purchaseReturn->id]) }}','View Purchase Return', false, '100%')" title="View" style="margin-right: 5px;">
-                                                    <i class="ft-eye"></i>
-                                                </a>
-                                                @if(auth()->user()->id == $purchaseReturn->created_by)
-                                                    @if($purchaseReturn->am_approval_status === 'pending' || $purchaseReturn->am_approval_status === 'reverted')
-                                                    <button
-                                                        onclick="openModal(this,'{{ route('store.purchase-return.edit', $purchaseReturn->id) }}','Edit Purchase Return', false, '100%')"
-                                                        class="btn btn-sm btn-warning" title="Edit" style="margin-right: 5px;">
-                                                        <i class="ft-edit"></i>
-                                                    </button>
-
-                                                <button onclick="deletemodal('{{ route('store.purchase-return.destroy', $purchaseReturn->id) }}', '{{ route('store.get.purchase-return') }}')" type="button"
-                                                        class="btn btn-sm btn-danger" title="Delete">
-                                                    <i class="ft-trash-2"></i>
-                                                </button>
-                                                    @endif
+                                            <a class="info p-1 text-center position-relative btn-action-show" title="View"
+                                                onclick="openModal(this,'{{ route('store.purchase-return.view', ['id' => $purchaseReturn->id]) }}','View Purchase Return', false, '100%')">
+                                                <i class="ft-eye font-medium-3"></i></a>
+                                            @if(auth()->user()->id == $purchaseReturn->created_by)
+                                                @if($purchaseReturn->am_approval_status === 'pending' || $purchaseReturn->am_approval_status === 'reverted')
+                                                    <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                                        onclick="openModal(this,'{{ route('store.purchase-return.edit', $purchaseReturn->id) }}','Edit Purchase Return', false, '100%')">
+                                                        <i class="ft-edit font-medium-3"></i></a>
+                                                    <a class="danger p-1 text-center position-relative" title="Delete"
+                                                        onclick="deletemodal('{{ route('store.purchase-return.destroy', $purchaseReturn->id) }}', '{{ route('store.get.purchase-return') }}')">
+                                                        <i class="ft-x font-medium-3"></i></a>
                                                 @endif
-                                            </div>
+                                            @endif
                                         </td>
                                     @endif
                                 </tr>
@@ -188,26 +181,19 @@
                                     </small>
                                 </td>
                                 <td class="text-center align-middle">
-                                    <div class="btn-group" role="group">
-                                        <a
-                                           class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('store.purchase-return.view', ['id' => $purchaseReturn->id]) }}','View Purchase Return', false, '100%')" title="View" style="margin-right: 5px;">
-                                            <i class="ft-eye"></i>
-                                        </a>
-                                        @if(auth()->user()->id == $purchaseReturn->created_by)
-                                            @if($purchaseReturn->am_approval_status === 'pending' || $purchaseReturn->am_approval_status === 'rejected')
-                                            <button
-                                                onclick="openModal(this,'{{ route('store.purchase-return.edit', $purchaseReturn->id) }}','Edit Purchase Return', false, '100%')"
-                                                class="btn btn-sm btn-warning" title="Edit" style="margin-right: 5px;">
-                                                <i class="ft-edit"></i>
-                                            </button>
-
-                                        <button onclick="deletemodal('{{ route('store.purchase-return.destroy', $purchaseReturn->id) }}', '{{ route('store.get.purchase-return') }}')" type="button"
-                                                class="btn btn-sm btn-danger" title="Delete">
-                                            <i class="ft-trash-2"></i>
-                                        </button>
-                                            @endif
+                                    <a class="info p-1 text-center position-relative btn-action-show" title="View"
+                                        onclick="openModal(this,'{{ route('store.purchase-return.view', ['id' => $purchaseReturn->id]) }}','View Purchase Return', false, '100%')">
+                                        <i class="ft-eye font-medium-3"></i></a>
+                                    @if(auth()->user()->id == $purchaseReturn->created_by)
+                                        @if($purchaseReturn->am_approval_status === 'pending' || $purchaseReturn->am_approval_status === 'rejected')
+                                            <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                                onclick="openModal(this,'{{ route('store.purchase-return.edit', $purchaseReturn->id) }}','Edit Purchase Return', false, '100%')">
+                                                <i class="ft-edit font-medium-3"></i></a>
+                                            <a class="danger p-1 text-center position-relative" title="Delete"
+                                                onclick="deletemodal('{{ route('store.purchase-return.destroy', $purchaseReturn->id) }}', '{{ route('store.get.purchase-return') }}')">
+                                                <i class="ft-x font-medium-3"></i></a>
                                         @endif
-                                    </div>
+                                    @endif
                                 </td>
                             </tr>
                         @endif

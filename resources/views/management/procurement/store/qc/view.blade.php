@@ -240,10 +240,10 @@
                 <div class="col-md-4">
 
                     <label class="form-label">Smell:</label>
-                    <select name="smell" readonly class="taxes form-group form-control select2">
+                    <select name="smell" disabled class="taxes form-group form-control select2">
                         <option value="">Select Smell</option>
-                        <option value="2">Smell 1</option>
-                        <option value="3">Smell 1</option>
+                        <option value="2" @selected(($purchaseOrderReceivingData->qc->smell ?? null) == '2')>Smell 1</option>
+                        <option value="3" @selected(($purchaseOrderReceivingData->qc->smell ?? null) == '3')>Smell 2</option>
                     </select>
                 </div>
             </div>
@@ -321,7 +321,10 @@
 
         <form action="{{ route('store.qc.update-amount') }}" method="POST" id="ajaxSubmit2">
            
-            @if ($purchaseOrderReceivingData->qc->canApprove() || $type == "view")
+            {{-- Qty fields are always shown; only an approver who can still approve may edit them --}}
+            @php
+                $qtyEditable = $type != 'view' && $purchaseOrderReceivingData->qc->canApprove();
+            @endphp
                 <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
 
                 <input type="hidden" name="total_bags" id="total_bags"
@@ -335,7 +338,7 @@
                             <label class="form-label">Accepted Qty:</label>
                             <input type="text" name="accepted_quantity" id="accepted_quantity" onkeyup="calculateQcQty('accepted')"
                                 value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}"
-                                class="form-control" @readonly($type == "view")>
+                                class="form-control" @readonly(!$qtyEditable)>
                         </div>
                     </div>
 
@@ -344,7 +347,7 @@
                             <label class="form-label">Rejected Qty with deduction:</label>
                             <input type="text" name="rejected_quantity" id="rejected_quantity" onkeyup="calculateQcQty('rejected')"
                                 value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}"
-                                class="form-control" @readonly($type == "view")>
+                                class="form-control" @readonly(!$qtyEditable)>
                         </div>
                     </div>
 
@@ -353,22 +356,21 @@
                             <label class="form-label">Rejected qty without deduction:</label>
                             <input type="text" name="rejection_return" id="rejection_return" onkeyup="calculateQcQty('return')"
                                 value="{{ $purchaseOrderReceivingData->qc->rejection_return ?? 0 }}"
-                                class="form-control" @readonly($type == "view")>
+                                class="form-control" @readonly(!$qtyEditable)>
                         </div>
                     </div>
 
-                    @canApprove('qc')
+                    {{-- @canApprove('qc') --}}
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Deduction Per Bag:</label>
                             <input type="text" name="deduction_per_bag" id="deduction_per_bag"
                                 value="{{ $purchaseOrderReceivingData->qc->deduction_per_bag }}"
-                                class="form-control" @readonly($type == "view")>
+                                class="form-control" @readonly(!$qtyEditable)>
                         </div>
                     </div>
-                    @endcanApprove
+                    {{-- @endcanApprove --}}
                 </div>
-                @endif
         </form>
 
 

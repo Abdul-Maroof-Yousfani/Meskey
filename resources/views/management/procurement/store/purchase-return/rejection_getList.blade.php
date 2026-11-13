@@ -62,28 +62,22 @@
                                 <span class="badge {{ $badge }} px-2 py-1">{{ ucfirst($status) }}</span>
                             </td>
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="vertical-align: middle;">
-                                <div class="d-flex flex-column align-items-start" style="gap: 4px;">
-                                    <a onclick="openModal(this, '{{ route('store.rejection-return.view', $requestGroup['id']) }}', 'View Return', false, '80%')"
-                                        class="bg-primary text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
-                                        View
-                                    </a>
-                                    @if ($status === 'approved')
-                                    <a href="{{ route('store.rejection-return.gate-out', $requestGroup['id']) }}" target="_blank"
-                                        class="bg-success text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
-                                        Gate Out
-                                    </a>
-                                    @endif
-                                    @if ($editable)
-                                    <a onclick="openModal(this,'{{ route('store.rejection-return.edit', $requestGroup['id']) }}','Edit Return',false,'80%')"
-                                        class="bg-warning text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
-                                        Edit
-                                    </a>
-                                    <a onclick="deletemodal('{{ route('store.rejection-return.destroy', $requestGroup['id']) }}','{{ route('store.rejection-return.getList') }}')"
-                                        class="bg-danger text-white p-1 text-center" style="border-radius: 4px; width: 75px; cursor: pointer; font-size: 11px;">
-                                        Delete
-                                    </a>
-                                    @endif
-                                </div>
+                                <a class="info p-1 text-center position-relative btn-action-show" title="View"
+                                    onclick="openModal(this, '{{ route('store.rejection-return.view', $requestGroup['id']) }}', 'View Return', false, '80%')">
+                                    <i class="ft-eye font-medium-3"></i></a>
+                                @if ($status === 'approved')
+                                    <a class="info p-1 text-center position-relative" title="Gate Out" target="_blank"
+                                        href="{{ route('store.rejection-return.gate-out', $requestGroup['id']) }}">
+                                        <i class="ft-printer font-medium-3"></i></a>
+                                @endif
+                                @if ($editable)
+                                    <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                        onclick="openModal(this,'{{ route('store.rejection-return.edit', $requestGroup['id']) }}','Edit Return',false,'80%')">
+                                        <i class="ft-edit font-medium-3"></i></a>
+                                    <a class="danger p-1 text-center position-relative" title="Delete"
+                                        onclick="deletemodal('{{ route('store.rejection-return.destroy', $requestGroup['id']) }}','{{ route('store.rejection-return.getList') }}')">
+                                        <i class="ft-x font-medium-3"></i></a>
+                                @endif
                             </td>
                             @php $isFirstRow = false; @endphp
                         @endif

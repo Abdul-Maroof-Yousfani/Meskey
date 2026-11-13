@@ -108,22 +108,22 @@
                                         strtolower($approvalDataStatus) === 'pending'
                                     ) {
                                         $statusText = 'Pending';
-                                        $statusColor = 'text-warning';
+                                        $statusColor = 'badge-warning';
                                     } elseif (
                                         strtolower($approvalStatus) === 'rejected' &&
                                         strtolower($approvalDataStatus) === 'pending'
                                     ) {
                                         $statusText = 'Rejected';
-                                        $statusColor = 'text-danger';
+                                        $statusColor = 'badge-danger';
                                     } else {
                                         $statusText = $approvalDataStatus ?: 'N/A';
                                         $statusColor = match (strtolower($statusText)) {
-                                            'approved' => 'text-success',
-                                            'rejected' => 'text-danger',
-                                            'neglected' => 'text-warning',
-                                            'returned' => 'text-primary',
-                                            'pending' => 'text-warning',
-                                            default => 'text-muted',
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'neglected' => 'badge-warning',
+                                            'returned' => 'badge-info',
+                                            'pending' => 'badge-warning',
+                                            default => 'badge-secondary',
                                         };
                                     }
                                 @endphp
@@ -131,12 +131,12 @@
                                 <p class="m-0 font-weight-bold">
                                     {{ optional($supplierRow['data']->category)->name }} -
                                     {{ optional($supplierRow['data']->item)->name }}
-                                    @if ($statusText)
-                                        <span class="{{ $statusColor }}" style="font-weight: 500;">
-                                            ({{ $statusText }})
-                                        </span>
-                                    @endif
                                 </p>
+                                @if ($statusText)
+                                    <span class="badge {{ $statusColor }} px-2 py-1 mt-1">
+                                        {{ ucfirst($statusText) }}
+                                    </span>
+                                @endif
                                 @if(optional($supplierRow['data']->purchase_request)->is_single_job_order)
                                     <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
                                 @else
@@ -171,22 +171,17 @@
 
                             @if ($previousRequestNo !== $currentRequestNo)
                                 <td rowspan="{{ $totalRequestRowspan }}" style="vertical-align: middle;">
-                                    <div class="d-flex flex-column" style="gap: 10px;">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', ['id' => $supplierRow['data']->purchase_quotation->purchase_request_id, 'listRefresh' => route('store.purchase-quotation.comparison')]) }}', 'Quotation Approval', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 70px;">
-                                            Approval
-                                        </a>
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Comparison', false, '100%')"
-                                            class="bg-primary text-white p-1 text-center position-relative" title="Compare" style="border-radius: 4px; min-width: 70px;">
-                                            Compare
-                                        </a>
-                                        @if($requestGroup['created_by_id'] == auth()->user()->id && $is_editing_allowed)
-                                            <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
-                                                class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 70px;">
-                                                Edit
-                                            </a>
-                                        @endif
-                                    </div>
+                                    <a class="info p-1 text-center position-relative" title="Approval"
+                                        onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', ['id' => $supplierRow['data']->purchase_quotation->purchase_request_id, 'listRefresh' => route('store.purchase-quotation.comparison')]) }}', 'Quotation Approval', false, '100%')">
+                                        <i class="ft-check-square font-medium-3"></i></a>
+                                    <a class="info p-1 text-center position-relative" title="Compare"
+                                        onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Comparison', false, '100%')">
+                                        <i class="ft-bar-chart-2 font-medium-3"></i></a>
+                                    @if($requestGroup['created_by_id'] == auth()->user()->id && $is_editing_allowed)
+                                        <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                            onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')">
+                                            <i class="ft-edit font-medium-3"></i></a>
+                                    @endif
                                 </td>
                                 @php
                                     $previousRequestNo = $currentRequestNo;

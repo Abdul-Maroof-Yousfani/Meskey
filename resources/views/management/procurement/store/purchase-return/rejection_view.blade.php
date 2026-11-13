@@ -106,10 +106,10 @@
     <div class="col-12 text-end">
         @if (($rejectionReturn->am_approval_status ?? '') === 'approved')
         <a href="{{ route('store.rejection-return.gate-out', $rejectionReturn->id) }}" target="_blank" class="btn btn-success ml-2">
-            <i class="fa fa-truck"></i> Gate Out Pass
+             Gate Out Pass
         </a>
         @endif
         <button type="button" class="btn btn-danger modal-sidebar-close">Close</button>
-        <button type="button" class="btn btn-info ml-2" onclick="window.print()"><i class="fa fa-print"></i> Print Voucher</button>
+        <button type="button" class="btn btn-info ml-2" onclick="window.print()"> Print Voucher</button>
     </div>
 </div>

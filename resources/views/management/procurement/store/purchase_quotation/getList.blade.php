@@ -124,22 +124,17 @@
                             {{-- Action (first request row only) --}}
                             @if($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex" style="gap: 10px;">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', ['id' => $supplierRow['data']->purchase_quotation->purchase_request_id, 'listRefresh' => route('store.get.purchase-quotation')]) }}', 'Approval Voucher', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px;">
-                                            Approval
-                                        </a>
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Comparison', false, '100%')"
-                                            class="bg-primary text-white p-1 text-center position-relative" title="Compare" style="border-radius: 4px; min-width: 60px;">
-                                            Compare
-                                        </a>
-                                        @if(!in_array(strtolower($requestGroup['request_status']), ['approved','rejected','partial approved']))
-                                            <a onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'100%')"
-                                                class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 60px;">
-                                                Edit
-                                            </a>
-                                        @endif
-                                    </div>
+                                    <a class="info p-1 text-center position-relative" title="Approval"
+                                        onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', ['id' => $supplierRow['data']->purchase_quotation->purchase_request_id, 'listRefresh' => route('store.get.purchase-quotation')]) }}', 'Approval Voucher', false, '100%')">
+                                        <i class="ft-check-square font-medium-3"></i></a>
+                                    <a class="info p-1 text-center position-relative" title="Compare"
+                                        onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Comparison', false, '100%')">
+                                        <i class="ft-bar-chart-2 font-medium-3"></i></a>
+                                    @if(!in_array(strtolower($requestGroup['request_status']), ['approved','rejected','partial approved']))
+                                        <a class="info p-1 text-center position-relative btn-action-edit" title="Edit"
+                                            onclick="openModal(this,'{{ route('store.purchase-quotation.edit', $supplierRow['data']->purchase_quotation->id) }}','Edit Purchase Quotation',false,'100%')">
+                                            <i class="ft-edit font-medium-3"></i></a>
+                                    @endif
                                 </td>
                                 @php $isFirstRequestRow = false; @endphp
                             @endif

@@ -161,7 +161,8 @@
     >
 
     <div class="d-flex align-items-center">
-        balance: {{ $remainingQty }}
+        {{-- Live: max allowed minus the qty entered (updated by the qty input handler) --}}
+        balance:&nbsp;<span class="qty-balance" data-max="{{ $maxAllowed }}">{{ round(max(0, $maxAllowed - (float) $currentInputQty), 2) }}</span>
     </div>
 
     <div class="d-flex align-items-center">

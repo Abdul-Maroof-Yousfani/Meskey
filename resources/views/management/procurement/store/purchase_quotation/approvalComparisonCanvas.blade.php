@@ -1,5 +1,27 @@
  <div style="overflow-x: hidden;">
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
+
+    {{-- No pending quotations: show the final status of this request's quotations --}}
+    @if ($PurchaseQuotationData->isEmpty())
+        @php
+            $pqStatus = strtolower(str_replace('_', ' ', $data1?->purchase_quotation?->am_approval_status ?? $data1?->am_approval_status ?? ''));
+            [$pqAlert, $pqIcon, $pqText] = match (true) {
+                in_array($pqStatus, ['approved', 'partial approved']) => ['alert-success', 'fa-check-circle', 'The quotations against this Purchase Request have been finalized. Their status cannot be changed.'],
+                $pqStatus === 'rejected' => ['alert-danger', 'fa-times-circle', 'The quotations against this Purchase Request have been finalized. Their status cannot be changed.'],
+                in_array($pqStatus, ['reverted', 'returned']) => ['alert-warning', 'fa-undo', 'The quotations against this Purchase Request have been reverted. They cannot be approved or rejected until changes are made and resubmitted to pending.'],
+                default => ['alert-info', 'fa-info-circle', 'There are no pending quotations to approve against this Purchase Request.'],
+            };
+        @endphp
+        <div class="alert {{ $pqAlert }} px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+            <div>
+                <i class="fa {{ $pqIcon }} me-2"></i>
+                <strong>Status: {{ $pqStatus ? ucwords($pqStatus) : 'No Pending Quotations' }}</strong> - {{ $pqText }}
+            </div>
+            @if (in_array($pqStatus, ['reverted', 'returned']))
+                <span class="badge badge-warning text-dark px-2 py-1 text-uppercase">{{ ucfirst($pqStatus) }}</span>
+            @endif
+        </div>
+    @endif
     {{-- <input type="hidden" name="data_id" value="{{ $purchaseRequest->purchase_quotation->id }}"> --}}
     {{-- <input type="hidden" name="purchase_request_data_id"
     value="{{ optional($purchaseRequest->quotation_data->first())->purchase_request_data_id }}"> --}}

@@ -257,7 +257,7 @@
                 <select  name="smell" class="taxes form-group form-control select2">
                     <option value="">Select Smell</option>
                     <option value="2" @selected($purchaseOrderReceivingData->qc->smell == '2')>Smell 1</option>
-                    <option value="3" @selected($purchaseOrderReceivingData->qc->smell == '3')>Smell 1</option>
+                    <option value="3" @selected($purchaseOrderReceivingData->qc->smell == '3')>Smell 2</option>
                 </select>
             </div>
         </div>

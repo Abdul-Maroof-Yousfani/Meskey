@@ -266,7 +266,12 @@
             },
             success: function (response) {
                 if($('#category_id_header').val() == "") {
-                    alert("Please select category first.");
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Category Required',
+                        text: 'Please select category first.',
+                        confirmButtonColor: '#D95000'
+                    });
                     $(".job_orders").val(null).trigger('change');
                     return;
                 }
@@ -286,7 +291,12 @@
 
     function addRow() {
         if($('#category_id_header').val() == "") {
-            alert("Please select category first.");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Category Required',
+                text: 'Please select category first.',
+                confirmButtonColor: '#D95000'
+            });
             return;
         }
         let index = `${purchaseRequestRowIndex++}0`;
@@ -514,7 +524,12 @@
         let balance = parseFloat(balanceAttr) || 0;
 
         if (val > balance) {
-            alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Quantity Exceeded',
+                text: 'Quantity cannot exceed available Job Order balance (' + balance + ')',
+                confirmButtonColor: '#D95000'
+            });
             input.val(balance);
         }
         
@@ -529,7 +544,12 @@
         let percentage = parseFloat(row.find('.tolerance-percentage-input').val()) || 0;
         
         if (percentage > 100) {
-            alert('Tolerance percentage cannot exceed 100%.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Invalid Tolerance',
+                text: 'Tolerance percentage cannot exceed 100%.',
+                confirmButtonColor: '#D95000'
+            });
             row.find('.tolerance-percentage-input').val(100);
             percentage = 100;
         }

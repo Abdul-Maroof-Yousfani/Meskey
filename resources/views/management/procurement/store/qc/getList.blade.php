@@ -83,7 +83,7 @@
                                 </p>
                             </td>
                             <td>
-                                <p class="m-0 text-right">
+                                <p class="m-0">
                                     @php
                                         $badgeClass = match (strtolower($approvalStatus)) {
                                             'approved' => 'badge-success',
@@ -94,20 +94,20 @@
                                         };
                                     @endphp
                                     @if($itemGroup["qc_status"] == 'pending')
-                                        <span class="badge badge-warning">
+                                        <span class="badge badge-warning px-2 py-1">
                                             Pending
                                         </span>
                                     @elseif($itemGroup["qc_status"] == 'approved')
-                                        <span class="badge badge-success">
+                                        <span class="badge badge-success px-2 py-1">
                                             Approved
                                         </span>
 
                                     @elseif($itemGroup["qc_status"] == 'rejected')
-                                        <span class="badge badge-danger">
+                                        <span class="badge badge-danger px-2 py-1">
                                             Rejected
                                         </span>
                                     @else
-                                        <span class="badge badge-info">
+                                        <span class="badge badge-info px-2 py-1">
                                             Not Created
                                         </span>
                                     @endif
@@ -124,22 +124,17 @@
 
                             {{-- Approval Status + Actions --}}
                              <td style="vertical-align: middle;">
-                            <div class="d-flex" style="gap: 5px; justify-content: center;">
-                                    <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '95%')"
-                                        class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px; font-size: 12px;">
-                                        Approval
-                                    </a>
-                                    <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no'], 'type' => 'view']) }}', 'View QC', false, '95%')"
-                                        class="bg-primary text-white p-1 text-center position-relative" title="View" style="border-radius: 4px; min-width: 50px; font-size: 12px;">
-                                        View
-                                    </a>
-                                    @if($itemGroup["canUserApprove"] && !$supplierRow["data"]->qc?->is_qc_approved)
-                                        <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
-                                            class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; min-width: 50px; font-size: 12px;">
-                                            Delete
-                                        </a>
-                                    @endif
-                                </div>
+                                <a class="info p-1 text-center position-relative" title="Approval"
+                                    onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '95%')">
+                                    <i class="ft-check-square font-medium-3"></i></a>
+                                <a class="info p-1 text-center position-relative btn-action-show" title="View"
+                                    onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no'], 'type' => 'view']) }}', 'View QC', false, '95%')">
+                                    <i class="ft-eye font-medium-3"></i></a>
+                                @if($itemGroup["canUserApprove"] && !$supplierRow["data"]->qc?->is_qc_approved)
+                                    <a class="danger p-1 text-center position-relative" title="Delete"
+                                        onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')">
+                                        <i class="ft-x font-medium-3"></i></a>
+                                @endif
                             </td>
                             @if ($isFirstRequestRow)
                                 {{-- <td rowspan="{{ $requestGroup['request_rowspan'] }}">

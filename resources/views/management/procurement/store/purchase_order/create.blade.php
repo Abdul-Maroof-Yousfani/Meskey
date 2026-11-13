@@ -149,6 +149,16 @@
 
 
 <script>
+    // Live balance under each Qty input: max allowed minus the qty entered
+    $(document).off('input.qtyBalance change.qtyBalance', 'input.qty')
+        .on('input.qtyBalance change.qtyBalance', 'input.qty', function () {
+            let $balance = $(this).closest('td').find('.qty-balance');
+            if (!$balance.length) return;
+            let max = parseFloat($balance.data('max')) || 0;
+            let qty = parseFloat($(this).val()) || 0;
+            $balance.text(+Math.max(0, max - qty).toFixed(2));
+        });
+
     $(document).ready(function() {
 
         $('#purchase_date, #company_location_id').on('change', function() {

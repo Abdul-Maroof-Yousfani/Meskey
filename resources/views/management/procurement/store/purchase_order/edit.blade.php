@@ -262,7 +262,7 @@
                                     @if($isApprovedRow) <input type="hidden" name="qty[]" value="{{ $data->qty }}"> @endif
                                     
                                     <div class="d-flex align-items-center">
-                                        balance: {{ $currentBalance }}
+                                        balance:&nbsp;<span class="qty-balance" data-max="{{ $maxAllowed }}">{{ round(max(0, $maxAllowed - (float) $data->qty), 2) }}</span>
                                     </div>
 
                                     <div class="d-flex align-items-center">
@@ -455,6 +455,16 @@
 </form>
 
 <script>
+    // Live balance under each Qty input: max allowed minus the qty entered
+    $(document).off('input.qtyBalance change.qtyBalance', 'input.qty')
+        .on('input.qtyBalance change.qtyBalance', 'input.qty', function () {
+            let $balance = $(this).closest('td').find('.qty-balance');
+            if (!$balance.length) return;
+            let max = parseFloat($balance.data('max')) || 0;
+            let qty = parseFloat($(this).val()) || 0;
+            $balance.text(+Math.max(0, max - qty).toFixed(2));
+        });
+
     function toggleVisibility(categoryId) {
         if (categoryId == 11 || categoryId == 38) {
             $('.bag-only').show();
