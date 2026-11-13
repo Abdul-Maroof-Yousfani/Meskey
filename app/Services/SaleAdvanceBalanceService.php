@@ -64,11 +64,11 @@ class SaleAdvanceBalanceService
         $approvedDoIds = $dos->where('am_approval_status', 'approved')->pluck('id')->all();
 
         // Money in: RVs
-        $rvLinks = $this->rvLinksForSo($soId);
+        $rvLinks = $this->rvLinksForSo($soId, $x);
         $attachedRows = empty($doIds) ? collect() : DB::table('delivery_order_receipt_voucher as dorv')
             ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
             ->whereNull('rv.deleted_at')
-            ->where('rv.am_approval_status', 'approved')
+            ->where(fn ($q) => $this->whereRvCounts($q, $x))
             ->whereIn('dorv.delivery_order_id', $doIds)
             ->orderBy('dorv.id')
             ->get(['dorv.delivery_order_id', 'dorv.receipt_voucher_id', 'dorv.amount', 'dorv.withhold_amount']);
@@ -323,7 +323,7 @@ class SaleAdvanceBalanceService
      */
     public function rvLedger(int $soId, array $x = []): array
     {
-        $links = $this->rvLinksForSo($soId);
+        $links = $this->rvLinksForSo($soId, $x);
         $s = $this->summary($soId, $x);
         $doIds = array_keys($s['dos']);
 
@@ -336,7 +336,7 @@ class SaleAdvanceBalanceService
             $rows = DB::table('delivery_order_receipt_voucher as dorv')
                 ->join('receipt_vouchers as rv', 'rv.id', '=', 'dorv.receipt_voucher_id')
                 ->whereNull('rv.deleted_at')
-                ->where('rv.am_approval_status', 'approved')
+                ->where(fn ($q) => $this->whereRvCounts($q, $x))
                 ->whereIn('dorv.delivery_order_id', $doIds)
                 ->orderBy('dorv.id')
                 ->get(['dorv.delivery_order_id', 'dorv.receipt_voucher_id', 'dorv.amount']);
@@ -431,9 +431,159 @@ class SaleAdvanceBalanceService
     /** What a DO being created/edited may take from this RV. */
     public function rvAvailableForDo($rvId, int $soId, $excludeDoId = null): float
     {
-        $x = $excludeDoId ? ['do' => $excludeDoId] : [];
+        // Pending RVs can be picked on a DO; approval waits for them (doApprovalError)
+        $x = ['pending_rvs' => true] + ($excludeDoId ? ['do' => $excludeDoId] : []);
 
         return (float) ($this->rvLedger($soId, $x)[$rvId]['available'] ?? 0);
+    }
+
+    /**
+     * After a (pending) RV is edited, bring the DOs that picked it in line with its new amount.
+     * A DO keeps a copy of what it took (link rows + advance/withhold on the DO), so it is recalculated here:
+     *  - RV line: what this RV can give the DO now (rvAvailableForDo already stops at the SO balance,
+     *    so the RV's excess amount never comes into the DO), limited by the SO's free advance.
+     *  - Advance line: the RV's advances are recreated on edit, so the link moves to the new advance
+     *    with the same adv_no and takes what that advance still has.
+     * A line is recalculated only when its amount changed in the edit (other edits leave the DO as it is).
+     * Approved / rejected DOs are left alone. DO qty is not changed.
+     *
+     * @param \Illuminate\Support\Collection $oldAdvances the RV's advances before the edit (id, adv_no, net_amount)
+     * @param array<int, float> $oldSoLinked so_id => the RV's net amount on that SO before the edit
+     * @return array<int, string> reference_no of the DOs that changed
+     */
+    public function syncDosAfterRvUpdate(int $rvId, $oldAdvances, array $oldSoLinked = []): array
+    {
+        $newSoLinked = DB::table('receipt_voucher_items')
+            ->where('receipt_voucher_id', $rvId)
+            ->where('reference_type', 'sale_order')
+            ->groupBy('reference_id')
+            ->select('reference_id', DB::raw('SUM(net_amount) as linked'))
+            ->pluck('linked', 'reference_id')->all();
+
+        $rows = DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('delivery_order as d', 'd.id', '=', 'dorv.delivery_order_id')
+            ->where('dorv.receipt_voucher_id', $rvId)
+            ->whereNotIn('d.am_approval_status', ['approved', 'rejected'])
+            ->orderBy('dorv.id')
+            ->get(['dorv.id', 'dorv.delivery_order_id', 'dorv.receipt_voucher_advance_id', 'dorv.amount', 'dorv.withhold_amount', 'd.so_id', 'd.reference_no', 'd.withhold_for_rv_id']);
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        // Old advance id -> new advance (same adv_no, else same position)
+        $newAdvances = DB::table('receipt_voucher_advances')->where('receipt_voucher_id', $rvId)->orderBy('id')->get(['id', 'adv_no', 'net_amount']);
+        $advMap = [];
+        $advOldNet = [];
+        foreach (collect($oldAdvances)->values() as $i => $old) {
+            $advOldNet[$old->id] = (float) ($old->net_amount ?? 0);
+            $match = $newAdvances->firstWhere('adv_no', $old->adv_no) ?? $newAdvances->get($i);
+            if ($match) {
+                $advMap[$old->id] = $match;
+            }
+        }
+
+        $changed = [];
+        foreach ($rows->groupBy('delivery_order_id') as $doId => $doRows) {
+            $soId = (int) $doRows->first()->so_id;
+            $deltaAdvance = 0.0;
+            $deltaWithhold = 0.0;
+
+            foreach ($doRows as $row) {
+                $oldTotal = (float) $row->amount + (float) $row->withhold_amount;
+                $newAdvId = null;
+
+                if ($row->receipt_voucher_advance_id) {
+                    $adv = $advMap[$row->receipt_voucher_advance_id] ?? null;
+                    $newAdvId = $adv->id ?? null;
+                    if ($adv && abs((float) $adv->net_amount - ($advOldNet[$row->receipt_voucher_advance_id] ?? 0)) <= self::EPS) {
+                        // Same amount: only move the link to the recreated advance
+                        DB::table('delivery_order_receipt_voucher')->where('id', $row->id)->update(['receipt_voucher_advance_id' => $newAdvId]);
+                        continue;
+                    }
+                    $newTotal = $adv ? $this->advanceLeftForDo($adv, $rvId, $doId) : 0.0;
+                } else {
+                    if (abs((float) ($newSoLinked[$soId] ?? 0) - (float) ($oldSoLinked[$soId] ?? 0)) <= self::EPS) {
+                        continue; // RV amount on this SO didn't change
+                    }
+                    // The SO's free advance this DO may use, minus its other RV lines
+                    $otherOnDo = (float) DB::table('delivery_order_receipt_voucher')
+                        ->where('delivery_order_id', $doId)
+                        ->whereNull('receipt_voucher_advance_id')
+                        ->where('receipt_voucher_id', '!=', $rvId)
+                        ->sum(DB::raw('amount + withhold_amount'));
+                    $pool = $soId ? $this->freeAdvance($soId, ['do' => $doId, 'pending_rvs' => true]) - $otherOnDo : 0;
+                    $newTotal = $soId ? min($this->rvAvailableForDo($rvId, $soId, $doId), max(0, $pool)) : 0.0;
+                }
+                $newTotal = round(max(0, $newTotal), 2);
+                $newWithhold = round(min((float) $row->withhold_amount, $newTotal), 2);
+
+                if ($newTotal <= self::EPS) {
+                    DB::table('delivery_order_receipt_voucher')->where('id', $row->id)->delete();
+                } else {
+                    DB::table('delivery_order_receipt_voucher')->where('id', $row->id)->update([
+                        'amount' => $newTotal - $newWithhold,
+                        'withhold_amount' => $newWithhold,
+                        'receipt_voucher_advance_id' => $row->receipt_voucher_advance_id ? $newAdvId : null,
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                $deltaAdvance += $newTotal - $oldTotal;
+                $deltaWithhold += $newWithhold - (float) $row->withhold_amount;
+            }
+
+            if (abs($deltaAdvance) > self::EPS || abs($deltaWithhold) > self::EPS) {
+                $do = DB::table('delivery_order')->where('id', $doId)->first(['advance_amount', 'withhold_amount', 'withhold_for_rv_id']);
+                $update = [
+                    'advance_amount' => round(max(0, (float) $do->advance_amount + $deltaAdvance), 2),
+                    'withhold_amount' => round(max(0, (float) $do->withhold_amount + $deltaWithhold), 2),
+                    'updated_at' => now(),
+                ];
+                // Withhold was on this RV and nothing of it is left
+                if ((int) $do->withhold_for_rv_id === $rvId && !DB::table('delivery_order_receipt_voucher')
+                        ->where('delivery_order_id', $doId)->where('receipt_voucher_id', $rvId)->where('withhold_amount', '>', 0)->exists()) {
+                    $update['withhold_for_rv_id'] = null;
+                }
+                DB::table('delivery_order')->where('id', $doId)->update($update);
+                $changed[] = $doRows->first()->reference_no;
+            }
+        }
+
+        return $changed;
+    }
+
+    /** What an RV advance can still give a DO: its net amount minus other DOs (not rejected) and JV use of the RV. */
+    private function advanceLeftForDo($adv, int $rvId, $doId): float
+    {
+        $otherDos = (float) DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('delivery_order as d', 'd.id', '=', 'dorv.delivery_order_id')
+            ->where('dorv.receipt_voucher_advance_id', $adv->id)
+            ->where('dorv.delivery_order_id', '!=', $doId)
+            ->where('d.am_approval_status', '!=', 'rejected')
+            ->sum(DB::raw('dorv.amount + dorv.withhold_amount'));
+        $jv = (float) DB::table('journal_voucher_details as jd')
+            ->join('journal_vouchers as j', 'j.id', '=', 'jd.journal_voucher_id')
+            ->whereNull('j.deleted_at')
+            ->whereNull('jd.deleted_at')
+            ->where('j.am_approval_status', '!=', 'rejected')
+            ->where('jd.receipt_voucher_id', $rvId)
+            ->sum('jd.debit_amount');
+
+        return max(0, (float) $adv->net_amount - $otherDos - $jv);
+    }
+
+    /** Receipt vouchers on this DO (directly or through an advance) that are not approved yet. */
+    public function unapprovedRvsOnDo($doId): array
+    {
+        return DB::table('delivery_order_receipt_voucher as dorv')
+            ->leftJoin('receipt_voucher_advances as adv', 'adv.id', '=', 'dorv.receipt_voucher_advance_id')
+            ->join('receipt_vouchers as rv', 'rv.id', '=', DB::raw('COALESCE(dorv.receipt_voucher_id, adv.receipt_voucher_id)'))
+            ->whereNull('rv.deleted_at')
+            ->where('dorv.delivery_order_id', $doId)
+            ->where('rv.am_approval_status', '!=', 'approved')
+            ->distinct()
+            ->pluck('rv.am_approval_status', 'rv.unique_no')
+            ->all();
     }
 
     /**
@@ -446,6 +596,22 @@ class SaleAdvanceBalanceService
         if (!$do || !$do->so_id || $do->am_approval_status === 'approved' || $do->do_status === 'closed') {
             return null;
         }
+
+        // A DO may be created on pending RVs, but it is approved only after all its RVs are approved
+        $unapproved = collect($this->unapprovedRvsOnDo($doId));
+        if ($unapproved->isNotEmpty()) {
+            // A rejected RV can't be approved any more: the DO needs another (approved) RV instead
+            $rejected = $unapproved->filter(fn ($status) => strtolower((string) $status) === 'rejected')->keys();
+            if ($rejected->isNotEmpty()) {
+                return "The selected Receipt Voucher(s) " . $rejected->implode(', ') . " of Delivery Order {$do->reference_no} has been rejected. "
+                    . 'Please add an approved Receipt Voucher to this Delivery Order to approve it.';
+            }
+
+            $list = $unapproved->map(fn ($status, $no) => "{$no} (" . ucfirst($status) . ')')->implode(', ');
+
+            return "Delivery Order {$do->reference_no} can not be approved yet. Please approve its Receipt Voucher(s) first: {$list}.";
+        }
+
         $soId = (int) $do->so_id;
         $s = $this->summary($soId);
         $row = $s['dos'][$doId] ?? null;
@@ -645,13 +811,26 @@ class SaleAdvanceBalanceService
         return null;
     }
 
+    /**
+     * Which RVs count as money in. Normally only approved ones. With pending_rvs (DO create/edit only)
+     * pending RVs count too, so a DO can be made on them; it can't be approved until they are (doApprovalError).
+     */
+    private function whereRvCounts($q, array $x): void
+    {
+        if (!empty($x['pending_rvs'])) {
+            $q->whereNotIn('rv.am_approval_status', ['rejected']);
+        } else {
+            $q->where('rv.am_approval_status', 'approved');
+        }
+    }
+
     /** @return array<int, float> receipt_voucher_id => net amount linked to this SO, oldest RV first */
-    private function rvLinksForSo(int $soId): array
+    private function rvLinksForSo(int $soId, array $x = []): array
     {
         return DB::table('receipt_voucher_items as i')
             ->join('receipt_vouchers as rv', 'rv.id', '=', 'i.receipt_voucher_id')
             ->whereNull('rv.deleted_at')
-            ->where('rv.am_approval_status', 'approved')
+            ->where(fn ($q) => $this->whereRvCounts($q, $x))
             ->where('i.reference_type', 'sale_order')
             ->where('i.reference_id', $soId)
             ->groupBy('rv.id', 'rv.created_at')

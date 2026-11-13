@@ -308,7 +308,7 @@ class DeliveryOrderController extends Controller
             $raw_vouchers = $request->receipt_vouchers ?? [];
             $salesOrder = SalesOrder::find($request->sale_order_id);
             // This DO has nothing attached yet, so the whole free balance is available to it
-            $poolLeft = $this->saleBalances()->freeAdvance((int) $request->sale_order_id);
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $request->sale_order_id, ['pending_rvs' => true]);
 
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
@@ -820,9 +820,10 @@ class DeliveryOrderController extends Controller
         $data = [];
 
         // 1. Fetch Advances for the customer
+        // Pending RVs are listed too: the DO can be created on them, but approved only after they are
         $advances = \App\Models\ReceiptVoucherAdvance::where('customer_id', $customer_id)
             ->whereHas('receiptVoucher', function($q) {
-                $q->where('am_approval_status', 'approved');
+                $q->where('am_approval_status', '!=', 'rejected');
             })
             ->get()
             ->map(function ($adv) {
@@ -849,9 +850,10 @@ class DeliveryOrderController extends Controller
             ->filter(fn($adv) => $adv->remaining_amount > 0);
 
         foreach ($advances as $adv) {
+            $advPending = ($adv->receiptVoucher->am_approval_status ?? '') !== 'approved';
             $data[] = [
                 'id' => "adv_{$adv->id}",
-                'text' => "advance ({$adv->remaining_amount})",
+                'text' => "advance ({$adv->remaining_amount})" . ($advPending ? ' - Pending' : ''),
                 'amount' => $adv->remaining_amount,
                 'date' => $adv->receiptVoucher && $adv->receiptVoucher->rv_date
                     ? $adv->receiptVoucher->rv_date->format('Y-m-d')
@@ -869,13 +871,13 @@ class DeliveryOrderController extends Controller
                 }
             ])
                 ->where("customer_id", $customer_id)
-                ->where("am_approval_status", "approved")
+                ->where("am_approval_status", "!=", "rejected")
                 ->orderBy('created_at', 'asc')
                 ->orderBy('id', 'asc')
                 ->get();
 
-            // Editing a DO: what it has attached is available to it again
-            $exclude = $request->filled('delivery_order_id') ? ['do' => $request->delivery_order_id] : [];
+            // Editing a DO: what it has attached is available to it again. Pending RVs count here too.
+            $exclude = ['pending_rvs' => true] + ($request->filled('delivery_order_id') ? ['do' => $request->delivery_order_id] : []);
             $rvLedger = $this->saleBalances()->rvLedger((int) $sale_order_id, $exclude);
             $poolLeft = $this->saleBalances()->freeAdvance((int) $sale_order_id, $exclude);
 
@@ -886,7 +888,7 @@ class DeliveryOrderController extends Controller
                     $poolLeft -= $remaining;
                     $data[] = [
                         'id' => "rv_{$rv->id}",
-                        'text' => "{$rv->unique_no} ({$rv->ref_bill_no})",
+                        'text' => "{$rv->unique_no} ({$rv->ref_bill_no})" . ($rv->am_approval_status !== 'approved' ? ' - Pending' : ''),
                         'amount' => $remaining,
                         'date' => $rv->rv_date->format('Y-m-d'),
                     ];
@@ -1041,7 +1043,9 @@ class DeliveryOrderController extends Controller
                     ->sum('delivery_order_receipt_voucher.amount');
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
-                $adv->unified_text = "advance ({$adv->net_amount})";
+                $advStatus = $adv->receiptVoucher->am_approval_status ?? '';
+                $adv->unified_text = "advance ({$adv->net_amount})"
+                    . ($advStatus === 'rejected' ? ' - Rejected' : ($advStatus !== 'approved' ? ' - Pending' : ''));
                 $adv->date = $adv->receiptVoucher && $adv->receiptVoucher->rv_date
                     ? $adv->receiptVoucher->rv_date->format('Y-m-d')
                     : null;
@@ -1049,15 +1053,16 @@ class DeliveryOrderController extends Controller
             })
             ->filter(function ($adv) use ($delivery_order) {
                 $is_attached = $delivery_order->receipt_vouchers->contains('pivot.receipt_voucher_advance_id', $adv->id);
-                $is_approved = $adv->receiptVoucher && $adv->receiptVoucher->am_approval_status === 'approved';
-                return ($adv->remaining_amount > 0 && $is_approved) || $is_attached;
+                // Pending RVs are allowed on a DO (it is approved only after they are); rejected ones are not
+                $is_usable = $adv->receiptVoucher && $adv->receiptVoucher->am_approval_status !== 'rejected';
+                return ($adv->remaining_amount > 0 && $is_usable) || $is_attached;
             });
 
         // 2. Fetch Regular RVs linked to the Sale Order of this DO
         $rvsList = collect();
         if ($delivery_order->so_id) {
-            $rvLedger = $this->saleBalances()->rvLedger((int) $delivery_order->so_id, ['do' => $delivery_order->id]);
-            $poolLeft = $this->saleBalances()->freeAdvance((int) $delivery_order->so_id, ['do' => $delivery_order->id]);
+            $rvLedger = $this->saleBalances()->rvLedger((int) $delivery_order->so_id, ['do' => $delivery_order->id, 'pending_rvs' => true]);
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $delivery_order->so_id, ['do' => $delivery_order->id, 'pending_rvs' => true]);
 
             $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
                 ->whereHas("items", function ($query) use ($delivery_order) {
@@ -1072,14 +1077,20 @@ class DeliveryOrderController extends Controller
                     $rv->remaining_amount = min((float) ($rvLedger[$rv->id]['available'] ?? 0), $poolLeft);
                     $poolLeft -= $rv->remaining_amount;
                     $rv->unified_id = "rv_{$rv->id}";
-                    $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
+                    // Same as the create/SO-change list: pending RVs can be picked, rejected ones can't
+                    $statusTag = match ($rv->am_approval_status) {
+                        'approved' => '',
+                        'rejected' => ' - Rejected',
+                        default => ' - Pending',
+                    };
+                    $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no}){$statusTag}";
                     $rv->date = $rv->rv_date->format('Y-m-d');
                     return $rv;
                 })
                 ->filter(function ($rv) use ($delivery_order) {
                     $is_attached = $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->contains('id', $rv->id);
-                    $is_approved = $rv->am_approval_status === 'approved';
-                    return ($rv->remaining_amount > 0 && $is_approved) || $is_attached;
+                    $is_usable = $rv->am_approval_status !== 'rejected';
+                    return ($rv->remaining_amount > 0 && $is_usable) || $is_attached;
                 });
         }
 
@@ -1246,7 +1257,7 @@ class DeliveryOrderController extends Controller
             $delivery_order->receipt_vouchers()->detach();
 
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            $poolLeft = $this->saleBalances()->freeAdvance((int) $request->sale_order_id, ['do' => $delivery_order->id]);
+            $poolLeft = $this->saleBalances()->freeAdvance((int) $request->sale_order_id, ['do' => $delivery_order->id, 'pending_rvs' => true]);
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
                     if (str_starts_with($rv_val, 'adv_')) {

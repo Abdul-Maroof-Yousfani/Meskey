@@ -1112,6 +1112,12 @@ class ReceiptVoucherController extends Controller
 
         DB::beginTransaction();
         try {
+            // RV advances are recreated below; DOs linked to them are moved to the new ones after the save
+            // Old amounts too, so only DOs whose RV amount really changed are recalculated
+            $oldAdvances = $receiptVoucher->advances->map(fn ($a) => (object) ['id' => $a->id, 'adv_no' => $a->adv_no, 'net_amount' => (float) $a->net_amount]);
+            $oldSoLinked = $receiptVoucher->items->where('reference_type', 'sale_order')
+                ->groupBy('reference_id')->map(fn ($rows) => (float) $rows->sum('net_amount'))->all();
+
             // Revert previous advances created by this voucher
             $generatedAdvances = \App\Models\CustomerAdvance::where("voucher_no", $receiptVoucher->unique_no)->get();
             foreach ($generatedAdvances as $adv) {
@@ -1326,6 +1332,9 @@ class ReceiptVoucherController extends Controller
                 }
             }
 
+            // DOs made on this (pending) RV keep a copy of its amount: update their advance / withhold
+            $syncedDos = app(\App\Services\SaleAdvanceBalanceService::class)->syncDosAfterRvUpdate($receiptVoucher->id, $oldAdvances, $oldSoLinked);
+
             DB::commit();
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -1333,7 +1342,7 @@ class ReceiptVoucherController extends Controller
         }
 
         return response()->json([
-            "success" => "Receipt voucher updated successfully!",
+            "success" => "Receipt voucher updated successfully!" . (!empty($syncedDos) ? " Advance updated on Delivery Order(s): " . implode(', ', $syncedDos) . "." : ""),
             "redirect" => route("receipt-voucher.index")
         ]);
     }
@@ -1356,6 +1365,18 @@ class ReceiptVoucherController extends Controller
                 'error' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be deleted.",
                 'message' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be deleted."
             ], 422);
+        }
+
+        // An RV picked on a Delivery Order (directly or through its advance) can't be deleted while that DO is in use
+        $linkedDos = DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('delivery_order as d', 'd.id', '=', 'dorv.delivery_order_id')
+            ->where('dorv.receipt_voucher_id', $receiptVoucher->id)
+            ->where('d.am_approval_status', '!=', 'rejected')
+            ->distinct()
+            ->pluck('d.reference_no');
+        if ($linkedDos->isNotEmpty()) {
+            $message = "This Receipt Voucher is connected with Delivery Order(s) " . $linkedDos->implode(', ') . ", so it can't be deleted.";
+            return response()->json(['error' => $message, 'message' => $message, 'details' => ''], 422);
         }
 
         $receiptVoucher->delete();

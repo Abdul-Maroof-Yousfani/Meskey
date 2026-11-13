@@ -1523,7 +1523,9 @@ function export_second_weighbridge_balance_kg(LoadingSlip $loadingSlip, $exclude
 
 function receipt_voucher_balance($reference_id, $type = "sale_order", $exclude_receipt_voucher_id = null)
 {
-    $query = ReceiptVoucherItem::where("reference_id", $reference_id)->where("reference_type", $type);
+    // A rejected (or deleted) RV hasn't taken anything from the order, so it doesn't reduce the balance
+    $query = ReceiptVoucherItem::where("reference_id", $reference_id)->where("reference_type", $type)
+        ->whereHas('receiptVoucher', fn ($q) => $q->where('am_approval_status', '!=', 'rejected'));
     if ($exclude_receipt_voucher_id) {
         $query->where("receipt_voucher_id", "!=", $exclude_receipt_voucher_id);
     }
