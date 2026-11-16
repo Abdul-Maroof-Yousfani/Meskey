@@ -865,7 +865,7 @@
                 $('select[name="arrival_locations[]"]').val([]).trigger('change');
                 $('#cropYearSelect').val('').trigger('change');
                 $('#exportOrderSelect').prop('disabled', false);
-                $('#exportOrderSelect').next('.select2-container').css({'pointer-events': '', 'opacity': ''});
+                $('#exportOrderSelect').nextAll('.select2-container').first().css({'pointer-events': '', 'opacity': ''});
                 $('#hidden_export_order_id').remove();
                 $('#exportOrderSelect').val('').trigger('change.select2');
                 $('#export-order-quantity-info').html('').hide();
@@ -954,12 +954,12 @@
                     }
                     $('#exportOrderSelect').val(data.export_order_id).trigger('change.select2');
                     $('#exportOrderSelect').prop('disabled', true);
-                    $('#exportOrderSelect').next('.select2-container').css({'pointer-events': 'none', 'opacity': '0.75'});
+                    $('#exportOrderSelect').nextAll('.select2-container').first().css({'pointer-events': 'none', 'opacity': '0.75'});
                     $('#exportOrderSelect').after('<input type="hidden" name="export_order_id" id="hidden_export_order_id" value="' + data.export_order_id + '">');
                     updateFumigationRequirement();
                 } else {
                     $('#exportOrderSelect').prop('disabled', false);
-                    $('#exportOrderSelect').next('.select2-container').css({'pointer-events': '', 'opacity': ''});
+                    $('#exportOrderSelect').nextAll('.select2-container').first().css({'pointer-events': '', 'opacity': ''});
                     $('#exportOrderSelect').val('').trigger('change.select2');
                     updateFumigationRequirement();
                 }

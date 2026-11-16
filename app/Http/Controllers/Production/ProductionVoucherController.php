@@ -671,7 +671,7 @@ class ProductionVoucherController extends Controller
                 });
             });
 
-        $allJobOrders = $query->orderBy('job_order_no')->get();
+        $allJobOrders = $query->orderByDesc('job_order_date')->orderByDesc('id')->get(); // latest first
 
         // 2. Resolve family products for the selected Head Product
         $product = $productId ? Product::find($productId) : null;
@@ -1927,7 +1927,7 @@ class ProductionVoucherController extends Controller
                     $q->orWhereIn('id', $voucherJobOrderIds);
                 }
             })
-            ->orderBy('job_order_no')
+            ->orderByDesc('job_order_date')->orderByDesc('id') // latest first
             ->get();
 
         $voucherProduct = $productionVoucher->product_id ? Product::find($productionVoucher->product_id) : null;

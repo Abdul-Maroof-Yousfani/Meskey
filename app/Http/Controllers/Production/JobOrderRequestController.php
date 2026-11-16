@@ -113,6 +113,10 @@ class JobOrderRequestController extends Controller
 
     public function store(JobOrderRequestFormRequest $request)
     {
+        if ($capacityError = $this->exportOrderCapacityError($request)) {
+            return $capacityError;
+        }
+
         DB::beginTransaction();
 
         try {
@@ -344,6 +348,10 @@ class JobOrderRequestController extends Controller
 
     public function update($id, JobOrderRequestFormRequest $request)
     {
+        if ($capacityError = $this->exportOrderCapacityError($request, (int) $id)) {
+            return $capacityError;
+        }
+
         DB::beginTransaction();
 
         try {
@@ -786,5 +794,53 @@ class JobOrderRequestController extends Controller
             'packing_items'          => $packingItems,
             'container_protection_items' => $containerProtectionItems,
         ]);
+    }
+
+    /**
+     * Same Export Order capacity check as Job Order.
+     * Used = other Job Order Requests on this EO + Job Orders on this EO made without one of
+     * those requests (Job Orders made from a request are already counted in that request).
+     */
+    private function exportOrderCapacityError(JobOrderRequestFormRequest $request, ?int $excludeRequestId = null)
+    {
+        if (!$request->export_order_id) {
+            return null;
+        }
+
+        $eo = \App\Models\Export\ExportOrder::with(['packingItems', 'jobOrders.packingItems'])
+            ->findOrFail($request->export_order_id);
+
+        $totalAllowedMt = (float) $eo->packingItems->sum('metric_tons');
+
+        $eoRequests = JobOrderRequest::with('packingItems')
+            ->where('export_order_id', $eo->id)
+            ->get();
+
+        $consumedByRequests = $eoRequests
+            ->where('id', '!=', $excludeRequestId)
+            ->sum(fn ($jor) => $jor->total_metric_tons);
+
+        $eoRequestIds = $eoRequests->pluck('id')->push($excludeRequestId)->filter()->all();
+        $consumedByJobOrders = $eo->jobOrders
+            ->filter(fn ($jo) => !in_array($jo->job_order_request_id, $eoRequestIds))
+            ->sum(fn ($jo) => $jo->packingItems->sum('metric_tons'));
+
+        $alreadyConsumedMt = $consumedByRequests + $consumedByJobOrders;
+
+        $currentRequestMt = round(collect($request->packing_items)->sum(function ($item) {
+            if (isset($item['metric_tons']) && $item['metric_tons'] !== '') {
+                return (float) $item['metric_tons'];
+            }
+            return (float) ($item['total_kgs'] ?? 0) / 1000;
+        }), 3);
+
+        if (($alreadyConsumedMt + $currentRequestMt) > ($totalAllowedMt + 0.001)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Order (" . round(max(0, $totalAllowedMt - $alreadyConsumedMt), 3) . " MT)."
+            ], 422);
+        }
+
+        return null;
     }
 }
