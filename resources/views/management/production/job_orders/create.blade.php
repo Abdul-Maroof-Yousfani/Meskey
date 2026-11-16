@@ -1423,6 +1423,8 @@
                 row.find(`input[name="packing_items[${index}][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                // Fumigation Dosage saved on the request (the export order dosage, if any, overrides it later)
+                row.find(`input[name="packing_items[${index}][fumigation_dosage]"]`).val(item.fumigation_dosage || '').prop('readonly', false).removeClass('dosage-auto');
                 if (item.delivery_date) {
                     row.find(`input[name="packing_items[${index}][delivery_date]"]`).val(item.delivery_date);
                 }
