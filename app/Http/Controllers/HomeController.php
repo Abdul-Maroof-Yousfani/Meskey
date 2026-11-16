@@ -841,7 +841,15 @@ class HomeController extends Controller
             );
         }
 
-        return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate', 'companylocations', 'location_id', 'purchasers', 'arrivallocations'));
+        $salesBoxes = [];
+        $salesGroups = \App\Services\SalesDashboardService::MODULES[$module] ?? null;
+        if ($salesGroups && canAccess('sales-stats')) {
+            $salesService = app(\App\Services\SalesDashboardService::class);
+            $data = $salesService->getData($request, $salesGroups);
+            $salesBoxes = $salesService->boxes($salesGroups);
+        }
+
+        return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate', 'companylocations', 'location_id', 'purchasers', 'arrivallocations', 'salesBoxes'));
     }
 
     public function getCitiesByState(Request $request)

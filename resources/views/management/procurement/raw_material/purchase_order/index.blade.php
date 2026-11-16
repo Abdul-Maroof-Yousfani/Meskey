@@ -59,7 +59,8 @@
                                                         class="form-control ">
                                                         <option value="">Location</option>
                                                         @foreach ($companyLocations as $location)
-                                                            <option value="{{ $location->id }}">{{ $location->name }}
+                                                            <option value="{{ $location->id }}"
+                                                                {{ request('company_location_id_f') == $location->id ? 'selected' : '' }}>{{ $location->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -73,7 +74,7 @@
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
                                                             <option value="{{ $commodity->id }}"
-                                                                {{ request('commodity_id') == $commodity->id ? 'selected' : '' }}>
+                                                                {{ request('commodity_id_f') == $commodity->id ? 'selected' : '' }}>
                                                                 {{ $commodity->name }}
                                                             </option>
                                                         @endforeach
@@ -114,6 +115,9 @@
                                                     <label>Suppliers:</label>
                                                     <select name="supplier_id_f" id="supplier_id_f" class="form-control ">
                                                         <option value="">Supplier</option>
+                                                        @if (request('supplier_id_f') && ($selectedSupplier = \App\Models\Master\Supplier::find(request('supplier_id_f'))))
+                                                            <option value="{{ $selectedSupplier->id }}" selected>{{ $selectedSupplier->name }}</option>
+                                                        @endif
                                                     </select>
                                                 </div>
                                             </div>
@@ -123,7 +127,8 @@
                                                     <select name="decision_of_f" id="decision_of_f" class="form-control">
                                                         <option value="">All Decision Of</option>
                                                         @foreach ($decisionofUsers as $decisionof)
-                                                            <option value="{{ $decisionof->id }}">{{ $decisionof->name }}
+                                                            <option value="{{ $decisionof->id }}"
+                                                                {{ request('decision_of_f') == $decisionof->id ? 'selected' : '' }}>{{ $decisionof->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -134,6 +139,9 @@
                                                     <label>Sauda Type:</label>
                                                     <select name="sauda_type_id_f" id="sauda_type" class="form-control ">
                                                         <option value="">Sauda Type Name</option>
+                                                        @if (request('sauda_type_id_f') && ($selectedSaudaType = \App\Models\SaudaType::find(request('sauda_type_id_f'))))
+                                                            <option value="{{ $selectedSaudaType->id }}" selected>{{ $selectedSaudaType->name }}</option>
+                                                        @endif
                                                     </select>
                                                 </div>
                                             </div>

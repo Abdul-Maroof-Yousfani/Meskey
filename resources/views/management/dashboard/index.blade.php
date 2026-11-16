@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Dashboard - {{ ucfirst($module) }}
+    Dashboard - {{ ucwords(str_replace('_', ' ', $module)) }}
 @endsection
 
 @section('content')
@@ -78,7 +78,7 @@
 
         @else
         <div class="row">
-            <div class="col-12 dd-none">
+            <div class="col-12">
                 <div class="dashboard-filters">
                     <div class="filter-group d-none">
                         <label>SELECT MODULE</label>
@@ -88,13 +88,15 @@
                                 Contract
                             </option>
                             <option value="finance" {{ $module == 'finance' ? 'selected' : '' }}>Finance</option>
+                            <option value="sales" {{ $module == 'sales' ? 'selected' : '' }}>Sales</option>
+                            <option value="sales_trucks" {{ $module == 'sales_trucks' ? 'selected' : '' }}>Dispatch</option>
                         </select>
                     </div>
-                    <div class="filter-group d-none">
+                    <div class="filter-group {{ $module == 'sales' ? '' : 'd-none' }}">
                         <label>FROM DATE</label>
                         <input type="date" id="from_date" class="filter-input" value="{{ $fromDate }}">
                     </div>
-                    <div class="filter-group d-none">
+                    <div class="filter-group {{ $module == 'sales' ? '' : 'd-none' }}">
                         <label>TO DATE</label>
                         <input type="date" id="to_date" class="filter-input" value="{{ $toDate }}">
                     </div>
@@ -673,7 +675,12 @@
                     </div>
                 </div>
             @endcanAccess
-            
+
+            @elseif (in_array($module, ['sales', 'sales_trucks']))
+            @canAccess('sales-stats')
+                @include('management.dashboard.sales')
+            @endcanAccess
+
             @else
                 <div class="col-12">
                     <div class="empty-module">

@@ -380,6 +380,7 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
 
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/dashboard/list-data', [App\Http\Controllers\HomeController::class, 'getListData'])->name('dashboard.list-data');
+    Route::get('/dashboard/sales/list-data', [App\Http\Controllers\SalesDashboardController::class, 'listData'])->name('dashboard.sales.list-data');
 
     Route::get('/dynamic-fetch-data', [App\Http\Controllers\HomeController::class, 'dynamicFetchData'])->name('dynamic-fetch-data');
     Route::get('/dynamic-dependent-fetch-data', [App\Http\Controllers\HomeController::class, 'dynamicDependentFetchData'])->name('dynamic-dependent-fetch-data');
