@@ -26,13 +26,13 @@
                         <td><span class="badge badge-warning">{{ $freight->status }}</span></td>
                         <td>
                             <!-- View Request -->
-                            <button style="user-select: none;" onclick="openModal(this,'{{ route('c-freight.show', $freight->id) }}','View Request',true,'80%')" class="btn btn-sm btn-secondary mb-1" title="View Request"><i class="ft-eye"></i></button>
+                            <button style="user-select: none;" onclick="openModal(this,'{{ route('sea-freight.show', $freight->id) }}','View Request',true,'80%')" class="btn btn-sm btn-secondary mb-1" title="View Request"><i class="ft-eye"></i></button>
 
                             <!-- Edit Request -->
-                            <button style="user-select: none;" onclick="openModal(this,'{{ route('c-freight.edit-request', $freight->id) }}','Edit Request',false,'80%')" class="btn btn-sm btn-primary mb-1" title="Edit Request"><i class="ft-edit-2"></i></button>
+                            <button style="user-select: none;" onclick="openModal(this,'{{ route('sea-freight.edit-request', $freight->id) }}','Edit Request',false,'80%')" class="btn btn-sm btn-primary mb-1" title="Edit Request"><i class="ft-edit-2"></i></button>
                             
                             <!-- Rates & Booking -->
-                            <button style="user-select: none;" onclick="openModal(this,'{{ route('c-freight.edit', $freight->id) }}','Add Rates & Booking',false,'90%')" class="btn btn-sm btn-info mb-1" title="Add Rates & Booking"><i class="ft-list"></i> Rates</button>
+                            <button style="user-select: none;" onclick="openModal(this,'{{ route('sea-freight.edit', $freight->id) }}','Add Rates & Booking',false,'90%')" class="btn btn-sm btn-info mb-1" title="Add Rates & Booking"><i class="ft-list"></i> Rates</button>
                         </td>
                     </tr>
                 @empty
@@ -87,10 +87,10 @@
                         <td>{{ $freight->etd ? date('d-M-y', strtotime($freight->etd)) : '' }}</td>
                         <td>{{ $freight->eta ? date('d-M-y', strtotime($freight->eta)) : '' }}</td>
                         <td>
-                            <button style="user-select: none;" onclick="openModal(this,'{{ route('c-freight.show-booking', $freight->id) }}','Booking Record',true,'80%')" class="btn btn-sm btn-primary mb-1" title="View Booking Record">
+                            <button style="user-select: none;" onclick="openModal(this,'{{ route('sea-freight.show-booking', $freight->id) }}','Booking Record',true,'80%')" class="btn btn-sm btn-primary mb-1" title="View Booking Record">
                                 <i class="ft-eye"></i>
                             </button>
-                            <button style="user-select: none;" onclick="openModal(this,'{{ route('c-freight.edit', $freight->id) }}','Edit Booking Details',false,'90%')" class="btn btn-sm btn-info mb-1" title="Edit Booking Details">
+                            <button style="user-select: none;" onclick="openModal(this,'{{ route('sea-freight.edit', $freight->id) }}','Edit Booking Details',false,'90%')" class="btn btn-sm btn-info mb-1" title="Edit Booking Details">
                                 <i class="ft-edit-2"></i>
                             </button>
                         </td>

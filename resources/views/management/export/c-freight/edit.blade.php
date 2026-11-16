@@ -155,7 +155,7 @@
                         <strong>Notice:</strong> Please approve a Freight Rate above to unlock Booking Confirmation.
                     </div>
                 @else
-                    <form action="{{ route('c-freight.update', $cFreight->id) }}" method="POST" id="cFreightForm" class="form">
+                    <form action="{{ route('sea-freight.update', $cFreight->id) }}" method="POST" id="cFreightForm" class="form">
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -317,7 +317,7 @@
             $btn.prop('disabled', true).text('Saving...');
             
             $.ajax({
-                url: "{{ route('c-freight.add-rate', $cFreight->id) }}",
+                url: "{{ route('sea-freight.add-rate', $cFreight->id) }}",
                 type: 'POST',
                 data: $(this).serialize() + "&_token={{ csrf_token() }}",
                 success: function(res) {
@@ -329,7 +329,7 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
-                        openModal($('<button></button>'), "{{ route('c-freight.edit', $cFreight->id) }}", 'Add Rates & Booking', false, '90%');
+                        openModal($('<button></button>'), "{{ route('sea-freight.edit', $cFreight->id) }}", 'Add Rates & Booking', false, '90%');
                     } else {
                         Swal.fire("Error", res.message, "error");
                         $btn.prop('disabled', false).text('Save New Rates');
@@ -359,7 +359,7 @@
                 if (result.isConfirmed) {
                     $btn.prop('disabled', true).text('...');
                     $.ajax({
-                        url: "{{ route('c-freight.approve-rate', $cFreight->id) }}",
+                        url: "{{ route('sea-freight.approve-rate', $cFreight->id) }}",
                         type: 'POST',
                         data: {
                             rate_id: rate_id,
@@ -374,7 +374,7 @@
                                     timer: 1500,
                                     showConfirmButton: false
                                 });
-                                openModal($('<button></button>'), "{{ route('c-freight.edit', $cFreight->id) }}", 'Add Rates & Booking', false, '90%');
+                                openModal($('<button></button>'), "{{ route('sea-freight.edit', $cFreight->id) }}", 'Add Rates & Booking', false, '90%');
                             } else {
                                 Swal.fire("Error", res.message, "error");
                                 $btn.prop('disabled', false).text('Approve');
@@ -406,7 +406,7 @@
                 if (result.isConfirmed) {
                     $btn.prop('disabled', true).text('...');
                     
-                    var deleteUrl = "{{ route('c-freight.delete-rate', ':id') }}";
+                    var deleteUrl = "{{ route('sea-freight.delete-rate', ':id') }}";
                     deleteUrl = deleteUrl.replace(':id', rate_id);
                     
                     $.ajax({
@@ -424,7 +424,7 @@
                                     timer: 1500,
                                     showConfirmButton: false
                                 });
-                                openModal($('<button></button>'), "{{ route('c-freight.edit', $cFreight->id) }}", 'Add Rates & Booking', false, '90%');
+                                openModal($('<button></button>'), "{{ route('sea-freight.edit', $cFreight->id) }}", 'Add Rates & Booking', false, '90%');
                             } else {
                                 Swal.fire("Error", res.message, "error");
                                 $btn.prop('disabled', false).text('Remove');

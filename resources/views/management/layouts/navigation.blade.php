@@ -925,8 +925,8 @@
 
                     @canAccess('sea-freight')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('c-freight.index') }}"
-                            onclick="loadPageContent('{{ route('c-freight.index') }}')" data-toggle="dropdown"><i
+                            href="{{ route('sea-freight.index') }}"
+                            onclick="loadPageContent('{{ route('sea-freight.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Sea Freight</span>
                         </a>

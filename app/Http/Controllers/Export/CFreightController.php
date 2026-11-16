@@ -80,7 +80,7 @@ class CFreightController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('c-freight.index')->with('success', 'C Freight Request created successfully.');
+            return redirect()->route('sea-freight.index')->with('success', 'Sea Freight Request created successfully.');
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', $e->getMessage());
@@ -112,7 +112,7 @@ class CFreightController extends Controller
                     'free_days' => $request->free_days,
                     'etr' => $request->etr,
                 ]);
-                return redirect()->route('c-freight.index')->with('success', 'C Freight Request updated successfully.');
+                return redirect()->route('sea-freight.index')->with('success', 'Sea Freight Request updated successfully.');
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', $e->getMessage());
             }
@@ -159,7 +159,7 @@ class CFreightController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('c-freight.index')->with('success', 'Booking Details updated successfully.');
+            return redirect()->route('sea-freight.index')->with('success', 'Booking Details updated successfully.');
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', $e->getMessage());

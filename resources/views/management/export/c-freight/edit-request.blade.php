@@ -1,4 +1,4 @@
-<form action="{{ route('c-freight.update', $cFreight->id) }}" method="POST" id="cFreightForm" class="form">
+<form action="{{ route('sea-freight.update', $cFreight->id) }}" method="POST" id="cFreightForm" class="form">
     @csrf
     @method('PUT')
     <input type="hidden" name="update_type" value="request">
@@ -100,7 +100,7 @@
         $('#export_order_id').change(function() {
             var eoId = $(this).val();
             if (eoId) {
-                var url = "{{ route('c-freight.get-export-order-details', ':id') }}";
+                var url = "{{ route('sea-freight.get-export-order-details', ':id') }}";
                 url = url.replace(':id', eoId);
                 
                 $.ajax({

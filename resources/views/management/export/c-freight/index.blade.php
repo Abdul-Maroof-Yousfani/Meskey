@@ -1,16 +1,16 @@
 @extends('management.layouts.master')
 @section('title')
-    C Freight Management
+    Sea Freight Management
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">C Freight Management</h2>
+                    <h2 class="page-title">Sea Freight Management</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('c-freight.create') }}','Add Freight Request',false,'80%')"
+                    <button onclick="openModal(this,'{{ route('sea-freight.create') }}','Add Freight Request',false,'80%')"
                         type="button" class="btn btn-primary position-relative">
                         Create Freight Request
                     </button>
@@ -68,7 +68,7 @@
         function loadFilteredData() {
             var formData = $('#filterForm').serialize();
             $.ajax({
-                url: "{{ route('get.c-freight') }}",
+                url: "{{ route('get.sea-freight') }}",
                 type: 'POST',
                 data: formData,
                 headers: {

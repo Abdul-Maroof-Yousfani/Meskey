@@ -78,14 +78,14 @@ Route::resource('export-filing', ExportFilingController::class)->only(['index', 
 Route::post('/get-export-filing', [ExportFilingController::class, 'getList'])->name('get.export-filing');
 
 // c freight
-Route::resource('c-freight', \App\Http\Controllers\Export\CFreightController::class);
-Route::post('/get-c-freight', [\App\Http\Controllers\Export\CFreightController::class, 'getList'])->name('get.c-freight');
-Route::get('/c-freight/get-export-order-details/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'getExportOrderDetails'])->name('c-freight.get-export-order-details');
-Route::post('/c-freight/{id}/add-rate', [\App\Http\Controllers\Export\CFreightController::class, 'addRate'])->name('c-freight.add-rate');
-Route::post('/c-freight/{id}/approve-rate', [\App\Http\Controllers\Export\CFreightController::class, 'approveRate'])->name('c-freight.approve-rate');
-Route::post('/c-freight/delete-rate/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'deleteRate'])->name('c-freight.delete-rate');
-Route::get('/c-freight/edit-request/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'editRequest'])->name('c-freight.edit-request');
-Route::get('/c-freight/show-booking/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'showBooking'])->name('c-freight.show-booking');
+Route::resource('sea-freight', \App\Http\Controllers\Export\CFreightController::class);
+Route::post('/get-sea-freight', [\App\Http\Controllers\Export\CFreightController::class, 'getList'])->name('get.sea-freight');
+Route::get('/sea-freight/get-export-order-details/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'getExportOrderDetails'])->name('sea-freight.get-export-order-details');
+Route::post('/sea-freight/{id}/add-rate', [\App\Http\Controllers\Export\CFreightController::class, 'addRate'])->name('sea-freight.add-rate');
+Route::post('/sea-freight/{id}/approve-rate', [\App\Http\Controllers\Export\CFreightController::class, 'approveRate'])->name('sea-freight.approve-rate');
+Route::post('/sea-freight/delete-rate/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'deleteRate'])->name('sea-freight.delete-rate');
+Route::get('/sea-freight/edit-request/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'editRequest'])->name('sea-freight.edit-request');
+Route::get('/sea-freight/show-booking/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'showBooking'])->name('sea-freight.show-booking');
 
 // export delivery order
 Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
