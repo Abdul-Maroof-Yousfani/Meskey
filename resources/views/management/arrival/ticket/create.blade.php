@@ -628,14 +628,54 @@
             });
 
 
+            // Location ki pending requests aur last loaded location, taake same location par dobara ajax na jaye
+            let locationRequests = [];
+            let loadedLocationId = null;
+            let contractsToast = null;
+
             function loadLocationData(locationId) {
+                locationId = locationId ? String(locationId) : '';
+                if (locationId === loadedLocationId) {
+                    return;
+                }
+                loadedLocationId = locationId;
+
+                // Purani location ki requests cancel karo
+                locationRequests.forEach(function (xhr) {
+                    xhr.abort();
+                });
+                locationRequests = [];
+
                 if (!locationId) {
-                    $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
+                    if (contractsToast) {
+                        toastr.clear(contractsToast);
+                        contractsToast = null;
+                    }
+                    $('input[name="unique_no"]').val('');
+                    $('#arrival_purchase_order_id').prop('disabled', false).empty().append('<option value="">N/A</option>');
                     $('#broker_name').empty().append('<option value="">Broker Name</option>');
                     $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
                     return;
                 }
-                $.get(`/arrival/get-contracts/${locationId}`, function (data) {
+
+                locationRequests.push($.get(`/arrival/get-ticket-number/${locationId}`, function (data) {
+                    $('input[name="unique_no"]').val(data.ticket_no);
+                }));
+
+                // Contracts load hone tak Contract Detail mein "Loading..." dikhao aur select disable rakho
+                $('#arrival_purchase_order_id').prop('disabled', true).empty()
+                    .append('<option value="">Loading contracts...</option>').trigger('change.select2');
+
+                // Loading toaster, contracts aane tak dikhta rahega
+                if (contractsToast) toastr.clear(contractsToast);
+                contractsToast = toastr.info('Loading contracts...', '', {
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    tapToDismiss: false,
+                    closeButton: false
+                });
+
+                const contractsRequest = $.get(`/arrival/get-contracts/${locationId}`, function (data) {
                     $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
                     $.each(data.contracts, function (index, contract) {
                         $('#arrival_purchase_order_id').append(
@@ -650,9 +690,22 @@
                                                     </option>`
                         );
                     });
+                }).fail(function (xhr, status) {
+                    // Location change par cancel hui request ko ignore karo, naya loading chal raha hai
+                    if (status === 'abort') return;
+                    $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
+                    toastr.error('Contracts load nahi ho sakay, dobara location select karein.');
+                }).always(function (data, status) {
+                    if (status === 'abort') return;
+                    if (contractsToast) {
+                        toastr.clear(contractsToast);
+                        contractsToast = null;
+                    }
+                    $('#arrival_purchase_order_id').prop('disabled', false).trigger('change.select2');
                 });
+                locationRequests.push(contractsRequest);
 
-                $.get(`/arrival/get-suppliers/${locationId}`, function (data) {
+                locationRequests.push($.get(`/arrival/get-suppliers/${locationId}`, function (data) {
                     $('#broker_name').empty().append('<option value="">Broker Name</option>');
                     $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
 
@@ -664,34 +717,20 @@
                             `<option value="${supplier.name}">${supplier.name}</option>`
                         );
                     });
-                });
+                }));
             }
 
+            $('#company_location_id').on('change', function () {
+                loadLocationData($(this).val());
+            });
 
-
-            function getTicketNumber(locationId) {
-                if (locationId) {
-                    $.get(`/arrival/get-ticket-number/${locationId}`, function (data) {
-                        $('input[name="unique_no"]').val(data.ticket_no);
-                    });
-                }
-                loadLocationData(locationId);
-
+            // Sirf ek location ho to use auto-select karo (change event khud data load karega)
+            if ($('#company_location_id option').length == 2) {
+                $('#company_location_id').val($('#company_location_id option:nth-child(2)').val()).trigger('change');
             }
-            $(document).on('change', '#company_location_id', function () {
-                const locationId = $(this).val();
-                getTicketNumber(locationId);
-            });
-            $(document).ready(function () {
-                // console.log($('#company_location_id option').length);
-                if ($('#company_location_id option').length == 2) {
-                    $('#company_location_id').val($('#company_location_id option:nth-child(2)').val()).trigger('change');
-                    getTicketNumber($('#company_location_id option:nth-child(2)').val());
-                    loadLocationData($('#company_location_id option:nth-child(2)').val());
-                }
-            });
 
             @if ($isRegularUser)
+                // Agar upar location already load ho chuki hai to ye dobara ajax nahi bhejega
                 loadLocationData('{{ $userLocation->id ?? null }}');
             @endif
 
