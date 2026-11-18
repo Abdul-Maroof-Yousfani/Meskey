@@ -105,7 +105,7 @@
 
         body.vertical-overlay-menu .main-menu.app-sidebar {
             background: #fff !important;
-            border-radius: 0 22px 22px 0;
+            border-radius: 0;
             border-right: 1px solid #ececf2;
             box-shadow: 10px 0 30px rgba(20, 30, 60, .18);
             overflow: hidden;
@@ -193,7 +193,12 @@
             box-shadow: 0 4px 10px rgba(39, 72, 154, .30);
         }
 
-        /* Arrow (chevron) - beech me, khulne pe ghoomta hai */
+        /* Arrow (chevron) - beech me, khulne pe ghoomta hai.
+           <a> ko relative do, warna arrow <li> ke hisaab se position hota hai aur
+           submenu khulne par (li lamba hone se) neeche khisak jata hai. */
+        body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.has-sub > a {
+            position: relative;
+        }
         body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.has-sub > a:not(.mm-next)::after {
             content: "\e844" !important;
             font-family: "feather" !important;

@@ -1052,34 +1052,201 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             font-size: 16px;
         }
 
-        @media (max-width: 768px) {
+        /* =========================================================
+           Mobile (< 768px): compact 2-column dashboard
+           ========================================================= */
+        @media (max-width: 767.98px) {
+            .dashboard-container {
+                padding: 12px;
+            }
+
+            /* ---- Filters: chhota sa card, ek line me ---- */
             .dashboard-filters {
-                flex-direction: column;
-                gap: 15px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-end;
+                gap: 10px;
+                padding: 12px;
+                margin-bottom: 14px;
+                border-radius: 16px;
+                border-color: #eceef4;
+                box-shadow: 0 2px 10px rgba(20, 30, 70, .05);
             }
 
             .filter-group {
-                min-width: 100%;
+                flex: 1 1 0;
+                min-width: 0;
             }
 
-            .dashboard-container {
-                padding: 15px;
+            /* sales module me dates: dono aadhi aadhi pehli line me */
+            .filter-group:has(#from_date),
+            .filter-group:has(#to_date) {
+                flex: 1 1 calc(50% - 5px);
+            }
+
+            .filter-group label {
+                font-size: 10px;
+                margin-bottom: 4px;
+            }
+
+            .filter-input {
+                width: 100%;
+                height: 40px;
+                padding: 0 10px;
+                font-size: 13px;
+                border-radius: 10px;
+            }
+
+            .filter-group .select2-container {
+                width: 100% !important;
+            }
+
+            .filter-group .select2-container .select2-selection--single {
+                height: 40px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+            }
+
+            .filter-group .select2-container .select2-selection--single .select2-selection__rendered {
+                font-size: 13px;
+                line-height: 40px;
+            }
+
+            .filter-group .select2-container .select2-selection--single .select2-selection__arrow {
+                height: 38px;
+            }
+
+            .refresh-btn {
+                flex: 0 0 auto;
+                height: 40px;
+                padding: 0 14px;
+                border-radius: 10px;
+                font-size: 13px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            /* ---- Grid: 2 columns ---- */
+            .dashboard-cards-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            /* ---- Card: compact ---- */
+            .dashboard-card {
+                display: flex;
+                flex-direction: column;
+                min-height: 112px;
+                padding: 12px;
+                border-radius: 16px;
+                border-color: #eceef4;
+                box-shadow: 0 2px 8px rgba(20, 30, 70, .05);
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .dashboard-card:hover {
+                transform: none;
+                box-shadow: 0 2px 8px rgba(20, 30, 70, .05);
+            }
+
+            .dashboard-card:active {
+                transform: scale(.97);
+            }
+
+            /* icon: upar left, chhota tinted square */
+            .card-icon {
+                position: static;
+                width: 32px;
+                height: 32px;
+                margin-bottom: 10px;
+                border-radius: 10px;
+                font-size: 15px;
+                background: rgba(39, 72, 154, .08);
+            }
+
+            .dashboard-card.bg-danger-light .card-icon { background: rgba(229, 72, 77, .12); }
+            .dashboard-card.bg-warning-light .card-icon { background: rgba(245, 158, 11, .14); }
+            .dashboard-card.bg-success-light .card-icon { background: rgba(34, 160, 90, .12); }
+
+            .card-number {
+                font-size: 1.35rem;
+                line-height: 1.15;
+                margin-bottom: 4px;
+                letter-spacing: -.3px;
+                word-break: break-word;
+            }
+
+            .card-title {
+                margin: 0 !important;
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 1.3;
+                color: #4b5563;
+                /* lamba title 2 lines tak, phir ... */
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            /* sales group headings */
+            .col-12 > h6.text-uppercase {
+                font-size: 11px;
+                letter-spacing: .6px;
+                margin: 6px 0 8px !important;
+            }
+
+            /* ---- Dark mode ---- */
+            body.layout-dark .dashboard-filters {
+                background: #1c1c20;
+                border-color: #2a2a30;
+                box-shadow: none;
+            }
+
+            body.layout-dark .filter-input {
+                background: #26262c;
+                border-color: #34343c;
+            }
+
+            body.layout-dark .dashboard-card {
+                background: #1c1c20;
+                border-color: #2a2a30;
+                box-shadow: none;
+            }
+
+            body.layout-dark .card-icon {
+                background: rgba(90, 130, 230, .14);
+                color: #9db4f0;
+            }
+
+            body.layout-dark .card-number {
+                color: #9db4f0;
+            }
+
+            body.layout-dark .card-title {
+                color: #c9c8d1;
             }
         }
 
-        @media (max-width: 480px) {
+        /* bahut chhoti screen */
+        @media (max-width: 359.98px) {
+            .dashboard-cards-grid {
+                gap: 8px;
+            }
+
             .dashboard-card {
-                padding: 20px;
+                padding: 10px;
+                min-height: 104px;
             }
 
             .card-number {
-                font-size: 2rem;
+                font-size: 1.15rem;
             }
 
-            .card-icon {
-                width: 36px;
-                height: 36px;
-                font-size: 16px;
+            .refresh-btn {
+                padding: 0 11px;
             }
         }
 
