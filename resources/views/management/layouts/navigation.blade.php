@@ -938,8 +938,6 @@
             {{-- @endcanAccess --}}
             @canAccess('export-sales')
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a
-                    {{--
-                    @canAccess('export-module') --}} <li class="dropdown nav-item" data-menu="dropdown"><a
                         class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                         data-toggle="dropdown"><i class="ft-arrow-up"></i><span data-i18n="UI Kit">Export</span></a>
                     <ul class="dropdown-menu">

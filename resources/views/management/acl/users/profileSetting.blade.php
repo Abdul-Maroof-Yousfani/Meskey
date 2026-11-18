@@ -31,13 +31,13 @@
                             <span class="align-middle">General</span>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a class="nav-link" id="change-password-tab" data-toggle="tab" href="#change-password"
                             role="tab" aria-controls="change-password" aria-selected="false">
                             <i class="ft-lock mr-1 align-middle"></i>
                             <span class="align-middle">Change Password</span>
                         </a>
-                    </li>
+                    </li> --}}
                     <li class="nav-item">
                         <a class="nav-link" id="connections-tab" data-toggle="tab" href="#connections" role="tab"
                             aria-controls="connections" aria-selected="false">
