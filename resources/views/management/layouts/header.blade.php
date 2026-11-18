@@ -311,6 +311,54 @@
             background: #9db4f0;
         }
 
+        /* ===== Full-screen lock loader ===== */
+        .app-lock-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 22, 45, .35);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+            cursor: wait;
+        }
+        .app-lock-loader.show {
+            display: flex;
+            animation: appLockFade .15s ease-out;
+        }
+        body.app-locked { overflow: hidden; }
+        .app-lock-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            min-width: 150px;
+            padding: 22px 26px;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 16px 40px rgba(15, 22, 45, .25);
+        }
+        .app-lock-spinner {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid rgba(39, 72, 154, .15);
+            border-top-color: #27489a;
+            animation: appLockSpin .7s linear infinite;
+        }
+        .app-lock-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #3d3c4a;
+        }
+        body.layout-dark .app-lock-box { background: #1c1c20; box-shadow: 0 16px 40px rgba(0, 0, 0, .6); }
+        body.layout-dark .app-lock-spinner { border-color: rgba(90, 130, 230, .2); border-top-color: #9db4f0; }
+        body.layout-dark .app-lock-text { color: #e4e4e8; }
+        @keyframes appLockSpin { to { transform: rotate(360deg); } }
+        @keyframes appLockFade { from { opacity: 0; } to { opacity: 1; } }
+
         /* ===== Header ko thori saans do (upar/neeche padding) - sirf mobile ===== */
         @media (max-width: 767.98px) {
             nav.header-navbar .container-fluid.navbar-wrapper {
@@ -390,6 +438,168 @@
         }
         body.layout-dark .header-navbar .header-icon-btn .notification { border-color: #2a2a2e; }
 
+        /* back button sirf mobile full-screen me */
+        .profile-menu .pm-back { display: none; }
+
+        /* ===== Profile popup (mobile + desktop) ===== */
+        .profile-menu {
+            top: calc(100% + 10px) !important;
+            width: 272px;
+            max-width: calc(100vw - 24px);
+            padding: 0 !important;
+            border: 1px solid #eceef4;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 18px 44px rgba(20, 30, 70, .18);
+        }
+        /* desktop: avatar right me hai, popup right se khule */
+        .profile-menu.dropdown-menu-right {
+            right: 0 !important;
+            left: auto !important;
+        }
+        .profile-menu.show { animation: pmIn .18s ease-out; }
+        @keyframes pmIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .profile-menu .pm-head {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 16px;
+            color: #fff;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4a6fd1, #27489a);
+        }
+        .profile-menu .pm-head::after {
+            /* halka decorative circle */
+            content: "";
+            position: absolute;
+            right: -40px;
+            top: -50px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .10);
+        }
+        .profile-menu .pm-avatar {
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, .85);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
+        }
+        .profile-menu .pm-info { position: relative; z-index: 1; min-width: 0; }
+        .profile-menu .pm-name {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .profile-menu .pm-email {
+            margin-top: 2px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, .78);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-menu .pm-body { padding: 8px; }
+        .profile-menu .pm-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            color: #2b2a35;
+            text-decoration: none;
+            transition: background .15s;
+        }
+        .profile-menu .pm-item:hover,
+        .profile-menu .pm-item:active { background: rgba(39, 72, 154, .06); text-decoration: none; }
+        .profile-menu .pm-ic {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            font-size: 16px;
+            color: #27489a;
+            background: rgba(39, 72, 154, .09);
+        }
+        .profile-menu .pm-label {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        .profile-menu .pm-label small {
+            margin-top: 2px;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: #9a98a6;
+        }
+        .profile-menu .pm-arrow { color: #b4b2be; font-size: 15px; }
+
+        .profile-menu .pm-foot {
+            padding: 8px;
+            border-top: 1px solid #f0f1f5;
+        }
+        .profile-menu .pm-logout {
+            width: 100%;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid rgba(229, 72, 77, .22);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #d93a40;
+            background: rgba(229, 72, 77, .07);
+            cursor: pointer;
+            transition: background .15s, border-color .15s;
+        }
+        .profile-menu .pm-logout:hover,
+        .profile-menu .pm-logout:active {
+            background: rgba(229, 72, 77, .14);
+            border-color: rgba(229, 72, 77, .35);
+        }
+
+        /* dark mode */
+        body.layout-dark .profile-menu {
+            background: #1c1c20;
+            border-color: #2a2a30;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, .6);
+        }
+        body.layout-dark .profile-menu .pm-head { background: linear-gradient(135deg, #3a5bb8, #1d3878); }
+        body.layout-dark .profile-menu .pm-item { color: #e4e4e8; }
+        body.layout-dark .profile-menu .pm-item:hover,
+        body.layout-dark .profile-menu .pm-item:active { background: rgba(90, 130, 230, .10); }
+        body.layout-dark .profile-menu .pm-ic { color: #9db4f0; background: rgba(90, 130, 230, .14); }
+        body.layout-dark .profile-menu .pm-foot { border-top-color: #2a2a30; }
+        body.layout-dark .profile-menu .pm-logout {
+            color: #ff7b80;
+            background: rgba(229, 72, 77, .12);
+            border-color: rgba(229, 72, 77, .30);
+        }
+
         /* ===== Mobile header + bottom nav ===== */
         .mobile-bottom-nav { display: none; }
 
@@ -423,10 +633,193 @@
             body.layout-dark .mobile-user-greet small { color: #9a9a9a; }
             body.layout-dark .mobile-user-greet strong { color: #e6e6e6; }
 
-            .mobile-user-dropdown .dropdown-menu {
+            /* ---- Profile popup: mobile par FULL SCREEN ---- */
+            body:has(.mobile-user-dropdown .profile-menu.show) { overflow: hidden; }
+            body:has(.mobile-user-dropdown .profile-menu.show) nav.header-navbar { z-index: 1065 !important; }
+            body:has(.mobile-user-dropdown .profile-menu.show) .mobile-bottom-nav { display: none; }
+
+            .mobile-user-dropdown .profile-menu.show {
+                position: fixed !important;
+                inset: 0 !important;
+                top: 0 !important;
                 left: 0 !important;
-                right: auto !important;
-                min-width: 200px;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100vw !important;
+                max-width: none !important;
+                height: 100vh;
+                height: 100dvh;
+                margin: 0 !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                transform: none !important;
+                display: flex !important;
+                flex-direction: column;
+                z-index: 1066;
+                background: #f4f5fa;
+                box-shadow: none;
+                overflow-y: auto;
+                animation: pmFull .25s ease-out;
+            }
+            @keyframes pmFull {
+                from { opacity: 0; transform: translateY(40px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            /* Hero header: beech me bari tasveer, naam, email */
+            .mobile-user-dropdown .profile-menu .pm-head {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                gap: 10px;
+                padding: calc(56px + env(safe-area-inset-top)) 20px 34px;
+                border-radius: 0 0 28px 28px;
+            }
+            .mobile-user-dropdown .profile-menu .pm-head::after {
+                width: 220px;
+                height: 220px;
+                right: -70px;
+                top: -80px;
+            }
+            .mobile-user-dropdown .profile-menu .pm-avatar {
+                width: 88px;
+                height: 88px;
+                border-width: 3px;
+                box-shadow: 0 10px 26px rgba(0, 0, 0, .25);
+            }
+            .mobile-user-dropdown .profile-menu .pm-info { width: 100%; }
+            .mobile-user-dropdown .profile-menu .pm-name { font-size: 19px; }
+            .mobile-user-dropdown .profile-menu .pm-email { font-size: 13px; margin-top: 4px; }
+
+            .mobile-user-dropdown .profile-menu .pm-back {
+                position: absolute;
+                z-index: 2;
+                top: calc(14px + env(safe-area-inset-top));
+                left: 14px;
+                width: 38px;
+                height: 38px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 0;
+                border-radius: 12px;
+                font-size: 1.15rem;
+                color: #fff;
+                background: rgba(255, 255, 255, .18);
+                cursor: pointer;
+            }
+
+            /* Menu card */
+            .mobile-user-dropdown .profile-menu .pm-body {
+                margin: 18px 16px 0;
+                padding: 8px;
+                border: 1px solid #eceef4;
+                border-radius: 18px;
+                background: #fff;
+                box-shadow: 0 2px 8px rgba(20, 30, 70, .04);
+            }
+            .mobile-user-dropdown .profile-menu .pm-item { padding: 12px 10px; }
+            .mobile-user-dropdown .profile-menu .pm-ic { width: 42px; height: 42px; font-size: 18px; border-radius: 13px; }
+            .mobile-user-dropdown .profile-menu .pm-label { font-size: 15px; }
+            .mobile-user-dropdown .profile-menu .pm-label small { font-size: 12px; }
+
+            /* Logout sabse neeche */
+            .mobile-user-dropdown .profile-menu .pm-foot {
+                margin-top: auto;
+                padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+                border-top: 0;
+            }
+            /* ---- Slide to logout ---- */
+            .slide-logout {
+                position: relative;
+                height: 60px;
+                border-radius: 30px;
+                overflow: hidden;
+                background: rgba(229, 72, 77, .08);
+                border: 1px solid rgba(229, 72, 77, .22);
+                user-select: none;
+                -webkit-user-select: none;
+            }
+            .slide-logout .sl-fill {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 60px;
+                border-radius: 30px;
+                background: linear-gradient(90deg, rgba(229, 72, 77, .10), rgba(229, 72, 77, .28));
+                pointer-events: none;
+            }
+            .slide-logout .sl-text {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding-left: 40px;
+                font-size: 15px;
+                font-weight: 600;
+                letter-spacing: .2px;
+                pointer-events: none;
+                /* iPhone jaisi chamakti hui text */
+                color: transparent;
+                background: linear-gradient(90deg, #d93a40 0%, #d93a40 40%, #ffb3b6 50%, #d93a40 60%, #d93a40 100%);
+                background-size: 250% 100%;
+                -webkit-background-clip: text;
+                background-clip: text;
+                animation: slShimmer 2.2s linear infinite;
+            }
+            @keyframes slShimmer {
+                from { background-position: 100% 0; }
+                to { background-position: -150% 0; }
+            }
+            .slide-logout .sl-knob {
+                position: absolute;
+                z-index: 2;
+                top: 5px;
+                left: 5px;
+                width: 50px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                font-size: 1.2rem;
+                color: #fff;
+                background: linear-gradient(135deg, #f0656a, #d93a40);
+                box-shadow: 0 6px 16px rgba(217, 58, 64, .35);
+                cursor: grab;
+                touch-action: none;
+                outline: none;
+            }
+            .slide-logout .sl-knob:focus-visible { box-shadow: 0 0 0 4px rgba(217, 58, 64, .3); }
+            .slide-logout.dragging .sl-knob { cursor: grabbing; }
+            /* chhorne par wapas smoothly jaye */
+            .slide-logout.returning .sl-knob,
+            .slide-logout.returning .sl-fill { transition: transform .3s ease, width .3s ease; }
+            .slide-logout.done .sl-text {
+                animation: none;
+                color: #d93a40;
+                background: none;
+            }
+
+            body.layout-dark .slide-logout {
+                background: rgba(229, 72, 77, .12);
+                border-color: rgba(229, 72, 77, .30);
+            }
+            body.layout-dark .slide-logout .sl-text {
+                background-image: linear-gradient(90deg, #ff7b80 0%, #ff7b80 40%, #fff 50%, #ff7b80 60%, #ff7b80 100%);
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .slide-logout .sl-text { animation: none; color: #d93a40; background: none; }
+            }
+
+            /* dark mode */
+            body.layout-dark .mobile-user-dropdown .profile-menu.show { background: #121214; }
+            body.layout-dark .mobile-user-dropdown .profile-menu .pm-body {
+                background: #1c1c20;
+                border-color: #2a2a30;
+                box-shadow: none;
             }
 
             /* Floating, frosted-glass bottom bar */
@@ -786,6 +1179,14 @@
 <body
     class="horizontal-layout horizontal-menu horizontal-menu-padding 2-columns  navbar-sticky {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="2-columns">
+    {{-- Full-screen lock loader (theme switch, notifications) --}}
+    <div id="appLockLoader" class="app-lock-loader" role="status" aria-live="polite" aria-hidden="true">
+        <div class="app-lock-box">
+            <span class="app-lock-spinner"></span>
+            <span class="app-lock-text">Please wait...</span>
+        </div>
+    </div>
+
     <div id="preloader" class="preloader-overlay" style="display: none;">
         <div class="preloader-spinner">
             <div class="spinner-border" role="status">
@@ -807,24 +1208,45 @@
                             <strong>{{ auth()->user()->name }}</strong>
                         </span>
                     </a>
-                    <div class="dropdown-menu text-left m-0 pb-0" aria-labelledby="dropdownBasicMobile">
-                        <div class="px-3 py-2">
-                            <div class="font-weight-bold">{{ auth()->user()->name }}</div>
-                            <small class="text-muted">{{ auth()->user()->email }}</small>
+                    <div class="dropdown-menu profile-menu text-left m-0 p-0" aria-labelledby="dropdownBasicMobile">
+                        <div class="pm-head">
+                            <button type="button" class="pm-back" aria-label="Close"
+                                onclick="document.getElementById('dropdownBasicMobile').click()">
+                                <i class="ft-arrow-left"></i>
+                            </button>
+                            <img class="pm-avatar" src="{{ image_path(auth()->user()->profile_image) }}"
+                                alt="avatar">
+                            <div class="pm-info">
+                                <div class="pm-name">{{ auth()->user()->name }}</div>
+                                <div class="pm-email">{{ auth()->user()->email }}</div>
+                            </div>
                         </div>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{{ url('profile-settings') }}">
-                            <div class="d-flex align-items-center"><i class="ft-edit mr-2"></i><span>Edit
-                                    Profile</span></div>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <form class="m-0" method="POST" action="{{ route('logouts') }}">
-                            @csrf
-                            <a href="#" onclick="event.preventDefault(); this.closest('form').submit();">
-                                <div class="dropdown-item"><i class="ft-power mr-2"></i><span>{{ __('Logout') }}</span>
-                                </div>
+
+                        <div class="pm-body">
+                            <a class="pm-item" href="{{ url('profile-settings') }}">
+                                <span class="pm-ic"><i class="ft-user"></i></span>
+                                <span class="pm-label">
+                                    Edit Profile
+                                    <small>Name, photo &amp; password</small>
+                                </span>
+                                <i class="ft-chevron-right pm-arrow"></i>
                             </a>
-                        </form>
+                        </div>
+
+                        <div class="pm-foot">
+                            <form class="m-0" id="mobileLogoutForm" method="POST" action="{{ route('logouts') }}">
+                                @csrf
+                                {{-- iPhone jaisa "slide to logout" --}}
+                                <div class="slide-logout" id="slideLogout">
+                                    <div class="sl-fill"></div>
+                                    <span class="sl-text">Slide to logout</span>
+                                    <div class="sl-knob" role="button" tabindex="0"
+                                        aria-label="Slide to logout (ya Enter dabayein)">
+                                        <i class="ft-log-out"></i>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
@@ -967,27 +1389,36 @@
                                 <img class="avatar" src="{{ image_path(auth()->user()->profile_image) }}"
                                     alt="avatar" height="35" width="35">
                             </a>
-                            <div class="dropdown-menu text-left dropdown-menu-right m-0 pb-0"
+                            <div class="dropdown-menu profile-menu dropdown-menu-right text-left m-0 p-0"
                                 aria-labelledby="dropdownBasic2">
+                                <div class="pm-head">
+                                    <img class="pm-avatar" src="{{ image_path(auth()->user()->profile_image) }}"
+                                        alt="avatar">
+                                    <div class="pm-info">
+                                        <div class="pm-name">{{ auth()->user()->name }}</div>
+                                        <div class="pm-email">{{ auth()->user()->email }}</div>
+                                    </div>
+                                </div>
 
-                                <a class="dropdown-item" href="{{ url('profile-settings') }}">
-                                    <div class="d-flex align-items-center"><i class="ft-edit mr-2"></i><span>Edit
-                                            Profile</span></div>
-                                </a>
-
-                                <div class="dropdown-divider"></div>
-
-                                <form class="m-0" method="POST" action="{{ route('logouts') }}">
-                                    @csrf
-                                    <a href="#"
-                                        onclick="event.preventDefault(); this.closest('form').submit();">
-                                        <div class="dropdown-item"><i
-                                                class="ft-power mr-2"></i><span>{{ __('Logout') }}</span></div>
-
+                                <div class="pm-body">
+                                    <a class="pm-item" href="{{ url('profile-settings') }}">
+                                        <span class="pm-ic"><i class="ft-user"></i></span>
+                                        <span class="pm-label">
+                                            Edit Profile
+                                            <small>Name, photo &amp; password</small>
+                                        </span>
+                                        <i class="ft-chevron-right pm-arrow"></i>
                                     </a>
-                                </form>
+                                </div>
 
-
+                                <div class="pm-foot">
+                                    <form class="m-0" method="POST" action="{{ route('logouts') }}">
+                                        @csrf
+                                        <button type="submit" class="pm-logout">
+                                            <i class="ft-log-out"></i><span>{{ __('Logout') }}</span>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </li>
                         {{-- <li class="nav-item d-none d-lg-block mr-2 mt-1"><a
@@ -1014,6 +1445,151 @@
         </a>
     </div>
 <script>
+    // ===== Full-screen lock loader (global) =====
+    var appLoaderTimer = null;
+
+    function showAppLoader(text) {
+        var el = document.getElementById('appLockLoader');
+        if (!el) return;
+        el.querySelector('.app-lock-text').textContent = text || 'Please wait...';
+        el.classList.add('show');
+        el.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('app-locked');
+
+        // safety: request atak jaye to bhi 15 sec baad screen unlock ho jaye
+        clearTimeout(appLoaderTimer);
+        appLoaderTimer = setTimeout(hideAppLoader, 15000);
+    }
+
+    function hideAppLoader() {
+        var el = document.getElementById('appLockLoader');
+        if (!el) return;
+        clearTimeout(appLoaderTimer);
+        el.classList.remove('show');
+        el.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('app-locked');
+    }
+
+    // ===== Mobile profile popup (full screen): khaali jagah tap karne se band na ho =====
+    // Bootstrap dropdown menu ke andar ke click par bhi band ho jata hai. Sirf link/button ko
+    // aage jane do (navigate, logout, back), baaki click yahin rok do.
+    document.addEventListener('DOMContentLoaded', function() {
+        var pm = document.querySelector('.mobile-user-dropdown .profile-menu');
+        if (pm) {
+            pm.addEventListener('click', function(e) {
+                if (!e.target.closest('a, button')) {
+                    e.stopPropagation();
+                }
+            });
+        }
+    });
+
+    // ===== Slide to logout (mobile profile popup) =====
+    document.addEventListener('DOMContentLoaded', function() {
+        var track = document.getElementById('slideLogout');
+        var form = document.getElementById('mobileLogoutForm');
+        if (!track || !form) return;
+
+        var knob = track.querySelector('.sl-knob');
+        var fill = track.querySelector('.sl-fill');
+        var text = track.querySelector('.sl-text');
+        var PAD = 5;
+        var startX = 0, dx = 0, max = 0, dragging = false, done = false;
+
+        function setPos(x) {
+            knob.style.transform = 'translateX(' + x + 'px)';
+            fill.style.width = (x + knob.offsetWidth + PAD * 2) + 'px';
+            // text slide ke saath halka hota jaye
+            text.style.opacity = String(Math.max(0, 1 - (x / (max || 1)) * 1.4));
+        }
+
+        function finish() {
+            done = true;
+            track.classList.add('done');
+            setPos(max);
+            text.style.opacity = '1';
+            text.textContent = 'Logging out...';
+            if (typeof showAppLoader === 'function') showAppLoader('Logging out...');
+            form.submit();
+        }
+
+        function reset() {
+            track.classList.add('returning');
+            setPos(0);
+            setTimeout(function() { track.classList.remove('returning'); }, 320);
+        }
+
+        knob.addEventListener('pointerdown', function(e) {
+            if (done) return;
+            dragging = true;
+            startX = e.clientX;
+            dx = 0;
+            max = track.clientWidth - knob.offsetWidth - PAD * 2;
+            track.classList.remove('returning');
+            track.classList.add('dragging');
+            knob.setPointerCapture(e.pointerId);
+            e.preventDefault();
+        });
+
+        knob.addEventListener('pointermove', function(e) {
+            if (!dragging) return;
+            dx = Math.min(Math.max(0, e.clientX - startX), max);
+            setPos(dx);
+        });
+
+        function release() {
+            if (!dragging) return;
+            dragging = false;
+            track.classList.remove('dragging');
+            // 90% se zyada khincha = logout, warna wapas
+            if (dx >= max * 0.9) {
+                finish();
+            } else {
+                reset();
+            }
+        }
+        knob.addEventListener('pointerup', release);
+        knob.addEventListener('pointercancel', release);
+
+        // keyboard se bhi chale (accessibility)
+        knob.addEventListener('keydown', function(e) {
+            if (!done && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                max = track.clientWidth - knob.offsetWidth - PAD * 2;
+                finish();
+            }
+        });
+
+        // browser "back" se wapas aaye to slider reset
+        window.addEventListener('pageshow', function() {
+            if (done && typeof hideAppLoader === 'function') hideAppLoader();
+            done = false;
+            track.classList.remove('done');
+            text.textContent = 'Slide to logout';
+            text.style.opacity = '';
+            knob.style.transform = '';
+            fill.style.width = '';
+        });
+    });
+
+    // ===== Dark / light mode: cookie save hone tak screen lock =====
+    // scripts.js (#color-switch-1 change) /set-layout-cookie par AJAX bhejta hai. Agar user
+    // us ke khatam hone se pehle doosre page par chala jaye to cookie save nahi hoti aur
+    // theme purani state me wapas aa jati hai. Is liye request poori hone tak loader dikhao.
+    $(document).on('change', '#color-switch-1', function() {
+        showAppLoader('Applying theme...');
+    });
+    // NOTE: footer me vendors.min.js jQuery dobara (3.4.1) load karta hai aur window.$ badal deta hai;
+    // scripts.js ka AJAX usi doosri jQuery se jata hai. Is liye ajaxComplete page load hone ke baad
+    // aakhri window.jQuery par lagao, warna event kabhi nahi milta aur loader atka rehta hai.
+    window.addEventListener('load', function() {
+        window.jQuery(document).ajaxComplete(function(event, xhr, settings) {
+            if (settings && settings.url && settings.url.indexOf('set-layout-cookie') !== -1) {
+                hideAppLoader();
+            }
+        });
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         
         // Request desktop notification permission on page load
@@ -1094,25 +1670,19 @@
             });
 
             // 2. Fetch dropdown items on click
+            // Pehle screen lock + loader, data aane ke baad hi popup bhara hua khule
             $('#dropdownBasic1').on('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
                 let menu = $('#notification-dropdown-menu');
 
-                // Toggle visibility manually
                 if (menu.hasClass('show')) {
                     closeNotiMenu();
                     return;
-                } else {
-                    menu.addClass('show');
-                    if (isMobileView()) {
-                        $('body').addClass('noti-open');
-                    }
                 }
 
-                menu.html('<li class="dropdown-menu-header"><div class="dropdown-header d-flex justify-content-center m-0 px-3 py-2 white bg-primary"><span>Loading notifications...</span></div></li>');
-                decorateNotiMenu();
+                showAppLoader('Loading notifications...');
 
                 $.ajax({
                     url: "{{ route('notifications.dropdown') }}",
@@ -1120,6 +1690,18 @@
                     success: function(res) {
                         menu.html(res.html);
                         decorateNotiMenu();
+                        menu.addClass('show');
+                        if (isMobileView()) {
+                            $('body').addClass('noti-open');
+                        }
+                    },
+                    error: function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Notifications load nahi ho sakin. Dobara try karein.');
+                        }
+                    },
+                    complete: function() {
+                        hideAppLoader();
                     }
                 });
             });
@@ -1133,6 +1715,7 @@
 
             // 3. Mark all as read
             $(document).on('click', '.mark-all-read-btn', function() {
+                showAppLoader('Marking as read...');
                 $.ajax({
                     url: "{{ route('notifications.markAllRead') }}",
                     type: "POST",
@@ -1149,8 +1732,19 @@
                                 success: function(res2) {
                                     $('#notification-dropdown-menu').html(res2.html);
                                     decorateNotiMenu();
+                                },
+                                complete: function() {
+                                    hideAppLoader();
                                 }
                             });
+                        } else {
+                            hideAppLoader();
+                        }
+                    },
+                    error: function() {
+                        hideAppLoader();
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Mark as read nahi ho saka. Dobara try karein.');
                         }
                     }
                 });

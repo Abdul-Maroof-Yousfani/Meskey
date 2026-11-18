@@ -501,7 +501,8 @@
 
 
 @foreach ($data['weighbridge_pending_locationwise'] as $location)
-                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '85%')">
+                        <div class="dashboard-card has-loc" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '85%')">
+                            <span class="loc-badge" title="{{ $location->location_name }}"><i class="ft-map-pin"></i>{{ $location->location_name }}</span>
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -522,7 +523,8 @@
                             </button>
                         </div>
 
-                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '85%')">
+                         <div class="dashboard-card has-loc" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '85%')">
+                            <span class="loc-badge" title="{{ $location->location_name }}"><i class="ft-map-pin"></i>{{ $location->location_name }}</span>
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -611,7 +613,8 @@
                         </div>
 
                     @foreach ($data['unloading_pending_locationwise'] as $location)
-                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_full_approve_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Unloading Pending - {{ $location->location_name }}', true, '85%')">
+                        <div class="dashboard-card has-loc" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_full_approve_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Unloading Pending - {{ $location->location_name }}', true, '85%')">
+                            <span class="loc-badge" title="{{ $location->location_name }}"><i class="ft-map-pin"></i>{{ $location->location_name }}</span>
                             <div class="card-icon">
                                 <i class="ft-thumbs-up"></i>
                             </div>
@@ -1024,6 +1027,44 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             text-decoration: none;
         }
 
+        /* ===== Location badge (location-wise boxes) - upar left ===== */
+        /* absolute: icon ke bilkul left me chipka hua, card ki height nahi barhata */
+        .loc-badge {
+            position: absolute;
+            top: 23px;              /* icon (top 14px, 40px uncha) ke beech me */
+            right: 66px;            /* icon (right 20px + 40px) ke saath 6px gap */
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            max-width: calc(100% - 136px); /* left me number ke liye ~70px jagah */
+            margin: 0;
+            padding: 3px 9px 3px 7px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: .2px;
+            color: #27489a;
+            background: rgba(39, 72, 154, .09);
+            border: 1px solid rgba(39, 72, 154, .18);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: top;
+        }
+
+        .loc-badge i {
+            flex-shrink: 0;
+            font-size: 11px;
+        }
+
+        body.layout-dark .loc-badge {
+            color: #9db4f0;
+            background: rgba(90, 130, 230, .14);
+            border-color: rgba(90, 130, 230, .30);
+        }
+
         .empty-module {
             display: flex;
             justify-content: center;
@@ -1189,6 +1230,31 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
+            }
+
+            /* location wale cards: icon + badge upar ek line me, number us ke neeche
+               (padding-top = doosre cards me icon 32px + 10px gap jitni, taake height barabar rahe) */
+            .dashboard-card.has-loc {
+                padding-top: 52px;
+            }
+
+            .dashboard-card.has-loc .card-icon {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                width: 28px;
+                height: 28px;
+                margin: 0;
+                font-size: 13px;
+                border-radius: 9px;
+            }
+
+            .dashboard-card.has-loc .loc-badge {
+                top: 15px;          /* 28px icon (top 12px) ke beech me */
+                right: 46px;        /* icon (right 12px + 28px) ke saath 6px gap */
+                max-width: calc(100% - 58px);
+                font-size: 10.5px;
+                padding: 2px 8px 2px 6px;
             }
 
             /* sales group headings */
