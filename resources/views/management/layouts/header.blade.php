@@ -1444,8 +1444,12 @@
         <a href="javascript:;" class="mbn-item mbn-menu menu-toggle">
             <i class="ft-menu"></i><span>Menu</span>
         </a>
+        {{-- Profile: page par jane ki jagah upar wala full-screen profile popup kholo.
+             stopPropagation zaroori hai, warna Bootstrap ka document click handler popup ko fauran band kar deta hai.
+             href fallback hai agar JS na chale. --}}
         <a href="{{ url('profile-settings') }}"
-            class="mbn-item {{ request()->is('profile-settings*') ? 'active' : '' }}">
+            class="mbn-item {{ request()->is('profile-settings*') ? 'active' : '' }}"
+            onclick="var t = document.getElementById('dropdownBasicMobile'); if (t) { event.preventDefault(); event.stopPropagation(); t.click(); }">
             <i class="ft-user"></i><span>Profile</span>
         </a>
     </div>
