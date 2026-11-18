@@ -66,7 +66,7 @@
 </table>
 
 <div class="row d-flex" id="paginationLinks">
-    <div class="col-md-12 text-right">
+    <div class="col-md-12 text-right px-0">
         {{ $notifications->links('management.notifications.pagination') }}
     </div>
 </div>

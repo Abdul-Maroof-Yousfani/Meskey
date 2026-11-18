@@ -452,19 +452,43 @@
             color: var(--nt-text);
         }
 
+        .nt-pager-info {
+            flex: 0 0 auto;
+        }
+
+        /* right side bachi hui jagah le, pages us me shrink/wrap hon -> JS wrap dekh kar kam numbers dikhata hai */
         .nt-pager-right {
+            flex: 1 1 auto;
+            min-width: 0;
             display: flex;
             align-items: center;
+            justify-content: flex-end;
             gap: 10px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+        }
+
+        .nt-perpage {
+            flex: 0 0 auto;
         }
 
         #paginationLinks .pagination {
+            flex: 0 1 auto;
+            min-width: 0;
             display: flex;
             align-items: center;
             margin: 0;
             gap: 6px;
             flex-wrap: wrap;
+        }
+
+        /* bahut tang screen: "5 / 10" */
+        #paginationLinks .nt-compact .page-link {
+            min-width: 64px;
+            font-weight: 700;
+            color: var(--nt-text);
+            background: var(--nt-soft);
+            border-color: transparent;
+            opacity: 1;
         }
 
         #paginationLinks .page-item.nt-gap .page-link {
@@ -635,6 +659,7 @@
             #paginationLinks .pagination {
                 justify-content: center;
                 gap: 4px;
+                max-width: 100%;
             }
 
             #paginationLinks .page-link {
@@ -655,6 +680,112 @@
 @endsection
 @section('script')
     <script>
+        // =====================================================================
+        // Responsive pagination: jitni jagah ho utne page numbers
+        //   level 0: 1 2 3 4 5 … 10   |  1 … 3 4 5 6 7 … 10
+        //   level 1: 1 2 3 4 … 10     |  1 … 4 5 6 … 10
+        //   level 2: 1 2 3 … 10       |  1 … 5 … 10
+        //   level 3: 5 / 10  (bahut tang screen)
+        // Buttons doosri line me chale jayen (wrap) to agla chhota level try hota hai.
+        // =====================================================================
+        (function () {
+            var LEVELS = [
+                { block: 5, sib: 2 },
+                { block: 4, sib: 1 },
+                { block: 3, sib: 0 },
+            ];
+
+            function pageList(c, last, lv) {
+                var block = lv.block, sib = lv.sib, p = [], i;
+                if (last <= block + 2) {
+                    for (i = 1; i <= last; i++) p.push(i);
+                } else if (c <= block - 1) {
+                    for (i = 1; i <= block; i++) p.push(i);
+                    p.push(last);
+                } else if (c >= last - block + 2) {
+                    p.push(1);
+                    for (i = last - block + 1; i <= last; i++) p.push(i);
+                } else {
+                    p.push(1);
+                    for (i = c - sib; i <= c + sib; i++) p.push(i);
+                    p.push(last);
+                }
+                // gaps: ek page chhoot raha ho to wahi number, warna "…"
+                var out = [], prev = 0;
+                p.forEach(function (n) {
+                    if (prev && n - prev === 2) out.push(prev + 1);
+                    else if (prev && n - prev > 2) out.push('gap');
+                    out.push(n);
+                    prev = n;
+                });
+                return out;
+            }
+
+            function li(html, cls) {
+                var el = document.createElement('li');
+                el.className = 'page-item nt-num' + (cls ? ' ' + cls : '');
+                el.innerHTML = html;
+                return el;
+            }
+
+            function render(ul, levelIndex) {
+                var c = parseInt(ul.dataset.current, 10);
+                var last = parseInt(ul.dataset.last, 10);
+                var tpl = ul.dataset.url;
+                var nextLi = ul.lastElementChild; // prev/next li waise hi rehte hain
+
+                ul.querySelectorAll('.nt-num').forEach(function (el) { el.remove(); });
+
+                if (levelIndex >= LEVELS.length) {
+                    ul.insertBefore(li('<span class="page-link">' + c + ' / ' + last + '</span>', 'disabled nt-compact'), nextLi);
+                    return;
+                }
+
+                pageList(c, last, LEVELS[levelIndex]).forEach(function (n) {
+                    var el;
+                    if (n === 'gap') {
+                        el = li('<span class="page-link">&hellip;</span>', 'disabled nt-gap');
+                    } else if (n === c) {
+                        el = li('<span class="page-link">' + n + '</span>', 'active');
+                        el.setAttribute('aria-current', 'page');
+                    } else {
+                        el = li('<a class="page-link" href="' + tpl.replace('987654321', n) + '">' + n + '</a>');
+                    }
+                    ul.insertBefore(el, nextLi);
+                });
+            }
+
+            function wraps(ul) {
+                var first = ul.firstElementChild, last = ul.lastElementChild;
+                return first && last && last.offsetTop > first.offsetTop + 2;
+            }
+
+            function fitPager() {
+                var ul = document.querySelector('#paginationLinks ul.nt-pages');
+                if (!ul || !ul.dataset.last) return;
+                for (var lv = 0; lv <= LEVELS.length; lv++) {
+                    render(ul, lv);
+                    if (!wraps(ul)) return;
+                }
+            }
+
+            // har AJAX list load ke baad (filterationCommon #filteredData ka html badalta hai)
+            document.addEventListener('DOMContentLoaded', function () {
+                var box = document.getElementById('filteredData');
+                if (box && window.MutationObserver) {
+                    new MutationObserver(fitPager).observe(box, { childList: true });
+                }
+                fitPager();
+            });
+
+            // screen resize / rotate
+            var t;
+            window.addEventListener('resize', function () {
+                clearTimeout(t);
+                t = setTimeout(fitPager, 120);
+            });
+        })();
+
         $(document).ready(function () {
             filterationCommon(`{{ route('notifications.getList') }}`);
 

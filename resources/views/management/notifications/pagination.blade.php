@@ -34,7 +34,10 @@
 
     <div class="nt-pager-right">
         @if ($paginator->hasPages())
-            <ul class="pagination nt-pages">
+            {{-- data-*: index.blade.php ka JS screen ke hisaab se numbers dobara banata hai
+                 (jagah kam ho to kam numbers). Server wala render JS na chale to fallback hai. --}}
+            <ul class="pagination nt-pages" data-current="{{ $current }}" data-last="{{ $last }}"
+                data-url="{{ $paginator->url(987654321) }}">
                 {{-- Previous --}}
                 @if ($paginator->onFirstPage())
                     <li class="page-item disabled" aria-disabled="true">
@@ -52,15 +55,15 @@
                 @foreach ($pages as $page)
                     @if ($prev && $page - $prev == 2)
                         {{-- sirf ek page beech me chhoot raha ho to "…" ki jagah wahi number dikhao --}}
-                        <li class="page-item"><a class="page-link" href="{{ $paginator->url($prev + 1) }}">{{ $prev + 1 }}</a></li>
+                        <li class="page-item nt-num"><a class="page-link" href="{{ $paginator->url($prev + 1) }}">{{ $prev + 1 }}</a></li>
                     @elseif ($prev && $page - $prev > 2)
-                        <li class="page-item disabled nt-gap" aria-disabled="true"><span class="page-link">&hellip;</span></li>
+                        <li class="page-item disabled nt-gap nt-num" aria-disabled="true"><span class="page-link">&hellip;</span></li>
                     @endif
 
                     @if ($page == $current)
-                        <li class="page-item active" aria-current="page"><span class="page-link">{{ $page }}</span></li>
+                        <li class="page-item active nt-num" aria-current="page"><span class="page-link">{{ $page }}</span></li>
                     @else
-                        <li class="page-item"><a class="page-link" href="{{ $paginator->url($page) }}">{{ $page }}</a></li>
+                        <li class="page-item nt-num"><a class="page-link" href="{{ $paginator->url($page) }}">{{ $page }}</a></li>
                     @endif
                     @php $prev = $page; @endphp
                 @endforeach
