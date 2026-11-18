@@ -23,7 +23,7 @@
                     </a>
                 </div>
             </div>
-            <div class="row">
+            <div class="row md:mt-0 mt-3">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
