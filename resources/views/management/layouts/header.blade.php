@@ -1180,12 +1180,17 @@
     class="horizontal-layout horizontal-menu horizontal-menu-padding 2-columns  navbar-sticky {{ Cookie::get('layout') === 'dark' ? 'layout-dark' : '' }}"
     data-open="hover" data-menu="horizontal-menu" data-col="2-columns">
     {{-- Full-screen lock loader (theme switch, notifications) --}}
-    <div id="appLockLoader" class="app-lock-loader" role="status" aria-live="polite" aria-hidden="true">
+    {{-- "show" se shuru: page load hone tak loader dikhe, window load par JS isy hata deta hai --}}
+    <div id="appLockLoader" class="app-lock-loader show" role="status" aria-live="polite" aria-hidden="false">
         <div class="app-lock-box">
             <span class="app-lock-spinner"></span>
-            <span class="app-lock-text">Please wait...</span>
+            <span class="app-lock-text">Loading...</span>
         </div>
     </div>
+    <script>
+        // page load hone tak scroll lock
+        document.body.classList.add('app-locked');
+    </script>
 
     <div id="preloader" class="preloader-overlay" style="display: none;">
         <div class="preloader-spinner">
@@ -1448,7 +1453,7 @@
     // ===== Full-screen lock loader (global) =====
     var appLoaderTimer = null;
 
-    function showAppLoader(text) {
+    function showAppLoader(text, maxMs) {
         var el = document.getElementById('appLockLoader');
         if (!el) return;
         el.querySelector('.app-lock-text').textContent = text || 'Please wait...';
@@ -1456,9 +1461,9 @@
         el.setAttribute('aria-hidden', 'false');
         document.body.classList.add('app-locked');
 
-        // safety: request atak jaye to bhi 15 sec baad screen unlock ho jaye
+        // safety: request atak jaye to bhi kuch der baad screen unlock ho jaye
         clearTimeout(appLoaderTimer);
-        appLoaderTimer = setTimeout(hideAppLoader, 15000);
+        appLoaderTimer = setTimeout(hideAppLoader, maxMs || 15000);
     }
 
     function hideAppLoader() {
@@ -1469,6 +1474,63 @@
         el.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('app-locked');
     }
+
+    // =====================================================================
+    // GLOBAL PAGE LOADER - poori application ke liye, sirf yahin se
+    // =====================================================================
+    // 1) Naya page: loader HTML me "show" se shuru hota hai -> page poora load hone par hatao.
+    //    Koi image/script bahut slow ho to bhi DOM ready ke 6 sec baad hata do.
+    window.addEventListener('load', function() {
+        hideAppLoader();
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(hideAppLoader, 6000);
+    });
+
+    // 2) Page chhorte waqt (link click, form submit, window.location wagaira) loader dikhao.
+    //    Jin clicks se page nahi badalta (download, naya tab, file) un par skip karo,
+    //    warna loader atak jata.
+    var appLoaderSkipNav = false;
+
+    function shouldSkipLoaderForLink(a, e) {
+        if (!a) return true;
+        if (e && (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1)) return true; // naya tab/window
+        if (a.hasAttribute('download') || a.hasAttribute('data-no-loader')) return true;
+        if ((a.getAttribute('target') || '').toLowerCase() === '_blank') return true;
+        var href = (a.getAttribute('href') || '').trim().toLowerCase();
+        if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0 ||
+            href.indexOf('mailto:') === 0 || href.indexOf('tel:') === 0) return true;
+        if (/\.(pdf|xlsx?|csv|zip|docx?|png|jpe?g)(\?|#|$)/.test(href) || /[\/?&]download/.test(href)) return true;
+        return false;
+    }
+
+    document.addEventListener('click', function(e) {
+        var a = e.target.closest ? e.target.closest('a') : null;
+        if (a && shouldSkipLoaderForLink(a, e)) {
+            // is click se aane wala beforeunload ignore karo (download wagaira)
+            appLoaderSkipNav = true;
+            setTimeout(function() { appLoaderSkipNav = false; }, 1500);
+        }
+    }, true);
+
+    document.addEventListener('submit', function(e) {
+        var f = e.target;
+        if (f && ((f.getAttribute('target') || '').toLowerCase() === '_blank' || f.hasAttribute('data-no-loader'))) {
+            appLoaderSkipNav = true;
+            setTimeout(function() { appLoaderSkipNav = false; }, 1500);
+        }
+    }, true);
+
+    window.addEventListener('beforeunload', function() {
+        if (appLoaderSkipNav) return;
+        // page na badla (e.g. server ne file bhej di) to 8 sec baad khud hat jaye
+        showAppLoader('Loading...', 8000);
+    });
+
+    // 3) Browser back/forward cache se page wapas aaye to loader band
+    window.addEventListener('pageshow', function(e) {
+        if (e.persisted) hideAppLoader();
+    });
 
     // ===== Mobile profile popup (full screen): khaali jagah tap karne se band na ho =====
     // Bootstrap dropdown menu ke andar ke click par bhi band ho jata hai. Sirf link/button ko
