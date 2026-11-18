@@ -54,6 +54,7 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/pages/dashboard1.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/style.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/mobile-filter-sheet.css') }}?v={{ @filemtime(public_path('management/assets/css/mobile-filter-sheet.css')) }}">    <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/mobile-scroll-bars.css') }}?v={{ @filemtime(public_path('management/assets/css/mobile-scroll-bars.css')) }}">
     <script src="{{ asset('assets/js/custom.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
@@ -310,6 +311,8 @@
         body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.open > a > i.submenu-icon {
             background: #9db4f0;
         }
+
+        /* (Mobile filter bottom sheet: public/management/assets/css/mobile-filter-sheet.css) */
 
         /* ===== Full-screen lock loader ===== */
         .app-lock-loader {
@@ -1549,6 +1552,8 @@
             });
         }
     });
+
+    // (Mobile filter bottom sheet: public/management/assets/js/mobile-filter-sheet.js)
 
     // ===== Slide to logout (mobile profile popup) =====
     document.addEventListener('DOMContentLoaded', function() {

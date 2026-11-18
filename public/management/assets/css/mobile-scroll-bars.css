@@ -1,0 +1,47 @@
+/* =====================================================================
+   Mobile: scroll par top header + bottom nav chhupana / dikhana
+   JS: public/management/assets/js/mobile-scroll-bars.js
+   - neeche scroll -> body.m-bars-hidden -> header upar, bottom nav neeche chala jata hai
+   - upar scroll   -> wapas aa jate hain
+   NOTE: header par transform SIRF hidden state me lagta hai. Notification / profile
+   full-screen popups header ke andar hain; header par transform hamesha rahe to
+   un ki position:fixed toot jati hai.
+   ===================================================================== */
+
+@media (max-width: 767.98px) {
+
+    nav.header-navbar,
+    .mobile-bottom-nav {
+        transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    /* top header upar */
+    body.m-bars-hidden nav.header-navbar {
+        transform: translateY(-110%);
+    }
+
+    /* bottom nav neeche (floating hai: bottom gap + safe area bhi cover karo) */
+    body.m-bars-hidden .mobile-bottom-nav {
+        transform: translateY(calc(100% + 20px + env(safe-area-inset-bottom)));
+    }
+
+    /* koi popup / menu / sheet khula ho to bars kabhi na chhupen */
+    body.menu-open nav.header-navbar,
+    body.noti-open nav.header-navbar,
+    body.m-sheet-open nav.header-navbar,
+    body:has(.mobile-user-dropdown .profile-menu.show) nav.header-navbar,
+    body:has(.header-navbar .dropdown-menu.show) nav.header-navbar {
+        transform: none !important;
+    }
+
+    body.menu-open .mobile-bottom-nav {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    nav.header-navbar,
+    .mobile-bottom-nav {
+        transition: none;
+    }
+}
