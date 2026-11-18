@@ -46,6 +46,20 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
+                                                    <label>Sub Location:</label>
+                                                    <select name="sub_location_id[]" id="sub_location_id" multiple
+                                                        class="form-control selectWithoutAjax" data-placeholder="Select Sub Location">
+                                                        @foreach ($subLocations as $subLocation)
+                                                            <option value="{{ $subLocation->id }}"
+                                                                {{ is_array(request('sub_location_id')) && in_array($subLocation->id, request('sub_location_id')) ? 'selected' : '' }}>
+                                                                {{ $subLocation->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
                                                     <label>Warehouse:</label>
                                                     <select name="warehouse_id[]" id="warehouse_id"
                                                         {{ count($warehouses) == 1 ? 'disabled' : 'multiple' }}
@@ -153,13 +167,43 @@
     <script>
         $(document).ready(function () {
             const allWarehouses = @json($warehouses);
+            const allSubLocations = @json($subLocations);
 
-            function updateWarehouseOptions() {
-                let selectedLocations = $('#company_location_id').val() || [];
-                if (!Array.isArray(selectedLocations)) {
-                    selectedLocations = selectedLocations ? [selectedLocations] : [];
+            function selectedValues(selector) {
+                let values = $(selector).val() || [];
+                if (!Array.isArray(values)) {
+                    values = values ? [values] : [];
                 }
-                selectedLocations = selectedLocations.filter(loc => loc !== '' && loc !== 'all');
+                return values.filter(v => v !== '' && v !== 'all').map(String);
+            }
+
+            // Sub locations of the selected locations (all when no location is selected)
+            function updateSubLocationOptions() {
+                let selectedLocations = selectedValues('#company_location_id');
+                let $subSelect = $('#sub_location_id');
+                let currentlySelected = selectedValues('#sub_location_id');
+
+                let subLocationsToShow = allSubLocations;
+                if (selectedLocations.length > 0) {
+                    subLocationsToShow = allSubLocations.filter(s => selectedLocations.includes(String(s.company_location_id)));
+                }
+
+                let validSelected = currentlySelected.filter(id =>
+                    subLocationsToShow.some(s => String(s.id) === id)
+                );
+
+                $subSelect.empty();
+                subLocationsToShow.forEach(s => {
+                    $subSelect.append(new Option(s.name, s.id, false, validSelected.includes(String(s.id))));
+                });
+
+                $subSelect.val(validSelected).trigger('change.select2');
+            }
+
+            // Warehouses of the selected sub locations; when no sub location is selected, all warehouses of the selected locations
+            function updateWarehouseOptions() {
+                let selectedLocations = selectedValues('#company_location_id');
+                let selectedSubLocations = selectedValues('#sub_location_id');
 
                 let $warehouseSelect = $('#warehouse_id');
                 let currentlySelectedWarehouses = $warehouseSelect.val() || [];
@@ -168,7 +212,9 @@
                 }
 
                 let warehousesToShow = allWarehouses;
-                if (selectedLocations.length > 0) {
+                if (selectedSubLocations.length > 0) {
+                    warehousesToShow = allWarehouses.filter(w => selectedSubLocations.includes(String(w.arrival_location_id)));
+                } else if (selectedLocations.length > 0) {
                     warehousesToShow = allWarehouses.filter(w => selectedLocations.includes(String(w.company_location_id)));
                 }
 
@@ -205,10 +251,16 @@
             $('.selectWithoutAjax').select2();
 
             $('#company_location_id').on('change', function () {
+                updateSubLocationOptions();
                 updateWarehouseOptions();
             });
 
-            if ($('#company_location_id').val() && $('#company_location_id').val().length > 0) {
+            $('#sub_location_id').on('change', function () {
+                updateWarehouseOptions();
+            });
+
+            if (selectedValues('#company_location_id').length > 0 || selectedValues('#sub_location_id').length > 0) {
+                updateSubLocationOptions();
                 updateWarehouseOptions();
             }
 
