@@ -1387,7 +1387,10 @@
                                 </ul>
                             </li>
                         @endif
-                        <li class="dropdown nav-item mr-1 d-none d-md-block"><a
+                        {{-- "dropdown" class jaan boojh kar nahi lagayi: theme ka app-menu.js (xl screen) har
+                             .dropdown ko hover par kholta hai aur .dropdown a ka click rok deta hai.
+                             Profile dropdown sirf CLICK par khule (Bootstrap data-toggle). --}}
+                        <li class="nav-item mr-1 d-none d-md-block position-relative"><a
                                 class="nav-link dropdown-toggle user-dropdown d-flex align-items-end"
                                 id="dropdownBasic2" href="javascript:;" data-toggle="dropdown">
                                 <div class="user d-md-flex d-none mr-2">

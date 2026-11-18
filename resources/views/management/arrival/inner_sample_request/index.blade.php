@@ -6,15 +6,18 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto align-items-center">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title mb-0"> Inner Sampling Requests</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6 mph-actions">
                     <button
                         onclick="openModal(this,'{{ route('inner-sampling-request.create') }}','Add Request For Inner Sampling')"
-                        type="button" class="btn btn-primary position-relative ">
-                        Request For Inner Sampling
+                        type="button" class="btn btn-primary position-relative mph-create"
+                        aria-label="Request For Inner Sampling" title="Request For Inner Sampling">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">Request For Inner Sampling</span>
                     </button>
                 </div>
             </div>

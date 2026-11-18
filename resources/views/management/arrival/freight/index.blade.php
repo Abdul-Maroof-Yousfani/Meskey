@@ -5,13 +5,16 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title">Freight Management</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <a href="{{ route('freight.create') }}" class="btn btn-primary position-relative">
-                        Add Freight
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions">
+                    <a href="{{ route('freight.create') }}" class="btn btn-primary position-relative mph-create"
+                        aria-label="Add Freight" title="Add Freight">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">Add Freight</span>
                     </a>
                 </div>
             </div>

@@ -6,10 +6,14 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title"> Arrival Slips</h2>
                 </div>
+                {{-- mobile par filter button yahan aata hai --}}
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions"></div>
                 {{-- <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button onclick="openModal(this,'{{ route('arrival-slip.create') }}','Create Arrival Slip')"
                         type="button" class="btn btn-primary position-relative ">

@@ -6,19 +6,23 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title"> {{ $isResampling ? 'Inner Re-Sampling' : 'Inner Sampling' }}</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions">
                     <!-- <button
                                         onclick="openModal(this,'{{ route($isResampling ? 'inner-resampling.create' : 'inner-sampling.create') }}','{{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}')"
                                         type="button" class="btn btn-primary position-relative">
                                         {{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}
                                     </button> -->
+                    @php $createLabel = $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling'; @endphp
                     <a href="{{ route($isResampling ? 'inner-resampling.create' : 'inner-sampling.create') }}"
-                        class="btn btn-primary position-relative">
-                        {{ $isResampling ? 'Create Inner Re-Sampling' : 'Create Inner Sampling' }}
+                        class="btn btn-primary position-relative mph-create" aria-label="{{ $createLabel }}"
+                        title="{{ $createLabel }}">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">{{ $createLabel }}</span>
                     </a>
                 </div>
             </div>

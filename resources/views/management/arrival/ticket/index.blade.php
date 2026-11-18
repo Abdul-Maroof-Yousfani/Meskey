@@ -5,20 +5,21 @@
 @section('content')
     <div class="content-wrapper ">
         <section id="extended">
-            {{-- tk-page-head: mobile par app-bar (neeche <style>/<script> me, sirf is page ke liye). Desktop same. --}}
-            <div class="row w-100 mx-auto align-items-center tk-page-head">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 tk-title-col">
-                    <div class="tk-sub">Arrival</div>
+            {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title mb-0"> Ticket List</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 text-right tk-actions">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 text-right mph-actions">
                     <!-- <button onclick="openModal(this,'{{ route('ticket.create') }}?quick=1','Add Ticket')" type="button"
                                     class="btn btn-primary position-relative ">
                                     Quick Create Ticket
                                 </button> -->
-                    <a href="{{ route('ticket.create') }}" class="btn btn-primary position-relative tk-create"
+                    <a href="{{ route('ticket.create') }}" class="btn btn-primary position-relative mph-create"
                         aria-label="Create Ticket" title="Create Ticket">
-                        <i class="ft-plus tk-create-icon"></i><span class="tk-create-text">Create Ticket</span>
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">Create Ticket</span>
                     </a>
                 </div>
             </div>
@@ -125,198 +126,8 @@
         </section>
     </div>
 
-    <style>
-        /* ================= Ticket page header - sirf mobile ================= */
-        /* desktop: sirf "Create Ticket" text (pehle jaisa) */
-        .tk-sub,
-        .tk-create-icon {
-            display: none;
-        }
-
-        @media (max-width: 767.98px) {
-
-            /* theme ke .wrapper ka overflow:hidden sticky tod deta hai; clip sticky nahi rokta */
-            @supports (overflow: clip) {
-                .wrapper {
-                    overflow: clip;
-                }
-            }
-
-            /* poori width app-bar, top header ke neeche chipka hua (JS margin-top set karta hai) */
-            .tk-page-head {
-                display: flex;
-                flex-wrap: nowrap !important;
-                align-items: center !important;
-                gap: 12px;
-                width: 100vw !important;
-                max-width: 100vw !important;
-                margin-left: calc(50% - 50vw) !important;
-                margin-right: calc(50% - 50vw) !important;
-                margin-bottom: 14px !important;
-                padding: 10px 16px;
-                border-bottom: 1px solid #ececf2;
-                background: #fff;
-                box-shadow: 0 4px 14px rgba(30, 20, 60, .05);
-            }
-
-            /* sticky: header dikhe to us ke neeche, header chhupe (m-bars-hidden) to bilkul top par */
-            .tk-page-head.tk-sticky {
-                position: sticky !important;
-                top: var(--tk-sticky-top, 60px);
-                z-index: 990;
-                transition: top .28s cubic-bezier(.2, .8, .2, 1);
-            }
-
-            body.m-bars-hidden .tk-page-head.tk-sticky {
-                top: 0;
-            }
-
-            /* scroll par theme top header ko shadow deti hai (body.page-scrolled) jo neeche chipke
-               Arrival bar par girti hai - is page par mobile me hata do */
-            body.page-scrolled nav.header-navbar,
-            body nav.header-navbar.navbar-shadow {
-                box-shadow: none !important;
-            }
-
-            .tk-page-head > [class*="col"] {
-                flex: 0 0 auto !important;
-                width: auto !important;
-                max-width: none !important;
-                padding: 0 !important;
-            }
-
-            /* "Welcome back / naam" jaisa: Arrival (chhota grey) / Ticket List (semibold) */
-            .tk-page-head .tk-title-col {
-                flex: 1 1 auto !important;
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                line-height: 1.2;
-                text-align: left !important;
-            }
-
-            .tk-sub {
-                display: block;
-                font-size: 11px;
-                font-weight: 400;
-                line-height: 1.2;
-                color: #8a8a8a;
-            }
-
-            .tk-page-head .page-title {
-                margin: 0 !important;
-                font-size: 13px;
-                font-weight: 600;
-                line-height: 1.2;
-                color: #342e49;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            /* actions: [filter] [+] */
-            .tk-page-head .tk-actions {
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                gap: 6px;
-                flex-shrink: 0 !important;
-            }
-
-            /* ➕ soft gol button, sirf icon */
-            .tk-create {
-                display: inline-flex !important;
-                align-items: center;
-                justify-content: center;
-                width: 36px;
-                height: 36px;
-                min-width: 0;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: 0 !important;
-                border-radius: 50% !important;
-                color: #4a6fd1 !important;
-                background: rgba(39, 72, 154, .06) !important;
-                box-shadow: none !important;
-            }
-
-            .tk-create:active {
-                background: rgba(39, 72, 154, .12) !important;
-            }
-
-            .tk-create-text {
-                display: none;
-            }
-
-            .tk-create-icon {
-                display: inline-block;
-                font-size: 16px;
-                line-height: 1;
-            }
-
-            /* dark mode */
-            body.layout-dark .tk-page-head {
-                border-bottom-color: #2a2a30;
-                background: #1b1b1f;
-                box-shadow: none;
-            }
-
-            body.layout-dark .tk-sub {
-                color: #9a9a9a;
-            }
-
-            body.layout-dark .tk-page-head .page-title {
-                color: #e6e6e6;
-            }
-
-            body.layout-dark .tk-create {
-                color: #9db4f0 !important;
-                background: rgba(90, 130, 230, .10) !important;
-            }
-        }
-    </style>
 @endsection
 @section('script')
-    <script>
-        // ===== Ticket page header (sirf mobile): top header se chipkao + sticky =====
-        //  desktop par kuch nahi hota (title row normal scroll karta hai)
-        (function () {
-            var MOBILE = window.matchMedia('(max-width: 767.98px)');
-
-            function fitHead() {
-                var row = document.querySelector('.tk-page-head');
-                var header = document.querySelector('nav.header-navbar');
-                if (!row) return;
-
-                // reset (sticky hata kar asal jagah naapo)
-                row.classList.remove('tk-sticky');
-                row.style.removeProperty('margin-top');
-                if (!MOBILE.matches || !header) return;
-
-                // header ki asal height (offsetHeight transform se affect nahi hoti - header chhupa ho tab bhi sahi)
-                var top = header.offsetTop + header.offsetHeight;
-                document.documentElement.style.setProperty('--tk-sticky-top', top + 'px');
-
-                // header ke bilkul neeche chipkao (beech ka gap khatam)
-                var rowTop = row.getBoundingClientRect().top + window.pageYOffset;
-                var gap = rowTop - top;
-                if (gap > 0 && gap < 140) {
-                    var current = parseFloat(window.getComputedStyle(row).marginTop) || 0;
-                    row.style.setProperty('margin-top', (current - gap) + 'px', 'important');
-                }
-                row.classList.add('tk-sticky');
-            }
-
-            document.addEventListener('DOMContentLoaded', fitHead);
-            window.addEventListener('load', fitHead);
-            var t;
-            window.addEventListener('resize', function () {
-                clearTimeout(t);
-                t = setTimeout(fitHead, 150);
-            });
-        })();
-    </script>
     <script>
         $(document).ready(function () {
             $('#qc_status_f').select2();

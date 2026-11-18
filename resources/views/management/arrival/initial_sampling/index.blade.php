@@ -6,23 +6,28 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto align-items-center">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6">
+            {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title mb-0"> {{ $isResampling ? 'Initial Re-Sampling' : 'Initial Sampling' }} </h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6 mph-actions">
                     <!-- <button
                                         onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}','{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}')"
                                         type="button" class="btn btn-primary position-relative ">
                                         {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
                                     </button> -->
+                    @php $createLabel = $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling'; @endphp
                     <a href="{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}"
-                        class="btn btn-primary position-relative ">
-                        {{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}
+                        class="btn btn-primary position-relative mph-create" aria-label="{{ $createLabel }}"
+                        title="{{ $createLabel }}">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">{{ $createLabel }}</span>
                     </a>
                 </div>
             </div>
-            <div class="row">
+            <div class="row mt-5">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">

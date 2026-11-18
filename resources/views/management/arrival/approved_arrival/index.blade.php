@@ -6,17 +6,20 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Arrival</div>
                     <h2 class="page-title"> Half/Full Approved</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions">
                     <!-- <button onclick="openModal(this,'{{ route('arrival-approve.create') }}','Add  Half/Full Approved')"
                                     type="button" class="btn btn-primary position-relative ">
                                     Create Half/Full Approved
                                 </button> -->
-                    <a href="{{ route('arrival-approve.create') }}" class="btn btn-primary position-relative ">
-                        Create Half/Full Approved
+                    <a href="{{ route('arrival-approve.create') }}" class="btn btn-primary position-relative mph-create"
+                        aria-label="Create Half/Full Approved" title="Create Half/Full Approved">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">Create Half/Full Approved</span>
                     </a>
                 </div>
             </div>
