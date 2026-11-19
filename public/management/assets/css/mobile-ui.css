@@ -16,6 +16,7 @@
    11. Master Control / revert page (rv-*) - opt-in: form par "rv-page" class
    12. Validation error message (.error-message) - GLOBAL, desktop + mobile
    13. Arrival Slip document view (slip-page) - CSS: public/css/arrival-slip-styles.css
+   14. Dashboard box -> side modal list (dl-mobile cards / dl-cards table)
    ===================================================================== */
 
 /* #####################################################################
@@ -58,11 +59,233 @@
     display: none;
 }
 
+/* Filter stickers (tags / chips) - global (desktop + mobile) */
+.m-filter-sticker {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+    gap: 4px;
+    padding: 2px 7px 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1.25;
+    color: #27489a;
+    background: #eef2ff;
+    border: 1px solid #dbe4ff;
+    max-width: 100%;
+    animation: mStickerPop .15s ease-out;
+}
+
+@keyframes mStickerPop {
+    from { opacity: 0; transform: scale(.92); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.m-filter-sticker i {
+    font-size: 11px;
+    color: #4361ee;
+    flex-shrink: 0;
+}
+
+.m-sticker-label {
+    font-weight: 600;
+    color: #1e3a8a;
+    font-size: 10.5px;
+    white-space: nowrap;
+}
+
+.m-sticker-val {
+    font-weight: 500;
+    color: #3b4252;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+}
+
+.m-sticker-del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    margin-left: 2px;
+    border: 0;
+    border-radius: 50%;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 700;
+    color: #64748b;
+    background: rgba(0, 0, 0, .07);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .12s, color .12s;
+}
+
+.m-sticker-del:hover,
+.m-sticker-del:active {
+    color: #fff;
+    background: #e5484d;
+}
+
+/* Applied filters stripe (header ke neeche: desktop + mobile dono par) */
+.m-applied-filters-stripe {
+    width: 100%;
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+
+.m-applied-filters-stripe[hidden] {
+    display: none !important;
+}
+
+.m-applied-filters-inner {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .04);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.m-applied-filters-inner::-webkit-scrollbar {
+    display: none;
+}
+
+.m-applied-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 2px;
+    flex-shrink: 0;
+}
+
+.m-applied-label i {
+    font-size: 13px;
+    color: #27489a;
+}
+
+.m-applied-tags {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    flex: 1 1 auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.m-applied-tags::-webkit-scrollbar {
+    display: none;
+}
+
+.m-applied-clear-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #e5484d;
+    background: rgba(229, 72, 77, .08);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s, color .15s, transform .12s;
+    margin-left: auto;
+}
+
+.m-applied-clear-all:hover,
+.m-applied-clear-all:active {
+    color: #fff;
+    background: #e5484d;
+    transform: scale(1.08);
+}
+
+/* Dark mode for applied filters stripe and stickers */
+body.layout-dark .m-filter-sticker {
+    background: rgba(74, 111, 209, .14);
+    border-color: rgba(74, 111, 209, .28);
+    color: #c7d2fe;
+}
+
+body.layout-dark .m-filter-sticker i {
+    color: #9db4f0;
+}
+
+body.layout-dark .m-sticker-label {
+    color: #9db4f0;
+}
+
+body.layout-dark .m-sticker-val {
+    color: #e4e4e8;
+}
+
+body.layout-dark .m-sticker-del {
+    color: #a1a1aa;
+    background: rgba(255, 255, 255, .1);
+}
+
+body.layout-dark .m-sticker-del:hover,
+body.layout-dark .m-sticker-del:active {
+    color: #fff;
+    background: #e5484d;
+}
+
+body.layout-dark .m-applied-filters-inner {
+    background: #1c1c20;
+    border-color: #2a2a30;
+    box-shadow: none;
+}
+
+body.layout-dark .m-applied-label {
+    color: #94a3b8;
+}
+
+body.layout-dark .m-applied-label i {
+    color: #9db4f0;
+}
+
+body.layout-dark .m-applied-clear-all {
+    color: #f87171;
+    background: rgba(239, 68, 68, .12);
+}
+
+body.layout-dark .m-applied-clear-all:hover,
+body.layout-dark .m-applied-clear-all:active {
+    color: #fff;
+    background: #e5484d;
+}
+
 @media (max-width: 767.98px) {
 
     /* form sheet me chala gaya aur asal container (e.g. card-header) khaali reh gaya */
     .m-filter-origin-empty {
         display: none !important;
+    }
+
+    .m-applied-filters-stripe {
+        margin-top: 6px !important;
+        margin-bottom: 6px !important;
+        padding: 0 2px;
+    }
+    .m-applied-filters-inner {
+        padding: 4px 8px;
+    }
+    .m-applied-filters-stripe:not([hidden]) + .row {
+        margin-top: 0 !important;
     }
 
     /* ---------- Filter button (icon only) - table ke upar, filters ki asal jagah ---------- */
@@ -224,6 +447,39 @@
         background: #f3f2f8;
     }
 
+    /* Active filter stickers / chips container at the top of bottom sheet */
+    .m-sheet-stickers {
+        flex-shrink: 0;
+        padding: 5px 14px;
+        background: #f8f9fc;
+        border-bottom: 1px solid #eceef4;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .m-sheet-stickers::-webkit-scrollbar {
+        display: none;
+    }
+
+    .m-sheet-stickers[hidden] {
+        display: none !important;
+    }
+
+    .m-stickers-wrap {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 4px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .m-stickers-wrap::-webkit-scrollbar {
+        display: none;
+    }
+
     .m-sheet-body {
         flex: 1 1 auto;
         overflow-y: auto;
@@ -323,6 +579,44 @@
         overflow: hidden;
     }
 
+    /* Dashboard filters (dashboard/index.blade.php) sheet ke andar: card / ek-line flex hatao,
+       fields ek ke neeche ek, Refresh poori chaurai */
+    .m-sheet-body .dashboard-filters {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .m-sheet-body .dashboard-filters .filter-group:not(.d-none) {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        margin-bottom: 14px;
+    }
+
+    .m-sheet-body .dashboard-filters .filter-group label {
+        margin-bottom: 6px;
+        font-size: 12.5px;
+        letter-spacing: 0;
+        text-transform: none;
+        color: #4b4a57;
+    }
+
+    .m-sheet-body .dashboard-filters .filter-input {
+        width: 100%;
+        height: 46px;
+        border-radius: 12px;
+    }
+
+    .m-sheet-body .dashboard-filters .refresh-btn {
+        width: 100%;
+        height: 46px;
+        border-radius: 12px;
+    }
+
     body.m-sheet-open .mobile-bottom-nav {
         display: none;
     }
@@ -356,6 +650,36 @@
 
     body.layout-dark .m-filter-fab .m-filter-count {
         border-color: #1c1c20;
+    }
+
+    body.layout-dark .m-sheet-stickers {
+        background: #1e1e24;
+        border-bottom-color: #2a2a30;
+    }
+
+    body.layout-dark .m-filter-sticker {
+        background: rgba(74, 111, 209, .14);
+        border-color: rgba(74, 111, 209, .28);
+        color: #c7d2fe;
+    }
+
+    body.layout-dark .m-sticker-label {
+        color: #9db4f0;
+    }
+
+    body.layout-dark .m-sticker-val {
+        color: #e4e4e8;
+    }
+
+    body.layout-dark .m-sticker-del {
+        color: #a1a1aa;
+        background: rgba(255, 255, 255, .1);
+    }
+
+    body.layout-dark .m-sticker-del:hover,
+    body.layout-dark .m-sticker-del:active {
+        color: #fff;
+        background: #e5484d;
     }
 }
 
@@ -1654,6 +1978,7 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
        Gap sirf yahan se: mph-head ka apna margin-bottom 0 (margin collapse ka jhagra khatam),
        agla element margin-top 10px. Beech me <script>/<style> ho to us ke baad wala. */
     .mph-head + :not(script):not(style):not(.rv-page),
+    .mph-head + .m-applied-filters-stripe + :not(script):not(style):not(.rv-page),
     .mph-head + :is(script, style) + :not(script):not(style):not(.rv-page),
     .mph-head + :is(script, style) + :is(script, style) + :not(script):not(style):not(.rv-page) {
         margin-top: 10px !important;
@@ -3817,3 +4142,77 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
    Wajah: arrival_slip/edit.blade.php partial hai; URL seedha khulne par mobile-ui.css load nahi hoti,
    lekin arrival-slip-styles.css (view khud link karta hai) modal + seedha URL dono me aati hai.
    ##################################################################### */
+
+/* #####################################################################
+   14. Dashboard box -> side modal list (dl-mobile / dl-cards)
+   Views: dashboard/snippets/list_data.blade.php, sales_list_data.blade.php (+ partials/mobile-card)
+   Mobile: Blade se bane tkc cards (Arrival Ticket list jaise; styling section 6) + search.
+   Desktop: DataTables table pehle jaisa (.dl-cards), cards chhupe.
+   ##################################################################### */
+@media (min-width: 768px) {
+    .dl-mobile {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+
+    /* list_data ki apni <style> X button ko position:fixed (right 35 / top 15) deti hai -> app-bar me wapas */
+    #modal-sidebar .modal-header-row a.modal-sidebar-close.top-wala,
+    #modal-sidebar2 .modal-header-row a.modal-sidebar-close.top-wala {
+        position: relative !important;
+        top: 0 !important;
+        right: auto !important;
+    }
+
+    #modal-sidebar:has(.dl-mobile),
+    #modal-sidebar2:has(.dl-mobile) {
+        background-color: #f5f7fb;
+    }
+
+    /* desktop wali table + DataTables mobile par nahi */
+    .dl-cards {
+        display: none !important;
+    }
+
+    /* search + count */
+    .dl-mobile-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .dl-mobile-search {
+        flex: 1 1 auto;
+        height: 42px !important;
+        border-radius: 12px !important;
+        border-color: #e3e5ee !important;
+        font-size: 15px !important;
+        background: #fff !important;
+    }
+
+    .dl-mobile-count {
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b6b80;
+    }
+
+    /* sales list ke badges card me chhote */
+    .dl-mobile .tkc-val .badge {
+        font-size: 10.5px;
+        white-space: normal;
+    }
+
+    body.layout-dark #modal-sidebar:has(.dl-mobile),
+    body.layout-dark #modal-sidebar2:has(.dl-mobile) {
+        background-color: #141417;
+    }
+
+    body.layout-dark .dl-mobile-search {
+        border-color: #2f2f36 !important;
+        background: transparent !important;
+        color: #e4e4e8;
+    }
+}

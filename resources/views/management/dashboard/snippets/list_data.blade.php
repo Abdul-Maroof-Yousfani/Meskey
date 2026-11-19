@@ -1,4 +1,21 @@
-<div class="table-responsive">
+{{-- ===== MOBILE: cards (Arrival Ticket list jaisa, mobile-ui.css section 6 + 14). Desktop par table. ===== --}}
+<div class="dl-mobile">
+    <div class="dl-mobile-bar">
+        <input type="search" class="form-control dl-mobile-search" placeholder="Search..." autocomplete="off" data-keep-editable>
+        <span class="dl-mobile-count">{{ count($data) }} records</span>
+    </div>
+    <div class="tkc-list">
+        @php $conf = canAccess('arrival-stats-show-confidential'); @endphp
+        @forelse ($data as $item)
+            @include('management.dashboard.snippets.partials.mobile-card', ['item' => $item, 'type' => $type, 'conf' => $conf])
+        @empty
+            <div class="tkc-empty"><i class="ft-inbox"></i> No data found for the selected criteria</div>
+        @endforelse
+    </div>
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa) ===== --}}
+<div class="table-responsive dl-cards">
     <!-- <h6 class="text-uppercase">Total Records: {{ count($data) }}</h6> -->
     <table class="table table-striped table-hover" id="myTable">
         <thead class="thead-dark">
@@ -225,6 +242,21 @@
 
 <script>
     $(document).ready(function() {
+        // mobile cards search (card ka sara text) - document par ek hi dafa bind
+        if (!window.dlMobileSearchReady) {
+            window.dlMobileSearchReady = true;
+            $(document).on('input', '.dl-mobile-search', function () {
+                var q = this.value.toLowerCase().trim();
+                var $wrap = $(this).closest('.dl-mobile');
+                var shown = 0;
+                $wrap.find('.tkc').each(function () {
+                    var ok = !q || this.textContent.toLowerCase().indexOf(q) !== -1;
+                    this.style.display = ok ? '' : 'none';
+                    if (ok) shown++;
+                });
+                $wrap.find('.dl-mobile-count').text(shown + ' records');
+            });
+        }
         $('#myTable').DataTable({
             "paging": false, // No pagination
             "searching": true, // Search enabled

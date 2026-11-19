@@ -1510,7 +1510,10 @@ function openModal(button, url, title, viewonly = false, drawerWidth = null, oth
       $('[data-toggle="tooltip"]').tooltip();
       //  initTinyMCE();
       if (viewonly) {
-        $("#modal-sidebar :input").prop("readonly", true);
+        // search boxes view-only me bhi chalte rahen: [data-keep-editable] + DataTables ka search
+        $("#modal-sidebar :input")
+          .not('[data-keep-editable], .dataTables_filter input')
+          .prop("readonly", true);
         $("#modal-sidebar select").prop("disabled", true);
         $("#modal-sidebar textarea").prop("readonly", true);
         $("#modal-sidebar :checkbox").prop("disabled", true);

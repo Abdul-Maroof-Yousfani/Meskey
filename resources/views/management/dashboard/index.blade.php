@@ -77,8 +77,21 @@
 </div>
 
         @else
+        {{-- mph-head: mobile app-bar (baaki pages jaisa sticky; desktop par chhupa - wahan pehle bhi title nahi tha).
+             Filter button (Location wagaira) mobile par isi ke right me aata hai: mobile-filter-sheet.js --}}
+        @include('management.layouts.partials.mobile-page-head')
+        <div class="row w-100 mx-auto align-items-center mph-head show-mobile">
+            <div class="col-6 mph-title-col">
+                <div class="mph-sub">{{ ucwords(str_replace('_', ' ', $module)) }}</div>
+                <h2 class="page-title mb-0">Dashboard</h2>
+            </div>
+            <div class="col-6 text-right mph-actions"></div>
+        </div>
         <div class="row">
             <div class="col-12">
+                {{-- filterForm: mobile par filter sheet me jata hai. Filter khud change par page reload karta hai
+                     (neeche ka script), is liye form ka apna submit band. Desktop layout same. --}}
+                <form id="filterForm" class="form dashboard-filter-form" onsubmit="return false;">
                 <div class="dashboard-filters">
                     <div class="filter-group d-none">
                         <label>SELECT MODULE</label>
@@ -113,6 +126,7 @@
                         <i class="ft-refresh-cw"></i> Refresh
                     </button>
                 </div>
+                </form>
             </div>
 
             @if ($module === 'arrival')
