@@ -670,10 +670,6 @@
                     return;
                 }
 
-                locationRequests.push($.get(`/arrival/get-ticket-number/${locationId}`, function (data) {
-                    $('input[name="unique_no"]').val(data.ticket_no);
-                }));
-
                 // Contracts load hone tak Contract Detail mein "Loading..." dikhao aur select disable rakho
                 $('#arrival_purchase_order_id').prop('disabled', true).empty()
                     .append('<option value="">Loading contracts...</option>').trigger('change.select2');
@@ -687,7 +683,10 @@
                     closeButton: false
                 });
 
-                const contractsRequest = $.get(`/arrival/get-contracts/${locationId}`, function (data) {
+                // Ticket number, contracts aur suppliers ek hi request mein
+                const locationRequest = $.get(`/arrival/get-location-data/${locationId}`, function (data) {
+                    $('input[name="unique_no"]').val(data.ticket_no);
+
                     $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
                     $.each(data.contracts, function (index, contract) {
                         $('#arrival_purchase_order_id').append(
@@ -700,6 +699,18 @@
                                                         >
                                                         #${contract.contract_no} - Sauda Type: ${contract.sauda_type?.name ?? 'N/A'} - Purchase Type: ${contract.purchase_type?.toUpperCase() ?? 'N/A'}
                                                     </option>`
+                        );
+                    });
+
+                    $('#broker_name').empty().append('<option value="">Broker Name</option>');
+                    $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
+
+                    $.each(data.suppliers, function (index, supplier) {
+                        $('#broker_name').append(
+                            `<option value="${supplier.name}">${supplier.name}</option>`
+                        );
+                        $('#accounts_of').append(
+                            `<option value="${supplier.name}">${supplier.name}</option>`
                         );
                     });
                 }).fail(function (xhr, status) {
@@ -715,21 +726,7 @@
                     }
                     $('#arrival_purchase_order_id').prop('disabled', false).trigger('change.select2');
                 });
-                locationRequests.push(contractsRequest);
-
-                locationRequests.push($.get(`/arrival/get-suppliers/${locationId}`, function (data) {
-                    $('#broker_name').empty().append('<option value="">Broker Name</option>');
-                    $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
-
-                    $.each(data.suppliers, function (index, supplier) {
-                        $('#broker_name').append(
-                            `<option value="${supplier.name}">${supplier.name}</option>`
-                        );
-                        $('#accounts_of').append(
-                            `<option value="${supplier.name}">${supplier.name}</option>`
-                        );
-                    });
-                }));
+                locationRequests.push(locationRequest);
             }
 
             $('#company_location_id').on('change', function () {

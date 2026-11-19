@@ -437,7 +437,14 @@
             }
         });
 
+        // Pichli location ki request, taake location jaldi badalne par purana jawab naye ke upar na aaye
+        var locationRequest = null;
+
         function loadLocationData(locationId) {
+            if (locationRequest) {
+                locationRequest.abort();
+                locationRequest = null;
+            }
             if (!locationId) {
                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
                 $('#broker_name').empty().append('<option value="">Broker Name</option>');
@@ -445,8 +452,9 @@
                 return;
             }
             var ticketId = '{{ $arrivalTicket->id ?? "" }}';
-            var url = `/arrival/get-contracts/${locationId}` + (ticketId ? `?ticket_id=${ticketId}` : '');
-            $.get(url, function (data) {
+            // Contracts aur suppliers ek hi request mein (ticket_id ke saath ticket number nahi aata, ticket apna number rakhta hai)
+            var url = `/arrival/get-location-data/${locationId}` + (ticketId ? `?ticket_id=${ticketId}` : '');
+            locationRequest = $.get(url, function (data) {
                 $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
                 $.each(data.contracts, function (index, contract) {
                     $('#arrival_purchase_order_id').append(
@@ -461,9 +469,7 @@
                     </option>`
                     );
                 });
-            });
 
-            $.get(`/arrival/get-suppliers/${locationId}`, function (data) {
                 $('#broker_name').empty().append('<option value="">Broker Name</option>');
                 $('#accounts_of').empty().append('<option value="">Accounts Of</option>');
 

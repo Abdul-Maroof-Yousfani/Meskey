@@ -177,19 +177,66 @@ class TicketController extends Controller
 
     public function getTicketNumber($locationId)
     {
-        $location = CompanyLocation::find($locationId);
-        $code = $location->code ?? 'KHI';
-        $ticketNo = generateTicketNoWithDateFormat('arrival_tickets', $code);
-
         return response()->json([
-            'ticket_no' => $ticketNo
+            'ticket_no' => $this->ticketNumberForLocation($locationId)
         ]);
     }
 
     public function getContractsByLocation(Request $request, $locationId)
     {
+        return response()->json([
+            'contracts' => $this->contractsForLocation($locationId, $request->ticket_id ?? null)
+        ]);
+    }
+
+    public function getSuppliersByLocation($locationId)
+    {
+        return response()->json([
+            'suppliers' => $this->suppliersForLocation($locationId)
+        ]);
+    }
+
+    /**
+     * Everything the ticket form needs when a location is picked, in one request.
+     * With ticket_id (edit page) no new ticket number is made: the ticket keeps its own.
+     * Contracts carry only the fields the form uses, which keeps the response small.
+     */
+    public function getLocationData(Request $request, $locationId)
+    {
         $excludeTicketId = $request->ticket_id ?? null;
 
+        $contracts = $this->contractsForLocation($locationId, $excludeTicketId)
+            ->map(function ($contract) {
+                return [
+                    'id' => $contract->id,
+                    'contract_no' => $contract->contract_no,
+                    'product_id' => $contract->product_id,
+                    'decision_of_id' => $contract->decision_of_id,
+                    'sauda_type_id' => $contract->sauda_type_id,
+                    'purchase_type' => $contract->purchase_type,
+                    'supplier' => $contract->supplier ? ['company_name' => $contract->supplier->company_name] : null,
+                    'sauda_type' => $contract->saudaType ? ['name' => $contract->saudaType->name] : null,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'ticket_no' => $excludeTicketId ? null : $this->ticketNumberForLocation($locationId),
+            'contracts' => $contracts,
+            'suppliers' => $this->suppliersForLocation($locationId),
+        ]);
+    }
+
+    private function ticketNumberForLocation($locationId)
+    {
+        $location = CompanyLocation::find($locationId);
+        $code = $location->code ?? 'KHI';
+
+        return generateTicketNoWithDateFormat('arrival_tickets', $code);
+    }
+
+    private function contractsForLocation($locationId, $excludeTicketId = null)
+    {
         // Contracts filtering: for gate_buying, skip those with tickets; for regular, include all
         $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType', 'arrivalTickets'])
             ->where('company_location_id', $locationId)
@@ -204,31 +251,23 @@ class TicketController extends Controller
             })
             ->get();
 
-        $contracts = $contracts->filter(function ($contract) use ($excludeTicketId) {
+        return $contracts->filter(function ($contract) use ($excludeTicketId) {
             return $contract->canAcceptArrivalTicket($excludeTicketId);
         })->values();
-
-        return response()->json([
-            'contracts' => $contracts
-        ]);
     }
 
-    public function getSuppliersByLocation($locationId)
+    private function suppliersForLocation($locationId)
     {
         $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)
             ->where('status', 'active')
             ->get();
 
-        $suppliers = $suppliers->map(function ($supplier) {
+        return $suppliers->map(function ($supplier) {
             return [
                 'id' => $supplier->id,
                 'name' => $supplier->company_name
             ];
         });
-
-        return response()->json([
-            'suppliers' => $suppliers
-        ]);
     }
 
     /**

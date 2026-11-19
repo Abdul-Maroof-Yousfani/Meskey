@@ -37,6 +37,8 @@ Route::post('/initial-sampling/update-status', [InitialSamplingController::class
 
 Route::get('/get-contracts/{locationId}', [TicketController::class, 'getContractsByLocation']);
 Route::get('/get-suppliers/{locationId}', [TicketController::class, 'getSuppliersByLocation']);
+// Ticket number + contracts + suppliers of a location in one request (ticket create / edit)
+Route::get('/get-location-data/{locationId}', [TicketController::class, 'getLocationData']);
 
 Route::resource('sampling-monitoring', SamplingMonitoringController::class);
 Route::get('sampling-monitoring/{sampling_monitoring}/edit-test', [SamplingMonitoringController::class, 'editTest'])->name('sampling-monitoring.edit-test');
