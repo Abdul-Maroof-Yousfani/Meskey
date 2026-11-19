@@ -72,7 +72,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
-                                                    <select name="commodity_id_f" id="commodity_id_f" class="form-control">
+                                                    <select name="commodity_id_f" id="commodity_id_f" class="form-control select2 selectWithoutAjax">
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
                                                             <option value="{{ $commodity->id }}"
@@ -282,9 +282,9 @@
             });
         }
         $(document).ready(function() {
-            // $('.po-filter-select').select2({
-            //     width: '100%'
-            // });
+            $('#commodity_id_f').select2({
+                width: '100%'
+            });
 
             // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
             const runListFilter = filterationCommon_withbtn(`{{ route('raw-material.get.purchase-order') }}`);

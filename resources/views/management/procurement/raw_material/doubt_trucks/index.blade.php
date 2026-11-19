@@ -104,6 +104,8 @@
             });
             runListFilter(true); // pehla load: URL wala page
 
+            $('.selectWithoutAjax').select2({ width: '100%' });
+
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true,
                 true);

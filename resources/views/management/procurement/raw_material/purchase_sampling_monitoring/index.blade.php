@@ -5,10 +5,15 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Purchaser Approval Requests</h2>
+            {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Purchase Contract</div>
+                    <h2 class="page-title mb-0">Purchaser Approval Requests</h2>
                 </div>
+                {{-- mobile par filter button yahan aata hai --}}
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions"></div>
             </div>
             <div class="row">
                 <div class="col-12">
@@ -93,7 +98,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th class="col-sm-1">Ticket No. </th>

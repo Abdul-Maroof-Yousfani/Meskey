@@ -1,3 +1,14 @@
+{{-- ===== MOBILE: cards (wahi $samplingRequests, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($samplingRequests as $row)
+        @include('management.procurement.raw_material.purchase_sampling_monitoring.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No approval requests found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -117,6 +128,7 @@
         @endif
     </tbody>
 </table>
+</div>
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}

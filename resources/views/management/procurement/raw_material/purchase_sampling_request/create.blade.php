@@ -1,3 +1,5 @@
+{{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page">
 <form action="{{ route('raw-material.purchase-sampling-request.store') }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
@@ -58,13 +60,14 @@
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
+</div>
 <script>
     $(document).ready(function() {
         $('#ajaxSubmit .select2').select2();

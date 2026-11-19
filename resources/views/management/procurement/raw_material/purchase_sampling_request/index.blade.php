@@ -5,15 +5,19 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Purchase Sampling Request</h2>
+            {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Purchase Contract</div>
+                    <h2 class="page-title mb-0">Purchase Sampling Request</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions">
                     <button
                         onclick="openModal(this,'{{ route('raw-material.purchase-sampling-request.create') }}','Create Purchase Sampling Request')"
-                        type="button" class="btn btn-primary position-relative">
-                        Create Request (Without Contract)
+                        type="button" class="btn btn-primary position-relative mph-create"
+                        aria-label="Create Request (Without Contract)" title="Create Request (Without Contract)">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">Create Request (Without Contract)</span>
                     </button>
                 </div>
             </div>
@@ -84,7 +88,7 @@
 
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th class="col-sm-2">Contract Number</th>
