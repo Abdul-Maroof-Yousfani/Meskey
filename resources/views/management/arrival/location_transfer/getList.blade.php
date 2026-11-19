@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $arrival_locations, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($arrival_locations as $row)
+        @include('management.arrival.location_transfer.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No location transfers found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -68,6 +82,7 @@
         @endif
     </tbody>
 </table>
+</div>
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">

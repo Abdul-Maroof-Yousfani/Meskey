@@ -1628,11 +1628,11 @@ body.layout-dark .profile-menu .pm-logout {
     /* GLOBAL: app-bar ke foran baad wala content (row, form, card, div... kuch bhi)
        thora neeche se shuru ho, sticky header ke peeche na chhupe.
        Gap sirf yahan se: mph-head ka apna margin-bottom 0 (margin collapse ka jhagra khatam),
-       agla element margin-top 18px. Beech me <script>/<style> ho to us ke baad wala. */
+       agla element margin-top 10px. Beech me <script>/<style> ho to us ke baad wala. */
     .mph-head + :not(script):not(style):not(.rv-page),
     .mph-head + :is(script, style) + :not(script):not(style):not(.rv-page),
     .mph-head + :is(script, style) + :is(script, style) + :not(script):not(style):not(.rv-page) {
-        margin-top: 18px !important;
+        margin-top: 10px !important;
     }
 
     /* scroll par theme top header ko shadow deti hai (body.page-scrolled) jo neeche chipke bar par girti hai */
@@ -2519,6 +2519,13 @@ body.layout-dark .profile-menu .pm-logout {
         line-height: 1.45;
     }
 
+    /* chhoti readonly values (First / 2nd / Net weight): "col-xs-4" teen ek line me.
+       (tkf-weights wala ticket form apna layout khud rakhta hai) */
+    .tkf-page form .row:not(.tkf-weights) > [class*="col-xs-4"] {
+        flex: 0 0 33.3333%;
+        max-width: 33.3333%;
+    }
+
     /* "px-3" wale columns bhi baaki fields ki seedh me */
     .tkf-page form .row > [class*="col"].px-3 {
         padding-left: 6px !important;
@@ -2526,6 +2533,11 @@ body.layout-dark .profile-menu .pm-logout {
     }
 
     /* ---------- QC checklist rows (form-group row: label + input) ---------- */
+    /* desktop wali "[khaali] | Result" heading row: mobile par har row me naam upar + value neeche hai */
+    .tkf-page .row:has(> .col-md-4:empty) {
+        display: none;
+    }
+
     .tkf-page .striped-rows .form-group.row {
         margin: 0 0 8px !important;
         padding: 10px 4px;
@@ -3308,7 +3320,7 @@ body.layout-dark .profile-menu .pm-logout {
        Is liye section 5 ka "mph-head + ..." margin rule rv-page ko chhorta hai (double gap na ho). */
     .rv-page {
         display: block;
-        padding-top: 18px !important;
+        padding-top: 10px !important;
     }
 
     .rv-page > .row {

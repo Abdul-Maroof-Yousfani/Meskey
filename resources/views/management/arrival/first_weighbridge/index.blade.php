@@ -23,11 +23,12 @@
                     </a>
                 </div>
             </div>
-            <div class="row">
+            <div class="row mt-5">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            {{-- data-filter-sheet: sirf 1 field (search) hai, phir bhi mobile par filter sheet me jaye --}}
+                            <form id="filterForm" class="form" data-filter-sheet>
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
@@ -47,7 +48,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th class="col-sm-1">Ticket No.</th>
