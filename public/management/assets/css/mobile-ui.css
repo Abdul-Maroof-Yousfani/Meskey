@@ -14,6 +14,7 @@
    9. Side modal / drawer (#modal-sidebar, openModal) - GLOBAL, sirf mobile: full screen app page
    10. Audit logs (components/audit-logs) - GLOBAL, sirf mobile: al-* classes
    11. Master Control / revert page (rv-*) - opt-in: form par "rv-page" class
+   12. Validation error message (.error-message) - GLOBAL, desktop + mobile
    ===================================================================== */
 
 /* #####################################################################
@@ -1753,7 +1754,9 @@ body.layout-dark .profile-menu .pm-logout {
 @media (max-width: 767.98px) {
 
     /* table chhupao, pagination (component ke andar) dikhti rahe */
-    .tk-table-wrap .sticky-table-scroller {
+    .tk-table-wrap .sticky-table-scroller,
+    .tk-table-wrap > table,
+    .tk-table-wrap > .table-responsive {
         display: none;
     }
 
@@ -2065,6 +2068,32 @@ body.layout-dark .profile-menu .pm-logout {
         font-size: 13px;
         color: #2b2a35;
         word-break: break-word;
+    }
+
+    /* remark / note: 2 lines tak, baaki "..." */
+    .tkc-remark {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        margin-top: 8px;
+        padding: 7px 10px;
+        border-radius: 10px;
+        font-size: 12.5px;
+        line-height: 1.45;
+        color: #5b5b6b;
+        background: #f6f7fb;
+    }
+
+    .tkc-remark i {
+        margin-right: 6px;
+        font-size: 12px;
+        color: #9a9aa8;
+    }
+
+    .layout-dark .tkc-remark {
+        color: #c9c8d1;
+        background: #232328;
     }
 
     .tkc-chips {
@@ -2445,6 +2474,55 @@ body.layout-dark .profile-menu .pm-logout {
         margin-bottom: 0;
         font-size: 12px;
         line-height: 1.45;
+    }
+
+    /* "px-3" wale columns bhi baaki fields ki seedh me */
+    .tkf-page form .row > [class*="col"].px-3 {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    /* ---------- QC checklist rows (form-group row: label + input) ---------- */
+    .tkf-page .striped-rows .form-group.row {
+        margin: 0 0 8px !important;
+        padding: 10px 4px;
+        border-radius: 12px;
+        border: 1px solid #f0f1f5;
+    }
+
+    /* theme (bootstrap-extended.css) "div.striped-rows .form-group > div" ko padding 1.2rem
+       aur ".label-control" ko padding-top 1.5rem deta hai -> mobile par bohot khaali jagah */
+    .tkf-page .striped-rows .form-group > div {
+        padding: 0 6px !important;
+    }
+
+    .tkf-page .striped-rows .form-group .label-control {
+        padding-top: 0 !important;
+    }
+
+    .tkf-page .striped-rows .form-group.row > label {
+        margin-bottom: 6px;
+        font-size: 12.5px;
+        color: #342e49;
+    }
+
+    .tkf-page .striped-rows .input-group-text {
+        border-radius: 0 10px 10px 0;
+        font-size: 12px;
+    }
+
+    .tkf-page .striped-rows .input-group > .form-control {
+        border-radius: 10px 0 0 10px;
+        font-weight: 400;
+        color: inherit;
+    }
+
+    body.layout-dark .tkf-page .striped-rows .form-group.row {
+        border-color: #2a2a30;
+    }
+
+    body.layout-dark .tkf-page .striped-rows .form-group.row > label {
+        color: #e6e6e6;
     }
 
     /* ---------- section heading (Weight Detail) ---------- */
@@ -3470,5 +3548,48 @@ body.layout-dark .profile-menu .pm-logout {
 
     body.layout-dark .rv-page .tab-pane .form-group.row {
         border-color: #2a2a30;
+    }
+}
+
+/* #####################################################################
+   12. Validation error message (div.error-message) - GLOBAL, desktop + mobile
+   scripts.js printErrorMsg() error ko ".form-group" ke aakhir me jorta hai.
+   "form-group row" (QC checklist: label col-md-3/4 + input col) flex row hai -> wahan
+   error bina column ke alag flex item ban kar ajeeb jagah + extra gap deta tha.
+   Ab: poori line, input ke theek neeche, kam jagah.
+   ##################################################################### */
+.form-group.row > .error-message {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin: 3px 0 0;
+    padding: 0 15px;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+/* desktop: label ke saamne wale input ke neeche (label ki chaurai jitna left se) */
+@media (min-width: 768px) {
+    .form-group.row > label.col-md-3 ~ .error-message {
+        flex-basis: 75%;
+        max-width: 75%;
+        margin-left: 25%;
+    }
+
+    .form-group.row > label.col-md-4 ~ .error-message {
+        flex-basis: 66.6667%;
+        max-width: 66.6667%;
+        margin-left: 33.3333%;
+    }
+}
+
+/* checklist (striped-rows) me error wali row ka neeche wala faltu margin kam */
+.striped-rows .form-group.row:has(> .error-message) {
+    margin-bottom: .75rem;
+}
+
+/* mobile form (tkf-page): column gutter 6px hai */
+@media (max-width: 767.98px) {
+    .tkf-page .form-group.row > .error-message {
+        padding: 0 6px;
     }
 }
