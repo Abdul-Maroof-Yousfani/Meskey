@@ -13,6 +13,8 @@
 
    Opt-out:  <form id="filterForm" data-no-filter-sheet>
    Opt-in:   <form data-filter-sheet>  (1 field wale form par bhi lagana ho)
+   Button filter: <form data-filter-apply> -> "Show results" form ka submit chalata hai
+             (page: filterationCommon_withbtn + $('#filterForm').on('submit', ...runFilter))
    ===================================================================== */
 (function () {
     'use strict';
@@ -91,7 +93,7 @@
             '</div>' +
             '<div class="m-sheet-body"></div>' +
             '<div class="m-sheet-foot">' +
-                '<button type="button" class="m-sheet-apply" data-m-sheet-close><i class="ft-check"></i> Show results</button>' +
+                '<button type="button" class="m-sheet-apply" data-m-sheet-close data-m-sheet-apply><i class="ft-check"></i> Show results</button>' +
             '</div>';
 
         var fab = document.createElement('button');
@@ -124,7 +126,13 @@
         sheet.addEventListener('click', function (e) {
             if (e.target.closest('[data-m-sheet-close]')) {
                 e.preventDefault();
+                var apply = !!e.target.closest('[data-m-sheet-apply]');
                 closeSheet();
+                // button wala filter (form[data-filter-apply]): "Show results" = filter lagao.
+                // Page ka submit handler (jQuery) filter chalata hai; auto-filter wale forms par kuch nahi.
+                if (apply && form.hasAttribute('data-filter-apply') && window.jQuery) {
+                    window.jQuery(form).trigger('submit');
+                }
             } else if (e.target.closest('[data-m-sheet-clear]')) {
                 e.preventDefault();
                 clearFilters();

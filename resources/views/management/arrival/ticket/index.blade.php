@@ -28,7 +28,9 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            {{-- data-filter-apply: filter sirf "Search" (desktop) / "Show results" (mobile sheet) par lagta hai,
+                                 field badalne par nahi. JS: filterationCommon_withbtn (scripts.js) --}}
+                            <form id="filterForm" class="form" data-filter-apply>
                                 @php
                                     $today = \Carbon\Carbon::today()->format('Y-m-d');
                                     $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
@@ -97,6 +99,13 @@
                                         </select>
                                     </div>
 
+                                    {{-- Search: desktop par; mobile par sheet ka "Show results" yahi kaam karta hai --}}
+                                    <div class="px-1 text-left hide-mobile" style="flex: 0 0 auto;">
+                                        <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                            <i class="ft-search mr-1"></i> Search
+                                        </button>
+                                    </div>
+
                                     <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                     <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                 </div>
@@ -132,7 +141,16 @@
     <script>
         $(document).ready(function () {
             $('#qc_status_f').select2();
-            filterationCommon(`{{ route('get.ticket') }}`);
+
+            // Filter sirf Search / Show results / Enter par (change par nahi)
+            const runTicketFilter = filterationCommon_withbtn(`{{ route('get.ticket') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runTicketFilter; // list refresh (edit / bilty return ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runTicketFilter();
+            });
+            runTicketFilter(true); // pehla load: URL wala page
             initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#miller_id_f', 'millers', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#station_id_f', 'stations', 'name', 'id', true, false, true, true);

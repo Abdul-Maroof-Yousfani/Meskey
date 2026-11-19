@@ -19,7 +19,8 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            {{-- data-filter-apply: filter sirf Search (desktop) / Show results (mobile) par --}}
+                            <form id="filterForm" class="form" data-filter-apply>
                                 @php
                                     $today = \Carbon\Carbon::today()->format('Y-m-d');
                                     $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
@@ -65,6 +66,12 @@
                                                     placeholder="Type Ticket No, Supplier Name " name="search"
                                                     value="{{ request('search') }}">
                                             </div>
+                                            {{-- Search: desktop par; mobile par sheet ka "Show results" yahi kaam karta hai --}}
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end">
+                                                <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                                    <i class="ft-search mr-1"></i> Search
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -100,7 +107,15 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('get.sampling-monitoring') }}`)
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route('get.sampling-monitoring') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
         });
     </script>
 @endsection

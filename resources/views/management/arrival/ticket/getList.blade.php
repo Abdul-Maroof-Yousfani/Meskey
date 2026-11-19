@@ -278,7 +278,12 @@
                                 'Bilty return has been confirmed.',
                                 'success'
                             ).then(() => {
-                                filterationCommon(`{{ route('get.ticket') }}`)
+                                // button wala filter laga ho to usi se refresh (auto-filter wapas na lage)
+                                if (window.filterRunners && typeof window.filterRunners.filterForm === 'function') {
+                                    window.filterRunners.filterForm(true);
+                                } else {
+                                    filterationCommon(`{{ route('get.ticket') }}`)
+                                }
                             });
                         } else {
                             Swal.fire(

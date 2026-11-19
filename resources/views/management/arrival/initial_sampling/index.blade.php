@@ -31,7 +31,8 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            {{-- data-filter-apply: filter sirf Search (desktop) / Show results (mobile) par --}}
+                            <form id="filterForm" class="form" data-filter-apply>
                                 <div class="row mx-0 align-items-end flex-nowrap"
                                     style="overflow-x: auto; padding-bottom: 10px;">
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
@@ -56,6 +57,12 @@
                                         <label for="remark" class="form-label text-nowrap">Remark</label>
                                         <input type="text" class="form-control" name="remark" id="remark"
                                             placeholder="Remark">
+                                    </div>
+                                    {{-- Search: desktop par; mobile par sheet ka "Show results" yahi kaam karta hai --}}
+                                    <div class="px-1 text-left hide-mobile" style="flex: 0 0 auto;">
+                                        <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                            <i class="ft-search mr-1"></i> Search
+                                        </button>
                                     </div>
                                 </div>
                             </form>
@@ -87,7 +94,15 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route($isResampling ? 'get.initial-resampling' : 'get.initialsampling') }}`)
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route($isResampling ? 'get.initial-resampling' : 'get.initialsampling') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
             initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);
         });

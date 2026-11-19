@@ -209,7 +209,12 @@ $('#arrival_ticket_id').on('change', function () {
                         // Refresh the list in background
                         var listRefresh = $('#listRefresh');
                         if (listRefresh.length > 0 && listRefresh.val()) {
-                            filterationCommon(listRefresh.val());
+                            // button wala filter laga ho to usi se refresh (auto-filter wapas na lage)
+                            if (window.filterRunners && typeof window.filterRunners.filterForm === 'function') {
+                                window.filterRunners.filterForm(true);
+                            } else {
+                                filterationCommon(listRefresh.val());
+                            }
                         }
                     } else if (response.error) {
                         let errors = response.error;

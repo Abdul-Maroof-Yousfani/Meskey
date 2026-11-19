@@ -988,8 +988,16 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
             var formId = listRefresh.data("formid") || "filterForm";
             var loadmore = listRefresh.data("loadmore") || false;
 
-            // Call filterationCommon with all parameters
-            filterationCommon(refreshUrl, loadmore, appenddiv, formId);
+            // Button wala filter (form[data-filter-apply]) -> usi ka runner, warna filterationCommon
+            // (filterationCommon dobara chale to change par auto-filter wapas lag jata hai)
+            var $filterFormRef = $("#" + formId);
+            if ($filterFormRef.is("[data-filter-apply]") && window.filterRunners &&
+              typeof window.filterRunners[formId] === "function") {
+              window.filterRunners[formId](true);
+            } else {
+              // Call filterationCommon with all parameters
+              filterationCommon(refreshUrl, loadmore, appenddiv, formId);
+            }
             $(formhunyr).parents(".model").slideUp();
           }
 
@@ -2436,8 +2444,11 @@ function filterationCommon_withbtn(
   // FILTER REQUEST
   // ==========================================
 
-  function runFilter() {
-    $form.find('input[name="page"]').val(1);
+  // keepPage = true: current page par hi raho (list refresh / pehla load URL ke page se)
+  function runFilter(keepPage) {
+    if (keepPage !== true) {
+      $form.find('input[name="page"]').val(1);
+    }
 
     const formData =
       $form.serialize();
