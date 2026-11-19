@@ -248,7 +248,7 @@
         // desktop par CSS isay chhupa deti hai.
         placeFab(fab, origin, placeholder);
 
-        // Header ke neeche applied filters stripe (desktop + mobile)
+        // Header ke neeche applied filters stripe (sirf mobile)
         var appliedStripe = document.createElement('div');
         appliedStripe.className = 'm-applied-filters-stripe';
         appliedStripe.id = 'mAppliedFiltersStripe';

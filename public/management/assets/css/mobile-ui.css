@@ -17,6 +17,7 @@
    12. Validation error message (.error-message) - GLOBAL, desktop + mobile
    13. Arrival Slip document view (slip-page) - CSS: public/css/arrival-slip-styles.css
    14. Dashboard box -> side modal list (dl-mobile cards / dl-cards table)
+   15. Approval signatures (Prepared By / Approved By) - GLOBAL, sirf mobile
    ===================================================================== */
 
 /* #####################################################################
@@ -55,7 +56,8 @@
 
 .m-filter-fab,
 .m-filter-sheet,
-.m-sheet-backdrop {
+.m-sheet-backdrop,
+.m-applied-filters-stripe {
     display: none;
 }
 
@@ -131,8 +133,9 @@
     background: #e5484d;
 }
 
-/* Applied filters stripe (header ke neeche: desktop + mobile dono par) */
+/* Applied filters stripe (header ke neeche: sirf mobile par) */
 .m-applied-filters-stripe {
+    display: none !important;
     width: 100%;
     margin-top: 6px;
     margin-bottom: 10px;
@@ -277,9 +280,13 @@ body.layout-dark .m-applied-clear-all:active {
     }
 
     .m-applied-filters-stripe {
+        display: block !important;
         margin-top: 6px !important;
         margin-bottom: 6px !important;
         padding: 0 2px;
+    }
+    .m-applied-filters-stripe[hidden] {
+        display: none !important;
     }
     .m-applied-filters-inner {
         padding: 4px 8px;
@@ -2066,6 +2073,27 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         line-height: 1;
     }
 
+    /* app-bar ka doosra icon button (e.g. Export CSV): soft gol, sirf icon (text .mph-create-text chhupta hai) */
+    .mph-head .mph-icon-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 50% !important;
+        color: #1f9d55 !important;
+        background: rgba(31, 157, 85, .10) !important;
+        box-shadow: none !important;
+    }
+
+    .mph-head .mph-icon-btn i {
+        margin: 0 !important;
+        font-size: 15px;
+    }
+
     /* dark mode */
     body.layout-dark .mph-head {
         border-bottom-color: #2a2a30;
@@ -2476,6 +2504,37 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         word-break: break-word;
     }
 
+    /* ---- card ka rang = desktop table ki row ka rang, halka ----
+       (ticket: rejected red / locked grey; approval requests: status; purchase order: expired yellow) */
+    .tkc.tkc-tint-red    { background: #fff3f3 !important; }
+    .tkc.tkc-tint-orange { background: #fff8ee !important; }
+    .tkc.tkc-tint-green  { background: #f1fbf4 !important; }
+    .tkc.tkc-tint-grey   { background: #f4f5f7 !important; }
+    .tkc.tkc-tint-yellow { background: #fff9ec !important; }
+
+    /* rangeen card par andar ki chips / remark / actions safed - saaf dikhen */
+    .tkc[class*="tkc-tint-"] .tkc-chip,
+    .tkc[class*="tkc-tint-"] .tkc-remark,
+    .tkc[class*="tkc-tint-"] .tkc-tag:not([class*="is-"]) {
+        background: rgba(255, 255, 255, .75);
+    }
+
+    .tkc[class*="tkc-tint-"] .tkc-actions {
+        border-top-color: rgba(0, 0, 0, .05);
+    }
+
+    .layout-dark .tkc.tkc-tint-red    { background: #2a1d1f !important; }
+    .layout-dark .tkc.tkc-tint-orange { background: #2a2219 !important; }
+    .layout-dark .tkc.tkc-tint-green  { background: #18261d !important; }
+    .layout-dark .tkc.tkc-tint-grey   { background: #222226 !important; }
+    .layout-dark .tkc.tkc-tint-yellow { background: #2a2618 !important; }
+
+    .layout-dark .tkc[class*="tkc-tint-"] .tkc-chip,
+    .layout-dark .tkc[class*="tkc-tint-"] .tkc-remark,
+    .layout-dark .tkc[class*="tkc-tint-"] .tkc-tag:not([class*="is-"]) {
+        background: rgba(255, 255, 255, .06);
+    }
+
     /* remark / note: 2 lines tak, baaki "..." */
     .tkc-remark {
         display: -webkit-box;
@@ -2556,6 +2615,13 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
     .tkc-btn-warn {
         color: #b7791f;
         background: rgba(245, 158, 11, .14);
+    }
+
+    /* sirf icon wala chhota gol button (Logs / Delete) */
+    .tkc-btn-icon {
+        width: 34px;
+        padding: 0;
+        border-radius: 50%;
     }
 
     .tkc-btn-danger {
@@ -2907,6 +2973,52 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         flex: 1 0 auto;
         font-size: 11.5px !important;
         line-height: 1.25;
+    }
+
+    /* opt-in: wrapper par "tkf-2col" (bade forms, e.g. Purchase Order): col-xs-4 / col-md-4 / col-md-6 / col-xs-6
+       fields mobile par 2 columns (col-xs-4 ka "3 ek line" rule yahan nahi), textarea poori line */
+    .tkf-page.tkf-2col .row.row:not(.tkf-weights) > :is([class*="col-xs-4"], [class*="col-md-4"], .col-md-6, [class*="col-xs-6"]) {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .tkf-page.tkf-2col .row.row:not(.tkf-weights) > [class*="col"]:has(textarea, input[type="file"], table) {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .tkf-page.tkf-2col label {
+        line-height: 1.25;
+    }
+
+    /* view-only (form nahi) wala tkf-page: form card jaisa safed card */
+    .tkf-page.tkf-view {
+        padding: 16px 14px 14px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+    }
+
+    .tkf-page.tkf-view > .row {
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+
+    .tkf-page.tkf-view > .row > [class*="col"] {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    .tkf-page.tkf-view label {
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b6b80;
+    }
+
+    body.layout-dark .tkf-page.tkf-view {
+        background: #1b1b1f;
+        box-shadow: none;
     }
 
     /* opt-in: row par "tkf-grid2" -> col-md-6 / col-md-3 fields mobile par 2 columns (e.g. Freight);
@@ -3537,9 +3649,7 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
     .al-wrap .al-card {
         margin-bottom: 12px !important;
         overflow: hidden;
-        border-top: 0 !important;
-        border-right: 0 !important;
-        border-bottom: 0 !important;
+        border: 0 !important;               /* baayen wali rangeen line (border-left-4) bhi nahi; rang icon me hai */
         border-radius: 14px !important;
         background: #fff;
         box-shadow: 0 2px 12px rgba(30, 20, 60, .06) !important;
@@ -4214,5 +4324,79 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         border-color: #2f2f36 !important;
         background: transparent !important;
         color: #e4e4e8;
+    }
+}
+
+/* #####################################################################
+   15. Approval signatures (Prepared By / Approved By) - GLOBAL, sirf mobile
+   Components: resources/views/components/approval-*.blade.php (sab me .dash-item boxes ek d-flex row me)
+   Mobile par ek row me ek signature; underscore wali line ki jagah patli line (chaurai me fit).
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    /* dash-item wali row: ek ke neeche ek */
+    .d-flex:has(> .dash-item),
+    .dash-container {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .dash-item {
+        display: grid !important;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        width: 100%;
+        min-width: 0 !important;
+        padding: 10px 12px;
+        border: 1px solid #efeff4;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    /* naam + role baayen */
+    .dash-item .dash-value {
+        grid-column: 1;
+        grid-row: 1;
+        align-items: flex-start !important;
+        text-align: left !important;
+        min-width: 0;
+    }
+
+    .dash-item .dash-value strong {
+        font-size: 13px;
+        word-break: break-word;
+    }
+
+    .dash-item .dash-value small {
+        font-size: 10px;
+        color: #8a8a99;
+        word-break: break-word;
+    }
+
+    /* "Prepared By / Approved By" daayen, chhota */
+    .dash-item .approver-name {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        margin: 0 0 0 10px !important;
+        min-height: 0 !important;
+        font-size: 11px !important;
+        font-weight: 600;
+        white-space: nowrap;
+        color: #6b6b80 !important;
+    }
+
+    /* "____________" wali line ki zaroorat nahi (box khud alag hai) */
+    .dash-item .dash-line {
+        display: none !important;
+    }
+
+    body.layout-dark .dash-item {
+        border-color: #2a2a30;
+        background: #1b1b1f;
+    }
+
+    body.layout-dark .dash-item .approver-name {
+        color: #a9a9b5 !important;
     }
 }

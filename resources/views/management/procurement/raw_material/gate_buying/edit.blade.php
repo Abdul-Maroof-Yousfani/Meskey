@@ -1,4 +1,7 @@
-div <form action="{{ route('raw-material.gate-buying.update', $arrivalPurchaseOrder->id) }}" method="POST" id="ajaxSubmit"
+div 
+{{-- tkf-page tkf-2col: mobile form UI, fields 2 columns (mobile-ui.css section 7 + 9). Desktop same. --}}
+<div class="tkf-page tkf-2col">
+<form action="{{ route('raw-material.gate-buying.update', $arrivalPurchaseOrder->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -254,13 +257,14 @@ div <form action="{{ route('raw-material.gate-buying.update', $arrivalPurchaseOr
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a href="{{ route('raw-material.gate-buying.index') }}" class="btn btn-danger">Close</a>
             <button type="submit" class="btn btn-primary">Update</button>
         </div>
     </div>
 </form>
+</div>
 
 <script>
     $(document).ready(function() {

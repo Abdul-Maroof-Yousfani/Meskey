@@ -10,7 +10,8 @@
     $testUrl = route('sampling-monitoring.edit-test', $row->id);
 @endphp
 
-<div class="tkc {{ $status == 'rejected' ? 'is-rejected' : '' }}">
+{{-- tkc-tint-*: table row ka rang (halka): pending = orange, rejected = red, approved = green, baaki = grey --}}
+<div class="tkc {{ $status == 'rejected' ? 'is-rejected' : '' }} tkc-tint-{{ $status == 'pending' ? 'orange' : ($status == 'rejected' ? 'red' : ($status == 'approved' ? 'green' : 'grey')) }}">
     {{-- card ka main hissa: tap = View (table wale 👁 jaisa) --}}
     <div class="tkc-main" role="button" tabindex="0"
         onclick="openModal(this,'{{ $viewUrl }}','View Approval Requests',false,'90%')">

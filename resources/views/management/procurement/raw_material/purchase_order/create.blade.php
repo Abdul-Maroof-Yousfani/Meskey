@@ -1,3 +1,5 @@
+{{-- tkf-page tkf-2col: mobile form UI, fields 2 columns (mobile-ui.css section 7 + 9). Desktop same. --}}
+<div class="tkf-page tkf-2col">
 <form action="{{ route('raw-material.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.purchase-order') }}" />
@@ -414,13 +416,14 @@
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
+</div>
 
 <script>
     $(document).ready(function () {

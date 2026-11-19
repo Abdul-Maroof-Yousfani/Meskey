@@ -344,7 +344,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="{{ asset('management/assets/js/scripts.js') }}?v={{ @filemtime(public_path('management/assets/js/scripts.js')) }}"></script>
-<script src="{{ asset('management/assets/js/mobile-filter-sheet.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-filter-sheet.js')) }}"></script><script src="{{ asset('management/assets/js/mobile-scroll-bars.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-scroll-bars.js')) }}"></script>
+<script src="{{ asset('management/assets/js/mobile-filter-sheet.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-filter-sheet.js')) }}"></script><script src="{{ asset('management/assets/js/mobile-scroll-bars.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-scroll-bars.js')) }}"></script><script src="{{ asset('management/assets/js/mobile-card-sheet.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-card-sheet.js')) }}"></script>
 <script src="{{ asset('management/assets/js/fetch-dynamic-html.js') }}"></script>
 <!-- END: Custom CSS-->
 <script>

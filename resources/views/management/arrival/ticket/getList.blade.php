@@ -151,64 +151,8 @@
 </div>
 
 <script>
-    // ===== Mobile card: ⋯ actions sheet =====
-    // getList har filter/page par AJAX se dobara aata hai -> sheet + listeners sirf EK baar banao
-    (function () {
-        if (window.tkcSheetReady) return;
-        window.tkcSheetReady = true;
+    // Mobile card ⋯ actions sheet: ab global - public/management/assets/js/mobile-card-sheet.js (footer me load)
 
-        var backdrop = document.createElement('div');
-        backdrop.className = 'tkc-backdrop';
-        var sheet = document.createElement('div');
-        sheet.className = 'tkc-sheet';
-        sheet.setAttribute('role', 'dialog');
-        sheet.setAttribute('aria-modal', 'true');
-        sheet.innerHTML =
-            '<span class="tkc-sheet-grip"></span>' +
-            '<div class="tkc-sheet-title"></div>' +
-            '<div class="tkc-sheet-body"></div>' +
-            '<button type="button" class="tkc-sheet-cancel">Cancel</button>';
-        document.body.appendChild(backdrop);
-        document.body.appendChild(sheet);
-
-        function closeSheet() {
-            sheet.classList.remove('open');
-            backdrop.classList.remove('show');
-            document.body.classList.remove('tkc-sheet-open');
-        }
-
-        function openSheet(btn) {
-            var card = btn.closest('.tkc');
-            var tpl = card ? card.querySelector('template.tkc-extra') : null;
-            if (!tpl) return;
-            sheet.querySelector('.tkc-sheet-title').textContent = btn.getAttribute('data-title') || 'Actions';
-            var body = sheet.querySelector('.tkc-sheet-body');
-            body.innerHTML = '';
-            body.appendChild(tpl.content.cloneNode(true));
-            backdrop.classList.add('show');
-            sheet.classList.add('open');
-            document.body.classList.add('tkc-sheet-open');
-        }
-
-        // (actions card ke "tap = View" wale hisse ke bahar hain, is liye wo View trigger nahi karte)
-        document.addEventListener('click', function (e) {
-            var more = e.target.closest('.tkc-more');
-            if (more) {
-                e.preventDefault();
-                openSheet(more);
-            }
-        });
-
-        backdrop.addEventListener('click', closeSheet);
-        sheet.querySelector('.tkc-sheet-cancel').addEventListener('click', closeSheet);
-        // sheet ka koi action dabaya -> uska onclick/href chale, phir sheet band
-        sheet.querySelector('.tkc-sheet-body').addEventListener('click', function (e) {
-            if (e.target.closest('a, button')) setTimeout(closeSheet, 0);
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeSheet();
-        });
-    })();
 
     function confirmBiltyReturn(ticketId) {
         Swal.fire({

@@ -4,6 +4,39 @@
         color: black;
     }
 </style>
+@php
+    // Har contract ka truck hisaab EK dafa (pehle table ke loop me hota tha) -> table + mobile card dono yahi use karte hain
+    $poStats = [];
+    foreach ($arrivalPurchaseOrder as $row) {
+        //  $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
+        $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
+        $rejectedTrucks = $row->rejectedArrivalTickets()->sum('closing_trucks_qty');
+        $rejectedHalfTrucks = $row->rejectedHalfArrivalTickets->count() != 0 ? $row->rejectedHalfArrivalTickets->count() / 2 : 0;
+        $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
+        $inTransitTrucks = $row->stockInTransitTickets->count();
+        $orderedTrucks = $row->no_of_trucks ?? 0;
+
+        if ($row->is_replacement == 1) {
+            $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
+        } else {
+            $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
+        }
+
+        $poStats[$row->id] = compact('arrivedTrucks', 'rejectedTrucks', 'rejectedHalfTrucks', 'totalRejectedTrucks', 'inTransitTrucks', 'orderedTrucks', 'balanceTrucks');
+    }
+@endphp
+
+{{-- ===== MOBILE: cards (mobile-ui.css section 6) ===== --}}
+<div class="tkc-list">
+    @forelse ($arrivalPurchaseOrder as $row)
+        @include('management.procurement.raw_material.purchase_order.partials.mobile-card', ['row' => $row, 'st' => $poStats[$row->id]])
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No purchase orders found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: sticky table (mobile par sirf iski pagination) ===== --}}
+<div class="tk-table-wrap">
 <x-sticky-table :items="$arrivalPurchaseOrder" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'" :pagination="$arrivalPurchaseOrder->links()">
     @slot('head')
     <th>Contract #</th>
@@ -33,19 +66,8 @@
     @slot('body')
     @foreach ($arrivalPurchaseOrder as $row)
         @php
-            //  $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
-            $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
-            $rejectedTrucks = $row->rejectedArrivalTickets()->sum('closing_trucks_qty');
-            $rejectedHalfTrucks = $row->rejectedHalfArrivalTickets->count() != 0 ? $row->rejectedHalfArrivalTickets->count() / 2 : 0;
-            $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
-            $inTransitTrucks = $row->stockInTransitTickets->count();
-            $orderedTrucks = $row->no_of_trucks ?? 0;
-
-            if ($row->is_replacement == 1) {
-                $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
-            } else {
-                $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
-            }
+            // hisaab upar EK dafa ho chuka (table + mobile card dono isi se)
+            extract($poStats[$row->id]);
         @endphp
 
         <tr class="{{ $row->hasExpired() ? 'expired' : '' }} {{ $row->defaulter == 1 ? 'defaulter' : '' }}">
@@ -179,3 +201,4 @@
     @endforeach
     @endslot
 </x-sticky-table>
+</div>

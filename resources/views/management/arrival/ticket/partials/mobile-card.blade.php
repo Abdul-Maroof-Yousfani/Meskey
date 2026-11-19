@@ -11,7 +11,8 @@
     $hasExtra = $canMaster || $hasBilty;
 @endphp
 
-<div class="tkc {{ $isRejected ? 'is-rejected' : '' }} {{ $isLocked ? 'is-locked' : '' }}">
+{{-- tkc-tint-*: table row ka rang (halka) - rejected = bg-red, locked = bg-locked --}}
+<div class="tkc {{ $isRejected ? 'is-rejected tkc-tint-red' : '' }} {{ $isLocked && !$isRejected ? 'is-locked tkc-tint-grey' : ($isLocked ? 'is-locked' : '') }}">
 
     {{-- card ka main hissa: tap = View Ticket (table wale 👁 jaisa) --}}
     <div class="tkc-main" role="button" tabindex="0"

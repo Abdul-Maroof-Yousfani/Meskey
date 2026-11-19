@@ -1,7 +1,8 @@
 @php
     $bagWeight = $arrivalPurchaseOrder->product->bag_weight_for_purchasing ?: 1;
 @endphp
-<div class="view-only">
+{{-- tkf-page tkf-2col tkf-view: mobile par form card jaisa, 2 columns (mobile-ui.css section 7). Desktop same. --}}
+<div class="view-only tkf-page tkf-2col tkf-view">
     <div class="d-flex justify-content-end mb-2">
         <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('raw-material.purchase-order.audit-logs', $arrivalPurchaseOrder->id) }}','Audit Logs: Contract #{{ $arrivalPurchaseOrder->contract_no }}', false, '55%')">
             <i class="fa fa-history mr-1"></i> Audit Logs
@@ -403,7 +404,7 @@
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close closebutton">Close</a>
         </div>
