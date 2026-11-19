@@ -65,19 +65,19 @@
                                             placeholder="Req Amt" name="requested_amount_for_filter"
                                             value="{{ request('requested_amount', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 16%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="daterange" class="form-label">Date Filter</label>
                                         <input type="text" name="daterange" id="daterange" class="form-control"
                                             value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                         <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                         <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                     </div>
-                                </div>
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
+                                    {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                    <div class="px-1 text-left hide-mobile d-flex align-items-end mt-2" style="width: auto;">
+                                        <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                            <i class="ft-search mr-1"></i> Search
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         </div>

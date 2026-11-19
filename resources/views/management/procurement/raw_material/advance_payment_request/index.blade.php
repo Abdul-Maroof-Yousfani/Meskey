@@ -17,7 +17,7 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form" data-filter-apply>
-                                <div class="row mx-0">
+                                <div class="row mx-0 align-items-end">
                                     <div class="px-1 text-left" style="width: 10%;">
                                         <label for="contract_no" class="form-label">Contract No</label>
                                         <input type="text" class="form-control" id="contract_no"
@@ -44,34 +44,31 @@
                                             <option value="">Commodity</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 15%;">
+                                    <div class="px-1 text-left" style="width: 14%;">
                                         <label for="amount" class="form-label">Amount</label>
                                         <input type="text" class="form-control" id="amount"
                                             placeholder="Amount" name="amount"
                                             value="{{ request('amount', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 15%;">
+                                    <div class="px-1 text-left" style="width: 14%;">
                                         <label for="requested_amount" class="form-label">Req. Amount</label>
                                         <input type="text" class="form-control" id="requested_amount"
                                             placeholder="Req. Amt" name="requested_amount"
                                             value="{{ request('requested_amount', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 10%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="daterange" class="form-label">Date</label>
                                         <input type="text" name="daterange" id="daterange" class="form-control"
                                             value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                     </div>
-                                    <div class="px-1 text-left" style="width: 10%;">
-                                        <label class="form-label" style="visibility: hidden;">Action</label>
+                                    {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                    <div class="px-1 text-left hide-mobile d-flex align-items-end mt-2" style="width: 10%;">
                                         <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                         <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                        <button type="submit" class="btn btn-primary mb-0 btn-block" title="Apply filters">
+                                            <i class="ft-search mr-1"></i> Search
+                                        </button>
                                     </div>
-                                </div>
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
                                 </div>
                             </form>
                         </div>

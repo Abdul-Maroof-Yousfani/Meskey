@@ -148,7 +148,7 @@
                                                 </div>
                                             </div>
                                             {{-- Search: desktop par; mobile par sheet ka "Show results" yahi kaam karta hai --}}
-                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end">
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end mt-2">
                                                 <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
                                                     <i class="ft-search mr-1"></i> Search
                                                 </button>

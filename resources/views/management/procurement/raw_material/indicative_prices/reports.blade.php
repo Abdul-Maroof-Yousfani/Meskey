@@ -26,23 +26,23 @@
                                 <div class="row">
                                     <div class="col-md-6"></div>
                                     <div class="col-md-6 my-1">
-                                        <div class="row justify-content-end text-left">
+                                        <div class="row justify-content-end text-left align-items-end">
                                             <div class="col-xs-4 col-sm-4 col-md-4">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="date" name="date" id="reportDateFilter"
                                                         class="form-control" value="{{ now()->format('Y-m-d') }}"
                                                         max="{{ now()->format('Y-m-d') }}">
                                                 </div>
                                             </div>
+                                            {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end mt-2">
+                                                <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                                    <i class="ft-search mr-1"></i> Search
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
                                 </div>
                             </form>
                         </div>
