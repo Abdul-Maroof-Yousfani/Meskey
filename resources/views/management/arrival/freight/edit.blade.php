@@ -1,10 +1,12 @@
+{{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page">
 <form action="{{ route('freight.update', $freight->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
     enctype="multipart/form-data">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.freight') }}" />
 
-    <div class="row form-mar">
+    <div class="row form-mar tkf-grid2">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Ticket #</label>
@@ -235,13 +237,14 @@
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
+</div>
 
 <script>
     //  $('input[name="arrived_weight"]').on('change', function() {

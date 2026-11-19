@@ -26,7 +26,7 @@
     }
  @endphp
 
-<div class="row form-mar">
+<div class="row form-mar tkf-grid2">
     <div class="col-12" bis_skin_checked="1">
         <h6 class="header-heading-sepration">
             Arrival Slip

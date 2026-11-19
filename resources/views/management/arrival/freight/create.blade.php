@@ -4,11 +4,23 @@
 @endsection
 @section('content')
 
-    <div class="container-fluid">
+    {{-- tkf-page: mobile form UI (mobile-ui.css section 7). Desktop same. --}}
+    <div class="container-fluid tkf-page">
+        {{-- mobile app-bar (desktop par card-header wala title hi dikhta hai) --}}
+        @include('management.layouts.partials.mobile-page-head')
+        <div class="row w-100 mx-auto align-items-center mph-head show-mobile">
+            <a href="{{ route('freight.index') }}" class="mph-back" aria-label="Back" title="Back">
+                <i class="ft-arrow-left"></i>
+            </a>
+            <div class="col-12 mph-title-col">
+                <div class="mph-sub">Arrival</div>
+                <h2 class="page-title mb-0">Create Freight</h2>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header hide-mobile">
                         <h4 class="mb-0">Create Freight </h4>
                     </div>
                     <div class="card-body">

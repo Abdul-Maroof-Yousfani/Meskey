@@ -47,7 +47,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th class="col-sm-4">Ticket</th>

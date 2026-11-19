@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $ArrivalSlip, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($ArrivalSlip as $row)
+        @include('management.arrival.arrival_slip.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No arrival slips found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0 table-responsive special">
     <thead>
         <tr>
@@ -96,6 +110,7 @@
         @endif
     </tbody>
 </table>
+</div>
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}

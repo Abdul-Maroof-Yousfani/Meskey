@@ -1,0 +1,183 @@
+/* =====================================================================
+   Arrival Slip document view - SIRF MOBILE SCREEN
+   Linked from: resources/views/management/arrival/arrival_slip/edit.blade.php
+                (aur show.blade.php - wahan .slip-page wrapper nahi, is liye koi asar nahi)
+
+   - Modal (View Arrival Slip) aur seedha URL (/arrival/arrival-slip/{id}/edit) dono me load hoti hai.
+   - "@media screen" -> PRINT par koi asar nahi (Ctrl+P ho ya Print button).
+     Print button wala printView() #printSection ka HTML naye window me apne styles se chhapta hai;
+     ye file wahan jati hi nahi. Print bilkul pehle jaisa.
+   - Desktop par koi asar nahi (sirf < 768px).
+   ===================================================================== */
+@media screen and (max-width: 767.98px) {
+
+    .slip-page {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* bahar wala bootstrap .row (-15px margin) slip ko baayen screen se bahar dhakel raha tha */
+    .slip-page form > .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .slip-page #printSection {
+        flex: 0 0 100%;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        font-size: 13px;
+    }
+
+    .slip-page #printSection > [class*="col"] {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    .slip-page img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* ---- header: logo upar, addresses neeche ---- */
+    .slip-page .flex-head {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .slip-page .logo img {
+        width: 140px;
+        max-width: 60%;
+    }
+
+    .slip-page .logo p {
+        margin-top: 8px !important;
+        font-size: 14px !important;
+    }
+
+    .slip-page .add-main1 ul {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin: 0 0 6px;
+        padding: 0;
+        list-style: none;
+    }
+
+    .slip-page .add-main2 {
+        display: block;
+    }
+
+    /* view ki apni <style> "#printSection h5 { 1.25rem !important }" deti hai -> #printSection + !important */
+    .slip-page #printSection .head-add1 h5 {
+        margin-bottom: 2px;
+        font-size: 13px !important;
+    }
+
+    .slip-page #printSection .head-add1 p {
+        margin-bottom: 4px;
+        font-size: 11.5px;
+        line-height: 1.4;
+    }
+
+    /* section titles (inline 1.25rem) chhote */
+    .slip-page #printSection div[style*="1.25rem"] {
+        font-size: 15px !important;
+    }
+
+    /* Freight / Weights jaise col-8 / col-4 hisse: ek ke neeche ek */
+    .slip-page #printSection .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .slip-page #printSection .row > [class*="col-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* ---- tables: har row 2 column grid (label | value) ----
+       Upar wali table me EK row me 4-5 label/value jode hain (Arrival Slip #, Date, Truck No...);
+       table me wo pichak kar ek ek akshar ki khadi line ban jate the. Grid me jode khud
+       ek ke neeche ek aa jate hain. (signature table neeche wapas normal table) */
+    .slip-page #printSection table,
+    .slip-page #printSection table > tbody,
+    .slip-page #printSection table > thead {
+        display: block;
+        width: 100% !important;
+    }
+
+    .slip-page #printSection table tr {
+        display: grid;
+        grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .slip-page #printSection table td,
+    .slip-page #printSection table th {
+        display: block;
+        width: auto !important;
+        min-width: 0;
+        padding: 5px 4px !important;
+        font-size: 12.5px;
+        word-break: break-word;
+    }
+
+    /* label wale cells (odd) halka rang */
+    .slip-page #printSection table tr > td:nth-child(odd) {
+        color: #5b5b6b !important;
+    }
+
+    /* td ke andar wale flex (e.g. Freight me input + likhai) chaurai me fit */
+    .slip-page #printSection table td > div[style*="display: flex"] {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .slip-page #printSection input[type="text"],
+    .slip-page #printSection input[type="number"] {
+        box-sizing: border-box;
+        width: 100% !important;
+        min-width: 0;
+        padding: 7px 9px !important;
+        border-radius: 8px;
+        font-size: 13.5px;
+    }
+
+    /* ---- signatures: wapas normal table (3 columns), chhoti likhai ---- */
+    .slip-page #printSection .signature table {
+        display: table;
+        table-layout: fixed;
+    }
+
+    .slip-page #printSection .signature table tr {
+        display: table-row;
+    }
+
+    .slip-page #printSection .signature table td {
+        display: table-cell;
+        width: 33.33% !important;
+        padding: 4px 2px !important;
+        font-size: 11px;
+        color: #222 !important;
+    }
+
+    .slip-page .signature table td > div:first-child {
+        font-size: 12px !important;
+    }
+
+    .slip-page .signature table td > div + div {
+        margin-top: 20px !important;
+    }
+
+    /* stamp */
+    .slip-page #printSection img[src*="stamp"] {
+        width: 60% !important;
+    }
+}

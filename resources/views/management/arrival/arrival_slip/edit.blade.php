@@ -26,7 +26,12 @@
     }
 @endphp
 
-<link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}">
+{{-- URL seedha khule to bhi phone par sahi chaurai (modal me main page ka viewport pehle se yahi hai) --}}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{-- mobile screen styles (print par asar nahi): public/css/arrival-slip-styles.css --}}
+<link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}?v={{ @filemtime(public_path('css/arrival-slip-styles.css')) }}">
+{{-- slip-page: mobile par slip document reflow (mobile-ui.css section 13). Print / desktop same. --}}
+<div class="slip-page">
 <form action="{{ route('arrival-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-slip') }}" />
@@ -629,7 +634,7 @@
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="button" class="btn btn-info mr-2" id="printButton">
@@ -638,6 +643,7 @@
         </div>
     </div>
 </form>
+</div>
 
 <script>
     function readURL(input) {

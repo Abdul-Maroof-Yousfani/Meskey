@@ -15,6 +15,7 @@
    10. Audit logs (components/audit-logs) - GLOBAL, sirf mobile: al-* classes
    11. Master Control / revert page (rv-*) - opt-in: form par "rv-page" class
    12. Validation error message (.error-message) - GLOBAL, desktop + mobile
+   13. Arrival Slip document view (slip-page) - CSS: public/css/arrival-slip-styles.css
    ===================================================================== */
 
 /* #####################################################################
@@ -2204,6 +2205,11 @@ body.layout-dark .profile-menu .pm-logout {
         background: rgba(245, 158, 11, .14);
     }
 
+    .tkc-btn-danger {
+        color: #c53030;
+        background: rgba(229, 62, 62, .10);
+    }
+
     .tkc-btn:active,
     .tkc-more:active {
         transform: scale(.96);
@@ -2548,6 +2554,42 @@ body.layout-dark .profile-menu .pm-logout {
         flex: 1 0 auto;
         font-size: 11.5px !important;
         line-height: 1.25;
+    }
+
+    /* opt-in: row par "tkf-grid2" -> col-md-6 / col-md-3 fields mobile par 2 columns (e.g. Freight);
+       file upload wale poori line */
+    .tkf-page form .tkf-grid2 > .col-md-6,
+    .tkf-page form .tkf-grid2 > .col-md-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .tkf-page form .tkf-grid2 > [class*="col"]:has(input[type="file"]) {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .tkf-page form .tkf-grid2 label {
+        line-height: 1.25;
+    }
+
+    /* form se bahar wala "pehle ticket chuno" hissa (e.g. Create Freight): form jaisa safed card */
+    .tkf-page .card-body > .row.form-mar {
+        margin: 0 0 12px;
+        padding: 14px 8px 2px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+    }
+
+    .tkf-page .card-body > .row.form-mar > [class*="col"] {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    body.layout-dark .tkf-page .card-body > .row.form-mar {
+        background: #1b1b1f;
+        box-shadow: none;
     }
 
     /* opt-in: tkf-half = aadhi line (2 ek row me), tkf-full = poori line
@@ -3727,3 +3769,10 @@ body.layout-dark .profile-menu .pm-logout {
         padding: 0 6px;
     }
 }
+
+/* #####################################################################
+   13. Arrival Slip document view (slip-page)
+   CSS yahan NAHI: public/css/arrival-slip-styles.css me hai.
+   Wajah: arrival_slip/edit.blade.php partial hai; URL seedha khulne par mobile-ui.css load nahi hoti,
+   lekin arrival-slip-styles.css (view khud link karta hai) modal + seedha URL dono me aati hai.
+   ##################################################################### */

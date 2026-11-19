@@ -7,7 +7,7 @@
         data-variable="slip" id="afterAjax" class="d-none">
     </a>
 
-    <div class="row form-mar">
+    <div class="row form-mar tkf-grid2">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Ticket #</label>
@@ -253,7 +253,7 @@
         </div>
     @endif
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a href="{{ route('freight.index') }}"
                 class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
