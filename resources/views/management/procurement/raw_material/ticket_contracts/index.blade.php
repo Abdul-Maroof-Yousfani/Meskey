@@ -17,7 +17,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            <form id="filterForm" class="form" data-filter-apply>
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row justify-content-nd text">
@@ -149,6 +149,12 @@
                                         </div>
                                     </div>
                                 </div>
+                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                <div class="text-right hide-mobile mt-1 px-1">
+                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                        <i class="ft-search mr-1"></i> Search
+                                    </button>
+                                </div>
                             </form>
                         </div>
                         <div class="card-content">
@@ -177,9 +183,15 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(
-                `{{ route(str()->contains(request()->route()->getName(), 'verified') ? 'raw-material.get.verified-contracts' : 'raw-material.get.ticket-contracts') }}`
-            )
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route(str()->contains(request()->route()->getName(), 'verified') ? 'raw-material.get.verified-contracts' : 'raw-material.get.ticket-contracts') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
 

@@ -34,7 +34,9 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            {{-- data-filter-apply: filter sirf Search (desktop) / Show results (mobile) par lagta hai,
+                                 field badalne par nahi. JS: filterationCommon_withbtn (scripts.js) --}}
+                            <form id="filterForm" class="form" data-filter-apply>
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-nd text">
@@ -144,6 +146,12 @@
                                                         @endif
                                                     </select>
                                                 </div>
+                                            </div>
+                                            {{-- Search: desktop par; mobile par sheet ka "Show results" yahi kaam karta hai --}}
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end">
+                                                <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                                    <i class="ft-search mr-1"></i> Search
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -278,7 +286,15 @@
             //     width: '100%'
             // });
 
-            filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route('raw-material.get.purchase-order') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (create / edit save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
 

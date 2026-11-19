@@ -20,7 +20,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            <form id="filterForm" class="form" data-filter-sheet data-filter-apply>
                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                 <div class="row">
@@ -37,6 +37,12 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                <div class="text-right hide-mobile mt-1 px-1">
+                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                        <i class="ft-search mr-1"></i> Search
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -108,7 +114,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('indicative-prices.reports.get-list') }}`)
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route('indicative-prices.reports.get-list') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
 
             $(document).on('mouseenter', '.commodity-cell', function() {
                 const commodity = $(this).data('commodity');

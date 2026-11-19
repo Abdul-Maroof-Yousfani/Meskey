@@ -14,7 +14,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            <form id="filterForm" class="form" data-filter-apply>
                                 @php
                                     $today = \Carbon\Carbon::today()->format('Y-m-d');
                                     $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
@@ -87,6 +87,12 @@
                                     </div>
                                 </div>
 
+                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                <div class="text-right hide-mobile mt-1 px-1">
+                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                        <i class="ft-search mr-1"></i> Search
+                                    </button>
+                                </div>
                             </form>
 
 
@@ -133,7 +139,15 @@
                 true,
             );
 
-            filterationCommon(`{{ route('raw-material.get.sampling-monitoring') }}`)
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route('raw-material.get.sampling-monitoring') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
         });
     </script>
 @endsection

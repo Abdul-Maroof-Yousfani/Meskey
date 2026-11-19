@@ -16,7 +16,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <form id="filterForm" class="form">
+                            <form id="filterForm" class="form" data-filter-apply>
                                 <div class="row mx-0">
                                     <div class="px-1 text-left" style="width: 10%;">
                                         <label for="contract_no" class="form-label">Contract No</label>
@@ -75,6 +75,12 @@
                                         <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                     </div>
                                 </div>
+                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                <div class="text-right hide-mobile mt-1 px-1">
+                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                        <i class="ft-search mr-1"></i> Search
+                                    </button>
+                                </div>
                             </form>
                         </div>
                         <div class="card-content">
@@ -108,9 +114,15 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(
-                `{{ route('raw-material.get.payment-request') }}`
-            );
+            // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
+            const runListFilter = filterationCommon_withbtn(`{{ route('raw-material.get.payment-request') }}`);
+            window.filterRunners = window.filterRunners || {};
+            window.filterRunners.filterForm = runListFilter; // list refresh (save ke baad)
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                runListFilter();
+            });
+            runListFilter(true); // pehla load: URL wala page
 
             // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
             initializeDynamicDependentSelect2(
