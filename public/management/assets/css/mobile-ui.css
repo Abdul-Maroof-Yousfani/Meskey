@@ -10,9 +10,10 @@
    5. Mobile page header (mph-*)        - opt-in: @include partial + "mph-head" classes
    6. Mobile list cards + pagination (tkc-*) - opt-in: page me "tkc-list" markup
    7. Mobile create/edit form (tkf-*)   - opt-in: container par "tkf-page" class
-   8. Dropdowns ek jaisa (native select + select2) - GLOBAL, sirf mobile
+   8. Dropdowns (native select + select2) - GLOBAL: alignment desktop+mobile, look sirf mobile
    9. Side modal / drawer (#modal-sidebar, openModal) - GLOBAL, sirf mobile: full screen app page
    10. Audit logs (components/audit-logs) - GLOBAL, sirf mobile: al-* classes
+   11. Master Control / revert page (rv-*) - opt-in: form par "rv-page" class
    ===================================================================== */
 
 /* #####################################################################
@@ -275,13 +276,9 @@
         align-items: center;
     }
 
+    /* text/arrow ki vertical alignment section 8 (global) karta hai */
     .m-sheet-body .select2-container .select2-selection--single .select2-selection__rendered {
-        line-height: 46px;
         font-size: 14px;
-    }
-
-    .m-sheet-body .select2-container .select2-selection--single .select2-selection__arrow {
-        height: 44px;
     }
 
     .m-sheet-foot {
@@ -1608,7 +1605,7 @@ body.layout-dark .profile-menu .pm-logout {
         max-width: 100vw !important;
         margin-left: calc(50% - 50vw) !important;
         margin-right: calc(50% - 50vw) !important;
-        margin-bottom: 14px !important;
+        margin-bottom: 0 !important;         /* gap: neeche "mph-head + ..." rule deta hai */
         padding: 10px 16px;
         border-bottom: 1px solid #ececf2;
         background: #fff;
@@ -1627,10 +1624,14 @@ body.layout-dark .profile-menu .pm-logout {
         top: 0;
     }
 
-    /* header ke neeche wala content (table card) thora neeche se shuru ho,
-       sticky header ke peeche na chhupe */
-    .mph-head ~ .row {
-        margin-top: 12px;
+    /* GLOBAL: app-bar ke foran baad wala content (row, form, card, div... kuch bhi)
+       thora neeche se shuru ho, sticky header ke peeche na chhupe.
+       Gap sirf yahan se: mph-head ka apna margin-bottom 0 (margin collapse ka jhagra khatam),
+       agla element margin-top 18px. Beech me <script>/<style> ho to us ke baad wala. */
+    .mph-head + :not(script):not(style),
+    .mph-head + :is(script, style) + :not(script):not(style),
+    .mph-head + :is(script, style) + :is(script, style) + :not(script):not(style) {
+        margin-top: 18px !important;
     }
 
     /* scroll par theme top header ko shadow deti hai (body.page-scrolled) jo neeche chipke bar par girti hai */
@@ -2410,12 +2411,7 @@ body.layout-dark .profile-menu .pm-logout {
     .tkf-page .select2-container .select2-selection--single .select2-selection__rendered {
         padding-left: 12px;
         padding-right: 30px;
-        line-height: 42px !important;
         font-size: 16px;
-    }
-
-    .tkf-page .select2-container .select2-selection--single .select2-selection__arrow {
-        height: 42px !important;
     }
 
     .tkf-page .select2-container--disabled .select2-selection--single {
@@ -2558,12 +2554,55 @@ body.layout-dark .profile-menu .pm-logout {
 }
 
 /* #####################################################################
-   8. Dropdowns ek jaisa - GLOBAL, sirf mobile
+   8. Dropdowns ek jaisa - GLOBAL (alignment: desktop + mobile, look: sirf mobile)
    Simple <select class="form-control"> aur select2 dono same dikhen:
    same border, kone, text, aur same chevron arrow (SVG).
    :where() se specificity kam rakhi hai, taake page/sheet wale rules
    (filter sheet, tkf-page) apni height/radius khud set kar saken.
    ##################################################################### */
+
+/* ---- select2 text / arrow / clear(x) vertical alignment - DESKTOP + MOBILE ----
+   Theme (components.css) rendered par height:100% + fixed line-height lagati hai aur style.css
+   arrow ko top:5px + fixed height deti hai -> text upar/neeche, arrow alag jagah.
+   Yahan sirf alignment; look (border, chevron) neeche mobile block me.
+   Ye block mobile block se PEHLE hai taake mobile wale rules isay override kar saken. */
+.select2-container--default .select2-selection--single {
+    display: flex;
+    align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: auto !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1.4 !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    top: 0 !important;
+    bottom: 0;
+    height: 100% !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__clear {
+    position: absolute;
+    top: 50%;
+    right: 26px;
+    float: none !important;
+    width: 22px !important;
+    height: 22px !important;
+    margin: 0 !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    transform: translateY(-50%);
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered:has(.select2-selection__clear) {
+    padding-right: 52px !important;
+}
+
 @media (max-width: 767.98px) {
 
     /* ---- native select ---- */
@@ -2598,12 +2637,17 @@ body.layout-dark .profile-menu .pm-logout {
         background-color: #fff;
     }
 
+    /* Theme (components.css) rendered par height:100% + fixed line-height (~39px) lagati hai:
+       box 44/46px ho to text upar chipak jata tha, arrow beech me. Ab text flex se beech me. */
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         flex: 1 1 auto;
         min-width: 0;
+        height: auto !important;
+        padding-top: 0;
+        padding-bottom: 0;
         padding-left: 12px;
         padding-right: 34px;
-        line-height: 38px;
+        line-height: 1.4 !important;
         font-size: 16px;
         color: #3d3c4a;
         white-space: nowrap;
@@ -2611,16 +2655,37 @@ body.layout-dark .profile-menu .pm-logout {
         text-overflow: ellipsis;
     }
 
+    /* clear (x) button: style.css me 30px float tha jo text ko upar dhakel deta tha -> arrow ke left me, beech me */
+    .select2-container--default .select2-selection--single .select2-selection__clear {
+        position: absolute;
+        top: 50%;
+        right: 32px;
+        float: none !important;
+        width: 24px !important;
+        height: 24px !important;
+        margin: 0 !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        transform: translateY(-50%);
+        color: #9a9aa8;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered:has(.select2-selection__clear) {
+        padding-right: 60px !important;
+    }
+
     .select2-container--default .select2-selection--single .select2-selection__placeholder {
         color: #9a9aa8;
     }
 
     /* select2 ka triangle hata kar wahi chevron */
+    /* arrow: poori box height me, beech me (theme/style.css ka top:5px + fixed height hatao) */
     .select2-container--default .select2-selection--single .select2-selection__arrow {
-        top: 0;
+        top: 0 !important;
+        bottom: 0;
         right: 12px;
         width: 14px;
-        height: 100%;
+        height: 100% !important;
         background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a8a99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") no-repeat center / 14px 14px;
         transition: transform .2s;
     }
@@ -3074,4 +3139,329 @@ body.layout-dark .profile-menu .pm-logout {
 
     body.layout-dark .al-wrap .al-table td.al-old { background: rgba(229, 62, 62, .12) !important; }
     body.layout-dark .al-wrap .al-table td.al-new { background: rgba(47, 158, 98, .14) !important; }
+}
+
+/* #####################################################################
+   11. Master Control / Arrival revert page (rv-*) - sirf mobile
+   Page: arrival/ticket/arrival-revert.blade.php (form#ajaxSubmit.rv-page)
+   - cards gol, kam padding; fields 2 columns
+   - section heading + "Audit Logs" button ek line me
+   - QC tabs: side scroll pills
+   - QC checklist rows: naam upar, neeche Result | Suggested | Deduction (chhote labels ke saath)
+   - Save / Revert buttons poori chaurai
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    /* ---- app-bar: "View All Audit Logs" -> soft gol icon ---- */
+    .mph-head .rv-logs-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 50% !important;
+        color: #4a6fd1 !important;
+        background: rgba(39, 72, 154, .06) !important;
+        box-shadow: none !important;
+    }
+
+    .mph-head .rv-logs-btn i {
+        margin: 0 !important;
+        font-size: 15px;
+    }
+
+    .mph-head .rv-logs-text {
+        display: none;
+    }
+
+    body.layout-dark .mph-head .rv-logs-btn {
+        color: #9db4f0 !important;
+        background: rgba(90, 130, 230, .10) !important;
+    }
+
+    /* ---- layout ---- */
+    .rv-page > .row {
+        margin-left: 0;
+        margin-right: 0;
+        padding-top: 0 !important;
+    }
+
+    .rv-page > .row > [class*="col"] {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .rv-page .card {
+        margin-bottom: 12px;
+        border: 0;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+    }
+
+    .rv-page .card-body {
+        padding: 14px !important;
+    }
+
+    .rv-page .card-body .row {
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+
+    .rv-page .card-body .row > [class*="col"] {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    /* fields: 2 columns (".full" wale poori line) */
+    .rv-page .card-body > .row > :is([class*="col-xs-6"], .col-md-4, .col-md-6):not(.full) {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .rv-page .card-body > .row > .full {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .rv-page .form-group {
+        margin-bottom: 12px;
+    }
+
+    .rv-page label {
+        margin-bottom: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.3;
+        color: #6b6b80;
+    }
+
+    .rv-page .form-control {
+        border-radius: 10px;
+    }
+
+    .rv-page .alert {
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 12.5px;
+        line-height: 1.45;
+    }
+
+    /* ---- section heading (+ Audit Logs button) ---- */
+    .rv-page .card-body .row > .header-heading-sepration,
+    .rv-page h6.header-heading-sepration {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px !important;
+        padding: 9px 10px 9px 12px !important;
+        border: 0;
+        border-radius: 10px;
+        background: rgba(39, 72, 154, .06);
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #27489a;
+    }
+
+    /* col-12 heading: gutter ke andar rahe */
+    .rv-page .card-body .row > .header-heading-sepration {
+        flex: 0 0 calc(100% - 12px);
+        max-width: calc(100% - 12px);
+        margin-left: 6px;
+        margin-right: 6px;
+    }
+
+    .rv-page .header-heading-sepration h6 {
+        min-width: 0;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: inherit;
+    }
+
+    .rv-page .header-heading-sepration .btn {
+        flex-shrink: 0;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        line-height: 1.3;
+        white-space: nowrap;
+        background: #fff;
+    }
+
+    /* ---- Save / Revert buttons ---- */
+    .rv-page .card-body input[type="submit"].btn,
+    .rv-page .card-body button[type="submit"].btn {
+        width: 100%;
+        height: 44px;
+        margin: 0 0 8px !important;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: none;
+    }
+
+    /* ---- QC tabs: side scroll pills ---- */
+    .rv-page .nav-tabs {
+        flex-wrap: nowrap;
+        gap: 6px;
+        margin: 0 0 12px;
+        padding-bottom: 4px;
+        overflow-x: auto;
+        border-bottom: 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .rv-page .nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .rv-page .nav-tabs .nav-item {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    .rv-page .nav-tabs .nav-link {
+        padding: 6px 12px;
+        border: 1px solid #e3e5ee !important;
+        border-radius: 12px !important;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.3;
+        white-space: nowrap;
+        color: #342e49;
+        background: #fff;
+    }
+
+    .rv-page .nav-tabs .nav-link small {
+        display: block;
+        font-size: 10px;
+        font-weight: 400;
+    }
+
+    .rv-page .nav-tabs .nav-link.active {
+        border-color: #27489a !important;
+        color: #fff;
+        background: #27489a;
+    }
+
+    .rv-page .nav-tabs .nav-link.active small {
+        color: rgba(255, 255, 255, .75) !important;
+    }
+
+    .rv-page .nav-tabs .nav-link::after,
+    .rv-page .nav-tabs .nav-link::before {
+        display: none !important;
+    }
+
+    /* ---- QC checklist ---- */
+    /* "Result / Suggested / Deduction" wali header row: mobile par har field me chhote label hain */
+    .rv-page .tab-pane .row:has(> .col-md-4:empty) {
+        display: none;
+    }
+
+    .rv-page .tab-pane .form-group.row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 8px !important;
+        padding: 10px;
+        border: 1px solid #f0f1f5;
+        border-radius: 12px;
+    }
+
+    .rv-page .tab-pane .form-group.row > * {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: none;
+        padding: 0 !important;
+    }
+
+    .rv-page .tab-pane .form-group.row > label {
+        flex: 0 0 100%;
+        margin: 0;
+        font-size: 12.5px;
+        color: #342e49;
+    }
+
+    /* label ke foran baad wala box = Result (current tab me pehle hidden input hota hai,
+       is liye nth-child nahi), aakhri QcResult (jo label ke baad wala na ho) = Deduction */
+    .rv-page .tab-pane .form-group.row > label + .QcResult::before,
+    .rv-page .tab-pane .form-group.row > .Suggested::before,
+    .rv-page .tab-pane .form-group.row > .QcResult:last-child:not(label + .QcResult)::before {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: #9a9aa8;
+    }
+
+    .rv-page .tab-pane .form-group.row > label + .QcResult::before { content: "Result"; }
+    .rv-page .tab-pane .form-group.row > .Suggested::before { content: "Suggested"; }
+    .rv-page .tab-pane .form-group.row > .QcResult:last-child:not(label + .QcResult)::before { content: "Deduction"; }
+
+    .rv-page .tab-pane .input-group {
+        flex-wrap: nowrap;
+    }
+
+    .rv-page .tab-pane .input-group .form-control {
+        min-width: 0;
+        height: 36px;
+        padding: 4px 8px;
+        border-radius: 8px 0 0 8px;
+        font-size: 14px;
+    }
+
+    .rv-page .tab-pane .input-group .input-group-text {
+        padding: 0 6px;
+        border-radius: 0 8px 8px 0;
+        font-size: 10.5px;
+    }
+
+    .rv-page .checklist-value-comparison {
+        display: block;
+        margin-top: 3px;
+        font-size: 10px;
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark .rv-page .card {
+        box-shadow: none;
+    }
+
+    body.layout-dark .rv-page label,
+    body.layout-dark .rv-page .tab-pane .form-group.row > label {
+        color: #c9c8d1;
+    }
+
+    body.layout-dark .rv-page .card-body .row > .header-heading-sepration,
+    body.layout-dark .rv-page h6.header-heading-sepration {
+        border: 0;
+        color: #9db4f0;
+        background: rgba(90, 130, 230, .10);
+    }
+
+    body.layout-dark .rv-page .header-heading-sepration .btn {
+        background: transparent;
+    }
+
+    body.layout-dark .rv-page .nav-tabs .nav-link {
+        border-color: #2f2f36 !important;
+        color: #e4e4e8;
+        background: #1b1b1f;
+    }
+
+    body.layout-dark .rv-page .nav-tabs .nav-link.active {
+        border-color: #27489a !important;
+        background: #27489a;
+    }
+
+    body.layout-dark .rv-page .tab-pane .form-group.row {
+        border-color: #2a2a30;
+    }
 }

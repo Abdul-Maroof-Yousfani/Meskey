@@ -61,20 +61,27 @@
 @if (!isset($source) || $source != 'contract')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto align-items-center mb-2">
-                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+            {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mb-2 mph-head">
+                <a href="{{ route('ticket.index') }}" class="mph-back" aria-label="Back" title="Back">
+                    <i class="ft-arrow-left"></i>
+                </a>
+                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Arrival · Master Control</div>
                     <h2 class="page-title mb-0"> Arrival Summary: {{ $arrivalTicket->unique_no }}</h2>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button type="button" class="btn btn-info btn-sm shadow-sm" onclick="openModal(this, '{{ route('ticket.revert-audit-logs', $arrivalTicket->id) }}?section=all', 'Audit Logs: #{{ $arrivalTicket->unique_no }}', false, '55%')">
-                        <i class="fa fa-history mr-1"></i> View All Audit Logs
+                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 text-right mph-actions">
+                    <button type="button" class="btn btn-info btn-sm shadow-sm rv-logs-btn" aria-label="View All Audit Logs" title="View All Audit Logs" onclick="openModal(this, '{{ route('ticket.revert-audit-logs', $arrivalTicket->id) }}?section=all', 'Audit Logs: #{{ $arrivalTicket->unique_no }}', false, '55%')">
+                        <i class="fa fa-history mr-1"></i><span class="rv-logs-text"> View All Audit Logs</span>
                     </button>
                 </div>
             </div>
 
 
 @endif
-        <form id="ajaxSubmit" action="{{ route('ticket.arrival-revert.update', $arrivalTicket->id) }}" method="POST">
+        {{-- rv-page: mobile UI (mobile-ui.css section 11). Desktop same. --}}
+        <form id="ajaxSubmit" class="rv-page" action="{{ route('ticket.arrival-revert.update', $arrivalTicket->id) }}" method="POST">
             @csrf
             <div class="row pt-2">
                 <div class="col-md-6">

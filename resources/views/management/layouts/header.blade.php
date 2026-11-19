@@ -82,8 +82,19 @@
         </div>
     </div>
     <script>
-        // page load hone tak scroll lock + solid loader (peeche ka adhoora page na dikhe)
-        document.body.classList.add('app-locked', 'page-booting');
+        // Page loader abhi SIRF mobile par (desktop par band - wapas chahiye to PAGE_LOADER_DESKTOP = true)
+        window.PAGE_LOADER_DESKTOP = false;
+        window.pageLoaderEnabled = function() {
+            return window.PAGE_LOADER_DESKTOP || window.matchMedia('(max-width: 767.98px)').matches;
+        };
+        if (window.pageLoaderEnabled()) {
+            // page load hone tak scroll lock + solid loader (peeche ka adhoora page na dikhe)
+            document.body.classList.add('app-locked', 'page-booting');
+        } else {
+            var bootLoader = document.getElementById('appLockLoader');
+            bootLoader.classList.remove('show');
+            bootLoader.setAttribute('aria-hidden', 'true');
+        }
     </script>
 
     <div id="preloader" class="preloader-overlay" style="display: none;">
@@ -436,6 +447,7 @@
 
     window.addEventListener('beforeunload', function() {
         if (appLoaderSkipNav) return;
+        if (!window.pageLoaderEnabled()) return; // desktop par page loader band
         // page na badla (e.g. server ne file bhej di) to 8 sec baad khud hat jaye
         showAppLoader('Loading...', 8000);
     });
