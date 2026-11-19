@@ -46,6 +46,15 @@
 
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
+                                                    <label>Contract:</label>
+                                                    <input type="text" class="form-control" name="contract_filter_txt"
+                                                        placeholder="Contract No"
+                                                        value="{{ request('contract_filter_txt', '') }}">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
                                                     <label>Arrival Ticket No:</label>
                                                     <input type="text" class="form-control" name="arrival_ticket_no"
                                                         placeholder="Arrival Ticket No"

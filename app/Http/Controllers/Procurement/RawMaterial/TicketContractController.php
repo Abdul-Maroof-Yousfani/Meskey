@@ -67,6 +67,11 @@ class TicketContractController extends Controller
                 $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
+            ->when($request->filled('contract_filter_txt'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($po) use ($request) {
+                    $po->where('contract_no', 'like', '%' . $request->contract_filter_txt . '%');
+                });
+            })
             ->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
             ->where(function ($query) {
                 $query->where('arrival_tickets.freight_status', 'completed')

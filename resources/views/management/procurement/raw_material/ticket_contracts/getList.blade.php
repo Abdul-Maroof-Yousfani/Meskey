@@ -3,6 +3,7 @@
         <th>Ticket #</th>
         <th></th>
         <th>GRN #</th>
+        <th>Contract</th>
         <th>Miller</th>
         <th>Broker</th>
         <th>A/c Of</th>
@@ -15,7 +16,7 @@
         <th>Tabaar Remarks</th>
         <th>Loaded Weight</th>
         <th>Arrived Weight</th>
-        <th>Contract</th>
+        
         <th>Final QC Report</th>
         <th>Bilty</th>
         <th>Loading Weight</th>
@@ -49,6 +50,7 @@
                     @endif
                 </td>
                 <td>{{ $row->grn_unique_no ?? 'N/A' }}</td>
+                <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td>
                 <td>{{ $row->miller->name ?? 'N/A' }}</td>
                 <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
                 <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
@@ -109,7 +111,7 @@
                 <td>{{ $tabaar }}</td>
                 <td>{{ $row->net_weight ?? 'N/A' }}</td>
                 <td>{{ $row->arrived_net_weight ?? 0 }}</td>
-                <td>{{ $row->purchaseOrder->contract_no ?? 'N/A' }}</td>
+                
                 <td>
                     <button class="info p-1 text-center mr-2 position-relative btn"
                         onclick="openModal(this,'{{ route('ticket.show', ['ticket' => $row->id, 'source' => 'contract']) }}','Ticket: {{ $row->unique_no }}', true, '90%')">
