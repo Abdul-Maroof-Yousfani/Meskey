@@ -184,7 +184,7 @@
     };
 </script>
 
-<div class="row">
+<div class="row tkf-grid2">
     <div class="col-12">
         <h6 class="header-heading-sepration">
             Basic Information
@@ -243,7 +243,7 @@
     </div>
 </div>
 
-<div class="row mt-3">
+<div class="row mt-3 tkf-grid2">
     <div class="col-12">
         <h6 class="header-heading-sepration">
             Loading Information
@@ -711,7 +711,7 @@
 </div>
 
 <!-- Attachment Section -->
-<div class="row mt-3">
+<div class="row mt-3 tkf-grid2">
     <div class="col-12">
         <h6 class="header-heading-sepration">
             Attachment
