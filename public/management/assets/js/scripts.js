@@ -569,7 +569,15 @@ function filterationCommon(
     },
   );
   // Handle form input changes
-  $("#" + formId + " input, #" + formId + " select")
+  var $filterFields = $("#" + formId + " input, #" + formId + " select");
+
+  // har field ki pichli value yaad rakho (Tab / Shift / arrow / Enter jaisi keys par
+  // value nahi badalti, phir bhi keyup aata tha aur list bar bar reload hoti thi)
+  $filterFields.each(function () {
+    $(this).data("fcLastVal", $(this).val());
+  });
+
+  $filterFields
     .off("change keyup")
     .on(
       "change keyup",
@@ -580,6 +588,13 @@ function filterationCommon(
         if ($this.attr("type") === "text" && event.type !== "keyup") {
           return;
         }
+
+        // keyup par value same hai (koi key dabi lekin text nahi badla) -> request mat bhejo
+        var currentVal = $this.val();
+        if (event.type === "keyup" && $this.data("fcLastVal") === currentVal) {
+          return;
+        }
+        $this.data("fcLastVal", currentVal);
 
         if ($("#" + appenddiv).length) {
           renderLoadingTable(

@@ -1,6 +1,6 @@
 /* =====================================================================
    Mobile filter bottom sheet (global)
-   CSS: public/management/assets/css/mobile-filter-sheet.css
+   CSS: public/management/assets/css/mobile-ui.css (section 2)
 
    Kaise kaam karta hai:
    - Har page par "form#filterForm" (ya koi bhi form[data-filter-sheet]) dhoondta hai.

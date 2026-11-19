@@ -1,5 +1,5 @@
-<div class="audit-timeline-container p-3">
-    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+<div class="audit-timeline-container al-wrap p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom al-head">
         <div>
             <h6 class="font-weight-bold mb-0 text-dark">
                 {{ $title }}
@@ -7,7 +7,7 @@
             <small class="text-muted">Ticket #{{ $ticket->unique_no }}</small>
         </div>
         <div>
-            <span class="badge badge-pill badge-primary px-2 py-1">
+            <span class="badge badge-pill badge-primary px-2 py-1 al-count">
                 {{ count($logs) }} {{ count($logs) == 1 ? 'Record' : 'Records' }}
             </span>
         </div>
@@ -33,37 +33,37 @@
                     $badgeClass = $isRevert ? 'badge-danger' : ($isCreate ? 'badge-success' : 'badge-primary');
                     $iconClass = $isRevert ? 'fa-undo' : ($isCreate ? 'fa-plus' : 'fa-pencil');
                 @endphp
-                <div class="card mb-3 shadow-sm border-left-4 {{ $borderClass }}" style="border-radius: 6px;">
-                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <span class="avatar-sm rounded-circle bg-white text-dark border p-1 mr-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                <div class="card mb-3 shadow-sm border-left-4 al-card {{ $borderClass }}" style="border-radius: 6px;">
+                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center al-card-head">
+                        <div class="d-flex align-items-center al-who">
+                            <span class="al-icon avatar-sm rounded-circle bg-white text-dark border p-1 mr-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
                                 <i class="fa {{ $iconClass }} font-small-2"></i>
                             </span>
                             <div>
-                                <span class="font-weight-bold text-dark font-small-3">
+                                <span class="font-weight-bold text-dark font-small-3 al-user">
                                     {{ $log->user->name ?? 'System' }}
                                 </span>
-                                <span class="badge {{ $badgeClass }} ml-1 text-uppercase font-small-1">
+                                <span class="badge {{ $badgeClass }} ml-1 text-uppercase font-small-1 al-action">
                                     {{ str_replace('_', ' ', $log->action) }}
                                 </span>
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right al-time">
                             <small class="text-secondary d-block font-small-1">
                                 {{ $log->created_at ? $log->created_at->format('d M Y, h:i A') : 'N/A' }}
                             </small>
                         </div>
                     </div>
-                    <div class="card-body py-2 px-3">
+                    <div class="card-body py-2 px-3 al-body">
                         @if ($log->description)
-                            <p class="text-secondary font-small-3 mb-2 font-italic">
+                            <p class="text-secondary font-small-3 mb-2 font-italic al-desc">
                                 <i class="fa fa-info-circle mr-1 text-muted"></i> {{ $log->description }}
                             </p>
                         @endif
 
                         @if (!empty($log->parsed_changes) && count($log->parsed_changes) > 0)
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered mb-0 font-small-2">
+                            <div class="table-responsive al-table-wrap">
+                                <table class="table table-sm table-bordered mb-0 font-small-2 al-table">
                                     <thead class="bg-light text-muted">
                                         <tr>
                                             @if ($isCreate)
@@ -79,11 +79,11 @@
                                     <tbody>
                                         @foreach ($log->parsed_changes as $change)
                                             <tr>
-                                                <td class="font-weight-bold text-dark bg-white">
+                                                <td class="font-weight-bold text-dark bg-white al-field">
                                                     {{ $change['label'] }}
                                                 </td>
                                                 @if (!$isCreate)
-                                                    <td class="text-danger" style="background-color: #fff5f5; word-break: break-all;">
+                                                    <td class="text-danger al-old" data-label="Old" style="background-color: #fff5f5; word-break: break-all;">
                                                         @if ($change['old'] !== null && $change['old'] !== '')
                                                             <span style="text-decoration: line-through;">{{ $change['old'] }}</span>
                                                         @else
@@ -91,7 +91,7 @@
                                                         @endif
                                                     </td>
                                                 @endif
-                                                <td class="text-success font-weight-bold" style="background-color: #f0fff4; word-break: break-all;">
+                                                <td class="text-success font-weight-bold al-new" data-label="{{ $isCreate ? 'Value' : 'New' }}" style="background-color: #f0fff4; word-break: break-all;">
                                                     @if ($change['new'] !== null && $change['new'] !== '')
                                                         <span>{{ $change['new'] }}</span>
                                                     @else
@@ -115,7 +115,7 @@
         </div>
     @endif
 
-    <div class="row bottom-button-bar mt-4 pt-2 border-top">
+    <div class="row bottom-button-bar mt-4 pt-2 border-top tkf-actions">
         <div class="col-12 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
         </div>

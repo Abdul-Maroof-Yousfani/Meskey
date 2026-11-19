@@ -1,0 +1,3077 @@
+/* =====================================================================
+   MOBILE / APP UI - saari custom UI styling EK jagah
+   Header (header.blade.php) me <head> ke aakhir me link hai, har page par load hoti hai.
+   Kram mat badlo: neeche wale rules upar walon ko override kar sakte hain.
+
+   1. Utilities (hide-mobile, show-mobile)
+   2. Mobile filter bottom sheet
+   3. Scroll par header/bottom nav chhupana
+   4. Header: bottom nav, notifications, profile, theme toggle, side nav, loader ...
+   5. Mobile page header (mph-*)        - opt-in: @include partial + "mph-head" classes
+   6. Mobile list cards + pagination (tkc-*) - opt-in: page me "tkc-list" markup
+   7. Mobile create/edit form (tkf-*)   - opt-in: container par "tkf-page" class
+   8. Dropdowns ek jaisa (native select + select2) - GLOBAL, sirf mobile
+   9. Side modal / drawer (#modal-sidebar, openModal) - GLOBAL, sirf mobile: full screen app page
+   10. Audit logs (components/audit-logs) - GLOBAL, sirf mobile: al-* classes
+   ===================================================================== */
+
+/* #####################################################################
+   1. Utilities
+   (pehle: naya)
+   ##################################################################### */
+
+/* Mobile = 767.98px tak (Bootstrap "md" se chhota). Desktop par koi asar nahi. */
+@media (max-width: 767.98px) {
+    /* sirf mobile par chhupao */
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) {
+    /* sirf mobile par dikhao (desktop par chhupa) */
+    .show-mobile {
+        display: none !important;
+    }
+}
+
+/* #####################################################################
+   2. Mobile filter bottom sheet
+   (pehle: mobile-filter-sheet.css)
+   ##################################################################### */
+
+/* =====================================================================
+   Mobile filter bottom sheet (global)
+   JS: public/management/assets/js/mobile-filter-sheet.js
+   - Mobile (< 768px) par page ka #filterForm (2+ filters) automatically
+     neeche se khulne wali sheet me chala jata hai, aur ek chhota floating
+     filter button (FAB) aata hai.
+   - Desktop par kuch nahi badalta (form apni asal jagah rehta hai).
+   ===================================================================== */
+
+.m-filter-fab,
+.m-filter-sheet,
+.m-sheet-backdrop {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+
+    /* form sheet me chala gaya aur asal container (e.g. card-header) khaali reh gaya */
+    .m-filter-origin-empty {
+        display: none !important;
+    }
+
+    /* ---------- Filter button (icon only) - table ke upar, filters ki asal jagah ---------- */
+    .m-filter-fab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-left: auto;   /* right side */
+        padding: 0;
+        border: 1px solid rgba(39, 72, 154, .22);
+        border-radius: 12px;
+        font-size: 18px;
+        color: #27489a;
+        background: rgba(39, 72, 154, .08);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .m-filter-fab:active {
+        transform: scale(.94);
+        background: rgba(39, 72, 154, .16);
+    }
+
+    body.layout-dark .m-filter-fab {
+        color: #9db4f0;
+        border-color: rgba(90, 130, 230, .35);
+        background: rgba(90, 130, 230, .12);
+    }
+
+    /* title bar me ➕ ke saath: bilkul ➕ jaisa soft gol button */
+    .m-filter-fab.in-title {
+        width: 36px;
+        height: 36px;
+        margin: 0;
+        border: 0;
+        border-radius: 50%;
+        font-size: 15px;
+        color: #4a6fd1;
+        background: rgba(39, 72, 154, .06);
+    }
+
+    .m-filter-fab.in-title:active {
+        background: rgba(39, 72, 154, .12);
+    }
+
+    body.layout-dark .m-filter-fab.in-title {
+        color: #9db4f0;
+        background: rgba(90, 130, 230, .10);
+    }
+
+    .m-filter-fab.in-title .m-filter-count {
+        top: -5px;
+        right: -5px;
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+        line-height: 14px;
+    }
+
+    .m-filter-fab .m-filter-count {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 10px;
+        border: 2px solid #fff;
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 16px;
+        text-align: center;
+        color: #fff;
+        background: #e5484d;
+        box-sizing: border-box;
+    }
+
+    /* ---------- Sheet ---------- */
+    .m-filter-sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1045; /* select2 dropdown (1051) aur daterangepicker (3001) is ke upar khulte hain */
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        max-height: 85dvh;
+        border-radius: 24px 24px 0 0;
+        background: #fff;
+        box-shadow: 0 -12px 40px rgba(15, 22, 45, .25);
+        transform: translateY(105%);
+        visibility: hidden;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
+    }
+
+    .m-filter-sheet.open {
+        transform: translateY(0);
+        visibility: visible;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s;
+    }
+
+    .m-sheet-head {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        padding: 20px 16px 12px;
+        border-bottom: 1px solid #eceef4;
+    }
+
+    .m-sheet-grip {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        width: 40px;
+        height: 4px;
+        margin-left: -20px;
+        border-radius: 4px;
+        background: #d6d8e2;
+    }
+
+    .m-sheet-title {
+        flex: 1;
+        font-size: 17px;
+        font-weight: 700;
+        color: #2b2a35;
+    }
+
+    .m-sheet-title i {
+        margin-right: 4px;
+        color: #27489a;
+    }
+
+    .m-sheet-clear {
+        border: 0;
+        padding: 6px 10px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #e5484d;
+        background: rgba(229, 72, 77, .08);
+    }
+
+    .m-sheet-close {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 12px;
+        font-size: 18px;
+        color: #2b2a35;
+        background: #f3f2f8;
+    }
+
+    .m-sheet-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 14px 16px 6px;
+    }
+
+    /* filters: desktop wali horizontal row -> mobile par ek ke neeche ek */
+    .m-sheet-body form,
+    .m-sheet-body form .row {
+        margin: 0 !important;
+    }
+
+    .m-sheet-body form .row {
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+        padding-bottom: 0 !important;
+    }
+
+    .m-sheet-body form .row > [class*="col"],
+    .m-sheet-body form .row > div {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-bottom: 14px;
+        text-align: left !important;
+    }
+
+    .m-sheet-body label {
+        margin-bottom: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #4b4a57;
+    }
+
+    .m-sheet-body .form-control {
+        height: 46px;
+        border-radius: 12px;
+        font-size: 14px;
+    }
+
+    .m-sheet-body .select2-container {
+        width: 100% !important;
+    }
+
+    .m-sheet-body .select2-container .select2-selection--single {
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+    }
+
+    .m-sheet-body .select2-container .select2-selection--single .select2-selection__rendered {
+        line-height: 46px;
+        font-size: 14px;
+    }
+
+    .m-sheet-body .select2-container .select2-selection--single .select2-selection__arrow {
+        height: 44px;
+    }
+
+    .m-sheet-foot {
+        flex-shrink: 0;
+        padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+        border-top: 1px solid #eceef4;
+    }
+
+    .m-sheet-apply {
+        width: 100%;
+        height: 50px;
+        border: 0;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #4a6fd1, #27489a);
+        box-shadow: 0 8px 20px rgba(39, 72, 154, .28);
+    }
+
+    /* ---------- Backdrop ---------- */
+    .m-sheet-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1044;
+        display: block;
+        background: rgba(15, 22, 45, .45);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .25s, visibility 0s linear .25s;
+    }
+
+    .m-sheet-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity .25s, visibility 0s;
+    }
+
+    body.m-sheet-open {
+        overflow: hidden;
+    }
+
+    body.m-sheet-open .mobile-bottom-nav {
+        display: none;
+    }
+
+    /* ---------- Dark mode ---------- */
+    body.layout-dark .m-filter-sheet {
+        background: #1c1c20;
+    }
+
+    body.layout-dark .m-sheet-head,
+    body.layout-dark .m-sheet-foot {
+        border-color: #2a2a30;
+    }
+
+    body.layout-dark .m-sheet-title,
+    body.layout-dark .m-sheet-close {
+        color: #e4e4e8;
+    }
+
+    body.layout-dark .m-sheet-close {
+        background: #26262c;
+    }
+
+    body.layout-dark .m-sheet-grip {
+        background: #3a3a42;
+    }
+
+    body.layout-dark .m-sheet-body label {
+        color: #c9c8d1;
+    }
+
+    body.layout-dark .m-filter-fab .m-filter-count {
+        border-color: #1c1c20;
+    }
+}
+
+/* #####################################################################
+   3. Scroll par header + bottom nav chhupana
+   (pehle: mobile-scroll-bars.css)
+   ##################################################################### */
+
+/* =====================================================================
+   Mobile: scroll par top header + bottom nav chhupana / dikhana
+   JS: public/management/assets/js/mobile-scroll-bars.js
+   - neeche scroll -> body.m-bars-hidden -> header upar, bottom nav neeche chala jata hai
+   - upar scroll   -> wapas aa jate hain
+   NOTE: header par transform SIRF hidden state me lagta hai. Notification / profile
+   full-screen popups header ke andar hain; header par transform hamesha rahe to
+   un ki position:fixed toot jati hai.
+   ===================================================================== */
+
+@media (max-width: 767.98px) {
+
+    nav.header-navbar,
+    .mobile-bottom-nav {
+        transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    /* top header upar */
+    body.m-bars-hidden nav.header-navbar {
+        transform: translateY(-110%);
+    }
+
+    /* bottom nav neeche (floating hai: bottom gap + safe area bhi cover karo) */
+    body.m-bars-hidden .mobile-bottom-nav {
+        transform: translateY(calc(100% + 20px + env(safe-area-inset-bottom)));
+    }
+
+    /* koi popup / menu / sheet khula ho to bars kabhi na chhupen */
+    body.menu-open nav.header-navbar,
+    body.noti-open nav.header-navbar,
+    body.m-sheet-open nav.header-navbar,
+    body:has(.mobile-user-dropdown .profile-menu.show) nav.header-navbar,
+    body:has(.header-navbar .dropdown-menu.show) nav.header-navbar {
+        transform: none !important;
+    }
+
+    body.menu-open .mobile-bottom-nav {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    nav.header-navbar,
+    .mobile-bottom-nav {
+        transition: none;
+    }
+}
+
+/* #####################################################################
+   4. Header / layout UI
+   (pehle: header.blade.php <style>)
+   ##################################################################### */
+
+.custom-switch .custom-control-label::before {
+    background-color: #e9ecef; /* Default bootstrap grey */
+}
+.custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #007bff; /* Primary blue */
+    border-color: #007bff;
+}
+
+/* ===== Side nav overlay =====
+   .main-panel (components.css) par "z-index: 2" hai jo apna stacking context banata hai.
+   Sidebar (z-index 998) .main-panel ke andar hai, overlay bahar - is liye overlay ya to sab ke
+   peeche jata tha ya sidebar ke upar bhi aa jata tha. Overlay-menu mode (mobile/tablet) me
+   .main-panel ka stacking context hata do, taake order ho: sidebar 998 > overlay 997 > content. */
+body.vertical-overlay-menu .main-panel {
+    z-index: auto;
+}
+body.vertical-overlay-menu .sidenav-overlay {
+    z-index: 997;
+}
+
+/* =====================================================================
+   Side nav (mobile/tablet overlay mode) - naya clean design, theme blue
+   ===================================================================== */
+/* Width: theme me 250px fix tha (width, left aur open translate teeno me) - teeno ek saath badlo.
+   Chhoti screen pe 85% se zyada nahi, taake overlay ka kuch hissa dikhe aur tap se band ho sake. */
+body.vertical-overlay-menu {
+    --sidenav-w: min(300px, 85vw);
+}
+body.vertical-overlay-menu .main-menu.app-sidebar {
+    width: var(--sidenav-w) !important;
+    left: calc(-1 * var(--sidenav-w)) !important;
+}
+body.vertical-overlay-menu.menu-open .main-menu.app-sidebar {
+    transform: translate3d(var(--sidenav-w), 0, 0) !important;
+}
+
+body.vertical-overlay-menu .main-menu.app-sidebar {
+    background: #fff !important;
+    border-radius: 0;
+    border-right: 1px solid #ececf2;
+    box-shadow: 10px 0 30px rgba(20, 30, 60, .18);
+    overflow: hidden;
+}
+body.vertical-overlay-menu.menu-hide .main-menu.app-sidebar { box-shadow: none; }
+
+/* Upar chhota "MENU" label */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation::before {
+    content: "MENU";
+    display: block;
+    padding: 18px 22px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    color: #9a98a6;
+}
+/* neeche floating bottom nav ke liye jagah */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation {
+    padding-bottom: 110px;
+}
+
+/* Theme ki laal patti / slide wala effect hatao */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li > a::before { display: none !important; }
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.sidebar-group-active:not(.open) {
+    border-right: 0 !important;
+    background: transparent !important;
+}
+
+/* --- Top level items --- */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li > a {
+    display: flex !important;
+    align-items: center;
+    margin: 3px 12px;
+    padding: 8px 34px 8px 8px;
+    line-height: 1.4;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #3d3c4a !important;
+    background: transparent;
+    transition: background .2s, color .2s, border-color .2s;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li > a > i {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-right: 12px;
+    border-radius: 11px;
+    font-size: 1rem;
+    color: #27489a !important;
+    background: rgba(39, 72, 154, .08);
+    transition: background .2s, color .2s;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li > a > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li:hover > a {
+    background: rgba(39, 72, 154, .05);
+}
+
+/* Open (submenu khula) */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.open > a {
+    color: #27489a !important;
+    font-weight: 600;
+    background: rgba(39, 72, 154, .07);
+}
+
+/* Active: bottom nav jaisa tinted pill + bhara hua icon */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.active > a,
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.sidebar-group-active > a {
+    color: #27489a !important;
+    font-weight: 600;
+    background: linear-gradient(180deg, rgba(39, 72, 154, .14), rgba(39, 72, 154, .06));
+    border-color: rgba(39, 72, 154, .22);
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.active > a > i,
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.sidebar-group-active > a > i {
+    color: #fff !important;
+    background: linear-gradient(135deg, #4a6fd1, #27489a);
+    box-shadow: 0 4px 10px rgba(39, 72, 154, .30);
+}
+
+/* Arrow (chevron) - beech me, khulne pe ghoomta hai.
+   <a> ko relative do, warna arrow <li> ke hisaab se position hota hai aur
+   submenu khulne par (li lamba hone se) neeche khisak jata hai. */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.has-sub > a {
+    position: relative;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.has-sub > a:not(.mm-next)::after {
+    content: "\e844" !important;
+    font-family: "feather" !important;
+    font-size: .95rem;
+    position: absolute;
+    right: 14px;
+    top: 50% !important;
+    transform: translateY(-50%) rotate(0deg);
+    color: #a5a3b0;
+    transition: transform .2s ease;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.open > a:not(.mm-next)::after {
+    transform: translateY(-50%) rotate(90deg);
+    color: #27489a;
+}
+
+/* --- Submenu --- */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul {
+    margin: 2px 12px 8px 29px;
+    padding: 2px 0 2px 10px;
+    border-left: 2px solid rgba(39, 72, 154, .12);
+    background: transparent !important;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a {
+    display: flex !important;
+    align-items: center;
+    margin: 2px 0;
+    padding: 8px 30px 8px 10px !important;
+    line-height: 1.35;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5d5b6a !important;
+    background: transparent;
+    white-space: normal;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a:hover {
+    background: rgba(39, 72, 154, .05);
+    color: #27489a !important;
+}
+/* submenu ka teer wala icon -> chhota dot */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a > i.submenu-icon {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    margin-right: 10px;
+    border-radius: 50%;
+    font-size: 0 !important;
+    background: #c3c9dc;
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a > i.submenu-icon::before { content: none; }
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active > a,
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.open > a {
+    color: #27489a !important;
+    font-weight: 600;
+    background: rgba(39, 72, 154, .08);
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active > a > i.submenu-icon,
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.open > a > i.submenu-icon {
+    background: #27489a;
+    box-shadow: 0 0 0 3px rgba(39, 72, 154, .15);
+}
+/* 3rd level */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li ul {
+    margin: 2px 0 6px 13px;
+}
+
+/* --- Dark mode --- */
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar {
+    background: #18181b !important;
+    border-right-color: #2a2a30;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, .5);
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation::before { color: #77757f; }
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li > a { color: #d6d6dc !important; }
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li > a > i {
+    color: #9db4f0 !important;
+    background: rgba(90, 130, 230, .14);
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li:hover > a,
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.open > a {
+    background: rgba(90, 130, 230, .10);
+    color: #c9d6f7 !important;
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.active > a,
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.sidebar-group-active > a {
+    color: #c9d6f7 !important;
+    background: linear-gradient(180deg, rgba(90, 130, 230, .24), rgba(90, 130, 230, .10));
+    border-color: rgba(90, 130, 230, .35);
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.active > a > i,
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation > li.sidebar-group-active > a > i {
+    color: #fff !important;
+    background: linear-gradient(135deg, #5a82e6, #27489a);
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li.open > a:not(.mm-next)::after { color: #9db4f0; }
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul {
+    border-left-color: rgba(90, 130, 230, .20);
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a { color: #a9a8b3 !important; }
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a:hover,
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active > a,
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.open > a {
+    color: #c9d6f7 !important;
+    background: rgba(90, 130, 230, .12);
+}
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li a > i.submenu-icon { background: #4a4a55; }
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active > a > i.submenu-icon,
+body.layout-dark.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.open > a > i.submenu-icon {
+    background: #9db4f0;
+}
+
+/* (Mobile filter bottom sheet: public/management/assets/css/mobile-filter-sheet.css) */
+
+/* ===== Full-screen lock loader ===== */
+.app-lock-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 22, 45, .35);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    cursor: wait;
+}
+.app-lock-loader.show {
+    display: flex;
+    animation: appLockFade .15s ease-out;
+}
+body.app-locked { overflow: hidden; }
+/* Pehla page load: sirf page ka content (khaali table / skeleton) chhupao.
+   Header, bottom nav, sidebar aur page title (.mph-head) dikhte rahen.
+   body.page-booting header.blade.php lagata hai, page + pehli AJAX list aane par hat jati hai. */
+body.page-booting .app-lock-loader { animation: none; }
+body.page-booting .content-wrapper { visibility: hidden; }
+
+/* Theme (app.js) mobile layout "window load" par lagati hai: body.horizontal-menu -> vertical-overlay-menu.
+   Us se pehle mobile par desktop wala layout chalta tha: header position:fixed + .main-panel margin-top:3.49rem
+   -> load ke dauran header ke upar/neeche khaali jagah, aur load hote hi jhatka.
+   Mobile par shuru se hi final layout jaisa rakho (sirf jab tak horizontal-menu class ho). */
+@media (max-width: 767.98px) {
+    body.horizontal-menu.navbar-sticky nav.header-navbar {
+        position: relative !important;
+    }
+
+    body.horizontal-menu .main-panel {
+        margin-top: 0 !important;
+    }
+}
+body.page-booting .content-wrapper .mph-head { visibility: visible; }
+.app-lock-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-width: 150px;
+    padding: 22px 26px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(15, 22, 45, .25);
+}
+.app-lock-spinner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid rgba(39, 72, 154, .15);
+    border-top-color: #27489a;
+    animation: appLockSpin .7s linear infinite;
+}
+.app-lock-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3d3c4a;
+}
+body.layout-dark .app-lock-box { background: #1c1c20; box-shadow: 0 16px 40px rgba(0, 0, 0, .6); }
+body.layout-dark .app-lock-spinner { border-color: rgba(90, 130, 230, .2); border-top-color: #9db4f0; }
+body.layout-dark .app-lock-text { color: #e4e4e8; }
+@keyframes appLockSpin { to { transform: rotate(360deg); } }
+@keyframes appLockFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ===== Header ko thori saans do (upar/neeche padding) - sirf mobile ===== */
+@media (max-width: 767.98px) {
+    nav.header-navbar .container-fluid.navbar-wrapper {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+}
+
+/* ===== Round header icon buttons (theme toggle + notification) ===== */
+.theme-toggle-btn,
+.header-navbar .header-icon-btn {
+    position: relative;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 50%;
+    /* bottom nav ke active pill jaisa halka theme-blue shade */
+    border: 1px solid rgba(39, 72, 154, .25);
+    background: linear-gradient(180deg, rgba(39, 72, 154, .12), rgba(39, 72, 154, .05));
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: #27489a;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 2px 6px rgba(39, 72, 154, .10);
+    transition: background .2s, border-color .2s, color .2s, box-shadow .2s;
+}
+/* hover pe thora sa dark */
+.theme-toggle-btn:hover,
+.header-navbar .header-icon-btn:hover {
+    color: #1d3878;
+    border-color: rgba(39, 72, 154, .45);
+    background: linear-gradient(180deg, rgba(39, 72, 154, .22), rgba(39, 72, 154, .12));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 3px 10px rgba(39, 72, 154, .20);
+}
+/* theme (bootstrap-extended.css) .dropdown-notification par margin-top: 1.2rem !important lagata hai - usy override karo */
+.header-navbar .navbar-container ul.navbar-nav li .dropdown-notification.header-icon-btn {
+    margin: 0 !important;
+}
+.header-navbar .header-icon-btn::after { display: none !important; } /* dropdown caret hatao */
+.header-navbar .header-icon-btn i { font-size: 1rem; margin: 0; }
+
+/* notification badge chhota sa, button ke corner par */
+.header-navbar .header-icon-btn .notification {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    font-size: 10px;
+    line-height: 17px;
+    border-radius: 9px;
+    border: 2px solid #fff;
+    box-sizing: content-box;
+}
+
+.theme-toggle-btn .icon-sun { display: none; color: #f6b100; }
+#color-switch-1:checked + .theme-toggle-btn .icon-moon { display: none; }
+#color-switch-1:checked + .theme-toggle-btn .icon-sun { display: inline-block; }
+
+body.layout-dark .theme-toggle-btn,
+body.layout-dark .header-navbar .header-icon-btn {
+    background: linear-gradient(180deg, rgba(90, 130, 230, .20), rgba(90, 130, 230, .10));
+    border-color: rgba(90, 130, 230, .35);
+    color: #9db4f0;
+    box-shadow: none;
+}
+body.layout-dark .theme-toggle-btn:hover,
+body.layout-dark .header-navbar .header-icon-btn:hover {
+    color: #c9d6f7;
+    border-color: rgba(90, 130, 230, .55);
+    background: linear-gradient(180deg, rgba(90, 130, 230, .32), rgba(90, 130, 230, .18));
+}
+body.layout-dark .header-navbar .header-icon-btn .notification { border-color: #2a2a2e; }
+
+/* back button sirf mobile full-screen me */
+.profile-menu .pm-back { display: none; }
+
+/* ===== Profile popup (mobile + desktop) ===== */
+.profile-menu {
+    top: calc(100% + 10px) !important;
+    width: 272px;
+    max-width: calc(100vw - 24px);
+    padding: 0 !important;
+    border: 1px solid #eceef4;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(20, 30, 70, .18);
+}
+/* desktop: avatar right me hai, popup right se khule */
+.profile-menu.dropdown-menu-right {
+    right: 0 !important;
+    left: auto !important;
+}
+.profile-menu.show { animation: pmIn .18s ease-out; }
+@keyframes pmIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-menu .pm-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 16px;
+    color: #fff;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4a6fd1, #27489a);
+}
+.profile-menu .pm-head::after {
+    /* halka decorative circle */
+    content: "";
+    position: absolute;
+    right: -40px;
+    top: -50px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .10);
+}
+.profile-menu .pm-avatar {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, .85);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
+}
+.profile-menu .pm-info { position: relative; z-index: 1; min-width: 0; }
+.profile-menu .pm-name {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.profile-menu .pm-email {
+    margin-top: 2px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, .78);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-menu .pm-body { padding: 8px; }
+.profile-menu .pm-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    color: #2b2a35;
+    text-decoration: none;
+    transition: background .15s;
+}
+.profile-menu .pm-item:hover,
+.profile-menu .pm-item:active { background: rgba(39, 72, 154, .06); text-decoration: none; }
+.profile-menu .pm-ic {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    font-size: 16px;
+    color: #27489a;
+    background: rgba(39, 72, 154, .09);
+}
+.profile-menu .pm-label {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+.profile-menu .pm-label small {
+    margin-top: 2px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #9a98a6;
+}
+.profile-menu .pm-arrow { color: #b4b2be; font-size: 15px; }
+
+.profile-menu .pm-foot {
+    padding: 8px;
+    border-top: 1px solid #f0f1f5;
+}
+.profile-menu .pm-logout {
+    width: 100%;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(229, 72, 77, .22);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #d93a40;
+    background: rgba(229, 72, 77, .07);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.profile-menu .pm-logout:hover,
+.profile-menu .pm-logout:active {
+    background: rgba(229, 72, 77, .14);
+    border-color: rgba(229, 72, 77, .35);
+}
+
+/* dark mode */
+body.layout-dark .profile-menu {
+    background: #1c1c20;
+    border-color: #2a2a30;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .6);
+}
+body.layout-dark .profile-menu .pm-head { background: linear-gradient(135deg, #3a5bb8, #1d3878); }
+body.layout-dark .profile-menu .pm-item { color: #e4e4e8; }
+body.layout-dark .profile-menu .pm-item:hover,
+body.layout-dark .profile-menu .pm-item:active { background: rgba(90, 130, 230, .10); }
+body.layout-dark .profile-menu .pm-ic { color: #9db4f0; background: rgba(90, 130, 230, .14); }
+body.layout-dark .profile-menu .pm-foot { border-top-color: #2a2a30; }
+body.layout-dark .profile-menu .pm-logout {
+    color: #ff7b80;
+    background: rgba(229, 72, 77, .12);
+    border-color: rgba(229, 72, 77, .30);
+}
+
+/* ===== Mobile header + bottom nav ===== */
+.mobile-bottom-nav { display: none; }
+
+@media (max-width: 767.98px) {
+    .mobile-user-dropdown .avatar {
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .mobile-user-dropdown > a { text-decoration: none; }
+    .mobile-user-greet {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-left: 8px;
+        line-height: 1.2;
+        min-width: 0;
+        max-width: 140px;
+    }
+    .mobile-user-greet small {
+        font-size: 11px;
+        color: #8a8a8a;
+    }
+    .mobile-user-greet strong {
+        font-size: 13px;
+        font-weight: 600;
+        color: #342e49;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    body.layout-dark .mobile-user-greet small { color: #9a9a9a; }
+    body.layout-dark .mobile-user-greet strong { color: #e6e6e6; }
+
+    /* ---- Profile popup: mobile par FULL SCREEN ---- */
+    body:has(.mobile-user-dropdown .profile-menu.show) { overflow: hidden; }
+    body:has(.mobile-user-dropdown .profile-menu.show) nav.header-navbar { z-index: 1065 !important; }
+    body:has(.mobile-user-dropdown .profile-menu.show) .mobile-bottom-nav { display: none; }
+
+    .mobile-user-dropdown .profile-menu.show {
+        position: fixed !important;
+        inset: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        max-width: none !important;
+        height: 100vh;
+        height: 100dvh;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        transform: none !important;
+        display: flex !important;
+        flex-direction: column;
+        z-index: 1066;
+        background: #f4f5fa;
+        box-shadow: none;
+        overflow-y: auto;
+        animation: pmFull .25s ease-out;
+    }
+    @keyframes pmFull {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hero header: beech me bari tasveer, naam, email */
+    .mobile-user-dropdown .profile-menu .pm-head {
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        gap: 10px;
+        padding: calc(56px + env(safe-area-inset-top)) 20px 34px;
+        border-radius: 0 0 28px 28px;
+    }
+    .mobile-user-dropdown .profile-menu .pm-head::after {
+        width: 220px;
+        height: 220px;
+        right: -70px;
+        top: -80px;
+    }
+    .mobile-user-dropdown .profile-menu .pm-avatar {
+        width: 88px;
+        height: 88px;
+        border-width: 3px;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, .25);
+    }
+    .mobile-user-dropdown .profile-menu .pm-info { width: 100%; }
+    .mobile-user-dropdown .profile-menu .pm-name { font-size: 19px; }
+    .mobile-user-dropdown .profile-menu .pm-email { font-size: 13px; margin-top: 4px; }
+
+    .mobile-user-dropdown .profile-menu .pm-back {
+        position: absolute;
+        z-index: 2;
+        top: calc(14px + env(safe-area-inset-top));
+        left: 14px;
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 12px;
+        font-size: 1.15rem;
+        color: #fff;
+        background: rgba(255, 255, 255, .18);
+        cursor: pointer;
+    }
+
+    /* Menu card */
+    .mobile-user-dropdown .profile-menu .pm-body {
+        margin: 18px 16px 0;
+        padding: 8px;
+        border: 1px solid #eceef4;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(20, 30, 70, .04);
+    }
+    .mobile-user-dropdown .profile-menu .pm-item { padding: 12px 10px; }
+    .mobile-user-dropdown .profile-menu .pm-ic { width: 42px; height: 42px; font-size: 18px; border-radius: 13px; }
+    .mobile-user-dropdown .profile-menu .pm-label { font-size: 15px; }
+    .mobile-user-dropdown .profile-menu .pm-label small { font-size: 12px; }
+
+    /* Logout sabse neeche */
+    .mobile-user-dropdown .profile-menu .pm-foot {
+        margin-top: auto;
+        padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+        border-top: 0;
+    }
+    /* ---- Slide to logout ---- */
+    .slide-logout {
+        position: relative;
+        height: 60px;
+        border-radius: 30px;
+        overflow: hidden;
+        background: rgba(229, 72, 77, .08);
+        border: 1px solid rgba(229, 72, 77, .22);
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .slide-logout .sl-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 60px;
+        border-radius: 30px;
+        background: linear-gradient(90deg, rgba(229, 72, 77, .10), rgba(229, 72, 77, .28));
+        pointer-events: none;
+    }
+    .slide-logout .sl-text {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 40px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: .2px;
+        pointer-events: none;
+        /* iPhone jaisi chamakti hui text */
+        color: transparent;
+        background: linear-gradient(90deg, #d93a40 0%, #d93a40 40%, #ffb3b6 50%, #d93a40 60%, #d93a40 100%);
+        background-size: 250% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: slShimmer 2.2s linear infinite;
+    }
+    @keyframes slShimmer {
+        from { background-position: 100% 0; }
+        to { background-position: -150% 0; }
+    }
+    .slide-logout .sl-knob {
+        position: absolute;
+        z-index: 2;
+        top: 5px;
+        left: 5px;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        color: #fff;
+        background: linear-gradient(135deg, #f0656a, #d93a40);
+        box-shadow: 0 6px 16px rgba(217, 58, 64, .35);
+        cursor: grab;
+        touch-action: none;
+        outline: none;
+    }
+    .slide-logout .sl-knob:focus-visible { box-shadow: 0 0 0 4px rgba(217, 58, 64, .3); }
+    .slide-logout.dragging .sl-knob { cursor: grabbing; }
+    /* chhorne par wapas smoothly jaye */
+    .slide-logout.returning .sl-knob,
+    .slide-logout.returning .sl-fill { transition: transform .3s ease, width .3s ease; }
+    .slide-logout.done .sl-text {
+        animation: none;
+        color: #d93a40;
+        background: none;
+    }
+
+    body.layout-dark .slide-logout {
+        background: rgba(229, 72, 77, .12);
+        border-color: rgba(229, 72, 77, .30);
+    }
+    body.layout-dark .slide-logout .sl-text {
+        background-image: linear-gradient(90deg, #ff7b80 0%, #ff7b80 40%, #fff 50%, #ff7b80 60%, #ff7b80 100%);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .slide-logout .sl-text { animation: none; color: #d93a40; background: none; }
+    }
+
+    /* dark mode */
+    body.layout-dark .mobile-user-dropdown .profile-menu.show { background: #121214; }
+    body.layout-dark .mobile-user-dropdown .profile-menu .pm-body {
+        background: #1c1c20;
+        border-color: #2a2a30;
+        box-shadow: none;
+    }
+
+    /* Floating, frosted-glass bottom bar */
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        height: 66px;
+        padding: 6px;
+        gap: 6px;
+        z-index: 1020;
+        align-items: stretch;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, .82);
+        -webkit-backdrop-filter: blur(14px) saturate(160%);
+        backdrop-filter: blur(14px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, .7);
+        box-shadow: 0 8px 28px rgba(30, 20, 60, .14), 0 2px 6px rgba(30, 20, 60, .06);
+    }
+    .mobile-bottom-nav .mbn-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        border-radius: 16px;
+        border: 1px solid transparent;
+        color: #7b7b86;
+        font-size: 12px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color .2s, color .2s, border-color .2s, transform .15s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-bottom-nav .mbn-item i { font-size: 1.3rem; line-height: 1; }
+    .mobile-bottom-nav .mbn-item:active { transform: scale(.95); }
+
+    /* Active item: tinted pill (reference jaisa) */
+    .mobile-bottom-nav .mbn-item.active,
+    body.menu-open .mobile-bottom-nav .mbn-item.mbn-menu {
+        color: #27489a;
+        font-weight: 700;
+        background: linear-gradient(180deg, rgba(39, 72, 154, .16), rgba(39, 72, 154, .08));
+        border-color: rgba(39, 72, 154, .30);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 2px 8px rgba(39, 72, 154, .15);
+    }
+    /* menu khula ho to baaki items ka active highlight hata do */
+    body.menu-open .mobile-bottom-nav .mbn-item.active:not(.mbn-menu) {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+        color: #7b7b86;
+        font-weight: 500;
+    }
+
+    body.layout-dark .mobile-bottom-nav {
+        background: rgba(32, 32, 36, .85);
+        border-color: rgba(255, 255, 255, .08);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, .55);
+    }
+    body.layout-dark .mobile-bottom-nav .mbn-item { color: #a9a9b3; }
+    body.layout-dark .mobile-bottom-nav .mbn-item.active,
+    body.layout-dark.menu-open .mobile-bottom-nav .mbn-item.mbn-menu {
+        color: #9db4f0;
+        background: linear-gradient(180deg, rgba(90, 130, 230, .26), rgba(90, 130, 230, .12));
+        border-color: rgba(90, 130, 230, .40);
+        box-shadow: none;
+    }
+    body.layout-dark.menu-open .mobile-bottom-nav .mbn-item.active:not(.mbn-menu) {
+        color: #a9a9b3;
+    }
+
+    /* content ko bottom nav ke peeche chhupne se bachane ke liye */
+    body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+    /* ===== Notification popup: mobile par full screen ===== */
+    body.noti-open { overflow: hidden; }
+    body.noti-open nav.header-navbar { z-index: 1065 !important; }
+    body.noti-open .mobile-bottom-nav { display: none; }
+
+    #notification-dropdown-menu.show {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh;
+        height: 100dvh;
+        max-height: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column;
+        z-index: 1066;
+        background: #f4f5fa;
+        animation: notiSlideUp .25s ease-out;
+    }
+    @keyframes notiSlideUp {
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ---------- Top app bar (white, clean) ---------- */
+    #notification-dropdown-menu.show > .dropdown-menu-header {
+        flex-shrink: 0;
+        position: relative;
+        z-index: 2;
+    }
+    #notification-dropdown-menu.show .dropdown-header {
+        background: #fff !important;
+        color: #2b2a35 !important;
+        padding: 14px 16px !important;
+        padding-top: calc(14px + env(safe-area-inset-top)) !important;
+        border-bottom: 1px solid #ececf2;
+        box-shadow: 0 4px 14px rgba(30, 20, 60, .05);
+        justify-content: flex-start !important;
+    }
+    #notification-dropdown-menu.show .dropdown-header > .d-flex {
+        flex: 1;
+        min-width: 0;
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    /* bara "Notifications" heading, purana count subtitle ban jata hai */
+    #notification-dropdown-menu.show .dropdown-header > .d-flex::before {
+        content: "Notifications";
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -.2px;
+        line-height: 1.2;
+        color: #2b2a35;
+    }
+    #notification-dropdown-menu.show .dropdown-header > .d-flex > i { display: none; }
+    #notification-dropdown-menu.show .noti-title {
+        font-size: .78rem;
+        font-weight: 500 !important;
+        color: #8a8797;
+        margin-top: 2px;
+    }
+    #notification-dropdown-menu.show .dropdown-header .mark-all-read-btn {
+        flex-shrink: 0;
+        color: #27489a !important;
+        text-decoration: none !important;
+        opacity: 1 !important;
+        font-size: .75rem !important;
+        font-weight: 600;
+        padding: 7px 12px;
+        border-radius: 20px;
+        background: rgba(39, 72, 154, .10);
+        white-space: nowrap;
+    }
+    #notification-dropdown-menu.show .noti-mobile-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        margin-right: 12px;
+        border-radius: 12px;
+        background: #f3f2f8;
+        color: #2b2a35;
+        font-size: 1.15rem;
+        text-decoration: none;
+    }
+
+    /* ---------- List ---------- */
+    #notification-dropdown-menu.show > .scrollable-container {
+        flex: 1 1 auto;
+        max-height: none !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        background: transparent !important;
+        padding: 14px 14px 8px;
+    }
+    #notification-dropdown-menu.show .notification-row {
+        position: relative;
+        margin-bottom: 10px;
+        border: 1px solid #efeff4 !important;
+        border-radius: 16px;
+        background-color: #fff !important;
+        box-shadow: 0 2px 8px rgba(30, 20, 60, .04);
+        overflow: hidden;
+        transition: transform .15s;
+    }
+    #notification-dropdown-menu.show .notification-row:active { transform: scale(.985); }
+    #notification-dropdown-menu.show .notification-row .media {
+        padding: 14px 14px 12px !important;
+        align-items: flex-start !important;
+    }
+    /* left side gol bell icon */
+    #notification-dropdown-menu.show .notification-row .media::before {
+        content: "\e836";
+        font-family: "feather";
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-right: 12px;
+        border-radius: 12px;
+        font-size: 1.05rem;
+        color: #8a8797;
+        background: #f3f2f8;
+    }
+    #notification-dropdown-menu.show .notification-row .media-body { min-width: 0; }
+    #notification-dropdown-menu.show .notification-row .noti-text {
+        font-size: .88rem !important;
+        color: #4a4858 !important;
+        line-height: 1.5 !important;
+        padding-right: 14px;
+        word-break: break-word;
+    }
+    /* time: left side, clock icon ke saath */
+    #notification-dropdown-menu.show .notification-row .text-right {
+        text-align: left !important;
+        margin-top: 6px !important;
+    }
+    #notification-dropdown-menu.show .notification-row .text-right small {
+        font-style: normal !important;
+        font-size: .72rem !important;
+        color: #9a98a6 !important;
+    }
+    #notification-dropdown-menu.show .notification-row .text-right small::before {
+        content: "\e84d";
+        font-family: "feather";
+        margin-right: 4px;
+        vertical-align: -1px;
+    }
+
+    /* unread: purple icon, halka tint aur right corner pe dot */
+    #notification-dropdown-menu.show .notification-row[style*="rgba(39, 72, 154"] {
+        background-color: #f4f7fd !important;
+        border-color: rgba(39, 72, 154, .22) !important;
+    }
+    #notification-dropdown-menu.show .notification-row[style*="rgba(39, 72, 154"] .media::before {
+        color: #fff;
+        background: linear-gradient(135deg, #4a6fd1, #27489a);
+        box-shadow: 0 4px 10px rgba(39, 72, 154, .30);
+    }
+    #notification-dropdown-menu.show .notification-row[style*="rgba(39, 72, 154"] .noti-text {
+        color: #2b2a35 !important;
+    }
+    #notification-dropdown-menu.show .notification-row[style*="rgba(39, 72, 154"]::after {
+        content: "";
+        position: absolute;
+        top: 16px;
+        right: 14px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #27489a;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .15);
+    }
+
+    /* Empty state */
+    #notification-dropdown-menu.show > .scrollable-container > div.d-flex {
+        flex-direction: column;
+        height: 100%;
+        padding: 40px 20px !important;
+    }
+    #notification-dropdown-menu.show > .scrollable-container > div.d-flex::before {
+        content: "\e833";
+        font-family: "feather";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 76px;
+        height: 76px;
+        margin-bottom: 14px;
+        border-radius: 50%;
+        font-size: 2rem;
+        color: #4a6fd1;
+        background: rgba(39, 72, 154, .10);
+    }
+    #notification-dropdown-menu.show > .scrollable-container > div.d-flex span {
+        font-size: .95rem !important;
+        font-weight: 500;
+    }
+
+    /* ---------- Footer: "Show All" bara button ---------- */
+    #notification-dropdown-menu.show > .dropdown-menu-footer {
+        flex-shrink: 0;
+        background: #fff !important;
+        border-top: 1px solid #ececf2 !important;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    #notification-dropdown-menu.show > .dropdown-menu-footer > div {
+        padding: 12px 14px !important;
+    }
+    /* "Read All" upar header me pehle se hai, is liye yahan chhupa do */
+    #notification-dropdown-menu.show > .dropdown-menu-footer .mark-all-read-btn { display: none; }
+    #notification-dropdown-menu.show > .dropdown-menu-footer a:not(.mark-all-read-btn) {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 46px;
+        border-radius: 14px;
+        font-size: .92rem !important;
+        color: #fff !important;
+        background: linear-gradient(135deg, #4a6fd1, #27489a);
+        box-shadow: 0 6px 16px rgba(39, 72, 154, .28);
+    }
+
+    /* ---------- Dark mode ---------- */
+    body.layout-dark #notification-dropdown-menu.show { background: #121214; }
+    body.layout-dark #notification-dropdown-menu.show .dropdown-header {
+        background: #1b1b1f !important;
+        color: #eee !important;
+        border-bottom-color: #2a2a30;
+        box-shadow: none;
+    }
+    body.layout-dark #notification-dropdown-menu.show .dropdown-header > .d-flex::before { color: #f1f1f4; }
+    body.layout-dark #notification-dropdown-menu.show .noti-mobile-back {
+        background: #26262c;
+        color: #eee;
+    }
+    body.layout-dark #notification-dropdown-menu.show .dropdown-header .mark-all-read-btn {
+        color: #9db4f0 !important;
+        background: rgba(90, 130, 230, .18);
+    }
+    body.layout-dark #notification-dropdown-menu.show .notification-row {
+        background-color: #1c1c20 !important;
+        border-color: #2a2a30 !important;
+        box-shadow: none;
+    }
+    body.layout-dark #notification-dropdown-menu.show .notification-row .media::before {
+        background: #26262c;
+        color: #9a98a6;
+    }
+    body.layout-dark #notification-dropdown-menu.show .notification-row .noti-text { color: #c9c8d1 !important; }
+    body.layout-dark #notification-dropdown-menu.show .notification-row[style*="rgba(39, 72, 154"] {
+        background-color: #1b2133 !important;
+        border-color: rgba(90, 130, 230, .30) !important;
+    }
+    body.layout-dark #notification-dropdown-menu.show .notification-row[style*="rgba(39, 72, 154"] .noti-text {
+        color: #f1f1f4 !important;
+    }
+    body.layout-dark #notification-dropdown-menu.show > .dropdown-menu-footer {
+        background: #1b1b1f !important;
+        border-top-color: #2a2a30 !important;
+    }
+}
+/* back button sirf mobile full-screen me dikhe */
+.noti-mobile-back { display: none; }
+
+/* #####################################################################
+   5. Mobile page header (mph-*)
+   (pehle: partials/mobile-page-head.blade.php <style>)
+   ##################################################################### */
+
+/* desktop: sirf text (pehle jaisa) */
+.mph-sub,
+.mph-create-icon,
+.mph-back {
+    display: none;
+}
+
+/* back button (opt-in): mph-head me title se pehle <a class="mph-back"><i class="ft-arrow-left"></i></a> */
+@media (max-width: 767.98px) {
+    .mph-head .mph-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: #342e49;
+        background: rgba(39, 72, 154, .06);
+        text-decoration: none;
+    }
+
+    .mph-head .mph-back i {
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .mph-head .mph-back:active {
+        background: rgba(39, 72, 154, .12);
+    }
+
+    body.layout-dark .mph-head .mph-back {
+        color: #e6e6e6;
+        background: rgba(90, 130, 230, .10);
+    }
+}
+
+@media (max-width: 767.98px) {
+
+    /* theme ke .wrapper ka overflow:hidden sticky tod deta hai; clip sticky nahi rokta */
+    @supports (overflow: clip) {
+        .wrapper {
+            overflow: clip;
+        }
+    }
+
+    /* poori width app-bar, top header ke neeche chipka hua (JS margin-top set karta hai) */
+    .mph-head {
+        display: flex;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 12px;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: calc(50% - 50vw) !important;
+        margin-right: calc(50% - 50vw) !important;
+        margin-bottom: 14px !important;
+        padding: 10px 16px;
+        border-bottom: 1px solid #ececf2;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(30, 20, 60, .05);
+    }
+
+    /* sticky: header dikhe to us ke neeche, header chhupe (m-bars-hidden) to bilkul top par */
+    .mph-head.mph-sticky {
+        position: sticky !important;
+        top: var(--mph-sticky-top, 60px);
+        z-index: 990;
+        transition: top .28s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    body.m-bars-hidden .mph-head.mph-sticky {
+        top: 0;
+    }
+
+    /* header ke neeche wala content (table card) thora neeche se shuru ho,
+       sticky header ke peeche na chhupe */
+    .mph-head ~ .row {
+        margin-top: 12px;
+    }
+
+    /* scroll par theme top header ko shadow deti hai (body.page-scrolled) jo neeche chipke bar par girti hai */
+    body.page-scrolled nav.header-navbar {
+        box-shadow: none !important;
+    }
+
+    .mph-head > [class*="col"] {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        max-width: none !important;
+        padding: 0 !important;
+    }
+
+    /* "Welcome back / naam" jaisa: module (chhota grey) / title (semibold) */
+    .mph-head .mph-title-col {
+        flex: 1 1 auto !important;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.2;
+        text-align: left !important;
+    }
+
+    .mph-sub {
+        display: block;
+        font-size: 11px;
+        font-weight: 400;
+        line-height: 1.2;
+        color: #8a8a8a;
+    }
+
+    .mph-head .page-title {
+        margin: 0 !important;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: #342e49;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* actions: [filter] [+] */
+    .mph-head .mph-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        flex-shrink: 0 !important;
+    }
+
+    /* ➕ soft gol button, sirf icon */
+    .mph-create {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        min-width: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 50% !important;
+        color: #4a6fd1 !important;
+        background: rgba(39, 72, 154, .06) !important;
+        box-shadow: none !important;
+    }
+
+    .mph-create:active {
+        background: rgba(39, 72, 154, .12) !important;
+    }
+
+    .mph-create-text {
+        display: none;
+    }
+
+    .mph-create-icon {
+        display: inline-block;
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    /* dark mode */
+    body.layout-dark .mph-head {
+        border-bottom-color: #2a2a30;
+        background: #1b1b1f;
+        box-shadow: none;
+    }
+
+    body.layout-dark .mph-sub {
+        color: #9a9a9a;
+    }
+
+    body.layout-dark .mph-head .page-title {
+        color: #e6e6e6;
+    }
+
+    body.layout-dark .mph-create {
+        color: #9db4f0 !important;
+        background: rgba(90, 130, 230, .10) !important;
+    }
+}
+
+/* #####################################################################
+   6. Mobile list cards + pagination (tkc-*)
+   (pehle: arrival/ticket/getList.blade.php <style>)
+   ##################################################################### */
+
+/* =====================================================================
+   MOBILE CARDS (Tareeqa B): mobile par alag cards (partials/mobile-card),
+   desktop par table. Pagination dono me dikhti hai.
+   ===================================================================== */
+.tkc-list {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+
+    /* table chhupao, pagination (component ke andar) dikhti rahe */
+    .tk-table-wrap .sticky-table-scroller {
+        display: none;
+    }
+
+    .tkc-list {
+        display: block;
+        position: relative;
+    }
+
+    /* list ke gird wala safed card: transparent, left/right padding nahi (cards khud card hain) */
+    .card:has(#filteredData) {
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #filteredData {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        background: transparent !important;
+    }
+
+    /* ---- Pagination (global vendor/pagination/bootstrap-5) ----
+       Us view me < 576px par sirf ek disabled "1" dikhta hai aur asli pagination
+       "d-none d-sm-flex" se chhupa hota hai. Mobile par asli wala dikhao. */
+    #paginationLinks {
+        margin: 4px 0 0;
+    }
+
+    #paginationLinks > [class*="col"] {
+        padding: 0;
+        text-align: center !important;
+    }
+
+    #paginationLinks .d-sm-none {
+        display: none !important;            /* bekaar "1" wala hissa */
+    }
+
+    /* asli pagination: safed card (notifications page jaisa) */
+    #paginationLinks .d-none.d-sm-flex {
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #eceef4;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(20, 30, 70, .04);
+    }
+
+    #paginationLinks .d-none.d-sm-flex > div {
+        width: 100%;
+    }
+
+    /* "Showing 1 to 25 of 240 results" */
+    #paginationLinks p.small {
+        margin: 0;
+        font-size: 13px;
+        text-align: center;
+        color: #8a8797 !important;
+    }
+
+    #paginationLinks p.small .fw-semibold {
+        font-weight: 700;
+        color: #2b2a35;
+    }
+
+    #paginationLinks .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+    }
+
+    #paginationLinks .page-link {
+        min-width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        border: 1px solid #eceef4;
+        border-radius: 11px !important;
+        background: #fff;
+        color: #2b2a35;
+        font-size: 12.5px;
+        font-weight: 600;
+        box-shadow: none;
+    }
+
+    #paginationLinks .page-item.active .page-link {
+        color: #fff;
+        border-color: transparent;
+        background: linear-gradient(135deg, #4a6fd1, #27489a);
+        box-shadow: 0 6px 14px rgba(39, 72, 154, .28);
+    }
+
+    #paginationLinks .page-item.disabled .page-link {
+        opacity: .5;
+    }
+
+    /* "/ Page" dropdown: apni line me, poori width */
+    #paginationLinks .pagination > li:last-child {
+        flex-basis: 100%;
+        margin-top: 4px;
+    }
+
+    #paginationLinks #per_page {
+        width: 100%;
+        height: 38px;
+        margin: 0 !important;
+        padding: 0 32px 0 12px;
+        border: 1px solid #eceef4;
+        border-radius: 11px;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8797' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+        color: #2b2a35;
+        font-size: 13px;
+        font-weight: 600;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    /* dark mode */
+    .layout-dark #paginationLinks .d-none.d-sm-flex {
+        border-color: #2a2a30;
+        background: #1c1c20;
+        box-shadow: none;
+    }
+
+    .layout-dark #paginationLinks p.small .fw-semibold,
+    .layout-dark #paginationLinks .page-link,
+    .layout-dark #paginationLinks #per_page {
+        color: #e4e4e8;
+    }
+
+    .layout-dark #paginationLinks .page-link,
+    .layout-dark #paginationLinks #per_page {
+        border-color: #2a2a30;
+        background-color: #26262c;
+    }
+
+    .layout-dark #paginationLinks .page-item.active .page-link {
+        color: #fff;
+        background: linear-gradient(135deg, #4a6fd1, #27489a);
+    }
+
+    /* loading (filterationCommon shimmer chhupi table me banata hai) -> cards halke + spinner */
+    #filteredData:has(tbody.shimmer-table) .tkc-list {
+        opacity: .45;
+        pointer-events: none;
+    }
+
+    #filteredData:has(tbody.shimmer-table) .tkc-list::after {
+        content: "";
+        position: absolute;
+        top: 40px;
+        left: 50%;
+        width: 34px;
+        height: 34px;
+        margin-left: -17px;
+        border-radius: 50%;
+        border: 3px solid rgba(39, 72, 154, .15);
+        border-top-color: #27489a;
+        animation: tkcSpin .7s linear infinite;
+    }
+
+    @keyframes tkcSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* ---- card ---- */
+    .tkc {
+        position: relative;
+        margin-bottom: 12px;
+        border: 1px solid #eceef4;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(20, 30, 70, .05);
+        overflow: hidden;
+    }
+
+    .tkc.is-rejected {
+        background: #fff6f6;
+        border-color: rgba(229, 72, 77, .30);
+    }
+
+    .tkc.is-locked {
+        background: #f3f4f7;
+    }
+
+    .tkc.is-rejected::before,
+    .tkc.is-locked::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #9aa3b5;
+    }
+
+    .tkc.is-rejected::before {
+        background: #e5484d;
+    }
+
+    .tkc-main {
+        padding: 14px 14px 10px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .tkc-main:active {
+        background: rgba(39, 72, 154, .03);
+    }
+
+    .tkc-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .tkc-no {
+        font-size: 15px;
+        font-weight: 700;
+        color: #27489a;
+        word-break: break-all;
+    }
+
+    .tkc-no .ft-lock {
+        margin-left: 4px;
+        font-size: 13px;
+        color: #f59e0b;
+    }
+
+    .tkc-qc {
+        flex-shrink: 0;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .3px;
+        text-transform: uppercase;
+        color: #27489a;
+        background: rgba(39, 72, 154, .10);
+    }
+
+    .tkc-qc.is-rejected {
+        color: #d93a40;
+        background: rgba(229, 72, 77, .12);
+    }
+
+    .tkc-qc.is-pending {
+        color: #c2410c;
+        background: rgba(249, 115, 22, .14);
+    }
+
+    .tkc-qc.is-approved,
+    .tkc-qc.is-completed {
+        color: #15803d;
+        background: rgba(34, 197, 94, .14);
+    }
+
+    .tkc-date {
+        margin-top: 2px;
+        font-size: 11.5px;
+        color: #8a8797;
+    }
+
+    .tkc-date i {
+        margin-right: 3px;
+        font-size: 11px;
+    }
+
+    .tkc-commodity {
+        margin-top: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2b2a35;
+    }
+
+    .tkc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+        margin-top: 10px;
+    }
+
+    .tkc-grid > div {
+        min-width: 0;
+    }
+
+    .tkc-label {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        color: #9a98a6;
+    }
+
+    .tkc-val {
+        display: block;
+        font-size: 13px;
+        color: #2b2a35;
+        word-break: break-word;
+    }
+
+    .tkc-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+    }
+
+    .tkc-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 100%;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #4a4858;
+        background: #f3f2f8;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tkc-chip i {
+        color: #8a8797;
+    }
+
+    /* ---- actions ---- */
+    .tkc-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px 12px;
+        border-top: 1px solid #f0f1f5;
+    }
+
+    .tkc-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 34px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 20px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #27489a;
+        background: rgba(39, 72, 154, .08);
+    }
+
+    .tkc-btn-warn {
+        color: #b7791f;
+        background: rgba(245, 158, 11, .14);
+    }
+
+    .tkc-btn:active,
+    .tkc-more:active {
+        transform: scale(.96);
+    }
+
+    .tkc-more {
+        margin-left: auto;
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        font-size: 18px;
+        color: #4a4858;
+        background: #f3f2f8;
+    }
+
+    /* ---- empty ---- */
+    .tkc-empty {
+        padding: 40px 16px;
+        text-align: center;
+        color: #8a8797;
+        border: 1px dashed #e3e4ea;
+        border-radius: 16px;
+    }
+
+    .tkc-empty i {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 30px;
+        color: #b4b2be;
+    }
+
+    /* ---- ⋯ actions sheet ---- */
+    .tkc-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1044;
+        background: rgba(15, 22, 45, .45);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .25s, visibility 0s linear .25s;
+    }
+
+    .tkc-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity .25s, visibility 0s;
+    }
+
+    .tkc-sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1045;
+        max-height: 75vh;
+        overflow-y: auto;
+        padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+        border-radius: 24px 24px 0 0;
+        background: #fff;
+        box-shadow: 0 -12px 40px rgba(15, 22, 45, .25);
+        transform: translateY(105%);
+        visibility: hidden;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
+    }
+
+    .tkc-sheet.open {
+        transform: translateY(0);
+        visibility: visible;
+        transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s;
+    }
+
+    .tkc-sheet-grip {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        width: 40px;
+        height: 4px;
+        margin-left: -20px;
+        border-radius: 4px;
+        background: #d6d8e2;
+    }
+
+    .tkc-sheet-title {
+        margin-bottom: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #2b2a35;
+    }
+
+    .tkc-sheet-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 13px 14px;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2b2a35 !important;
+        background: #f5f6fa;
+        text-decoration: none !important;
+    }
+
+    .tkc-sheet-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 16px;
+        color: #4a6fd1;
+    }
+
+    .tkc-sheet-item.is-danger i { color: #e5484d; }
+    .tkc-sheet-item.is-warn i { color: #d97706; }
+    .tkc-sheet-item.is-success i { color: #1f9d55; }
+
+    .tkc-sheet-cancel {
+        width: 100%;
+        height: 46px;
+        margin-top: 4px;
+        border: 0;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #4a4858;
+        background: transparent;
+    }
+
+    body.tkc-sheet-open {
+        overflow: hidden;
+    }
+
+    /* ---- dark mode ---- */
+    .layout-dark .tkc {
+        border-color: #2a2a30;
+        background: #1c1c20;
+        box-shadow: none;
+    }
+
+    .layout-dark .tkc.is-rejected {
+        background: #2a1b1d;
+        border-color: rgba(229, 72, 77, .40);
+    }
+
+    .layout-dark .tkc.is-locked {
+        background: #23252b;
+    }
+
+    .layout-dark .tkc-no { color: #9db4f0; }
+    .layout-dark .tkc-qc.is-pending { color: #fdba74; background: rgba(249, 115, 22, .18); }
+    .layout-dark .tkc-qc.is-approved,
+    .layout-dark .tkc-qc.is-completed { color: #86efac; background: rgba(34, 197, 94, .16); }
+    .layout-dark .tkc-commodity,
+    .layout-dark .tkc-val { color: #e4e4e8; }
+    .layout-dark .tkc-chip { color: #c9c8d1; background: #26262c; }
+    .layout-dark .tkc-actions { border-top-color: #2a2a30; }
+    .layout-dark .tkc-btn { color: #9db4f0; background: rgba(90, 130, 230, .14); }
+    .layout-dark .tkc-btn-warn { color: #fbbf24; background: rgba(245, 158, 11, .14); }
+    .layout-dark .tkc-more { color: #e4e4e8; background: #26262c; }
+    .layout-dark .tkc-sheet { background: #1c1c20; }
+    .layout-dark .tkc-sheet-title { color: #e4e4e8; }
+    .layout-dark .tkc-sheet-item { color: #e4e4e8 !important; background: #26262c; }
+    .layout-dark .tkc-sheet-cancel { color: #c9c8d1; }
+}
+
+/* #####################################################################
+   7. Mobile create/edit form (tkf-*)
+   Opt-in: form wale page ke container par "tkf-page" class
+   (pehli dafa: arrival/ticket/create.blade.php). Desktop par koi asar nahi.
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    /* nested container/card/card-body ki faltu padding + border hatao */
+    .tkf-page {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .tkf-page > .row:not(.mph-head) {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .tkf-page > .row:not(.mph-head) > [class*="col"],
+    .tkf-page .card-body > .row > [class*="col"] {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .tkf-page .card-body > .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .tkf-page .card {
+        margin-bottom: 0;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .tkf-page .card-body,
+    .tkf-page .card-body .card-header {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    /* form khud ek safed card */
+    .tkf-page form {
+        padding: 16px 14px 14px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+    }
+
+    /* columns ke beech kam gap */
+    .tkf-page form .row {
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+
+    .tkf-page form .row > [class*="col"] {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    /* ---------- fields ---------- */
+    .tkf-page .form-group,
+    .tkf-page fieldset {
+        margin-bottom: 14px;
+    }
+
+    .tkf-page form label:not(.custom-control-label) {
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b6b80;
+    }
+
+    /* 16px: iPhone input par zoom na kare */
+    .tkf-page .form-control {
+        height: 44px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border-color: #e3e5ee;
+        font-size: 16px;
+    }
+
+    /* native select: right me chevron (section 8) ki jagah */
+    .tkf-page select.form-control {
+        padding-right: 34px;
+    }
+
+    .tkf-page textarea.form-control {
+        height: auto;
+        min-height: 90px;
+    }
+
+    .tkf-page .form-control:focus {
+        border-color: #27489a;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .12);
+    }
+
+    .tkf-page .form-control[readonly],
+    .tkf-page .form-control:disabled {
+        background: #f5f6fa;
+    }
+
+    /* select2 ko input jaisa */
+    .tkf-page .select2-container {
+        width: 100% !important;
+    }
+
+    .tkf-page .select2-container .select2-selection--single {
+        display: flex;
+        align-items: center;
+        height: 44px !important;
+        border-radius: 10px !important;
+        border-color: #e3e5ee !important;
+    }
+
+    .tkf-page .select2-container .select2-selection--single .select2-selection__rendered {
+        padding-left: 12px;
+        padding-right: 30px;
+        line-height: 42px !important;
+        font-size: 16px;
+    }
+
+    .tkf-page .select2-container .select2-selection--single .select2-selection__arrow {
+        height: 42px !important;
+    }
+
+    .tkf-page .select2-container--disabled .select2-selection--single {
+        background: #f5f6fa !important;
+    }
+
+    /* Ticket No# : button + input ek hi pill */
+    .tkf-page .input-group-prepend .btn {
+        height: 44px;
+        padding: 0 14px;
+        border-radius: 10px 0 0 10px !important;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: none !important;
+    }
+
+    .tkf-page .input-group > .form-control {
+        border-radius: 0 10px 10px 0;
+        font-weight: 600;
+        color: #27489a;
+    }
+
+    /* Lock Arrival box */
+    .tkf-page .lock-arrival-wrapper {
+        margin: 0;
+        padding: 12px 14px;
+        border-radius: 12px;
+    }
+
+    .tkf-page .lock-arrival-description {
+        margin-bottom: 0;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    /* ---------- section heading (Weight Detail) ---------- */
+    .tkf-page .header-heading-sepration {
+        margin: 6px 0 12px;
+        padding: 14px 0 0;
+        border-top: 1px solid #ececf2;
+        border-radius: 0;
+        background: none;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: #27489a;
+    }
+
+    /* First / Second weight 2 columns, Net weight poori line (highlight) */
+    .tkf-weights > [class*="col-sm-4"] {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .tkf-weights > [class*="col-sm-4"]:last-child {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .tkf-page #net_weight {
+        font-weight: 700;
+        color: #27489a;
+        border-color: rgba(39, 72, 154, .25);
+        background: rgba(39, 72, 154, .05);
+    }
+
+    .tkf-page #net_weight.is-invalid {
+        color: #e53e3e;
+        border-color: #e53e3e;
+        background: rgba(229, 62, 62, .05);
+    }
+
+    /* ---------- Close / Save ---------- */
+    .tkf-actions {
+        margin-top: 4px;
+    }
+
+    .tkf-actions > .col-12 {
+        display: flex;
+        gap: 10px;
+    }
+
+    .tkf-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 0;
+        height: 46px;
+        margin: 0 !important;
+        top: 0 !important;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: none !important;
+    }
+
+    .tkf-actions .submitbutton {
+        flex: 2 1 0;
+    }
+
+    .tkf-actions .closebutton {
+        color: #e53e3e !important;
+        border: 0 !important;
+        background: rgba(229, 62, 62, .08) !important;
+    }
+
+    /* ---------- dark mode ---------- */
+    body.layout-dark .tkf-page form {
+        background: #1b1b1f;
+        box-shadow: none;
+    }
+
+    body.layout-dark .tkf-page form label:not(.custom-control-label) {
+        color: #a9a9b5;
+    }
+
+    body.layout-dark .tkf-page .form-control,
+    body.layout-dark .tkf-page .select2-container .select2-selection--single {
+        border-color: #2f2f36 !important;
+    }
+
+    body.layout-dark .tkf-page .form-control[readonly],
+    body.layout-dark .tkf-page .form-control:disabled,
+    body.layout-dark .tkf-page .select2-container--disabled .select2-selection--single {
+        background: #232328 !important;
+    }
+
+    body.layout-dark .tkf-page .header-heading-sepration {
+        border: 0;
+        border-top: 1px solid #2a2a30;
+        background: none;
+        color: #9db4f0;
+    }
+
+    body.layout-dark .tkf-page #net_weight,
+    body.layout-dark .tkf-page .input-group > .form-control {
+        color: #9db4f0;
+    }
+}
+
+/* #####################################################################
+   8. Dropdowns ek jaisa - GLOBAL, sirf mobile
+   Simple <select class="form-control"> aur select2 dono same dikhen:
+   same border, kone, text, aur same chevron arrow (SVG).
+   :where() se specificity kam rakhi hai, taake page/sheet wale rules
+   (filter sheet, tkf-page) apni height/radius khud set kar saken.
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    /* ---- native select ---- */
+    select.form-control:where(:not([multiple]):not([size])) {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        height: 40px;
+        padding: 0 34px 0 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;            /* iPhone par focus zoom na ho */
+        color: #3d3c4a;
+        background-color: #fff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a8a99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 14px 14px;
+    }
+
+    select.form-control:where(:not([multiple]):not([size]))::-ms-expand {
+        display: none;
+    }
+
+    /* ---- select2 (single) ---- */
+    .select2-container--default .select2-selection--single {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #fff;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-left: 12px;
+        padding-right: 34px;
+        line-height: 38px;
+        font-size: 16px;
+        color: #3d3c4a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #9a9aa8;
+    }
+
+    /* select2 ka triangle hata kar wahi chevron */
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        top: 0;
+        right: 12px;
+        width: 14px;
+        height: 100%;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a8a99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") no-repeat center / 14px 14px;
+        transition: transform .2s;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        display: none !important;
+    }
+
+    .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow {
+        transform: rotate(180deg);
+    }
+
+    /* focus: dono same blue ring */
+    select.form-control:where(:not([multiple]):not([size])):focus,
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #27489a;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .12);
+        outline: 0;
+    }
+
+    /* disabled: dono same grey */
+    select.form-control:where(:not([multiple]):not([size])):disabled,
+    .select2-container--default.select2-container--disabled .select2-selection--single {
+        background-color: #f5f6fa;
+        opacity: 1;
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark select.form-control:where(:not([multiple]):not([size])),
+    body.layout-dark .select2-container--default .select2-selection--single {
+        border-color: #34343c;
+        background-color: transparent;
+        color: #e4e4e8;
+    }
+
+    body.layout-dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #e4e4e8;
+    }
+
+    body.layout-dark select.form-control:where(:not([multiple]):not([size])) option {
+        color: #e4e4e8;
+        background: #1c1c20;
+    }
+
+    body.layout-dark select.form-control:where(:not([multiple]):not([size])):disabled,
+    body.layout-dark .select2-container--default.select2-container--disabled .select2-selection--single {
+        background-color: #232328;
+    }
+}
+
+/* #####################################################################
+   9. Side modal / drawer (#modal-sidebar, #modal-sidebar2) - GLOBAL, sirf mobile
+   openModal() (scripts.js) mobile par inline width 98% / right -98% deta hai.
+   Mobile par poori screen ka app page: upar sticky app-bar (title + soft X),
+   andar ka form (tkf-page ho to) grey background par safed card.
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    #modal-sidebar,
+    #modal-sidebar2 {
+        width: 100% !important;
+        right: -100% !important;
+        box-shadow: none !important;
+        transition: right .35s cubic-bezier(.2, .8, .2, 1);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #modal-sidebar.open,
+    #modal-sidebar2.open {
+        right: 0 !important;
+    }
+
+    /* tkf-page (form) wala modal: app jaisa grey background, form safed card */
+    #modal-sidebar:has(.tkf-page),
+    #modal-sidebar2:has(.tkf-page),
+    #modal-sidebar:has(.al-wrap),
+    #modal-sidebar2:has(.al-wrap) {
+        background-color: #f5f7fb;
+    }
+
+    /* ---- app-bar ---- */
+    #modal-sidebar .modal-header-row,
+    #modal-sidebar2 .modal-header-row {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        padding: calc(8px + env(safe-area-inset-top)) 12px 8px 16px;
+        border-bottom: 1px solid #ececf2;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(30, 20, 60, .05);
+    }
+
+    #modal-sidebar .modal-header-row > .row,
+    #modal-sidebar2 .modal-header-row > .row {
+        flex-wrap: nowrap;
+        gap: 10px;
+        margin: 0 !important;
+    }
+
+    #modal-sidebar .modal-header-row > .row > [class*="col"],
+    #modal-sidebar2 .modal-header-row > .row > [class*="col"] {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: none;
+        padding: 0;
+    }
+
+    #modal-sidebar .modal-header-row > .row > [class*="col"]:first-child,
+    #modal-sidebar2 .modal-header-row > .row > [class*="col"]:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    #modal-sidebar .modal-header-row .modal-title,
+    #modal-sidebar2 .modal-header-row .modal-title {
+        margin: 0 !important;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.3;
+        color: #342e49;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* X: soft gol button (➕ / back jaisa) */
+    #modal-sidebar .modal-header-row a.modal-sidebar-close.top-wala,
+    #modal-sidebar2 .modal-header-row a.modal-sidebar-close.top-wala {
+        top: 0 !important;
+        width: 36px !important;
+        height: 36px;
+        padding: 0;
+        color: #4a6fd1 !important;
+        background: rgba(39, 72, 154, .06);
+        box-shadow: none;
+    }
+
+    #modal-sidebar .modal-header-row a.modal-sidebar-close.top-wala:active,
+    #modal-sidebar2 .modal-header-row a.modal-sidebar-close.top-wala:active {
+        background: rgba(39, 72, 154, .12);
+    }
+
+    #modal-sidebar .modal-header-row a.modal-sidebar-close.top-wala i,
+    #modal-sidebar2 .modal-header-row a.modal-sidebar-close.top-wala i {
+        font-size: 18px !important;
+    }
+
+    /* ---- content: kam padding, neeche safe area ---- */
+    #modal-sidebar .modal-sidebar-content > .row:not(.modal-header-row),
+    #modal-sidebar2 .modal-sidebar-content > .row:not(.modal-header-row) {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    #modal-sidebar .modal-sidebar-content .modal-tab-content,
+    #modal-sidebar2 .modal-sidebar-content .modal-tab-content {
+        height: auto !important;
+        min-height: 0;
+        padding: 12px 12px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    /* modal ke andar form card ke actions: Close/Update neeche poori chaurai */
+    #modal-sidebar .tkf-actions,
+    #modal-sidebar2 .tkf-actions {
+        text-align: left;
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark #modal-sidebar:has(.tkf-page),
+    body.layout-dark #modal-sidebar2:has(.tkf-page),
+    body.layout-dark #modal-sidebar:has(.al-wrap),
+    body.layout-dark #modal-sidebar2:has(.al-wrap) {
+        background-color: #141417;
+    }
+
+    body.layout-dark #modal-sidebar .modal-header-row,
+    body.layout-dark #modal-sidebar2 .modal-header-row {
+        border-bottom-color: #2a2a30;
+        background: #1b1b1f;
+        box-shadow: none;
+    }
+
+    body.layout-dark #modal-sidebar .modal-header-row .modal-title,
+    body.layout-dark #modal-sidebar2 .modal-header-row .modal-title {
+        color: #e6e6e6;
+    }
+
+    body.layout-dark #modal-sidebar .modal-header-row a.modal-sidebar-close.top-wala,
+    body.layout-dark #modal-sidebar2 .modal-header-row a.modal-sidebar-close.top-wala {
+        color: #9db4f0 !important;
+        background: rgba(90, 130, 230, .10);
+    }
+}
+
+/* #####################################################################
+   10. Audit logs - GLOBAL, sirf mobile
+   Component: resources/views/components/audit-logs.blade.php (har module ke logs yahi hai)
+   - har log ek safed card, rang wala icon (create = green, update = blue, delete/revert = red)
+   - Field / Old / New table mobile par stacked: field naam upar, neeche Old | New boxes
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    .al-wrap {
+        padding: 0 !important;
+    }
+
+    /* ---- upar: title + records pill ---- */
+    .al-wrap .al-head {
+        gap: 10px;
+        margin-bottom: 12px !important;
+        padding: 12px 14px !important;
+        border: 0 !important;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+    }
+
+    .al-wrap .al-head h6 {
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.3;
+    }
+
+    .al-wrap .al-head small {
+        font-size: 11.5px;
+        line-height: 1.4;
+    }
+
+    .al-wrap .al-count {
+        flex-shrink: 0;
+        padding: 5px 10px !important;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #27489a;
+        background: rgba(39, 72, 154, .08);
+    }
+
+    /* ---- log card ---- */
+    .al-wrap .al-card {
+        margin-bottom: 12px !important;
+        overflow: hidden;
+        border-top: 0 !important;
+        border-right: 0 !important;
+        border-bottom: 0 !important;
+        border-radius: 14px !important;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06) !important;
+    }
+
+    .al-wrap .al-card-head {
+        align-items: flex-start !important;
+        gap: 10px;
+        padding: 12px 14px 10px !important;
+        border-bottom: 1px solid #f0f1f5;
+        background: #fff !important;
+    }
+
+    .al-wrap .al-who {
+        align-items: flex-start !important;
+        min-width: 0;
+    }
+
+    .al-wrap .al-who > div {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+    }
+
+    .al-wrap .al-icon {
+        flex-shrink: 0;
+        width: 34px !important;
+        height: 34px !important;
+        margin-right: 10px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        color: #27489a !important;
+        background: rgba(39, 72, 154, .08) !important;
+    }
+
+    .al-wrap .al-icon i {
+        font-size: 13px;
+    }
+
+    .al-wrap .al-card.border-success .al-icon {
+        color: #2f9e62 !important;
+        background: rgba(47, 158, 98, .10) !important;
+    }
+
+    .al-wrap .al-card.border-danger .al-icon {
+        color: #e53e3e !important;
+        background: rgba(229, 62, 62, .10) !important;
+    }
+
+    .al-wrap .al-user {
+        font-size: 13.5px !important;
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    /* action: naam ke neeche soft pill */
+    .al-wrap .al-action {
+        margin: 4px 0 0 !important;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 10px !important;
+        font-weight: 600;
+        letter-spacing: .03em;
+        white-space: normal;
+        text-align: left;
+    }
+
+    .al-wrap .al-action.badge-primary { color: #27489a; background: rgba(39, 72, 154, .10); }
+    .al-wrap .al-action.badge-success { color: #2f9e62; background: rgba(47, 158, 98, .12); }
+    .al-wrap .al-action.badge-danger  { color: #e53e3e; background: rgba(229, 62, 62, .10); }
+
+    .al-wrap .al-time {
+        flex-shrink: 0;
+        max-width: 42%;
+        padding-top: 2px;
+    }
+
+    .al-wrap .al-time small {
+        font-size: 11px !important;
+        line-height: 1.35;
+        color: #8a8a99 !important;
+    }
+
+    .al-wrap .al-body {
+        padding: 10px 14px 12px !important;
+    }
+
+    .al-wrap .al-desc {
+        margin-bottom: 10px !important;
+        padding: 8px 10px;
+        border-radius: 10px;
+        font-size: 12.5px !important;
+        line-height: 1.45;
+        background: #f7f8fb;
+    }
+
+    /* ---- changes: table -> stacked ---- */
+    .al-wrap .al-table-wrap {
+        overflow: visible;
+    }
+
+    .al-wrap .al-table,
+    .al-wrap .al-table tbody {
+        display: block;
+        width: 100%;
+        border: 0 !important;
+    }
+
+    .al-wrap .al-table thead {
+        display: none;
+    }
+
+    .al-wrap .al-table tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 10px 0;
+        border-bottom: 1px dashed #e8e9f0;
+    }
+
+    .al-wrap .al-table tr:first-child {
+        padding-top: 2px;
+    }
+
+    .al-wrap .al-table tr:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
+    .al-wrap .al-table td {
+        display: block;
+        min-width: 0;
+        padding: 0 !important;
+        border: 0 !important;
+        background: none !important;
+        word-break: break-word !important;
+    }
+
+    .al-wrap .al-table td.al-field {
+        grid-column: 1 / -1;
+        font-size: 12px;
+        color: #342e49 !important;
+    }
+
+    .al-wrap .al-table td.al-old,
+    .al-wrap .al-table td.al-new {
+        padding: 6px 9px !important;
+        border-radius: 8px;
+        font-size: 12.5px;
+        line-height: 1.4;
+    }
+
+    .al-wrap .al-table td.al-old { background: #fff5f5 !important; }
+    .al-wrap .al-table td.al-new { background: #effbf3 !important; }
+
+    /* create log: sirf "Value" -> poori line */
+    .al-wrap .al-table td.al-new:nth-child(2) {
+        grid-column: 1 / -1;
+    }
+
+    .al-wrap .al-table td.al-old::before,
+    .al-wrap .al-table td.al-new::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 2px;
+        font-size: 9.5px;
+        font-weight: 700;
+        font-style: normal;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: #9a9aa8;
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark .al-wrap .al-head,
+    body.layout-dark .al-wrap .al-card,
+    body.layout-dark .al-wrap .al-card-head {
+        background: #1b1b1f !important;
+        box-shadow: none !important;
+    }
+
+    body.layout-dark .al-wrap .al-card-head {
+        border-bottom-color: #2a2a30;
+    }
+
+    body.layout-dark .al-wrap .al-head h6,
+    body.layout-dark .al-wrap .al-user,
+    body.layout-dark .al-wrap .al-table td.al-field {
+        color: #e6e6e6 !important;
+    }
+
+    body.layout-dark .al-wrap .al-count {
+        color: #9db4f0;
+        background: rgba(90, 130, 230, .12);
+    }
+
+    body.layout-dark .al-wrap .al-desc {
+        background: #232328;
+    }
+
+    body.layout-dark .al-wrap .al-table tr {
+        border-bottom-color: #2a2a30;
+    }
+
+    body.layout-dark .al-wrap .al-table td.al-old { background: rgba(229, 62, 62, .12) !important; }
+    body.layout-dark .al-wrap .al-table td.al-new { background: rgba(47, 158, 98, .14) !important; }
+}

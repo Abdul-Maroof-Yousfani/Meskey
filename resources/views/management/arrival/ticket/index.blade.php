@@ -23,7 +23,8 @@
                     </a>
                 </div>
             </div>
-            <div class="row md:mt-0 mt-3">
+            {{-- hide-mobile: sirf mobile par chhupa (mobile-ui.css section 1), desktop par dikhta hai --}}
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
@@ -103,7 +104,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th class="col-sm-2">Ticket No. </th>

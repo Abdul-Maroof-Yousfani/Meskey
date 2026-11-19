@@ -1,7 +1,7 @@
 /* =====================================================================
    Mobile: scroll down -> top header + bottom nav chhup jayen,
            scroll up   -> wapas aa jayen
-   CSS: public/management/assets/css/mobile-scroll-bars.css
+   CSS: public/management/assets/css/mobile-ui.css (section 3)
    ===================================================================== */
 (function () {
     'use strict';
