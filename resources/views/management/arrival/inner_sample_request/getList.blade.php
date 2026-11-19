@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $ArrivalSamplingRequests, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($ArrivalSamplingRequests as $row)
+        @include('management.arrival.inner_sample_request.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No inner sampling requests found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -71,6 +85,7 @@
         @endif
     </tbody>
 </table>
+</div>
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}
