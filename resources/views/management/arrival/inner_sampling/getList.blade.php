@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $samplingRequests, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($samplingRequests as $row)
+        @include('management.arrival.inner_sampling.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No sampling requests found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -43,7 +57,7 @@
                     </td>
                     <td>
                         @can('role-edit')
-                            <a onclick="openModal(this,'{{ route($isResampling ? 'inner-sampling.edit' : 'inner-resampling.edit', $row->id) }}','{{ $isResampling ? 'View Inner Re-Sampling' : 'View Inner Sampling' }}',true)"
+                            <a onclick="openModal(this,'{{ route($isResampling ? 'inner-resampling.edit' : 'inner-sampling.edit', $row->id) }}','{{ $isResampling ? 'View Inner Re-Sampling' : 'View Inner Sampling' }}',true)"
                                 class="info p-1 text-center mr-2 position-relative ">
                                 <i class="ft-eye font-medium-3"></i>
                             </a>
@@ -83,6 +97,7 @@
         @endif
     </tbody>
 </table>
+</div>
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}
