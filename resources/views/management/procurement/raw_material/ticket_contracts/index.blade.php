@@ -142,18 +142,18 @@
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
                                             </div>
+                                            {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end mt-2">
+                                                <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                                    <i class="ft-search mr-1"></i> Search
+                                                </button>
+                                            </div>
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                             <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                         </div>
                                     </div>
-                                </div>
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
                                 </div>
                             </form>
                         </div>

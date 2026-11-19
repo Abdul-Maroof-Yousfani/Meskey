@@ -22,9 +22,9 @@
 
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right0">
+                                        <div class="row justify-content-end align-items-end">
                                             <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Approval Status:</label>
                                                     <select name="approval_status_filter" class="form-control">
                                                         <option value="pending" {{ request('approval_status_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -33,14 +33,14 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
                                                         value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
                                             <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id" id="company_location"
                                                         class="form-control select2">
@@ -49,7 +49,7 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-2">
-                                                <div class="form-group">
+                                                <div class="form-group mb-0">
                                                     <label>Suppliers:</label>
                                                     <select name="supplier_id" id="supplier_id_f"
                                                         class="form-control select2">
@@ -57,41 +57,34 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="from_date" class="form-label">Sampling Type</label>
-                                                <select class="form-control" name="sampling_type">
-                                                    <option value="">All</option>
-                                                    <option value="initial">Initial</option>
-                                                    <option value="inner">Inner</option>
-                                                </select>
-                                            </div>
-                                            {{-- <div class="col-md-2 text-left">
-                                                <label for="from_date" class="form-label">From Date</label>
-                                                <input type="date" class="form-control" id="from_date" name="from_date"
-                                                    value="{{ request('from_date', $oneMonthAgo) }}">
+                                            <div class="col-md-auto text-left" style="min-width: 130px;">
+                                                <div class="form-group mb-0">
+                                                    <label for="from_date" class="form-label">Sampling Type</label>
+                                                    <select class="form-control" name="sampling_type">
+                                                        <option value="">All</option>
+                                                        <option value="initial">Initial</option>
+                                                        <option value="inner">Inner</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div class="col-md-2 text-left">
-                                                <label for="to_date" class="form-label">To Date</label>
-                                                <input type="date" class="form-control" id="to_date" name="to_date"
-                                                    value="{{ request('to_date', $today) }}">
-                                            </div> --}}
-                                            <div class="col-md-2 text-left">
-                                                <label for="search" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Type Ticket No, Supplier Name " name="search"
-                                                    value="{{ request('search') }}">
+                                                <div class="form-group mb-0">
+                                                    <label for="search" class="form-label">Search</label>
+                                                    <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                                    <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                                    <input type="text" class="form-control" id="search"
+                                                        placeholder="Type Ticket No, Supplier Name " name="search"
+                                                        value="{{ request('search') }}">
+                                                </div>
+                                            </div>
+                                            {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end mt-2">
+                                                <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                                    <i class="ft-search mr-1"></i> Search
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
                                 </div>
                             </form>
 

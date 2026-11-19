@@ -24,23 +24,25 @@
                             <form id="filterForm" class="form" data-filter-sheet data-filter-apply>
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
+                                        <div class="row justify-content-end align-items-end">
                                             <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
+                                                <div class="form-group mb-0">
+                                                    <label for="search" class="form-label">Search</label>
+                                                    <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                                    <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                                    <input type="text" class="form-control" id="search"
+                                                        placeholder="Search here" name="search"
+                                                        value="{{ request('search', '') }}">
+                                                </div>
+                                            </div>
+                                            {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
+                                            <div class="col-md-auto text-left hide-mobile d-flex align-items-end mt-2">
+                                                <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                                    <i class="ft-search mr-1"></i> Search
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
                                 </div>
                             </form>
                         </div>

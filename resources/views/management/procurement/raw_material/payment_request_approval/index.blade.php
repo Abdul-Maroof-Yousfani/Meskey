@@ -83,15 +83,11 @@
                                          <input type="text" name="arrival_daterange" id="arrival_daterange" class="form-control"
                                              value="{{ request('arrival_daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                      </div>
-                                     <div class="px-1 text-left" style="min-width: 100px;">
-                                        <!-- Actions Column -->
+                                     <div class="px-1 text-left hide-mobile d-flex align-items-end mt-2" style="min-width: 120px;">
+                                        <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
+                                            <i class="ft-search mr-1"></i> Search
+                                        </button>
                                      </div>
-                                </div>
-                                {{-- Search: desktop par; mobile par filter sheet ka "Show results" yahi kaam karta hai --}}
-                                <div class="text-right hide-mobile mt-1 px-1">
-                                    <button type="submit" class="btn btn-primary mb-0" title="Apply filters">
-                                        <i class="ft-search mr-1"></i> Search
-                                    </button>
                                 </div>
                             </form>
                         </div>
