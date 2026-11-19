@@ -1199,7 +1199,7 @@ body.layout-dark .profile-menu .pm-logout {
         left: 12px;
         right: 12px;
         bottom: calc(10px + env(safe-area-inset-bottom));
-        height: 66px;
+        height: 58px;               /* sirf icons (text nahi) */
         padding: 6px;
         gap: 6px;
         z-index: 1020;
@@ -1227,7 +1227,7 @@ body.layout-dark .profile-menu .pm-logout {
         transition: background-color .2s, color .2s, border-color .2s, transform .15s;
         -webkit-tap-highlight-color: transparent;
     }
-    .mobile-bottom-nav .mbn-item i { font-size: 1.3rem; line-height: 1; }
+    .mobile-bottom-nav .mbn-item i { font-size: 1.4rem; line-height: 1; }
     .mobile-bottom-nav .mbn-item:active { transform: scale(.95); }
 
     /* Active item: tinted pill (reference jaisa) */
@@ -1266,7 +1266,7 @@ body.layout-dark .profile-menu .pm-logout {
     }
 
     /* content ko bottom nav ke peeche chhupne se bachane ke liye */
-    body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+    body { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 
     /* ===== Notification popup: mobile par full screen ===== */
     body.noti-open { overflow: hidden; }
@@ -1628,9 +1628,9 @@ body.layout-dark .profile-menu .pm-logout {
        thora neeche se shuru ho, sticky header ke peeche na chhupe.
        Gap sirf yahan se: mph-head ka apna margin-bottom 0 (margin collapse ka jhagra khatam),
        agla element margin-top 18px. Beech me <script>/<style> ho to us ke baad wala. */
-    .mph-head + :not(script):not(style),
-    .mph-head + :is(script, style) + :not(script):not(style),
-    .mph-head + :is(script, style) + :is(script, style) + :not(script):not(style) {
+    .mph-head + :not(script):not(style):not(.rv-page),
+    .mph-head + :is(script, style) + :not(script):not(style):not(.rv-page),
+    .mph-head + :is(script, style) + :is(script, style) + :not(script):not(style):not(.rv-page) {
         margin-top: 18px !important;
     }
 
@@ -3183,6 +3183,13 @@ body.layout-dark .profile-menu .pm-logout {
     }
 
     /* ---- layout ---- */
+    /* app-bar ke neeche gap: padding (margin nahi) - kisi bhi DOM me collapse/override na ho.
+       Is liye section 5 ka "mph-head + ..." margin rule rv-page ko chhorta hai (double gap na ho). */
+    .rv-page {
+        display: block;
+        padding-top: 18px !important;
+    }
+
     .rv-page > .row {
         margin-left: 0;
         margin-right: 0;

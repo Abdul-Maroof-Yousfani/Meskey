@@ -346,19 +346,19 @@
     {{-- Mobile: fixed bottom navbar --}}
     <div class="mobile-bottom-nav">
         <a href="{{ url('dashboard') }}"
-            class="mbn-item {{ request()->is('dashboard') || request()->is('/') ? 'active' : '' }}">
-            <i class="ft-grid"></i><span>Dashboard</span>
+            class="mbn-item {{ request()->is('dashboard') || request()->is('/') ? 'active' : '' }}" aria-label="Dashboard" title="Dashboard">
+            <i class="ft-grid"></i>
         </a>
-        <a href="javascript:;" class="mbn-item mbn-menu menu-toggle">
-            <i class="ft-menu"></i><span>Menu</span>
+        <a href="javascript:;" class="mbn-item mbn-menu menu-toggle" aria-label="Menu" title="Menu">
+            <i class="ft-menu"></i>
         </a>
         {{-- Profile: page par jane ki jagah upar wala full-screen profile popup kholo.
              stopPropagation zaroori hai, warna Bootstrap ka document click handler popup ko fauran band kar deta hai.
              href fallback hai agar JS na chale. --}}
         <a href="{{ url('profile-settings') }}"
-            class="mbn-item {{ request()->is('profile-settings*') ? 'active' : '' }}"
+            class="mbn-item {{ request()->is('profile-settings*') ? 'active' : '' }}" aria-label="Profile" title="Profile"
             onclick="var t = document.getElementById('dropdownBasicMobile'); if (t) { event.preventDefault(); event.stopPropagation(); t.click(); }">
-            <i class="ft-user"></i><span>Profile</span>
+            <i class="ft-user"></i>
         </a>
     </div>
 <script>

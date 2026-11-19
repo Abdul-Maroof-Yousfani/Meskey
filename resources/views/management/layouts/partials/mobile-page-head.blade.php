@@ -41,10 +41,13 @@
             var top = header.offsetTop + header.offsetHeight;
             document.documentElement.style.setProperty('--mph-sticky-top', top + 'px');
 
-            // header ke bilkul neeche chipkao (beech ka gap khatam)
+            // header ke bilkul neeche chipkao:
+            //  gap > 0 -> beech ka khaali hissa khatam (row upar khincho)
+            //  gap < 0 -> row fixed header ke neeche dabi hui hai; sticky use visually neeche
+            //             dhakel kar content ke upar le aata tha -> row (aur us ke saath content) neeche karo
             var rowTop = row.getBoundingClientRect().top + window.pageYOffset;
             var gap = rowTop - top;
-            if (gap > 0 && gap < 140) {
+            if (gap !== 0 && gap < 140) {
                 var current = parseFloat(window.getComputedStyle(row).marginTop) || 0;
                 row.style.setProperty('margin-top', (current - gap) + 'px', 'important');
             }
@@ -56,7 +59,13 @@
         } else {
             fitHead();
         }
-        window.addEventListener('load', fitHead);
+        // load par theme (app.js) header ko "fixed-top" karti hai -> layout badalta hai.
+        // Ye listener theme se pehle chalta hai, is liye theme ke baad dobara naapo.
+        window.addEventListener('load', function () {
+            fitHead();
+            setTimeout(fitHead, 60);
+            setTimeout(fitHead, 700); // menu transit (500ms) ke baad
+        });
         var t;
         window.addEventListener('resize', function () {
             clearTimeout(t);
