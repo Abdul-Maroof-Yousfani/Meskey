@@ -31,21 +31,21 @@
         Loaded Weight
     </h6>
 </div>
-<div class="col-xs-4 col-sm-4 col-md-4">
+<div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
     <div class="form-group ">
         <label>First Weight:</label>
         <input type="text" id="first_weight" placeholder="First Weight" value="{{ $ArrivalTicket->first_weight }}"
             readonly class="form-control" autocomplete="off" />
     </div>
 </div>
-<div class="col-xs-4 col-sm-4 col-md-4">
+<div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
     <div class="form-group ">
         <label>2nd Weight:</label>
         <input type="text" id="second_weight" placeholder="Second Weight" value="{{ $ArrivalTicket->second_weight }}"
             disabled class="form-control" autocomplete="off" />
     </div>
 </div>
-<div class="col-xs-4 col-sm-4 col-md-4">
+<div class="col-xs-4 col-sm-4 col-md-4 tkf-full">
     <div class="form-group ">
         <label>Net Weight:</label>
         <input type="text" id="loaded_net_weight" placeholder="Net Weight" value="{{ $ArrivalTicket->net_weight }}"
@@ -58,21 +58,21 @@
         Arrived Weighbridge
     </h6>
 </div>
-<div class="col-xs-4 col-sm-4 col-md-4">
+<div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
     <div class="form-group ">
         <label>First Weighbridge Weight:</label>
         <input type="text" id="first_weighbridge" value="{{ $ArrivalTicket->firstWeighbridge->weight }}"
             class="form-control" autocomplete="off" disabled />
     </div>
 </div>
-<div class="col-xs-4 col-sm-4 col-md-4">
+<div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
     <div class="form-group">
         <label>2nd Weighbridge Weight:</label>
         <input type="number" id="second_weighbridge" name="second_weight" placeholder="Enter Second Weighbridge"
             class="form-control" autocomplete="off" max="{{ $ArrivalTicket->firstWeighbridge->weight }}" />
     </div>
 </div>
-<div class="col-xs-4 col-sm-4 col-md-4">
+<div class="col-xs-4 col-sm-4 col-md-4 tkf-full">
     <div class="form-group ">
         <label>Net Weighbridge Weight:</label>
         <input type="text" id="weighbridge_net_weight" name="weighbridge_net_weight" placeholder="Net Weighbridge"

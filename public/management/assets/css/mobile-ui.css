@@ -2061,6 +2061,16 @@ body.layout-dark .profile-menu .pm-logout {
         background: rgba(6, 182, 212, .12);
     }
 
+    .tkc-tag.is-danger {
+        color: #c53030;
+        background: rgba(229, 62, 62, .10);
+    }
+
+    /* chips ki line me tag bhi ho to beech me */
+    .tkc-chips .tkc-tag {
+        align-self: center;
+    }
+
     .layout-dark .tkc-tag {
         color: #c9c8d1;
         background: #26262c;
@@ -2526,6 +2536,32 @@ body.layout-dark .profile-menu .pm-logout {
         max-width: 33.3333%;
     }
 
+    /* lamba label ("First Weighbridge Weight:") 2 line me jaye to bhi teeno inputs ek seedh me:
+       label upar jagah le, input hamesha neeche */
+    .tkf-page form .row:not(.tkf-weights) > [class*="col-xs-4"] > .form-group {
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 14px);
+    }
+
+    .tkf-page form .row:not(.tkf-weights) > [class*="col-xs-4"] > .form-group > label {
+        flex: 1 0 auto;
+        font-size: 11.5px !important;
+        line-height: 1.25;
+    }
+
+    /* opt-in: tkf-half = aadhi line (2 ek row me), tkf-full = poori line
+       (e.g. Second Weighbridge "Arrived Weighbridge": First + 2nd ek row, Net agli row) */
+    .tkf-page form .row:not(.tkf-weights) > .tkf-half {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .tkf-page form .row:not(.tkf-weights) > .tkf-full {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
     /* "px-3" wale columns bhi baaki fields ki seedh me */
     .tkf-page form .row > [class*="col"].px-3 {
         padding-left: 6px !important;
@@ -2578,6 +2614,37 @@ body.layout-dark .profile-menu .pm-logout {
 
     body.layout-dark .tkf-page .striped-rows .form-group.row > label {
         color: #e6e6e6;
+    }
+
+    /* inline background wali heading (e.g. "Total Rejection" style="background:#ffafaf"):
+       mobile par baaki headings jaisi patli line, rang laal text se */
+    .tkf-page .header-heading-sepration[style*="background"] {
+        background: none !important;
+        color: #e53e3e !important;
+    }
+
+    /* radio (Half / Full Approved): pill jaisa, tap ke liye bara */
+    .tkf-page .input-group > .radio {
+        display: inline-flex !important;
+        align-items: center;
+        margin: 0 8px 8px 0 !important;
+        padding: 8px 12px;
+        border: 1px solid #e3e5ee;
+        border-radius: 10px;
+    }
+
+    .tkf-page .input-group > .radio label {
+        margin: 0 0 0 6px !important;
+        font-size: 13px !important;
+        color: #342e49 !important;
+    }
+
+    body.layout-dark .tkf-page .input-group > .radio {
+        border-color: #2f2f36;
+    }
+
+    body.layout-dark .tkf-page .input-group > .radio label {
+        color: #e6e6e6 !important;
     }
 
     /* ---------- section heading (Weight Detail) ---------- */

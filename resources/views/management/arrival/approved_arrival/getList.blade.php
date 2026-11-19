@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $ArrivalApproves, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($ArrivalApproves as $approval)
+        @include('management.arrival.approved_arrival.partials.mobile-card', ['approval' => $approval])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No approvals found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -102,6 +116,7 @@
         @endif
     </tbody>
 </table>
+</div>
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">

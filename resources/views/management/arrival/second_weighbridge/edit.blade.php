@@ -1,3 +1,5 @@
+{{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page">
 <form action="{{ route('arrival-location.update', $SecondWeighbridge->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
@@ -63,21 +65,21 @@
                 Loaded Weight
             </h6>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
             <div class="form-group ">
                 <label>First Weight:</label>
                 <input type="text" id="first_weight" placeholder="First Weight"
                     value="{{ $ArrivalTicket->first_weight }}" readonly class="form-control" autocomplete="off" />
             </div>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
             <div class="form-group ">
                 <label>2nd Weight:</label>
                 <input type="text" id="second_weight" placeholder="Second Weight"
                     value="{{ $ArrivalTicket->second_weight }}" disabled class="form-control" autocomplete="off" />
             </div>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4 tkf-full">
             <div class="form-group ">
                 <label>Net Weight:</label>
                 <input type="text" id="loaded_net_weight" placeholder="Net Weight"
@@ -90,14 +92,14 @@
                 Arrived Weighbridge
             </h6>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
             <div class="form-group ">
                 <label>First Weighbridge Weight:</label>
                 <input type="text" id="first_weighbridge" value="{{ $ArrivalTicket->firstWeighbridge->weight }}"
                     class="form-control" autocomplete="off" disabled />
             </div>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4 tkf-half">
             <div class="form-group">
                 <label>2nd Weighbridge Weight:</label>
                 <input type="number" id="second_weighbridge" name="second_weight"
@@ -105,7 +107,7 @@
                     value="{{ $SecondWeighbridge->weight }}" max="{{ $ArrivalTicket->firstWeighbridge->weight }}" />
             </div>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4">
+        <div class="col-xs-4 col-sm-4 col-md-4 tkf-full">
             <div class="form-group ">
                 <label>Net Weighbridge Weight:</label>
                 <input type="text" id="weighbridge_net_weight" name="weighbridge_net_weight"
@@ -134,10 +136,11 @@
         </div>
 
     </div>
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
+</div>
