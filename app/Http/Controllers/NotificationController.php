@@ -27,15 +27,39 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function fetchDropdown()
+    /**
+     * Header notification dropdown - 10 10 karke (infinite scroll).
+     * page=1 : poora dropdown (header + pehli 10 + footer)
+     * page>1 : sirf agli 10 rows ka HTML (JS list ke aakhir me jorta hai)
+     */
+    public function fetchDropdown(Request $request)
     {
-        // Scope cleanup to current user and ONLY delete READ notifications older than 3 months
-        auth()->user()->notifications()->whereNotNull('read_at')->where('created_at', '<', now()->subMonths(3))->delete();
+        $perPage = 10;
+        $page = max(1, (int) $request->query('page', 1));
 
-        $notifications = auth()->user()->notifications()->take(50)->get();
-        
-        $html = view('management.notifications.dropdown_items', compact('notifications'))->render();
-        return response()->json(['html' => $html]);
+        if ($page === 1) {
+            // Scope cleanup to current user and ONLY delete READ notifications older than 3 months
+            auth()->user()->notifications()->whereNotNull('read_at')->where('created_at', '<', now()->subMonths(3))->delete();
+        }
+
+        // ek zyada mangwao: pata chal jaye aur hain ya nahi (count query ki zaroorat nahi)
+        $notifications = auth()->user()->notifications()
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage + 1)
+            ->get();
+
+        $hasMore = $notifications->count() > $perPage;
+        $notifications = $notifications->take($perPage);
+
+        $html = $page === 1
+            ? view('management.notifications.dropdown_items', compact('notifications', 'hasMore'))->render()
+            : view('management.notifications.partials.dropdown_rows', compact('notifications'))->render();
+
+        return response()->json([
+            'html' => $html,
+            'has_more' => $hasMore,
+            'next_page' => $page + 1,
+        ]);
     }
 
     public function markAllAsRead()

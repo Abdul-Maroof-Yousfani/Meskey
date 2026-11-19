@@ -1546,6 +1546,29 @@ body.layout-dark .profile-menu .pm-logout {
 /* back button sirf mobile full-screen me dikhe */
 .noti-mobile-back { display: none; }
 
+/* ===== Notifications 10 10 karke: neeche ka spinner + aakhir ki line (desktop + mobile) =====
+   JS: header.blade.php (loadMoreNotifications) */
+.noti-loadmore {
+    padding: 12px 0;
+    text-align: center;
+}
+.noti-loadmore-spinner {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(39, 72, 154, .15);
+    border-top-color: #27489a;
+    animation: appLockSpin .7s linear infinite;
+}
+.noti-end {
+    padding: 10px 0 12px;
+    text-align: center;
+    font-size: 12px;
+    color: #9a9aa8;
+}
+body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); border-top-color: #9db4f0; }
+
 /* #####################################################################
    5. Mobile page header (mph-*)
    (pehle: partials/mobile-page-head.blade.php <style>)

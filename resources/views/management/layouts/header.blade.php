@@ -658,6 +658,60 @@
                 closeNotiMenu();
             });
 
+            // ===== Notifications: 10 10 karke (infinite scroll) =====
+            // List (.scrollable-container) ke neeche pahuncho -> spinner -> agli 10 jud jayen.
+            // data-next-page / data-has-more: dropdown_items.blade.php (controller: fetchDropdown?page=N)
+            // "scroll" bubble nahi hota -> capture phase; dropdown ka HTML har dafa naya banta hai.
+            var notiLoadingMore = false;
+
+            function loadMoreNotifications(list) {
+                var $list = $(list);
+                if (notiLoadingMore || String($list.attr('data-has-more')) !== '1') return;
+
+                notiLoadingMore = true;
+                var page = parseInt($list.attr('data-next-page'), 10) || 2;
+                var $spinner = $list.find('.noti-loadmore');
+                $spinner.show();
+
+                $.ajax({
+                    url: "{{ route('notifications.dropdown') }}",
+                    type: "GET",
+                    data: { page: page },
+                    success: function(res) {
+                        // agar is dauran dropdown dobara bana (mark all read / naya notification) to purani list chhor do
+                        if (!document.body.contains(list)) return;
+                        $spinner.before(res.html);
+                        $list.attr('data-next-page', res.next_page);
+                        $list.attr('data-has-more', res.has_more ? 1 : 0);
+                        if (!res.has_more && !$list.find('.noti-end').length) {
+                            $spinner.after('<div class="noti-end">No more notifications</div>');
+                        }
+                    },
+                    error: function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Mazeed notifications load nahi ho sakin.');
+                        }
+                    },
+                    complete: function() {
+                        $spinner.hide();
+                        notiLoadingMore = false;
+                        // list itni chhoti ho ke scroll hi na bane, to agla page khud mangwa lo
+                        if (document.body.contains(list) && list.scrollHeight <= list.clientHeight + 4) {
+                            loadMoreNotifications(list);
+                        }
+                    }
+                });
+            }
+
+            document.addEventListener('scroll', function(e) {
+                var list = e.target;
+                if (!list || !list.matches || !list.matches('#notification-dropdown-menu .scrollable-container')) return;
+                // neeche se 60px pehle hi agla page mangwa lo
+                if (list.scrollTop + list.clientHeight >= list.scrollHeight - 60) {
+                    loadMoreNotifications(list);
+                }
+            }, true);
+
             // 2. Fetch dropdown items on click
             // Pehle screen lock + loader, data aane ke baad hi popup bhara hua khule
             $('#dropdownBasic1').on('click', function(e) {

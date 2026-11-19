@@ -11,25 +11,20 @@
         @endif
     </div>
 </li>
-<li class="scrollable-container" style="max-height: 22rem; overflow-y: auto !important; overflow-x: hidden; position: relative; background: #ffffff;">
-    @forelse($notifications as $notification)
-        <a class="d-flex justify-content-between notification-row" href="{{ route('notifications.readAndRedirect', $notification->id) }}" style="display: block; border-bottom: 1px solid #f0f0f0; text-decoration: none; {{ is_null($notification->read_at) ? 'background-color: rgba(39, 72, 154, 0.08);' : 'background-color: #ffffff;' }}">
-            <div class="media d-flex align-items-start p-2" style="width: 100%;">
-                <div class="media-body" style="width: 100%;">
-                    <div class="noti-text font-small-3 text-dark m-0" style="line-height: 1.45; {{ is_null($notification->read_at) ? 'font-weight: 600;' : 'font-weight: 400;' }}">
-                        {!! strip_tags($notification->data['message'], '<strong><b><i><em><br>') !!}
-                    </div>
-                    <div class="text-right mt-1">
-                        <small class="text-muted font-italic font-small-1">{{ $notification->created_at->diffForHumans() }}</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    @empty
+{{-- 10 10 karke: neeche pahunchne par header.blade.php ka JS data-next-page wala page mangwata hai --}}
+<li class="scrollable-container" data-next-page="2" data-has-more="{{ !empty($hasMore) ? 1 : 0 }}"
+    style="max-height: 22rem; overflow-y: auto !important; overflow-x: hidden; position: relative; background: #ffffff;">
+    @if ($notifications->isEmpty())
         <div class="d-flex justify-content-center align-items-center py-4">
             <span class="text-muted font-small-3">No notifications found.</span>
         </div>
-    @endforelse
+    @else
+        @include('management.notifications.partials.dropdown_rows', ['notifications' => $notifications])
+        {{-- agli 10 aate waqt spinner (JS dikhata hai) --}}
+        <div class="noti-loadmore" style="display: none;">
+            <span class="noti-loadmore-spinner"></span>
+        </div>
+    @endif
 </li>
 <li class="dropdown-menu-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; position: relative; z-index: 10;">
     <div class="d-flex justify-content-between align-items-center px-3 py-2 w-100">
