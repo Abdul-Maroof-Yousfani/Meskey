@@ -66,10 +66,11 @@
         const IS_LOCAL = @json(env('IS_LOCAL', false));
         let purchaseRequestRowIndex = 1;
 
-        // Header "Clear Cache" button: server drops this site's browser cache
-        // (Clear-Site-Data header), then the page reloads with fresh files.
-        function clearAppCache(el) {
+        // Profile menu "Clear Cache" / "Reset Cache for All Users": server drops the browser
+        // cache (Clear-Site-Data header), then the page reloads with fresh files.
+        function clearAppCache(el, url, confirmText) {
             if (el.dataset.busy) return;
+            if (confirmText && !window.confirm(confirmText)) return;
             el.dataset.busy = '1';
             var icon = el.querySelector('i');
             if (icon) icon.classList.add('spinner');
@@ -78,7 +79,7 @@
                 window.location.reload();
             };
 
-            fetch(@json(route('clear.cache')), {
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -168,14 +169,6 @@
                                 <span class="pm-label">
                                     Edit Profile
                                     <small>Name, photo &amp; password</small>
-                                </span>
-                                <i class="ft-chevron-right pm-arrow"></i>
-                            </a>
-                            <a class="pm-item" href="javascript:;" onclick="clearAppCache(this)">
-                                <span class="pm-ic"><i class="ft-refresh-ccw"></i></span>
-                                <span class="pm-label">
-                                    Clear Cache
-                                    <small>Reload fresh files</small>
                                 </span>
                                 <i class="ft-chevron-right pm-arrow"></i>
                             </a>
@@ -300,13 +293,6 @@
                             @endif
                         @endif
 
-
-                        <li class="nav-item d-flex align-items-center mr-2">
-                            <a class="nav-link header-icon-btn" href="javascript:;" title="Clear Cache"
-                                onclick="clearAppCache(this)">
-                                <i class="ft-refresh-ccw"></i>
-                            </a>
-                        </li>
 
                         <li class="nav-item d-flex align-items-center mr-2">
                             <input type="checkbox" class="d-none" id="color-switch-1"

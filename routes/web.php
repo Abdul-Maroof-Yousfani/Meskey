@@ -437,6 +437,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     // Header "Clear Cache" button
     Route::post('clear-cache', [\App\Http\Controllers\CacheController::class, 'clear'])->name('clear.cache');
+    Route::post('clear-cache/all-users', [\App\Http\Controllers\CacheController::class, 'resetAll'])->name('clear.cache.all');
 
     // Database Backup Route
     Route::get('/download-database-zip', [DatabaseBackupController::class, 'downloadDatabaseZip'])->name('database.download-zip');

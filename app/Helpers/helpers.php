@@ -51,8 +51,34 @@ if (!function_exists('versioned_asset')) {
         }
 
         $url = asset($path);
+        $version = $versions[$path];
 
-        return $versions[$path] ? $url . '?v=' . $versions[$path] : $url;
+        // Super admin "Reset for all users" bumps this, so every URL changes at once
+        $global = browser_cache_version();
+        if ($global) {
+            $version = ($version ?: '0') . '-' . $global;
+        }
+
+        return $version ? $url . '?v=' . $version : $url;
+    }
+}
+
+if (!function_exists('browser_cache_version')) {
+    /**
+     * Global browser-cache version, bumped by the super admin "Reset for all users"
+     * button. Kept in a file (not Laravel Cache) so a server cache clear never resets it.
+     * 0 = never reset.
+     */
+    function browser_cache_version(): int
+    {
+        static $version = null;
+
+        if ($version === null) {
+            $file = storage_path('app/browser_cache_version');
+            $version = is_file($file) ? (int) trim((string) @file_get_contents($file)) : 0;
+        }
+
+        return $version;
     }
 }
 
@@ -143,7 +169,14 @@ if (!function_exists('getCurrentCompany')) {
         if (!$companyId) {
             return null;
         }
-        return Company::find($companyId);
+
+        // Called many times per page (header, navigation, views): one query per request
+        static $companies = [];
+        if (!array_key_exists($companyId, $companies)) {
+            $companies[$companyId] = Company::find($companyId);
+        }
+
+        return $companies[$companyId];
     }
 }
 

@@ -469,27 +469,26 @@ class TicketController extends Controller
         $productSlabCalculations = null;
         $results = collect();
         $Compulsuryresults = collect();
-        $arrivalPurchaseOrders = collect();
-        $sampleTakenByUsers = collect();
-        $saudaTypes = collect();
         $allInitialRequests = collect();
         $allInnerRequests = collect();
         $initialRequestsData = [];
         $innerRequestsData = [];
 
         if ($arrivalSamplingRequest) {
-            $slabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)
-                ->get()
+            // One query for both: the lowest slab per type and the full slab list
+            $productSlabs = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
+
+            $slabs = $productSlabs
                 ->groupBy('product_slab_type_id')
                 ->map(function ($group) {
                     return $group->sortBy('from')->first();
                 });
 
             if ($arrivalSamplingRequest->arrival_product_id) {
-                $productSlabCalculations = ProductSlab::where('product_id', $arrivalSamplingRequest->arrival_product_id)->get();
+                $productSlabCalculations = $productSlabs;
             }
 
-            $results = ArrivalSamplingResult::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
+            $results = ArrivalSamplingResult::with('slabType')->where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
             foreach ($results as $result) {
                 $matchingSlabs = [];
                 if ($productSlabCalculations) {
@@ -506,12 +505,7 @@ class TicketController extends Controller
                 return $item;
             });
 
-            $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
-
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
-            $sampleTakenByUsers = User::all();
-            $authUserCompany = $request->company_id;
-            $saudaTypes = SaudaType::all();
+            $Compulsuryresults = ArrivalSamplingResultForCompulsury::with('qcParam')->where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
             $allInitialRequests = ArrivalSamplingRequest::where('sampling_type', 'initial')
                 ->where('arrival_ticket_id', $arrivalTicket->id)
@@ -526,9 +520,19 @@ class TicketController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->get();
 
+            // Results of all earlier requests in 2 queries instead of 2 per request
+            $earlierRequestIds = $allInitialRequests->pluck('id')->merge($allInnerRequests->pluck('id'))->all();
+            $resultsByRequest = ArrivalSamplingResult::with('slabType')->whereIn('arrival_sampling_request_id', $earlierRequestIds)
+                ->get()
+                ->groupBy('arrival_sampling_request_id');
+            $compulsuryByRequest = ArrivalSamplingResultForCompulsury::with('qcParam')->whereIn('arrival_sampling_request_id', $earlierRequestIds)
+                ->get()
+                ->groupBy('arrival_sampling_request_id');
+            $emptyResults = fn() => new \Illuminate\Database\Eloquent\Collection();
+
             foreach ($allInitialRequests as $initialReq) {
-                $initialResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $initialReq->id)->get();
-                $initialCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $initialReq->id)->get();
+                $initialResults = $resultsByRequest->get($initialReq->id) ?? $emptyResults();
+                $initialCompulsuryResults = $compulsuryByRequest->get($initialReq->id) ?? $emptyResults();
 
                 $initialResults->map(function ($item) use ($slabs) {
                     $slab = $slabs->get($item->product_slab_type_id);
@@ -544,8 +548,8 @@ class TicketController extends Controller
             }
 
             foreach ($allInnerRequests as $innerReq) {
-                $innerResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $innerReq->id)->get();
-                $innerCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $innerReq->id)->get();
+                $innerResults = $resultsByRequest->get($innerReq->id) ?? $emptyResults();
+                $innerCompulsuryResults = $compulsuryByRequest->get($innerReq->id) ?? $emptyResults();
 
                 $innerResults->map(function ($item) use ($slabs) {
                     $slab = $slabs->get($item->product_slab_type_id);

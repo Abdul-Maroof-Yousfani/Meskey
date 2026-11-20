@@ -74,6 +74,12 @@
                     @endif
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" id="cache-tab" data-toggle="tab" href="#cache" role="tab"
+                    aria-controls="cache" aria-selected="false">
+                    <i class="ft-refresh-ccw"></i><span>Cache</span>
+                </a>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -278,6 +284,56 @@
                         </div>
                     @endif
                 </div>
+            </div>
+
+            <!-- ================= Cache ================= -->
+            {{-- clearAppCache() is defined in management/layouts/header.blade.php --}}
+            <div class="tab-pane" id="cache" role="tabpanel" aria-labelledby="cache-tab">
+                <div class="ps-card">
+                    <div class="ps-card-head">
+                        <span class="ps-card-ic"><i class="ft-refresh-ccw"></i></span>
+                        <div>
+                            <h4>Clear cache</h4>
+                            <p>Screen looks old or a change is not showing? Clear the saved files in this browser.</p>
+                        </div>
+                    </div>
+
+                    <div class="ps-tip">
+                        <i class="ft-info"></i>
+                        <span>You stay logged in. The page reloads with fresh files.</span>
+                    </div>
+
+                    <div class="ps-actions">
+                        <button type="button" class="ps-btn position-relative"
+                            onclick="clearAppCache(this, @js(route('clear.cache')))">
+                            <i class="ft-refresh-ccw"></i> Clear Cache
+                        </button>
+                    </div>
+                </div>
+
+                @if ($me->user_type === 'super-admin')
+                    <div class="ps-card">
+                        <div class="ps-card-head">
+                            <span class="ps-card-ic"><i class="ft-users"></i></span>
+                            <div>
+                                <h4>Reset cache for all users</h4>
+                                <p>Clears the server cache, and every user's browser gets fresh files on their next page load.</p>
+                            </div>
+                        </div>
+
+                        <div class="ps-tip">
+                            <i class="ft-alert-triangle"></i>
+                            <span>Use after a deploy if users still see old screens. The first page load for everyone will be a little slower.</span>
+                        </div>
+
+                        <div class="ps-actions">
+                            <button type="button" class="ps-btn position-relative"
+                                onclick="clearAppCache(this, @js(route('clear.cache.all')), 'Reset cache for ALL users? Every user will get fresh files on their next page load.')">
+                                <i class="ft-users"></i> Reset for All Users
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
