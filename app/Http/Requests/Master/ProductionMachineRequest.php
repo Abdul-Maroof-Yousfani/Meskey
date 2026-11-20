@@ -34,9 +34,11 @@ class ProductionMachineRequest extends FormRequest
 
                 Rule::unique('production_machines', 'name')
                     ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->arrival_location)
+                    // Edit: skip the machine being edited (route param is {production_machine})
+                    ->ignore($this->route('production_machine'))
             ],
             'description' => 'nullable|string|max:500',
+            'is_required' => 'required|boolean',
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ];
     }
@@ -57,6 +59,7 @@ class ProductionMachineRequest extends FormRequest
             'name.required' => 'The Productin Machine name is required.',
             'name.unique' => 'The name has already been taken for the selected company.',
             'description.max' => 'The description must not exceed 500 characters.',
+            'is_required.required' => 'Please select whether the machine is required.',
             'status.required' => 'The status is required.',
             'status.in' => 'The status must be either active or inactive.',
         ];

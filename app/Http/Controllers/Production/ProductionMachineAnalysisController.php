@@ -81,19 +81,17 @@ class ProductionMachineAnalysisController extends Controller
             ->get();
 
         $fixedProduct = null;
-        if ($analysisRequest) {
-            $fixedProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
-                $analysisRequest->arrival_location_id,
-                $analysisRequest->plant_id,
-                now()->format('Y-m-d'),
-                $analysisRequest->request_date?->format('Y-m-d')
-            );
-        }
+        $tabData = $this->tabProductData($analysisRequest);
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::latest('id')->get(['id', 'job_order_no']);
+        $selectedJobOrderId = $analysisRequest?->job_order_id ?? ($analysisRequest?->jobOrderIdsForAnalysis()[0] ?? null);
             
         return view('management.production.production_machine_analysis.create', compact(
+            'tabData',
             'companyLocations', 
             'units', 
             'products',
+            'jobOrders',
+            'selectedJobOrderId',
             'fixedProduct',
             'productSlabTypes', 
             'preSelectedLocationId',
@@ -117,13 +115,9 @@ class ProductionMachineAnalysisController extends Controller
             // The request's own voucher for now; once the readings are saved the analysis is linked to the voucher that fits it
             $matchingVoucherId = $analysisReq?->production_voucher_id;
 
-            $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
-                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
-                $request->plant_id ?: $analysisReq?->plant_id,
-                $request->date,
-                $analysisReq?->request_date?->format('Y-m-d')
-            );
-            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+            // Output tab is fixed to the job order product; the analysis keeps that product (else the input tab product)
+            $outputProductId = $analysisReq?->outputProductId();
+            $finalProductId = $outputProductId ?: ($request->input('items.0.product_id') ?: $request->product_id);
 
             // Create Parent Record
             $analysis = ProductionMachineAnalysis::create([
@@ -146,35 +140,33 @@ class ProductionMachineAnalysisController extends Controller
                 }
             }
 
-            // Store New Line Items
-            if ($request->has('items')) {
-                foreach ($request->items as $row) {
-                    // Create the Row Metadata (Item)
-                    $item = ProductionMachineAnalysisItem::create([
-                        'machine_analysis_id' => $analysis->id,
-                        'analysis_time' => $row['time'],
-                        'unit_id' => $row['unit_id'] ?? null,
-                    ]);
-
-                    // Save the Slab Values for this Item (Pivot)
-                    if (isset($row['params']) && is_array($row['params'])) {
-                        foreach ($row['params'] as $slabTypeId => $value) {
-                            if ($value !== null && $value !== '') {
-                                ProductionMachineAnalysisItemSlab::create([
-                                    'machine_analysis_item_id' => $item->id,
-                                    'slab_type_id' => $slabTypeId,
-                                    'analysis_value' => $value,
-                                ]);
-                            }
-                        }
-                    }
-                }
+            // Sync Job Orders (single select on UI, stored as multi in DB)
+            $jobOrderIds = $request->filled('job_order_id')
+                ? [$request->job_order_id]
+                : (array) $request->input('job_orders', $request->input('job_order_ids', []));
+            $jobOrderIds = array_values(array_filter(array_unique($jobOrderIds)));
+            if (empty($jobOrderIds) && $request->filled('analysis_request_id') && isset($analysisReq)) {
+                $jobOrderIds = $analysisReq->jobOrderIdsForAnalysis();
             }
+            if (!empty($jobOrderIds)) {
+                $analysis->jobOrders()->sync($jobOrderIds);
+            }
+
+            // Store the Input and Output tab readings
+            $this->saveItems($analysis, $request->items ?? [], $outputProductId);
 
             // Link to the voucher whose machines were running at the reading time (or the request's voucher)
             app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis);
 
             DB::commit();
+
+            // Schedule the plant's next auto Machine Analysis request from this reading
+            try {
+                app(\App\Services\Production\Milling\AutoAnalysisRequestService::class)->onAnalysisCompleted($analysis);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('AutoAnalysis onAnalysisCompleted (machine) error: ' . $e->getMessage());
+            }
+
             return response()->json(['status' => 'success', 'message' => 'Machine Analysis stored successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -184,7 +176,7 @@ class ProductionMachineAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'product', 'items.unit', 'items.slabs.slabType'])
+        $item = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'product', 'jobOrders', 'items.unit', 'items.product', 'items.slabs.slabType'])
             ->findOrFail($id);
             
         $productSlabTypes = collect();
@@ -216,7 +208,7 @@ class ProductionMachineAnalysisController extends Controller
 
     public function edit($id)
     {
-        $item = ProductionMachineAnalysis::with(['items.slabs.slabType', 'product'])
+        $item = ProductionMachineAnalysis::with(['items.slabs.slabType', 'product', 'jobOrders'])
             ->findOrFail($id);
         
         $locationIds = getUserCurrentCompanyLocations();
@@ -268,20 +260,25 @@ class ProductionMachineAnalysisController extends Controller
             ->where('plant_id', $item->plant_id)
             ->get();
 
-        $fixedProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
-            $item->arrival_location_id,
-            $item->plant_id,
-            $item->analysis_date,
-            $item->analysisRequest?->request_date?->format('Y-m-d'),
-            $item->id,
-            'machine'
-        );
+        $fixedProduct = null;
+        $tabData = $this->tabProductData($item->analysisRequest, $item);
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::latest('id')->get(['id', 'job_order_no']);
+        $selectedJobOrderId = $item->jobOrders->first()?->id ?? $item->analysisRequest?->job_order_id ?? ($item->analysisRequest?->jobOrderIdsForAnalysis()[0] ?? null);
+
+        $tabItems = [
+            'input' => $item->items->firstWhere('analysis_type', 'input') ?? $item->items->first(),
+            'output' => $item->items->firstWhere('analysis_type', 'output'),
+        ];
 
         return view('management.production.production_machine_analysis.edit', compact(
             'item',
+            'tabItems',
+            'tabData',
             'companyLocations', 
             'units', 
             'products',
+            'jobOrders',
+            'selectedJobOrderId',
             'fixedProduct',
             'productSlabTypes',
             'analysisRequests',
@@ -304,15 +301,9 @@ class ProductionMachineAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
-            $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
-                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
-                $request->plant_id ?: $analysisReq?->plant_id,
-                $request->date,
-                $analysisReq?->request_date?->format('Y-m-d'),
-                $analysis->id,
-                'machine'
-            );
-            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+            // Output tab is fixed to the job order product; the analysis keeps that product (else the input tab product)
+            $outputProductId = $analysisReq?->outputProductId();
+            $finalProductId = $outputProductId ?: ($request->input('items.0.product_id') ?: $request->product_id);
 
             // Update Parent Record
             $analysis->update([
@@ -326,32 +317,19 @@ class ProductionMachineAnalysisController extends Controller
                 'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
 
+            // Sync Job Orders (single select on UI, stored as multi in DB)
+            $jobOrderIds = $request->filled('job_order_id')
+                ? [$request->job_order_id]
+                : (array) $request->input('job_orders', $request->input('job_order_ids', []));
+            $jobOrderIds = array_values(array_filter(array_unique($jobOrderIds)));
+            $analysis->jobOrders()->sync($jobOrderIds);
+
             // Delete old items (which will cascade to slabs due to migration or manual delete if cascade not set)
             // But we have cascade on migration.
             $analysis->items()->delete();
 
-            // Store New Line Items
-            if ($request->has('items')) {
-                foreach ($request->items as $row) {
-                    $item = ProductionMachineAnalysisItem::create([
-                        'machine_analysis_id' => $analysis->id,
-                        'analysis_time' => $row['time'],
-                        'unit_id' => $row['unit_id'] ?? null,
-                    ]);
-
-                    if (isset($row['params']) && is_array($row['params'])) {
-                        foreach ($row['params'] as $slabTypeId => $value) {
-                            if ($value !== null && $value !== '') {
-                                ProductionMachineAnalysisItemSlab::create([
-                                    'machine_analysis_item_id' => $item->id,
-                                    'slab_type_id' => $slabTypeId,
-                                    'analysis_value' => $value,
-                                ]);
-                            }
-                        }
-                    }
-                }
-            }
+            // Store the Input and Output tab readings
+            $this->saveItems($analysis, $request->items ?? [], $outputProductId);
 
             // Link to the fitting voucher; a request this analysis moved away from goes back to pending
             app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis, $previousRequestId);
@@ -370,6 +348,7 @@ class ProductionMachineAnalysisController extends Controller
             DB::beginTransaction();
             $analysis = ProductionMachineAnalysis::findOrFail($id);
             $requestId = $analysis->analysis_request_id;
+            $analysis->jobOrders()->detach();
             $analysis->delete();
 
             // Request goes back to pending since its analysis no longer exists
@@ -391,7 +370,7 @@ class ProductionMachineAnalysisController extends Controller
         $machineIdsFilter = $request->production_machine_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'product'])
+        $items = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'product', 'jobOrders'])
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('company_location_id', $locationIdsFilter);
             })
@@ -414,6 +393,102 @@ class ProductionMachineAnalysisController extends Controller
             ->paginate($limit);
 
         return view('management.production.production_machine_analysis.getList', compact('items'));
+    }
+
+    /**
+     * Save one item per tab (input / output) with its QC values.
+     * An output tab left empty is not saved.
+     */
+    private function saveItems(ProductionMachineAnalysis $analysis, array $rows, ?int $outputProductId = null): void
+    {
+        foreach ($rows as $row) {
+            $type = in_array($row['analysis_type'] ?? null, ['input', 'output'], true) ? $row['analysis_type'] : 'input';
+            $params = array_filter(
+                is_array($row['params'] ?? null) ? $row['params'] : [],
+                fn($value) => $value !== null && $value !== ''
+            );
+
+            if (empty($params) && $type === 'output') {
+                continue;
+            }
+
+            $item = ProductionMachineAnalysisItem::create([
+                'machine_analysis_id' => $analysis->id,
+                'analysis_type' => $type,
+                'product_id' => ($type === 'output' && $outputProductId) ? $outputProductId : ($row['product_id'] ?? null),
+                'analysis_time' => $row['time'],
+                'unit_id' => $row['unit_id'] ?? null,
+            ]);
+
+            foreach ($params as $slabTypeId => $value) {
+                ProductionMachineAnalysisItemSlab::create([
+                    'machine_analysis_item_id' => $item->id,
+                    'slab_type_id' => $slabTypeId,
+                    'analysis_value' => $value,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Products and QC slabs of the Input / Output tabs.
+     * Input: RM QC products of the request (or all products), chosen freely.
+     * Output: fixed to the job order product of the request.
+     */
+    private function tabProductData($analysisRequest, ?ProductionMachineAnalysis $analysis = null): array
+    {
+        $inputItem = $analysis ? ($analysis->items->firstWhere('analysis_type', 'input') ?? $analysis->items->first()) : null;
+        $outputItem = $analysis?->items->firstWhere('analysis_type', 'output');
+
+        $rmQcIds = $analysisRequest ? $analysisRequest->rmQcProductIds() : [];
+
+        $inputProductId = $inputItem?->product_id ?: $analysis?->product_id;
+        if (!$analysis && count($rmQcIds) === 1) {
+            $inputProductId = $rmQcIds[0];
+        }
+
+        $outputFixedId = $analysisRequest?->outputProductId();
+        $outputProductId = $outputFixedId ?: $outputItem?->product_id;
+
+        return [
+            'inputProducts' => \App\Models\Production\ProductionAnalysisRequest::inputProductOptions($analysisRequest, $inputProductId),
+            'outputProducts' => getFinishGoodProducts($outputProductId),
+            'fromRmQc' => !empty($rmQcIds),
+            'outputFixed' => (bool) $outputFixedId,
+            'productIds' => ['input' => $inputProductId, 'output' => $outputProductId],
+            'slabTypes' => [
+                'input' => $this->slabTypesFor($inputProductId, $inputItem),
+                'output' => $this->slabTypesFor($outputProductId, $outputItem),
+            ],
+        ];
+    }
+
+    /** QC slab types of a product; else the ones saved on the item; else the general ones. */
+    private function slabTypesFor($productId, $item = null)
+    {
+        $types = collect();
+        if ($productId) {
+            $types = ProductSlab::with('slabType')
+                ->where('product_id', $productId)
+                ->get()
+                ->unique('product_slab_type_id')
+                ->pluck('slabType')
+                ->filter()
+                ->values();
+        }
+
+        if ($types->isEmpty() && $item) {
+            $slabTypeIds = $item->slabs->pluck('slab_type_id')->unique();
+            if ($slabTypeIds->isNotEmpty()) {
+                $types = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
+            }
+        }
+
+        if ($types->isEmpty()) {
+            $types = ProductSlabType::where('status', 'active')->where('for_general_item', 1)->get();
+        }
+
+        return $types;
     }
 
     public function getSlabsByProduct(Request $request)
@@ -471,43 +546,24 @@ class ProductionMachineAnalysisController extends Controller
         return response()->json($machines);
     }
 
+    /** Product options of the selected request: input tab = RM QC products (or all), output tab = job order product. */
     public function checkFixedProduct(Request $request)
     {
-        $analysisReq = null;
-        if ($request->filled('analysis_request_id')) {
-            $analysisReq = \App\Models\Production\ProductionAnalysisRequest::with('jobOrder')->find($request->analysis_request_id);
-        }
+        $analysisReq = $request->filled('analysis_request_id')
+            ? \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id)
+            : null;
 
-        $arrivalLocationId = $request->arrival_location_id ?: $analysisReq?->arrival_location_id;
-        $plantId = $request->plant_id ?: $analysisReq?->plant_id;
-        $date = $request->date ?: now()->format('Y-m-d');
-        $requestDate = $analysisReq?->request_date?->format('Y-m-d');
-        $excludeId = $request->exclude_id;
-        $excludeType = $request->exclude_type ?? 'machine';
-
-        $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
-            $arrivalLocationId,
-            $plantId,
-            $date,
-            $requestDate,
-            $excludeId,
-            $excludeType
-        );
-
-        if ($firstProduct) {
-            return response()->json([
-                'status' => 'success',
-                'is_fixed' => true,
-                'product_id' => $firstProduct->id,
-                'product_name' => $firstProduct->name,
-            ]);
-        }
+        $rmQcIds = $analysisReq ? $analysisReq->rmQcProductIds() : [];
+        $outputProduct = $analysisReq?->outputProductId() ? Product::find($analysisReq->outputProductId()) : null;
 
         return response()->json([
             'status' => 'success',
             'is_fixed' => false,
-            'suggested_product_id' => $analysisReq?->suggestedProductId(),
-            'product_id' => null,
+            'input_products' => \App\Models\Production\ProductionAnalysisRequest::inputProductOptions($analysisReq, $request->include_product_id),
+            'from_rm_qc' => !empty($rmQcIds),
+            'suggested_input_product_id' => count($rmQcIds) === 1 ? $rmQcIds[0] : null,
+            'output_product_id' => $outputProduct?->id,
+            'output_product_name' => $outputProduct?->name,
         ]);
     }
 }

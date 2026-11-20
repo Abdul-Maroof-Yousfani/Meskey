@@ -71,4 +71,9 @@ class ProductionMachineAnalysis extends Model
     {
         return $this->hasMany(ProductionMachineAnalysisItem::class, 'machine_analysis_id');
     }
+
+    public function jobOrders()
+    {
+        return $this->belongsToMany(\App\Models\Production\JobOrder\JobOrder::class, 'job_orders_against_production_machine_analysis', 'machine_analysis_id', 'job_order_id');
+    }
 }

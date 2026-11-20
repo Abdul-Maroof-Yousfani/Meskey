@@ -245,9 +245,12 @@ class ProductionSettingController extends Controller
             'input_max_interval' => 'required|integer|gte:input_min_interval|max:1440',
             'output_min_interval' => 'required|integer|min:1|max:1440',
             'output_max_interval' => 'required|integer|gte:output_min_interval|max:1440',
+            'machine_min_interval' => 'required|integer|min:1|max:1440',
+            'machine_max_interval' => 'required|integer|gte:machine_min_interval|max:1440',
         ], [
             'input_max_interval.gte' => 'Input max interval must be greater than or equal to min interval.',
             'output_max_interval.gte' => 'Output max interval must be greater than or equal to min interval.',
+            'machine_max_interval.gte' => 'Machine max interval must be greater than or equal to min interval.',
         ]);
 
         $plant->update([
@@ -257,6 +260,8 @@ class ProductionSettingController extends Controller
             'input_max_interval' => (int) $request->input_max_interval,
             'output_min_interval' => (int) $request->output_min_interval,
             'output_max_interval' => (int) $request->output_max_interval,
+            'machine_min_interval' => (int) $request->machine_min_interval,
+            'machine_max_interval' => (int) $request->machine_max_interval,
             'min_analysis_interval' => (int) $request->input_min_interval,
             'max_analysis_interval' => (int) $request->input_max_interval,
         ]);
@@ -296,6 +301,8 @@ class ProductionSettingController extends Controller
             $inMax = isset($data['input_max']) ? max($inMin, (int) $data['input_max']) : 60;
             $outMin = isset($data['output_min']) ? max(1, (int) $data['output_min']) : 20;
             $outMax = isset($data['output_max']) ? max($outMin, (int) $data['output_max']) : 60;
+            $machineMin = isset($data['machine_min']) ? max(1, (int) $data['machine_min']) : 20;
+            $machineMax = isset($data['machine_max']) ? max($machineMin, (int) $data['machine_max']) : 60;
             $enabled = !empty($data['auto_analysis_enabled']) ? 1 : 0;
             $requireCompleted = !empty($data['require_last_completed']);
 
@@ -306,6 +313,8 @@ class ProductionSettingController extends Controller
                 'input_max_interval' => $inMax,
                 'output_min_interval' => $outMin,
                 'output_max_interval' => $outMax,
+                'machine_min_interval' => $machineMin,
+                'machine_max_interval' => $machineMax,
                 'min_analysis_interval' => $inMin,
                 'max_analysis_interval' => $inMax,
             ]);
@@ -337,7 +346,9 @@ class ProductionSettingController extends Controller
                 $msg .= " Generated: {$details}";
             } elseif (!empty($result['skipped'])) {
                 $skipDetails = collect($result['skipped'])->map(function ($s) {
-                    $type = !empty($s['type']) ? ' (' . (str_contains($s['type'], 'input') ? 'Input' : 'Output') . ')' : '';
+                    $type = !empty($s['type'])
+                        ? ' (' . (str_contains($s['type'], 'input') ? 'Input' : (str_contains($s['type'], 'machine') ? 'Machine' : 'Output')) . ')'
+                        : '';
                     return "{$s['plant_name']}{$type}: {$s['reason']}";
                 })->unique()->join(' | ');
                 $msg .= " Status: {$skipDetails}";

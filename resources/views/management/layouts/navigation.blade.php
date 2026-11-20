@@ -447,7 +447,7 @@
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Production</span></a>
 
                 <ul class="dropdown-menu">
-                    <li class="dropdown dropdown-submenu drying-submenu" data-menu="dropdown-submenu"><a
+                    {{-- <li class="dropdown dropdown-submenu drying-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="dryingdd">Drying</span></a>
@@ -480,7 +480,7 @@
                             </li>
                             @endcanAccess
                         </ul>
-                    </li>
+                    </li> --}}
 
 
 
@@ -560,6 +560,14 @@
                                             onclick="loadPageContent('{{ route('production-output-analysis.index') }}')"
                                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                                             <span data-i18n="Task Board">Output Analysis</span>
+                                        </a>
+                                    </li>
+
+                                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                            href="{{ route('production-output-alert.index') }}"
+                                            onclick="loadPageContent('{{ route('production-output-alert.index') }}')"
+                                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                            <span data-i18n="Task Board">Output QC Alerts</span>
                                         </a>
                                     </li>
                                 </ul>

@@ -5,6 +5,7 @@
             <th class="col-sm-3">Company Location </th>
             <th class="col-sm-2">Arrival Location </th>
             <th class="col-sm-2">Plant </th>
+            <th class="col-sm-1">Required</th>
             {{-- <th class="col-sm-2">Description</th> --}}
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
@@ -33,6 +34,15 @@
                     <td>
                         <p class="m-0">
                             {{ $row->plant->name }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            @if($row->is_required)
+                                <span class="badge badge-primary">Yes</span>
+                            @else
+                                <span class="badge badge-secondary">No</span>
+                            @endif
                         </p>
                     </td>
                     {{-- <td>

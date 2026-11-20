@@ -1,6 +1,7 @@
 <form action="{{ route('production-output-analysis.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.production-output-analysis') }}">
+    @php $hasRequest = isset($analysisRequest) && $analysisRequest; @endphp
     <div class="row form-mar">
         <!-- Header Information -->
         <div class="col-md-12">
@@ -12,7 +13,7 @@
                         <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Analysis Request: <span class="text-danger">*</span></label>
                         <select name="analysis_request_id" id="analysis_request_id" class="form-control select2" required>
@@ -25,10 +26,13 @@
                                     data-arrival-location-name="{{ $req->arrivalLocation?->name }}"
                                     data-plant-id="{{ $req->plant_id }}"
                                     data-plant-name="{{ $req->plant?->name }}"
-                                    data-job-order-id="{{ $req->job_order_id }}"
+                                    data-job-order-id="{{ $req->job_order_id ?? ($req->jobOrderIdsForAnalysis()[0] ?? '') }}"
                                     data-job-order-no="{{ $req->voucher_display }}"
                                     data-product-id="{{ $req->suggestedProductId() }}"
                                     data-request-date="{{ $req->request_date?->format('Y-m-d') }}"
+                                    data-alert-no="{{ $req->outputAlert?->alert_no }}"
+                                    data-alert-remarks="{{ $req->outputAlert?->remarks }}"
+                                    data-alert-by="{{ $req->outputAlert ? trim(($req->outputAlert->remarkedBy?->name ?? '') . ' ' . ($req->outputAlert->remarked_at?->format('d-m-Y h:i A') ?? '')) : '' }}"
                                     @selected(isset($analysisRequest) && $analysisRequest->id == $req->id)>
                                     {{ $req->request_no }} - {{ $req->companyLocation?->name }} (Plant: {{ $req->plant?->name ?? 'N/A' }}) - {{ $req->request_date->format('d-m-Y') }}
                                 </option>
@@ -36,12 +40,29 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <!-- Shown until an Analysis Request is selected -->
+                <div class="col-md-6 {{ $hasRequest ? 'd-none' : '' }}" id="oa_select_request_msg">
+                    <div class="oa-select-request">
+                        <i class="ft-info mr-1"></i> Please select an <strong>Analysis Request</strong> first.
+                    </div>
+                </div>
+                <div class="col-md-3 oa-needs-request {{ $hasRequest ? '' : 'd-none' }}">
+                    <div class="form-group">
+                        <label>Job Order: <span class="text-danger">*</span></label>
+                        <select name="job_order_id" id="job_order_id" class="form-control select2" required>
+                            <option value="">Select Job Order</option>
+                            @foreach($jobOrders as $jo)
+                                <option value="{{ $jo->id }}" @selected(isset($selectedJobOrderId) && $selectedJobOrderId == $jo->id)>
+                                    {{ $jo->job_order_no }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3 oa-needs-request {{ $hasRequest ? '' : 'd-none' }}">
                     <div class="form-group">
                         <label>Product (Commodity): <span class="text-danger">*</span>
-                            <span id="product_fixed_badge" class="badge badge-warning ml-1 {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}">
-                                <i class="ft-lock"></i> Fixed for this Run
-                            </span>
+                            <i id="product_fixed_badge" class="ft-lock text-warning ml-1 {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}" title="Fixed from Job Order"></i>
                         </label>
                         <select name="product_id" id="product_id" class="form-control select2" required {{ isset($fixedProduct) && $fixedProduct ? 'disabled' : '' }}>
                             <option value="">Select Product</option>
@@ -62,20 +83,30 @@
                 </div>
 
                 <!-- Selected Request Details Summary -->
-                <div id="request_details_box" class="col-12 mb-2 {{ isset($analysisRequest) && $analysisRequest ? '' : 'd-none' }}">
-                    <div class="alert alert-light border py-2 px-3 mb-0 d-flex flex-wrap align-items-center justify-content-between" style="background: #f8fafc; border-radius: 6px;">
-                        <div>
+                <div id="request_details_box" class="col-12 mt-1 mb-3 {{ isset($analysisRequest) && $analysisRequest ? '' : 'd-none' }}">
+                    <div class="request-details-card">
+                        <h5 class="request-plant-heading">
+                            <i class="ft-cpu mr-1"></i> Plant: <span id="req_disp_plant">{{ $analysisRequest->plant?->name ?? '' }}</span>
+                        </h5>
+                        <div class="request-details-line">
                             <i class="ft-map-pin text-primary mr-1"></i> Location: <strong id="req_disp_location">{{ $analysisRequest->companyLocation?->name ?? '' }}</strong> &bull;
-                            <i class="ft-navigation text-info mr-1 ml-2"></i> Arrival: <span id="req_disp_arrival">{{ $analysisRequest->arrivalLocation?->name ?? '' }}</span> &bull;
-                            <i class="ft-cpu text-success mr-1 ml-2"></i> Plant: <span id="req_disp_plant">{{ $analysisRequest->plant?->name ?? '' }}</span>
+                            <i class="ft-navigation text-info mr-1 ml-2"></i> Arrival: <span id="req_disp_arrival">{{ $analysisRequest->arrivalLocation?->name ?? '' }}</span>
                             <span id="req_disp_jo_wrapper" class="ml-2 {{ isset($analysisRequest) && $analysisRequest->voucher_display ? '' : 'd-none' }}">
                                 &bull; <i class="ft-file-text text-warning mr-1"></i> Voucher: <strong id="req_disp_jo">{{ $analysisRequest?->voucher_display ?? '' }}</strong>
                             </span>
                         </div>
+                        @php $selAlert = isset($analysisRequest) ? $analysisRequest?->outputAlert : null; @endphp
+                        <div id="req_alert_remarks" class="request-alert-remarks mt-2 {{ $selAlert?->remarks ? '' : 'd-none' }}">
+                            <div class="font-weight-bold text-warning">
+                                <i class="ft-alert-triangle mr-1"></i> Re-check for QC Alert <span id="req_alert_no">{{ $selAlert?->alert_no }}</span>
+                            </div>
+                            <div class="request-alert-remarks-text" id="req_alert_text">{{ $selAlert?->remarks }}</div>
+                            <small class="text-muted" id="req_alert_by">{{ $selAlert ? trim(($selAlert->remarkedBy?->name ?? '') . ' ' . ($selAlert->remarked_at?->format('d-m-Y h:i A') ?? '')) : '' }}</small>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Hidden Location, Arrival Location, Plant dropdowns -->
+                <!-- Hidden Location, Factory Location, Plant dropdowns -->
                 <div class="d-none">
                     <select name="location_id" id="location_id">
                         <option value="">Select Location</option>
@@ -86,7 +117,7 @@
                         @endforeach
                     </select>
                     <select name="arrival_location_id" id="arrival_location_id">
-                        <option value="">Select Arrival Location</option>
+                        <option value="">Select Factory Location</option>
                         @if(isset($initialArrivalLocations))
                             @foreach($initialArrivalLocations as $arr)
                                 <option value="{{ $arr->id }}" @selected(isset($analysisRequest) && $analysisRequest->arrival_location_id == $arr->id)>
@@ -109,7 +140,7 @@
             </div>
 
             <!-- Extra Fields for Output Analysis -->
-            <div class="row mt-3">
+            <div class="row mt-3 oa-needs-request {{ $hasRequest ? '' : 'd-none' }}">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="d-block">Milling Degree:</label>
@@ -167,7 +198,7 @@
         </div>
 
         <!-- QC Checklist Section -->
-        <div class="col-md-12 mt-4">
+        <div class="col-md-12 mt-4 oa-needs-request {{ $hasRequest ? '' : 'd-none' }}">
             <h6 class="header-heading-sepration font-weight-bold mb-3">
                 QC Checklist
             </h6>
@@ -202,7 +233,7 @@
         </div>
 
         <!-- Remarks Section -->
-        <div class="col-md-12 mt-4">
+        <div class="col-md-12 mt-4 oa-needs-request {{ $hasRequest ? '' : 'd-none' }}">
             <div class="form-group">
                 <label>Remarks:</label>
                 <textarea name="remarks" class="form-control" rows="4" placeholder="Enter Remarks"></textarea>
@@ -213,12 +244,14 @@
     <div class="row bottom-button-bar">
         <div class="col-12 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save Analysis</button>
+            <button type="submit" class="btn btn-primary submitbutton oa-needs-request {{ $hasRequest ? '' : 'd-none' }}">Save Analysis</button>
         </div>
     </div>
 </form>
 
 <style>
+    .oa-select-request { margin-top: 28px; padding: 9px 14px; border-radius: 6px; background: #eef4ff; border: 1px dashed #9db8e8; color: #2f5fb3; font-size: 13px; }
+    .layout-dark .oa-select-request { background: #13263a; border-color: #2c4a6b; color: #9ccaff; }
     .qc-checklist-container .form-group {
         margin: 0;
         padding: 10px 15px;
@@ -269,6 +302,7 @@
     }
 </style>
 
+@include('management.production.partials.analysis_product_options_script')
 <script>
     $(document).ready(function() {
         function initSelect2(el) {
@@ -335,6 +369,10 @@
         // Handle Analysis Request Selection
         $('#analysis_request_id').on('change', function() {
             let reqId = $(this).val();
+
+            // Nothing but the request select until a request is chosen
+            $('.oa-needs-request').toggleClass('d-none', !reqId);
+            $('#oa_select_request_msg').toggleClass('d-none', !!reqId);
             let dateVal = $('input[name="date"]').val();
 
             if (reqId) {
@@ -356,6 +394,10 @@
                 $('#req_disp_location').text(compLocName || '');
                 $('#req_disp_arrival').text(arrivalLocName || '');
                 $('#req_disp_plant').text(plantName || '');
+                if (jobOrderId) {
+                    // Full change so the product and specs get fixed to this job order
+                    $('#job_order_id').val(jobOrderId).trigger('change');
+                }
                 if (jobOrderNo) {
                     $('#req_disp_jo').text(jobOrderNo);
                     $('#req_disp_jo_wrapper').removeClass('d-none');
@@ -363,6 +405,13 @@
                     $('#req_disp_jo_wrapper').addClass('d-none');
                 }
                 $('#request_details_box').removeClass('d-none');
+
+                // Request made from a QC Alert: show the remarks given on that alert
+                let alertRemarks = $opt.attr('data-alert-remarks') || '';
+                $('#req_alert_no').text($opt.attr('data-alert-no') || '');
+                $('#req_alert_text').text(alertRemarks);
+                $('#req_alert_by').text($opt.attr('data-alert-by') || '');
+                $('#req_alert_remarks').toggleClass('d-none', !alertRemarks);
 
                 $.ajax({
                     url: "{{ route('production-output-analysis.check-fixed-product') }}",
@@ -376,7 +425,12 @@
                         exclude_type: 'analysis'
                     },
                     success: function(res) {
+                        // A selected Job Order already fixes the product and specs
+                        if ($('#job_order_id').val()) {
+                            return;
+                        }
                         if (res.is_fixed && res.product_id) {
+                            window.ensureAnalysisProductOption($('#product_id'), res.product_id, res.product_name);
                             $('#product_id').val(res.product_id).trigger('change.select2');
                             $('#product_id').prop('disabled', true);
                             $('#hidden_product_id').val(res.product_id).prop('disabled', false);
@@ -401,6 +455,7 @@
                 $('#arrival_location_id').val('');
                 $('#plant_id').val('');
                 $('#request_details_box').addClass('d-none');
+                $('#req_alert_remarks').addClass('d-none');
                 $('#product_id').prop('disabled', false);
                 $('#hidden_product_id').val('').prop('disabled', true);
                 $('#product_fixed_badge').addClass('d-none');
@@ -421,3 +476,4 @@
         }
     });
 </script>
+@include('management.production.production_output_analysis.partials.job_order_lock_script')

@@ -37,18 +37,21 @@ Route::post("get/bag-request", [BagRequestController::class, "getList"])->name("
 Route::get("bag-request/getNumber", [BagRequestController::class, "getNumber"])->name("bag-requests.get-number");
 Route::get("bag-request/getArrivalLocation", [BagRequestController::class, "getArrivalLocations"])->name("bag-requests.get-arrival-locations");
 Route::get("bag-request/getGalas", [BagRequestController::class, "getGalas"])->name("bag-requests.get-galas");
+Route::get("bag-request/getPlants", [BagRequestController::class, "getPlants"])->name("bag-requests.get-plants");
 Route::get("bag-request/getJobOrders", [BagRequestController::class, "getJobOrders"])->name("bag-requests.get-job-orders");
 Route::get("bag-request/getJobOrderItems", [BagRequestController::class, "getJobOrderItems"])->name("get.job-order-items");
 
 
 Route::get('job-order-rm-qc/get-number', [JobOrderRawMaterialQcController::class, 'getNumber'])->name('job-order-rm-qc.get-number');
 Route::get('job-order-rm-qc/get-job-orders-by-date', [JobOrderRawMaterialQcController::class, 'getJobOrdersByDate'])->name('job-order-rm-qc.get-job-orders-by-date');
+Route::get('job-order-rm-qc/location-options', [JobOrderRawMaterialQcController::class, 'getLocationOptions'])->name('job-order-rm-qc.location-options');
 Route::resource('job-order-rm-qc', JobOrderRawMaterialQcController::class);
 Route::post('get-job-order-rm-qc', [JobOrderRawMaterialQcController::class, 'getList'])->name('get.job_order_rm_qc');
 Route::post('get-job-order-detail-for-rm-qc', [JobOrderRawMaterialQcController::class, 'getJobOrderDetails'])->name('get.job_order_details');
 Route::get('load-qc-commodities-tables', [JobOrderRawMaterialQcController::class, 'loadQcCommoditiesTables'])->name('load_qc_commodities_tables');
 
 Route::get('production-voucher/get-number', [ProductionVoucherController::class, 'getNumber'])->name('production-voucher.get-number');
+Route::post('production-voucher/rm-qc-inputs', [ProductionVoucherController::class, 'rmQcInputs'])->name('production-voucher.rm-qc-inputs');
 Route::resource('production-voucher', ProductionVoucherController::class);
 Route::post('get-production-voucher', [ProductionVoucherController::class, 'getList'])->name('get.production-voucher');
 Route::get('production-voucher/{id}/analysis-qc-view', [ProductionVoucherController::class, 'getAnalysisQcView'])->name('production-voucher.analysis-qc-view');
@@ -97,6 +100,9 @@ Route::resource('plant-breakdown', PlantBreakdownController::class);
 Route::post('get-plant-breakdown', [PlantBreakdownController::class, 'getList'])->name('get.plant-breakdown');
 
 // Machine Plan Setting Routes
+// Manage Logs: view a plan and enter only its breakdowns
+Route::get('machine-plan-setting/{id}/logs', [MachinePlanSettingController::class, 'logs'])->name('machine-plan-setting.logs');
+Route::post('machine-plan-setting/{id}/logs', [MachinePlanSettingController::class, 'saveLogs'])->name('machine-plan-setting.save-logs');
 Route::resource('machine-plan-setting', MachinePlanSettingController::class);
 Route::post('get-machine-plan-setting', [MachinePlanSettingController::class, 'getList'])->name('get.machine-plan-setting');
 Route::get('/machines-by-plant', [MachinePlanSettingController::class, 'getMachinesByPlant'])->name('getMachinesByPlant');
@@ -122,8 +128,14 @@ Route::resource("production-machine-analysis", ProductionMachineAnalysisControll
 Route::post('get-production-machine-analysis', [ProductionMachineAnalysisController::class, 'getList'])->name('get.production-machine-analysis');
 
 Route::get('production-output-analysis/check-fixed-product', [ProductionOutputAnalysisController::class, 'checkFixedProduct'])->name('production-output-analysis.check-fixed-product');
+Route::get('production-output-analysis/job-order-details', [ProductionOutputAnalysisController::class, 'jobOrderDetails'])->name('production-output-analysis.job-order-details');
 Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
 Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
+
+// Output QC Alerts (difference against the Job Order spec -> plant users' remarks -> re-check request)
+Route::post('production-output-alert/{id}/resolve', [\App\Http\Controllers\Production\ProductionOutputAlertController::class, 'resolve'])->name('production-output-alert.resolve');
+Route::post('get-production-output-alert', [\App\Http\Controllers\Production\ProductionOutputAlertController::class, 'getList'])->name('get.production-output-alert');
+Route::resource('production-output-alert', \App\Http\Controllers\Production\ProductionOutputAlertController::class)->only(['index', 'show']);
 Route::get('get-slabs-by-product', [ProductionOutputAnalysisController::class, 'getSlabsByProduct'])->name('production-output-analysis.get-slabs');
 
 Route::get('production-drying-job-order/get-recipes/{productId}', [ProductionDryingController::class, 'getRecipesByProduct'])->name('production-drying-job-order.get-recipes');

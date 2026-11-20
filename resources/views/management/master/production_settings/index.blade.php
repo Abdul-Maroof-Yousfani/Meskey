@@ -284,6 +284,16 @@ Production Settings
         border-right: 1px solid #ecf8ef;
     }
 
+    .col-header-machine {
+        background-color: #fffbeb !important;
+        border-right: 1px solid #fdf0c9;
+    }
+
+    .col-cell-machine {
+        background-color: #fffdf5;
+        border-right: 1px solid #fbf3dc;
+    }
+
     .plant-table td {
         padding: 12px 14px;
         vertical-align: middle !important;
@@ -377,6 +387,12 @@ Production Settings
         background: #ffffff;
     }
 
+    .range-input-box.machine-box:focus-within {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        background: #ffffff;
+    }
+
     .range-num-input {
         width: 46px;
         height: 26px;
@@ -444,6 +460,12 @@ Production Settings
         background-color: #dcfce7;
         color: #15803d;
         border: 1px solid #bbf7d0;
+    }
+
+    .tag-analysis-machine {
+        background-color: #fef3c7;
+        color: #b45309;
+        border: 1px solid #fde68a;
     }
 
     .sched-badge-pending {
@@ -656,6 +678,8 @@ Production Settings
         let inMax = parseInt($row.find('.plant-input-max').val(), 10) || 60;
         let outMin = parseInt($row.find('.plant-output-min').val(), 10) || 20;
         let outMax = parseInt($row.find('.plant-output-max').val(), 10) || 60;
+        let machineMin = parseInt($row.find('.plant-machine-min').val(), 10) || 20;
+        let machineMax = parseInt($row.find('.plant-machine-max').val(), 10) || 60;
 
         if (inMax < inMin) {
             if (typeof toastr !== 'undefined') toastr.error('Input Max interval must be >= Min interval.');
@@ -669,6 +693,12 @@ Production Settings
             return;
         }
 
+        if (machineMax < machineMin) {
+            if (typeof toastr !== 'undefined') toastr.error('Machine Max interval must be >= Min interval.');
+            else alert('Machine Max interval must be >= Min interval.');
+            return;
+        }
+
         let origHtml = $btn.html();
         $btn.prop('disabled', true).html('<i class="ft-loader ft-spin font-medium-1"></i>');
 
@@ -679,7 +709,9 @@ Production Settings
             input_min_interval: inMin,
             input_max_interval: inMax,
             output_min_interval: outMin,
-            output_max_interval: outMax
+            output_max_interval: outMax,
+            machine_min_interval: machineMin,
+            machine_max_interval: machineMax
         }, function(response) {
             if (typeof toastr !== 'undefined') {
                 toastr.success(response.success);

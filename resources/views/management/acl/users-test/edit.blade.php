@@ -306,6 +306,17 @@
                                                             <span class="text-muted">No Locations Assigned</span>
                                                         @endif
 
+                                                        @php
+                                                            $assignedPlantIds = json_decode($pivot->plants ?? "[]", true) ?? [];
+                                                            $assignedPlantNames = $assignedPlantIds
+                                                                ? \App\Models\Master\Plant::whereIn("id", $assignedPlantIds)->orderBy("name")->pluck("name")
+                                                                : collect();
+                                                        @endphp
+                                                        <div class="mt-1 pt-1 border-top small">
+                                                            <strong class="text-dark">Plants:</strong>
+                                                            {{ $assignedPlantNames->isNotEmpty() ? $assignedPlantNames->implode(", ") : "No Plants Assigned" }}
+                                                        </div>
+
                                                     </div>
                                                 </td>
 

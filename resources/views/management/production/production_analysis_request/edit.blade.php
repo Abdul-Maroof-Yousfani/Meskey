@@ -45,9 +45,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Arrival Location: <span class="text-danger">*</span></label>
+                        <label>Factory Location: <span class="text-danger">*</span></label>
                         <select name="arrival_location_id" id="edit_arrival_location_id" class="form-control select2" required>
-                            <option value="">Select Arrival Location</option>
+                            <option value="">Select Factory Location</option>
                             @foreach($arrivalLocations as $arrival)
                                 <option value="{{ $arrival->id }}" @selected($item->arrival_location_id == $arrival->id)>
                                     {{ $arrival->name }}
@@ -166,7 +166,7 @@
             loadProductionVouchers();
         });
 
-        // Company Location Change -> Load Arrival Locations & Production Vouchers
+        // Company Location Change -> Load Factory Locations & Production Vouchers
         $('#edit_company_location_id').on('change', function() {
             let companyLocationId = $(this).val();
             let $arrivalSelect = $('#edit_arrival_location_id');
@@ -174,7 +174,7 @@
 
             refreshRequestNumber();
 
-            $arrivalSelect.html('<option value="">Select Arrival Location</option>');
+            $arrivalSelect.html('<option value="">Select Factory Location</option>');
             $plantSelect.html('<option value="">Select Plant</option>');
 
             if (!companyLocationId) {
@@ -182,7 +182,7 @@
                 return;
             }
 
-            // Load Arrival Locations
+            // Load Factory Locations
             let arrivalUrl = "{{ route('production-analysis-request.get-arrival-locations', ':id') }}".replace(':id', companyLocationId);
             $.get(arrivalUrl, function(data) {
                 $.each(data, function(i, item) {
@@ -194,7 +194,7 @@
             loadProductionVouchers();
         });
 
-        // Arrival Location Change -> Load Plants
+        // Factory Location Change -> Load Plants
         $('#edit_arrival_location_id').on('change', function() {
             let companyLocationId = $('#edit_company_location_id').val();
             let arrivalId = $(this).val();

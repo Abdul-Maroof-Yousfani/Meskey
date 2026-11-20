@@ -75,25 +75,28 @@ class ProductionInputAnalysisController extends Controller
         }
         
         $units = UnitOfMeasure::all();
-        $products = getFinishGoodProducts();
+        // RM QC products of the request's job orders, or all products when no RM QC exists
+        $products = \App\Models\Production\ProductionAnalysisRequest::inputProductOptions($analysisRequest);
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
 
+        // Input product is never fixed; it is chosen from the list
         $fixedProduct = null;
-        if ($analysisRequest) {
-            $fixedProduct = ProductionAnalysis::getFirstProductForRun(
-                $analysisRequest->arrival_location_id,
-                $analysisRequest->plant_id,
-                now()->format('Y-m-d'),
-                $analysisRequest->request_date?->format('Y-m-d')
-            );
-        }
-            
+
+        // Other Products: finish good products
+        $otherProductOptions = getFinishGoodProducts();
+
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::latest('id')->get(['id', 'job_order_no']);
+        $selectedJobOrderId = $analysisRequest?->job_order_id ?? ($analysisRequest?->jobOrderIdsForAnalysis()[0] ?? null);
+
         return view('management.production.production_input_analysis.create', compact(
-            'companyLocations', 
-            'units', 
+            'companyLocations',
+            'units',
             'products',
+            'jobOrders',
+            'selectedJobOrderId',
+            'otherProductOptions',
             'fixedProduct',
             'productSlabTypes', 
             'preSelectedLocationId',
@@ -117,13 +120,8 @@ class ProductionInputAnalysisController extends Controller
             // The request's own voucher for now; once the readings are saved the analysis is linked to the voucher that fits it
             $matchingVoucherId = $analysisReq?->production_voucher_id;
 
-            $firstProduct = ProductionAnalysis::getFirstProductForRun(
-                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
-                $request->plant_id ?: $analysisReq?->plant_id,
-                $request->date,
-                $analysisReq?->request_date?->format('Y-m-d')
-            );
-            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+            // Input product is chosen freely
+            $finalProductId = $request->product_id;
 
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
@@ -138,20 +136,24 @@ class ProductionInputAnalysisController extends Controller
                 'production_voucher_id' => $matchingVoucherId,
             ]);
 
-            // If created against an Analysis Request, mark it completed & link the job orders of its Production Voucher
+            // If created against an Analysis Request, mark it completed
             if ($request->filled('analysis_request_id')) {
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
                 if ($analysisReq) {
                     $analysisReq->update(['status' => 'completed']);
-                    foreach ($analysisReq->jobOrderIdsForAnalysis() as $jobOrderId) {
-                        DB::table('job_orders_against_production_analysis')->insertOrIgnore([
-                            'job_order_id' => $jobOrderId,
-                            'production_id' => $analysis->id,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
                 }
+            }
+
+            // Sync Job Orders (single select on UI, stored as multi in DB)
+            $jobOrderIds = $request->filled('job_order_id')
+                ? [$request->job_order_id]
+                : (array) $request->input('job_orders', $request->input('job_order_ids', []));
+            $jobOrderIds = array_values(array_filter(array_unique($jobOrderIds)));
+            if (empty($jobOrderIds) && $request->filled('analysis_request_id') && isset($analysisReq)) {
+                $jobOrderIds = $analysisReq->jobOrderIdsForAnalysis();
+            }
+            if (!empty($jobOrderIds)) {
+                $analysis->jobOrders()->sync($jobOrderIds);
             }
 
             // Store New Line Items
@@ -179,6 +181,8 @@ class ProductionInputAnalysisController extends Controller
                 }
             }
 
+            $this->saveOtherProducts($analysis, $request->other_products ?? []);
+
             // Link to the voucher whose machines were running at the reading time (or the request's voucher)
             app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis);
 
@@ -199,7 +203,7 @@ class ProductionInputAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'items.unit', 'items.slabs.slabType'])
+        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'items.unit', 'items.slabs.slabType', 'otherProducts.product', 'jobOrders'])
             ->findOrFail($id);
             
         $productSlabTypes = collect();
@@ -229,13 +233,13 @@ class ProductionInputAnalysisController extends Controller
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['items.slabs.slabType', 'product'])
+        $item = ProductionAnalysis::with(['items.slabs.slabType', 'product', 'otherProducts'])
                                     ->findOrFail($id);
         
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
-        $products = getFinishGoodProducts($item->product_id);
+        $products = \App\Models\Production\ProductionAnalysisRequest::inputProductOptions($item->analysisRequest, $item->product_id);
 
         $productSlabTypes = collect();
         if ($item->product_id) {
@@ -276,20 +280,22 @@ class ProductionInputAnalysisController extends Controller
             ->where('arrival_location_id', $item->arrival_location_id)
             ->get();
 
-        $fixedProduct = ProductionAnalysis::getFirstProductForRun(
-            $item->arrival_location_id,
-            $item->plant_id,
-            $item->analysis_date,
-            $item->analysisRequest?->request_date?->format('Y-m-d'),
-            $item->id,
-            'analysis'
-        );
+        $fixedProduct = null;
+
+        // Other Products: finish good products; already saved ones stay in the list
+        $otherProductOptions = getFinishGoodProducts($item->otherProducts->pluck('product_id')->all());
+
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::latest('id')->get(['id', 'job_order_no']);
+        $selectedJobOrderId = $item->jobOrders->first()?->id ?? $item->analysisRequest?->job_order_id ?? ($item->analysisRequest?->jobOrderIdsForAnalysis()[0] ?? null);
 
         return view('management.production.production_input_analysis.edit', compact(
             'item',
             'productSlabTypes',
-            'companyLocations', 
+            'companyLocations',
             'products',
+            'jobOrders',
+            'selectedJobOrderId',
+            'otherProductOptions',
             'fixedProduct',
             'units',
             'analysisRequests',
@@ -311,15 +317,8 @@ class ProductionInputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
-            $firstProduct = ProductionAnalysis::getFirstProductForRun(
-                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
-                $request->plant_id ?: $analysisReq?->plant_id,
-                $request->date,
-                $analysisReq?->request_date?->format('Y-m-d'),
-                $analysis->id,
-                'analysis'
-            );
-            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+            // Input product is chosen freely
+            $finalProductId = $request->product_id;
 
             // Update Parent Record
             $analysis->update([
@@ -332,8 +331,12 @@ class ProductionInputAnalysisController extends Controller
                 'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
 
-            // Sync Job Orders (Detach all regardless of presence in request as we don't use them anymore)
-            $analysis->jobOrders()->detach();
+            // Sync Job Orders (single select on UI, stored as multi in DB)
+            $jobOrderIds = $request->filled('job_order_id')
+                ? [$request->job_order_id]
+                : (array) $request->input('job_orders', $request->input('job_order_ids', []));
+            $jobOrderIds = array_values(array_filter(array_unique($jobOrderIds)));
+            $analysis->jobOrders()->sync($jobOrderIds);
 
             // Delete old items (which will cascade to slabs)
             $analysis->items()->delete();
@@ -363,6 +366,9 @@ class ProductionInputAnalysisController extends Controller
                 }
             }
 
+            $analysis->otherProducts()->delete();
+            $this->saveOtherProducts($analysis, $request->other_products ?? []);
+
             // Link to the fitting voucher; a request this analysis moved away from goes back to pending
             app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis, $previousRequestId);
 
@@ -371,6 +377,21 @@ class ProductionInputAnalysisController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Failed to update analysis: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /** Saves the "Other Products" rows (product + percent); fully empty rows are skipped. */
+    private function saveOtherProducts(ProductionAnalysis $analysis, array $rows): void
+    {
+        foreach ($rows as $row) {
+            if (empty($row['product_id'])) {
+                continue;
+            }
+
+            $analysis->otherProducts()->create([
+                'product_id' => $row['product_id'],
+                'percentage' => $row['percentage'] ?? 0,
+            ]);
         }
     }
 
@@ -406,7 +427,7 @@ class ProductionInputAnalysisController extends Controller
         $plantIdsFilter = $request->plant_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product'])
+        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'jobOrders'])
             ->where('production_analysis_type', 'input')
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('location_id', $locationIdsFilter);
@@ -461,43 +482,22 @@ class ProductionInputAnalysisController extends Controller
         return response()->json($slabTypes);
     }
 
+    /** Product options for the selected request: its RM QC products, or all products when no RM QC exists. Never fixed. */
     public function checkFixedProduct(Request $request)
     {
-        $analysisReq = null;
-        if ($request->filled('analysis_request_id')) {
-            $analysisReq = \App\Models\Production\ProductionAnalysisRequest::with('jobOrder')->find($request->analysis_request_id);
-        }
+        $analysisReq = $request->filled('analysis_request_id')
+            ? \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id)
+            : null;
 
-        $arrivalLocationId = $request->arrival_location_id ?: $analysisReq?->arrival_location_id;
-        $plantId = $request->plant_id ?: $analysisReq?->plant_id;
-        $date = $request->date ?: now()->format('Y-m-d');
-        $requestDate = $analysisReq?->request_date?->format('Y-m-d');
-        $excludeId = $request->exclude_id;
-        $excludeType = $request->exclude_type ?? 'analysis';
-
-        $firstProduct = ProductionAnalysis::getFirstProductForRun(
-            $arrivalLocationId,
-            $plantId,
-            $date,
-            $requestDate,
-            $excludeId,
-            $excludeType
-        );
-
-        if ($firstProduct) {
-            return response()->json([
-                'status' => 'success',
-                'is_fixed' => true,
-                'product_id' => $firstProduct->id,
-                'product_name' => $firstProduct->name,
-            ]);
-        }
+        $rmQcIds = $analysisReq ? $analysisReq->rmQcProductIds() : [];
 
         return response()->json([
             'status' => 'success',
             'is_fixed' => false,
-            'suggested_product_id' => $analysisReq?->suggestedProductId(),
             'product_id' => null,
+            'products' => \App\Models\Production\ProductionAnalysisRequest::inputProductOptions($analysisReq, $request->include_product_id),
+            'from_rm_qc' => !empty($rmQcIds),
+            'suggested_product_id' => count($rmQcIds) === 1 ? $rmQcIds[0] : null,
         ]);
     }
 }

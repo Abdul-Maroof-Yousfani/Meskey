@@ -5,22 +5,26 @@ namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Production\MachinePlanSettingRequest;
-use App\Models\Master\ProductionMachine;
-use App\Models\Production\MachinePlanSetting;
-use App\Models\Production\ProductionVoucherMachineTime;
-use App\Models\Production\MachineTimeBreakdown;
+use App\Models\Master\CompanyLocation;
 use App\Models\Master\Plant;
-use App\Models\Master\Machine;
 use App\Models\Master\PlantBreakdownType;
+use App\Models\Master\ProductionMachine;
+use App\Models\Production\JobOrder\JobOrder;
+use App\Models\Production\MachinePlanSetting;
+use App\Models\Production\MachineTimeBreakdown;
 use App\Models\Production\PlantBreakdown;
 use App\Models\Production\PlantBreakdownItem;
 use App\Models\Production\ProductionVoucher;
-use App\Models\Production\JobOrder\JobOrder;
-use App\Models\Master\CompanyLocation;
-use App\Services\Production\Milling\MachinePlanDraftVoucherService;
+use App\Models\Production\ProductionVoucherMachineTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
+/**
+ * Machine Plan Setting: which machines of a plant run, and when, for a job order on a date.
+ * Saving with several job orders creates one plan per job order (same machines and times).
+ * Plans may share the same time slots. Breakdowns are added afterwards from "Manage Logs".
+ */
 class MachinePlanSettingController extends Controller
 {
     public function index()
@@ -32,802 +36,379 @@ class MachinePlanSettingController extends Controller
 
     public function getList(Request $request)
     {
-        $machinePlanSettings = MachinePlanSetting::with(['plant.companyLocation', 'plant.arrivalLocation', 'companyLocation', 'productionVoucher', 'user', 'items.machine'])
+        $plans = MachinePlanSetting::with([
+            'plant.arrivalLocation', 'plant.companyLocation', 'companyLocation', 'productionVoucher', 'user',
+            'jobOrder.product', 'items.machine', 'items.breakdowns',
+        ])
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . $request->search . '%';
-                $matchingJobOrderIds = JobOrder::where('job_order_no', 'like', $searchTerm)->pluck('id')->all();
-
-                return $q->where(function ($sq) use ($searchTerm, $matchingJobOrderIds) {
-                    $sq->whereHas('plant', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', $searchTerm);
-                    })
-                        ->orWhereHas('productionVoucher', function ($q) use ($searchTerm) {
-                            $q->where('prod_no', 'like', $searchTerm);
-                        });
-
-                    if (!empty($matchingJobOrderIds)) {
-                        $sq->orWhereHas('items', function ($iq) use ($matchingJobOrderIds) {
-                            $iq->where(function ($jq) use ($matchingJobOrderIds) {
-                                foreach ($matchingJobOrderIds as $joId) {
-                                    $jq->orWhereJsonContains('job_order_ids', (int) $joId);
-                                }
-                            });
-                        });
-                    }
+                $term = '%' . $request->search . '%';
+                $q->where(function ($sq) use ($term) {
+                    $sq->whereHas('jobOrder', fn ($j) => $j->where('job_order_no', 'like', $term))
+                        ->orWhereHas('plant', fn ($p) => $p->where('name', 'like', $term))
+                        ->orWhereHas('productionVoucher', fn ($v) => $v->where('prod_no', 'like', $term));
                 });
             })
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
+            ->when($request->filled('company_id'), fn ($q) => $q->where('company_id', $request->company_id))
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->where(function ($sq) use ($request) {
+                $q->where(function ($sq) use ($request) {
                     $sq->where('company_location_id', $request->company_location_id)
                         ->orWhere(function ($old) use ($request) {
                             // Older records saved before location was captured
                             $old->whereNull('company_location_id')
-                                ->whereHas('plant', function ($p) use ($request) {
-                                    $p->where('company_location_id', $request->company_location_id);
-                                });
+                                ->whereHas('plant', fn ($p) => $p->where('company_location_id', $request->company_location_id));
                         });
                 });
             })
-            ->when($request->filled('plant_id'), function ($q) use ($request) {
-                return $q->where('plant_id', $request->plant_id);
-            })
-            ->when($request->filled('date_from'), function ($q) use ($request) {
-                return $q->whereDate('date', '>=', $request->date_from);
-            })
-            ->when($request->filled('date_to'), function ($q) use ($request) {
-                return $q->whereDate('date', '<=', $request->date_to);
-            })
+            ->when($request->filled('plant_id'), fn ($q) => $q->where('plant_id', $request->plant_id))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('date', '<=', $request->date_to))
             ->latest('date')
-            ->latest('created_at')
+            ->latest('id')
             ->paginate(request('per_page', 25));
 
-        $plantBreakdowns = PlantBreakdown::with('items.breakdownType')
-            ->whereIn('plant_id', $machinePlanSettings->pluck('plant_id'))
-            ->whereIn('date', $machinePlanSettings->pluck('date'))
-            ->get()
-            ->groupBy(function ($item) {
-                return $item->date->format('Y-m-d') . '_' . $item->plant_id;
-            });
-
-        // job_order_no for every job order shown on this page, keyed by id
-        $jobOrderNos = JobOrder::whereIn(
-            'id',
-            $machinePlanSettings->getCollection()->flatMap->items->flatMap->job_order_id_list->unique()->values()
-        )->pluck('job_order_no', 'id');
-
-        return view('management.production.machine_plan_setting.getList', compact('machinePlanSettings', 'plantBreakdowns', 'jobOrderNos'));
+        return view('management.production.machine_plan_setting.getList', ['machinePlanSettings' => $plans]);
     }
 
     public function create(Request $request)
     {
         $companyLocations = $this->userCompanyLocations();
         $plants = Plant::with('arrivalLocation')->where('status', 'active')->get();
-        $breakdownTypes = PlantBreakdownType::where('status', 'active')->get();
-        $machines = ProductionMachine::where('status', 'active')
-            ->when($request->filled('plant_id'), function ($q) use ($request) {
-                return $q->where('plant_id', $request->plant_id);
-            })
-            ->get();
+        $breakdownTypes = PlantBreakdownType::where('status', 'active')->get(['id', 'name']);
 
-        return view('management.production.machine_plan_setting.create', compact('companyLocations', 'plants', 'machines', 'breakdownTypes'));
+        return view('management.production.machine_plan_setting.create', compact('companyLocations', 'plants', 'breakdownTypes'));
     }
 
+    /** One plan per selected job order, each with the same machines and time slots. */
     public function store(MachinePlanSettingRequest $request)
     {
+        $jobOrderIds = array_values(array_unique(array_filter(array_map('intval', (array) $request->job_order_ids))));
+
         DB::beginTransaction();
-
         try {
-            $machinePlanSettingData = $request->only([
-                'company_id',
-                'company_location_id',
-                'date',
-                'plant_id',
-                'remarks',
-            ]);
-            // production_voucher_id is not chosen on the form: the plan creates its own draft voucher
-            $companyId = $request->company_id ?: (auth()->user()->company_id ?? 1);
-            $machinePlanSettingData['company_id'] = $companyId;
-            $machinePlanSettingData['user_id'] = auth()->user()->id;
+            foreach ($jobOrderIds as $jobOrderId) {
+                $plan = MachinePlanSetting::create([
+                    'company_id' => $request->company_id,
+                    'company_location_id' => $request->company_location_id,
+                    'date' => $request->date,
+                    'plant_id' => $request->plant_id,
+                    'job_order_id' => $jobOrderId,
+                    'remarks' => $request->remarks,
+                    'user_id' => auth()->user()->id,
+                ]);
 
-            // Same plant + date: update the picked plan, unless 'Create as New Voucher' asks for another plan
-            $existingPlan = $request->targetPlan();
-
-            if ($existingPlan) {
-                $existingPlan->update($machinePlanSettingData);
-                $machinePlanSetting = $existingPlan;
-                ProductionVoucherMachineTime::where('machine_plan_setting_id', $machinePlanSetting->id)->delete();
-            } else {
-                $machinePlanSetting = MachinePlanSetting::create($machinePlanSettingData);
+                $this->saveMachineSlots($plan, $request);
             }
 
-            // Save machine items using ProductionVoucherMachineTime
-            $enabledMachineIds = $request->input('production_machine_id', []);
-            if (!is_array($enabledMachineIds)) {
-                $enabledMachineIds = [];
-            }
-
-            $allMachineIds = $request->input('all_machine_ids', []);
-            if (empty($allMachineIds) && $request->has('machine_start_time')) {
-                $allMachineIds = array_keys($request->machine_start_time);
-            }
-
-            if (!empty($allMachineIds)) {
-                foreach ($allMachineIds as $machineId) {
-                    $isEnabled = in_array($machineId, $enabledMachineIds);
-                    $startTimes = $request->input("machine_start_time.{$machineId}", []);
-                    $endTimes = $request->input("machine_end_time.{$machineId}", []);
-
-                    $hasValidSlot = false;
-                    if (is_array($startTimes) && !empty($startTimes)) {
-                        foreach ($startTimes as $index => $startTime) {
-                            $endTime = $endTimes[$index] ?? null;
-                            $durationMinutes = 0;
-                            $hours = 0;
-
-                            if (!empty($startTime) && !empty($endTime)) {
-                                $start = \Carbon\Carbon::parse($startTime);
-                                $end = \Carbon\Carbon::parse($endTime);
-                                if ($end->lt($start)) {
-                                    $end->addDay();
-                                }
-                                $durationMinutes = $start->diffInMinutes($end);
-                                $hours = round($durationMinutes / 60, 2);
-                            }
-
-                            if (!empty($startTime) || !empty($endTime)) {
-                                $hasValidSlot = true;
-                                $machineTime = ProductionVoucherMachineTime::create([
-                                    'company_id' => $request->company_id,
-                                    'machine_plan_setting_id' => $machinePlanSetting->id,
-                                    'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                                    'production_machine_id' => $machineId,
-                                    ...$this->machineJobOrderData($request, $machineId),
-                                    'start_time' => $startTime ?: null,
-                                    'end_time' => $endTime ?: null,
-                                    'duration_minutes' => $durationMinutes,
-                                    'hours' => $hours,
-                                    'is_enabled' => $isEnabled,
-                                ]);
-
-                                // Save child breakdowns for this slot
-                                $slotBreakdownFroms = $request->input("slot_breakdown_from.{$machineId}.{$index}", []);
-                                $slotBreakdownTos = $request->input("slot_breakdown_to.{$machineId}.{$index}", []);
-                                $slotBreakdownHours = $request->input("slot_breakdown_hours.{$machineId}.{$index}", []);
-                                $slotBreakdownRemarks = $request->input("slot_breakdown_remarks.{$machineId}.{$index}", []);
-
-                                if (is_array($slotBreakdownFroms) && !empty($slotBreakdownFroms)) {
-                                    foreach ($slotBreakdownFroms as $bIdx => $bFrom) {
-                                        $bTo = !empty($slotBreakdownTos[$bIdx]) ? $slotBreakdownTos[$bIdx] : null;
-                                        $bHours = !empty($slotBreakdownHours[$bIdx]) ? $slotBreakdownHours[$bIdx] : null;
-
-                                        if (!empty($bFrom)) {
-                                            if (!empty($bFrom) && !empty($bTo) && empty($bHours)) {
-                                                $fTime = \Carbon\Carbon::parse($bFrom);
-                                                $tTime = \Carbon\Carbon::parse($bTo);
-                                                if ($tTime->lt($fTime)) {
-                                                    $tTime->addDay();
-                                                }
-                                                $bHours = round($fTime->diffInMinutes($tTime) / 60, 2);
-                                            }
-
-                                            MachineTimeBreakdown::create([
-                                                'company_id' => $request->company_id,
-                                                'production_voucher_machine_time_id' => $machineTime->id,
-                                                'from' => $bFrom,
-                                                'to' => $bTo,
-                                                'hours' => $bHours,
-                                                'remarks' => $slotBreakdownRemarks[$bIdx] ?? null,
-                                            ]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!$hasValidSlot) {
-                        ProductionVoucherMachineTime::create([
-                            'company_id' => $request->company_id,
-                            'machine_plan_setting_id' => $machinePlanSetting->id,
-                            'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                            'production_machine_id' => $machineId,
-                            ...$this->machineJobOrderData($request, $machineId),
-                            'start_time' => null,
-                            'end_time' => null,
-                            'duration_minutes' => 0,
-                            'hours' => 0,
-                            'is_enabled' => $isEnabled,
-                        ]);
-                    }
-                }
-            } elseif ($request->has('machines') && is_array($request->machines)) {
-                foreach ($request->machines as $machineData) {
-                    if (!empty($machineData['production_machine_id'])) {
-                        $startTime = $machineData['start_time'] ?? null;
-                        $endTime = $machineData['end_time'] ?? null;
-                        $hours = $machineData['hours'] ?? null;
-                        $durationMinutes = 0;
-
-                        if (!empty($startTime) && !empty($endTime)) {
-                            $fromT = \Carbon\Carbon::parse($startTime);
-                            $toT = \Carbon\Carbon::parse($endTime);
-                            if ($toT < $fromT) {
-                                $toT->addDay();
-                            }
-                            $durationMinutes = $fromT->diffInMinutes($toT);
-                            if (empty($hours) || $hours == 0) {
-                                $hours = round($durationMinutes / 60, 2);
-                            }
-                        } elseif (!empty($hours)) {
-                            $durationMinutes = round($hours * 60);
-                        }
-
-                        ProductionVoucherMachineTime::create([
-                            'company_id' => $request->company_id,
-                            'machine_plan_setting_id' => $machinePlanSetting->id,
-                            'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                            'production_machine_id' => $machineData['production_machine_id'],
-                            'job_order_ids' => !empty($machineData['job_order_id']) ? [(int) $machineData['job_order_id']] : null,
-                            'start_time' => $startTime,
-                            'end_time' => $endTime,
-                            'duration_minutes' => $durationMinutes,
-                            'hours' => $hours ?? 0,
-                            'is_enabled' => $machineData['is_enabled'] ?? false,
-                            'remarks' => $machineData['remarks'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Save plant breakdown and items if breakdown items are provided
-            $hasBreakdownItems = false;
-            if ($request->has('breakdown_type_id') && is_array($request->breakdown_type_id)) {
-                foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
-                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
-                        $hasBreakdownItems = true;
-                        break;
-                    }
-                }
-            }
-
-            if ($hasBreakdownItems) {
-                // One plant breakdown per plant and day, shared by the day's plans
-                $plantBreakdown = PlantBreakdown::firstOrCreate(
-                    [
-                        'company_id' => $request->company_id,
-                        'date' => $request->date,
-                        'plant_id' => $request->plant_id,
-                    ],
-                    [
-                        'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                        'user_id' => auth()->user()->id,
-                    ]
-                );
-                $plantBreakdown->update(['user_id' => auth()->user()->id]);
-
-                $plantBreakdown->items()->delete();
-
-                foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
-                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
-                        $fromVal = $request->from[$index];
-                        $toVal = !empty($request->to[$index]) ? $request->to[$index] : null;
-                        $hoursVal = !empty($request->hours[$index]) ? $request->hours[$index] : null;
-
-                        if (!empty($fromVal) && !empty($toVal) && empty($hoursVal)) {
-                            $fromTime = \Carbon\Carbon::parse($fromVal);
-                            $toTime = \Carbon\Carbon::parse($toVal);
-                            $hoursVal = $fromTime->diffInHours($toTime, false) + ($fromTime->diffInMinutes($toTime, false) % 60) / 60;
-                        }
-
-                        PlantBreakdownItem::create([
-                            'company_id' => $request->company_id,
-                            'plant_breakdown_id' => $plantBreakdown->id,
-                            'breakdown_type_id' => $breakdownTypeId,
-                            'from' => $fromVal,
-                            'to' => $toVal,
-                            'hours' => $hoursVal,
-                            'remarks' => $request->breakdown_remarks[$index] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Create (or refresh) this plan's draft Production Voucher
-            app(MachinePlanDraftVoucherService::class)->syncForPlan($machinePlanSetting->fresh(['plant', 'items']));
+            // Overall plant breakdown: one per plant and day, shared by the day's plans
+            $this->savePlantBreakdown($plan, $request);
 
             DB::commit();
-
-            try {
-                app(\App\Services\Production\Milling\AutoAnalysisRequestService::class)->checkAndGenerateRequests();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('AutoAnalysis checkAndGenerateRequests error on machine plan save: ' . $e->getMessage());
-            }
-
-            return response()->json([
-                'success' => 'Machine Plan Setting created successfully.',
-                'data' => $machinePlanSetting->load('items.machine')
-            ], 201);
-
         } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json([
-                'error' => 'Something went wrong: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Something went wrong: ' . $e->getMessage()], 500);
         }
+
+        $this->refreshAutoAnalysis();
+
+        $count = count($jobOrderIds);
+        return response()->json([
+            'success' => $count > 1
+                ? "{$count} Machine Plans created (one for each job order)."
+                : 'Machine Plan created successfully.',
+        ], 201);
     }
 
     public function edit(Request $request, $id)
     {
-        $machinePlanSetting = MachinePlanSetting::with(['items.machine', 'items.breakdowns', 'productionVoucher'])->findOrFail($id);
+        $machinePlanSetting = MachinePlanSetting::with(['items.machine', 'productionVoucher', 'jobOrder'])->findOrFail($id);
 
         $companyLocations = $this->userCompanyLocations();
-
-        $plants = Plant::with('arrivalLocation')->where('status', 'active')
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
-            ->get();
+        $plants = Plant::with('arrivalLocation')->where('status', 'active')->get();
 
         // Older records may not have a location stored; fall back to the plant's location
-        $selectedLocationId = $machinePlanSetting->company_location_id
-            ?: optional($machinePlanSetting->plant)->company_location_id;
+        $selectedLocationId = $machinePlanSetting->company_location_id ?: optional($machinePlanSetting->plant)->company_location_id;
 
-        $jobOrders = $selectedLocationId
-            ? $this->jobOrdersForLocation($selectedLocationId, $request->company_id)
-            : collect();
+        $breakdownTypes = PlantBreakdownType::where('status', 'active')->get(['id', 'name']);
 
-        $breakdownTypes = PlantBreakdownType::where('status', 'active')
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
-            ->get();
-
-        $plantBreakdown = PlantBreakdown::with('items.breakdownType')
-            ->whereDate('date', $machinePlanSetting->date)
-            ->where('plant_id', $machinePlanSetting->plant_id)
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
-            ->first();
-
-        $machines = ProductionMachine::where('status', 'active')
-            ->when($machinePlanSetting->plant_id, function ($q) use ($machinePlanSetting) {
-                return $q->where('plant_id', $machinePlanSetting->plant_id);
-            })
-            ->get();
-
-        return view('management.production.machine_plan_setting.edit', compact('machinePlanSetting', 'companyLocations', 'selectedLocationId', 'jobOrders', 'plants', 'machines', 'breakdownTypes', 'plantBreakdown'));
+        return view('management.production.machine_plan_setting.edit', compact('machinePlanSetting', 'companyLocations', 'plants', 'selectedLocationId', 'breakdownTypes'));
     }
 
     public function update(MachinePlanSettingRequest $request, $id)
     {
-        $machinePlanSetting = MachinePlanSetting::findOrFail($id);
+        $plan = MachinePlanSetting::findOrFail($id);
 
         DB::beginTransaction();
-
         try {
-            $oldDate = $machinePlanSetting->date;
-            $oldPlantId = $machinePlanSetting->plant_id;
-
-            $machinePlanSettingData = $request->only([
-                'company_id',
-                'company_location_id',
-                'date',
-                'plant_id',
-                'remarks',
+            $plan->update([
+                'company_location_id' => $request->company_location_id,
+                'date' => $request->date,
+                'plant_id' => $request->plant_id,
+                'job_order_id' => $request->job_order_id,
+                'remarks' => $request->remarks,
             ]);
-            // production_voucher_id stays the plan's own voucher; it is not chosen on the form
 
-            $machinePlanSettingData['user_id'] = auth()->user()->id;
-            $machinePlanSetting->update($machinePlanSettingData);
-
-            // Delete existing items
-            ProductionVoucherMachineTime::where('machine_plan_setting_id', $machinePlanSetting->id)->delete();
-
-            // Save new machine items using ProductionVoucherMachineTime
-            $enabledMachineIds = $request->input('production_machine_id', []);
-            if (!is_array($enabledMachineIds)) {
-                $enabledMachineIds = [];
-            }
-
-            $allMachineIds = $request->input('all_machine_ids', []);
-            if (empty($allMachineIds) && $request->has('machine_start_time')) {
-                $allMachineIds = array_keys($request->machine_start_time);
-            }
-
-            if (!empty($allMachineIds)) {
-                foreach ($allMachineIds as $machineId) {
-                    $isEnabled = in_array($machineId, $enabledMachineIds);
-                    $startTimes = $request->input("machine_start_time.{$machineId}", []);
-                    $endTimes = $request->input("machine_end_time.{$machineId}", []);
-
-                    $hasValidSlot = false;
-                    if (is_array($startTimes) && !empty($startTimes)) {
-                        foreach ($startTimes as $index => $startTime) {
-                            $endTime = $endTimes[$index] ?? null;
-                            $durationMinutes = 0;
-                            $hours = 0;
-
-                            if (!empty($startTime) && !empty($endTime)) {
-                                $start = \Carbon\Carbon::parse($startTime);
-                                $end = \Carbon\Carbon::parse($endTime);
-                                if ($end->lt($start)) {
-                                    $end->addDay();
-                                }
-                                $durationMinutes = $start->diffInMinutes($end);
-                                $hours = round($durationMinutes / 60, 2);
-                            }
-
-                            if (!empty($startTime) || !empty($endTime)) {
-                                $hasValidSlot = true;
-                                $machineTime = ProductionVoucherMachineTime::create([
-                                    'company_id' => $request->company_id,
-                                    'machine_plan_setting_id' => $machinePlanSetting->id,
-                                    'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                                    'production_machine_id' => $machineId,
-                                    ...$this->machineJobOrderData($request, $machineId),
-                                    'start_time' => $startTime ?: null,
-                                    'end_time' => $endTime ?: null,
-                                    'duration_minutes' => $durationMinutes,
-                                    'hours' => $hours,
-                                    'is_enabled' => $isEnabled,
-                                ]);
-
-                                // Save child breakdowns for this slot
-                                $slotBreakdownFroms = $request->input("slot_breakdown_from.{$machineId}.{$index}", []);
-                                $slotBreakdownTos = $request->input("slot_breakdown_to.{$machineId}.{$index}", []);
-                                $slotBreakdownHours = $request->input("slot_breakdown_hours.{$machineId}.{$index}", []);
-                                $slotBreakdownRemarks = $request->input("slot_breakdown_remarks.{$machineId}.{$index}", []);
-
-                                if (is_array($slotBreakdownFroms) && !empty($slotBreakdownFroms)) {
-                                    foreach ($slotBreakdownFroms as $bIdx => $bFrom) {
-                                        $bTo = !empty($slotBreakdownTos[$bIdx]) ? $slotBreakdownTos[$bIdx] : null;
-                                        $bHours = !empty($slotBreakdownHours[$bIdx]) ? $slotBreakdownHours[$bIdx] : null;
-
-                                        if (!empty($bFrom)) {
-                                            if (!empty($bFrom) && !empty($bTo) && empty($bHours)) {
-                                                $fTime = \Carbon\Carbon::parse($bFrom);
-                                                $tTime = \Carbon\Carbon::parse($bTo);
-                                                if ($tTime->lt($fTime)) {
-                                                    $tTime->addDay();
-                                                }
-                                                $bHours = round($fTime->diffInMinutes($tTime) / 60, 2);
-                                            }
-
-                                            MachineTimeBreakdown::create([
-                                                'company_id' => $request->company_id,
-                                                'production_voucher_machine_time_id' => $machineTime->id,
-                                                'from' => $bFrom,
-                                                'to' => $bTo,
-                                                'hours' => $bHours,
-                                                'remarks' => $slotBreakdownRemarks[$bIdx] ?? null,
-                                            ]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!$hasValidSlot) {
-                        ProductionVoucherMachineTime::create([
-                            'company_id' => $request->company_id,
-                            'machine_plan_setting_id' => $machinePlanSetting->id,
-                            'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                            'production_machine_id' => $machineId,
-                            ...$this->machineJobOrderData($request, $machineId),
-                            'start_time' => null,
-                            'end_time' => null,
-                            'duration_minutes' => 0,
-                            'hours' => 0,
-                            'is_enabled' => $isEnabled,
-                        ]);
-                    }
-                }
-            } elseif ($request->has('machines') && is_array($request->machines)) {
-                foreach ($request->machines as $machineData) {
-                    if (!empty($machineData['production_machine_id'])) {
-                        $startTime = $machineData['start_time'] ?? null;
-                        $endTime = $machineData['end_time'] ?? null;
-                        $hours = $machineData['hours'] ?? null;
-                        $durationMinutes = 0;
-
-                        if (!empty($startTime) && !empty($endTime)) {
-                            $fromT = \Carbon\Carbon::parse($startTime);
-                            $toT = \Carbon\Carbon::parse($endTime);
-                            if ($toT < $fromT) {
-                                $toT->addDay();
-                            }
-                            $durationMinutes = $fromT->diffInMinutes($toT);
-                            if (empty($hours) || $hours == 0) {
-                                $hours = round($durationMinutes / 60, 2);
-                            }
-                        } elseif (!empty($hours)) {
-                            $durationMinutes = round($hours * 60);
-                        }
-
-                        ProductionVoucherMachineTime::create([
-                            'company_id' => $request->company_id,
-                            'machine_plan_setting_id' => $machinePlanSetting->id,
-                            'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                            'production_machine_id' => $machineData['production_machine_id'],
-                            'job_order_ids' => !empty($machineData['job_order_id']) ? [(int) $machineData['job_order_id']] : null,
-                            'start_time' => $startTime,
-                            'end_time' => $endTime,
-                            'duration_minutes' => $durationMinutes,
-                            'hours' => $hours ?? 0,
-                            'is_enabled' => $machineData['is_enabled'] ?? false,
-                            'remarks' => $machineData['remarks'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Save / Update plant breakdown items
-            $hasBreakdownItems = false;
-            if ($request->has('breakdown_type_id') && is_array($request->breakdown_type_id)) {
-                foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
-                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
-                        $hasBreakdownItems = true;
-                        break;
-                    }
-                }
-            }
-
-            if ($hasBreakdownItems) {
-                $plantBreakdown = PlantBreakdown::where('company_id', $request->company_id)
-                    ->where(function ($q) use ($request, $oldDate, $oldPlantId) {
-                        $q->where(function ($sq) use ($oldDate, $oldPlantId) {
-                            $sq->whereDate('date', $oldDate)->where('plant_id', $oldPlantId);
-                        })->orWhere(function ($sq) use ($request) {
-                            $sq->whereDate('date', $request->date)->where('plant_id', $request->plant_id);
-                        });
-                    })->first();
-
-                if (!$plantBreakdown) {
-                    $plantBreakdown = PlantBreakdown::create([
-                        'company_id' => $request->company_id,
-                        'date' => $request->date,
-                        'plant_id' => $request->plant_id,
-                        'production_voucher_id' => $machinePlanSetting->production_voucher_id,
-                        'user_id' => auth()->user()->id,
-                    ]);
-                } else {
-                    $plantBreakdown->update([
-                        'date' => $request->date,
-                        'plant_id' => $request->plant_id,
-                        // Shared by the day's plans: keep the voucher it is already linked to
-                        'production_voucher_id' => $plantBreakdown->production_voucher_id ?: $machinePlanSetting->production_voucher_id,
-                        'user_id' => auth()->user()->id,
-                    ]);
-                }
-
-                $plantBreakdown->items()->delete();
-
-                foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
-                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
-                        $fromVal = $request->from[$index];
-                        $toVal = !empty($request->to[$index]) ? $request->to[$index] : null;
-                        $hoursVal = !empty($request->hours[$index]) ? $request->hours[$index] : null;
-
-                        if (!empty($fromVal) && !empty($toVal) && empty($hoursVal)) {
-                            $fromTime = \Carbon\Carbon::parse($fromVal);
-                            $toTime = \Carbon\Carbon::parse($toVal);
-                            $hoursVal = $fromTime->diffInHours($toTime, false) + ($fromTime->diffInMinutes($toTime, false) % 60) / 60;
-                        }
-
-                        PlantBreakdownItem::create([
-                            'company_id' => $request->company_id,
-                            'plant_breakdown_id' => $plantBreakdown->id,
-                            'breakdown_type_id' => $breakdownTypeId,
-                            'from' => $fromVal,
-                            'to' => $toVal,
-                            'hours' => $hoursVal,
-                            'remarks' => $request->breakdown_remarks[$index] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Keep the plan's draft Production Voucher in step (or create one for older plans)
-            app(MachinePlanDraftVoucherService::class)->syncForPlan($machinePlanSetting->fresh(['plant', 'items']));
+            $this->saveMachineSlots($plan, $request);
+            $this->savePlantBreakdown($plan, $request);
 
             DB::commit();
-
-            // Load the relationship separately after commit
-            $machinePlanSetting->load('items.machine');
-
-            return response()->json([
-                'success' => 'Machine Plan Setting updated successfully.',
-                'data' => $machinePlanSetting
-            ], 200);
-
         } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json([
-                'error' => 'Something went wrong: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Something went wrong: ' . $e->getMessage()], 500);
         }
+
+        $this->refreshAutoAnalysis();
+
+        return response()->json(['success' => 'Machine Plan updated successfully.'], 200);
     }
 
     public function destroy($id)
     {
         DB::beginTransaction();
         try {
-            $machinePlanSetting = MachinePlanSetting::with('productionVoucher')->findOrFail($id);
+            $plan = MachinePlanSetting::with('productionVoucher')->findOrFail($id);
 
             // Its machine rows are the completed voucher's actual times: keep them
-            if ($machinePlanSetting->isLocked()) {
+            if ($plan->isLocked()) {
                 DB::rollBack();
                 return response()->json([
-                    'error' => 'This plan cannot be deleted: its Production Voucher ' . $machinePlanSetting->productionVoucher->prod_no . ' is already completed.'
+                    'error' => 'This plan cannot be deleted: its Production Voucher ' . $plan->productionVoucher->prod_no . ' is already completed.',
                 ], 422);
             }
 
             // The plant breakdown is shared by the day's plans: delete it only with the last plan
-            $otherPlansExist = MachinePlanSetting::where('plant_id', $machinePlanSetting->plant_id)
-                ->whereDate('date', $machinePlanSetting->date)
-                ->where('id', '!=', $machinePlanSetting->id)
+            $otherPlansExist = MachinePlanSetting::where('plant_id', $plan->plant_id)
+                ->whereDate('date', $plan->date)
+                ->where('id', '!=', $plan->id)
                 ->exists();
-
-            $plantBreakdown = $otherPlansExist ? null : PlantBreakdown::whereDate('date', $machinePlanSetting->date)
-                ->where('plant_id', $machinePlanSetting->plant_id)
-                ->where('company_id', $machinePlanSetting->company_id)
-                ->first();
-
-            if ($plantBreakdown) {
-                $plantBreakdown->delete();
+            if (!$otherPlansExist) {
+                PlantBreakdown::whereDate('date', $plan->date)->where('plant_id', $plan->plant_id)
+                    ->where('company_id', $plan->company_id)->get()
+                    ->each(function ($breakdown) {
+                        $breakdown->items()->delete();
+                        $breakdown->delete();
+                    });
             }
 
-            ProductionVoucherMachineTime::where('machine_plan_setting_id', $machinePlanSetting->id)->delete();
+            $itemIds = ProductionVoucherMachineTime::where('machine_plan_setting_id', $plan->id)->pluck('id');
+            MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $itemIds)->delete();
+            ProductionVoucherMachineTime::whereIn('id', $itemIds)->delete();
 
-            // Its voucher goes too, but only while it is still an untouched draft
-            app(MachinePlanDraftVoucherService::class)->deleteDraftForPlan($machinePlanSetting);
-
-            $machinePlanSetting->delete();
+            $plan->delete();
 
             DB::commit();
-
-            return response()->json([
-                'success' => 'Machine Plan Setting deleted successfully.'
-            ], 200);
-        } catch (\Exception $e) {
+            return response()->json(['success' => 'Machine Plan deleted successfully.'], 200);
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json([
-                'error' => 'Error deleting Machine Plan Setting: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Error deleting Machine Plan: ' . $e->getMessage()], 500);
         }
     }
 
-    public function getMachinesByPlant(Request $request)
+    /** Read-only plan with its machine slots; only breakdowns can be entered here. */
+    public function logs($id)
     {
-        $machines = ProductionMachine::where('status', 'active')
-            ->when($request->filled('plant_id'), function ($q) use ($request) {
-                return $q->where('plant_id', $request->plant_id);
-            })
-            ->get();
+        $plan = MachinePlanSetting::with([
+            'plant.arrivalLocation', 'companyLocation', 'jobOrder.product', 'productionVoucher', 'user',
+            'items' => fn ($q) => $q->orderBy('production_machine_id')->orderBy('start_time'),
+            'items.machine', 'items.breakdowns' => fn ($q) => $q->orderBy('from'),
+        ])->findOrFail($id);
 
-        // A plant can have several plans (one voucher each) on a date: list them and load the picked one (latest by default)
-        $existingSetting = null;
-        $dayPlans = collect();
-        if ($request->filled('plant_id') && $request->filled('date')) {
-            $dayPlans = MachinePlanSetting::with(['items.breakdowns', 'items.machine:id,name', 'productionVoucher:id,prod_no,is_draft'])
-                ->where('plant_id', $request->plant_id)
-                ->whereDate('date', $request->date)
-                ->when($request->filled('company_id'), function ($q) use ($request) {
-                    return $q->where('company_id', $request->company_id);
-                })
-                ->orderBy('id')
-                ->get();
+        $plantBreakdown = PlantBreakdown::with('items')
+            ->whereDate('date', $plan->date)
+            ->where('plant_id', $plan->plant_id)
+            ->first();
 
-            $existingSetting = ($request->filled('plan_id') ? $dayPlans->firstWhere('id', (int) $request->plan_id) : null)
-                ?? $dayPlans->last();
-        }
+        $breakdownTypes = PlantBreakdownType::where('status', 'active')->get(['id', 'name']);
 
-        $existingPlans = $dayPlans->map(function ($plan) {
-            $times = $plan->items->where('is_enabled', true)
-                ->map(fn ($i) => ($i->machine->name ?? 'Machine') . ' ' . \App\Services\Production\Milling\ProductionDayPlanService::formatRange(
-                    \App\Services\Production\Milling\ProductionDayPlanService::slotRange($i->start_time, $i->end_time)
-                ))
-                ->unique()->values()->all();
+        return view('management.production.machine_plan_setting.logs', compact('plan', 'plantBreakdown', 'breakdownTypes'));
+    }
 
-            return [
-                'id' => $plan->id,
-                'voucher_no' => $plan->productionVoucher->prod_no ?? null,
-                'is_locked' => $plan->isLocked(),
-                'times' => $times,
-            ];
-        })->values();
+    public function saveLogs(Request $request, $id)
+    {
+        $plan = MachinePlanSetting::with('items.machine')->findOrFail($id);
+        $items = $plan->items->keyBy('id');
 
-        $machineItemsGrouped = $existingSetting ? $existingSetting->items->groupBy('production_machine_id') : collect();
+        $rows = collect((array) $request->input('breakdowns', []))
+            ->map(fn ($list, $itemId) => collect((array) $list)->filter(fn ($r) => !empty($r['from']) || !empty($r['to']))->values())
+            ->filter(fn ($list, $itemId) => $items->has($itemId));
+        $plantRows = collect((array) $request->input('plant_breakdowns', []))
+            ->filter(fn ($r) => !empty($r['breakdown_type_id']) || !empty($r['from']) || !empty($r['to']))
+            ->values();
 
-        $machinesData = $machines->map(function ($machine) use ($machineItemsGrouped) {
-            $items = $machineItemsGrouped->get($machine->id, collect());
-            $firstItem = $items->first();
-            $isEnabled = $firstItem ? (bool)$firstItem->is_enabled : false;
-
-            $slots = [];
-            if ($items->isNotEmpty()) {
-                $uniqueItems = $items->unique(function ($item) {
-                    return ($item->start_time ? substr($item->start_time, 0, 5) : '') . '_' . ($item->end_time ? substr($item->end_time, 0, 5) : '');
-                });
-
-                foreach ($uniqueItems as $item) {
-                    $bList = [];
-                    if ($item->breakdowns && $item->breakdowns->isNotEmpty()) {
-                        foreach ($item->breakdowns as $bd) {
-                            $bList[] = [
-                                'id' => $bd->id,
-                                'from' => $bd->from ? substr($bd->from, 0, 5) : '',
-                                'to' => $bd->to ? substr($bd->to, 0, 5) : '',
-                                'hours' => $bd->hours,
-                                'remarks' => $bd->remarks ?? '',
-                            ];
-                        }
-                    }
-
-                    $slots[] = [
-                        'id' => $item->id,
-                        'start_time' => $item->start_time ? substr($item->start_time, 0, 5) : '',
-                        'end_time' => $item->end_time ? substr($item->end_time, 0, 5) : '',
-                        'hours' => $item->hours,
-                        'breakdowns' => $bList,
-                    ];
-                }
-            } else {
-                $slots[] = [
-                    'id' => null,
-                    'start_time' => '',
-                    'end_time' => '',
-                    'hours' => null,
-                    'breakdowns' => [],
-                ];
-            }
-
-            return [
-                'id' => $machine->id,
-                'name' => $machine->name,
-                'is_enabled' => $isEnabled,
-                'job_order_ids' => $firstItem ? $firstItem->job_order_id_list : [],
-                'start_time' => $slots[0]['start_time'] ?? '',
-                'end_time' => $slots[0]['end_time'] ?? '',
-                'hours' => $slots[0]['hours'] ?? null,
-                'time_slots' => $slots,
-            ];
+        // Slot times can be corrected here too (slots[item_id][start_time|end_time])
+        $submittedSlots = collect((array) $request->input('slots', []))->filter(fn ($s, $itemId) => $items->has($itemId));
+        $slotTimes = $items->map(function ($item) use ($submittedSlots) {
+            $s = $submittedSlots->get($item->id);
+            return $s
+                ? [$s['start_time'] ?? null, $s['end_time'] ?? null]
+                : [$item->start_time ? substr($item->start_time, 0, 5) : null, $item->end_time ? substr($item->end_time, 0, 5) : null];
         });
 
-        return response()->json([
-            'machines' => $machinesData,
-            'existing_plan' => $existingSetting ? [
-                'id' => $existingSetting->id,
-                'production_voucher_id' => $existingSetting->production_voucher_id,
-                'remarks' => $existingSetting->remarks,
-                'is_locked' => $existingSetting->isLocked(),
-            ] : null,
-            'existing_plans' => $existingPlans,
-        ]);
+        $validator = Validator::make([], []);
+        $validator->after(function ($v) use ($rows, $items, $plantRows, $submittedSlots, $slotTimes) {
+            foreach ($submittedSlots as $itemId => $s) {
+                if (empty($s['start_time']) || empty($s['end_time'])) {
+                    $v->errors()->add("slots.{$itemId}", ($items[$itemId]->machine->name ?? 'Machine') . ': enter both start and end time of the slot.');
+                }
+            }
+
+            foreach ($rows as $itemId => $list) {
+                $item = $items[$itemId];
+                [$slotStartStr, $slotEndStr] = $slotTimes[$itemId];
+                $label = ($item->machine->name ?? 'Machine') . ' (' . ($slotStartStr ?: '--') . ' - ' . ($slotEndStr ?: '--') . ')';
+                [$slotStart, $slotEnd] = self::range($slotStartStr, $slotEndStr);
+                $taken = [];
+
+                foreach ($list as $i => $row) {
+                    $n = $i + 1;
+                    if (empty($row['from']) || empty($row['to'])) {
+                        $v->errors()->add("breakdowns.{$itemId}", "{$label}: breakdown {$n} needs both From and To.");
+                        continue;
+                    }
+                    [$from, $to] = self::range($row['from'], $row['to'], $slotStart);
+                    if ($to <= $from) {
+                        $v->errors()->add("breakdowns.{$itemId}", "{$label}: breakdown {$n} To must be after From.");
+                        continue;
+                    }
+                    if ($slotStart !== null && ($from < $slotStart || $to > $slotEnd)) {
+                        $v->errors()->add("breakdowns.{$itemId}", "{$label}: breakdown {$n} ({$row['from']} - {$row['to']}) must be within the machine's time slot.");
+                    }
+                    foreach ($taken as [$tFrom, $tTo, $tn]) {
+                        if ($from < $tTo && $to > $tFrom) {
+                            $v->errors()->add("breakdowns.{$itemId}", "{$label}: breakdown {$n} overlaps breakdown {$tn}.");
+                        }
+                    }
+                    $taken[] = [$from, $to, $n];
+                }
+            }
+
+            foreach ($plantRows as $i => $row) {
+                $n = $i + 1;
+                if (empty($row['breakdown_type_id']) || empty($row['from']) || empty($row['to'])) {
+                    $v->errors()->add('plant_breakdowns', "Plant breakdown {$n}: select the type and enter From and To.");
+                    continue;
+                }
+                [$from, $to] = self::range($row['from'], $row['to']);
+                if ($to <= $from) {
+                    $v->errors()->add('plant_breakdowns', "Plant breakdown {$n}: To must be after From.");
+                }
+            }
+        });
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($submittedSlots as $itemId => $s) {
+                $minutes = self::minutesBetween($s['start_time'], $s['end_time']);
+                $items[$itemId]->update([
+                    'start_time' => $s['start_time'],
+                    'end_time' => $s['end_time'],
+                    'duration_minutes' => $minutes,
+                    'hours' => round($minutes / 60, 2),
+                ]);
+            }
+
+            // Machine breakdowns: each slot's list is replaced with what was submitted
+            MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $items->keys())->delete();
+            foreach ($rows as $itemId => $list) {
+                foreach ($list as $row) {
+                    MachineTimeBreakdown::create([
+                        'company_id' => $plan->company_id,
+                        'production_voucher_machine_time_id' => $itemId,
+                        'from' => $row['from'],
+                        'to' => $row['to'],
+                        'hours' => self::hoursBetween($row['from'], $row['to']),
+                        'remarks' => $row['remarks'] ?? null,
+                    ]);
+                }
+            }
+
+            // Plant breakdown: one per plant and day, shared by the day's plans
+            $plantBreakdown = PlantBreakdown::whereDate('date', $plan->date)->where('plant_id', $plan->plant_id)->first();
+            if ($plantRows->isNotEmpty() && !$plantBreakdown) {
+                $plantBreakdown = PlantBreakdown::create([
+                    'company_id' => $plan->company_id,
+                    'date' => $plan->date,
+                    'plant_id' => $plan->plant_id,
+                    'production_voucher_id' => $plan->production_voucher_id,
+                    'user_id' => auth()->user()->id,
+                ]);
+            }
+            if ($plantBreakdown) {
+                $plantBreakdown->items()->delete();
+                foreach ($plantRows as $row) {
+                    PlantBreakdownItem::create([
+                        'company_id' => $plan->company_id,
+                        'plant_breakdown_id' => $plantBreakdown->id,
+                        'breakdown_type_id' => $row['breakdown_type_id'],
+                        'from' => $row['from'],
+                        'to' => $row['to'],
+                        'hours' => self::hoursBetween($row['from'], $row['to']),
+                        'remarks' => $row['remarks'] ?? null,
+                    ]);
+                }
+                $plantBreakdown->update(['user_id' => auth()->user()->id]);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Something went wrong: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json(['success' => 'Logs saved successfully.'], 200);
     }
 
-    public function getProductionVouchersByDate(Request $request)
+    /**
+     * Machines of a plant for the form: each with its ON/OFF state and time slots.
+     * With plan_id the plan's saved slots are used; otherwise the plant's Shift Time,
+     * with required machines ON and the others OFF.
+     */
+    public function getMachinesByPlant(Request $request)
     {
-        $vouchers = ProductionVoucher::when($request->filled('date'), function ($q) use ($request) {
-            return $q->whereDate('prod_date', $request->date);
-        })
-            ->when($request->filled('plant_id'), function ($q) use ($request) {
-                return $q->where('plant_id', $request->plant_id);
-            })
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
-            ->latest()
-            ->get(['id', 'prod_no']);
+        $plant = $request->filled('plant_id') ? Plant::find($request->plant_id) : null;
+        if (!$plant) {
+            return response()->json(['machines' => []]);
+        }
 
-        return response()->json([
-            'vouchers' => $vouchers
-        ]);
+        $shift = [
+            'start_time' => $plant->shift_start_time ? substr($plant->shift_start_time, 0, 5) : '09:00',
+            'end_time' => $plant->shift_end_time ? substr($plant->shift_end_time, 0, 5) : '21:00',
+        ];
+
+        $plan = $request->filled('plan_id') ? MachinePlanSetting::with('items.breakdowns')->find($request->plan_id) : null;
+        $savedByMachine = $plan && (int) $plan->plant_id === (int) $plant->id
+            ? $plan->items->sortBy('id')->groupBy('production_machine_id')
+            : collect();
+
+        $machines = ProductionMachine::where('status', 'active')->where('plant_id', $plant->id)->orderBy('id')->get()
+            ->map(function ($machine) use ($savedByMachine, $shift) {
+                $saved = $savedByMachine->get($machine->id, collect());
+                $slots = $saved
+                    ->filter(fn ($i) => $i->start_time || $i->end_time)
+                    ->map(fn ($i) => [
+                        'start_time' => $i->start_time ? substr($i->start_time, 0, 5) : '',
+                        'end_time' => $i->end_time ? substr($i->end_time, 0, 5) : '',
+                        'breakdowns' => $i->breakdowns->sortBy('from')->map(fn ($b) => [
+                            'from' => $b->from ? substr($b->from, 0, 5) : '',
+                            'to' => $b->to ? substr($b->to, 0, 5) : '',
+                            'hours' => $b->hours,
+                            'remarks' => $b->remarks,
+                        ])->values()->all(),
+                    ])
+                    ->values()->all();
+
+                return [
+                    'id' => $machine->id,
+                    'name' => $machine->name,
+                    'is_enabled' => $saved->isNotEmpty() ? (bool) $saved->first()->is_enabled : (bool) $machine->is_required,
+                    'slots' => $slots ?: [$shift + ['breakdowns' => []]],
+                ];
+            });
+
+        return response()->json(['machines' => $machines, 'shift' => $shift]);
     }
 
     public function getJobOrdersByLocation(Request $request)
@@ -836,71 +417,211 @@ class MachinePlanSettingController extends Controller
             return response()->json(['jobOrders' => []]);
         }
 
-        // Product filter: exactly the Head / B2 / By job orders that Create Production Voucher shows
-        // for this location + head product (same function, so both screens always agree)
-        if ($request->filled('product_id')) {
-            $voucherRequest = Request::create('/', 'POST', [
-                'location_id' => $request->company_location_id,
-                'product_id' => $request->product_id,
-                'company_id' => $request->company_id,
-            ]);
-            $lists = app(ProductionVoucherController::class)->getJobOrdersByLocation($voucherRequest)->getData(true);
-
-            $jobOrders = collect();
-            foreach (['headJobOrders' => 'Head', 'b2JobOrders' => 'B2', 'byJobOrders' => 'By Product'] as $key => $group) {
-                foreach ($lists[$key] ?? [] as $jo) {
-                    if (!$jobOrders->contains('id', $jo['id'])) {
-                        $jobOrders->push(['id' => $jo['id'], 'text' => $jo['display_text'], 'group' => $group]);
-                    }
-                }
-            }
-
-            return response()->json(['jobOrders' => $jobOrders->values()]);
-        }
-
         $jobOrders = $this->jobOrdersForLocation($request->company_location_id, $request->company_id)
-            ->map(function ($jo) {
-                $refText = $jo->ref_no ? ' (' . $jo->ref_no . ')' : '';
-                $prodText = $jo->product ? ' - ' . $jo->product->name : '';
-                return [
-                    'id' => $jo->id,
-                    'text' => $jo->job_order_no . $refText . $prodText,
-                    'group' => self::jobOrderGroup($jo),
-                ];
-            })
+            ->map(fn ($jo) => [
+                'id' => $jo->id,
+                'text' => $jo->job_order_no . ($jo->ref_no ? ' (' . $jo->ref_no . ')' : '') . ($jo->product ? ' - ' . $jo->product->name : ''),
+            ])
             ->values();
 
         return response()->json(['jobOrders' => $jobOrders]);
     }
 
-    /** Most job orders one machine card may take per group (as the Production Voucher's 3 Head / 3 B2 / 3 By selects). */
-    public const MACHINE_JOB_ORDER_LIMIT = 3;
-
-    /** Head / B2 / By Product group of a job order, from its product's category flag. */
-    public static function jobOrderGroup($jobOrder): string
+    public function getProductionVouchersByDate(Request $request)
     {
-        $flag = optional($jobOrder->product)->product_category_flags;
-        return match ($flag) {
-            'b2' => 'B2',
-            'by' => 'By Product',
-            default => 'Head',
-        };
+        $vouchers = ProductionVoucher::when($request->filled('date'), fn ($q) => $q->whereDate('prod_date', $request->date))
+            ->when($request->filled('plant_id'), fn ($q) => $q->where('plant_id', $request->plant_id))
+            ->when($request->filled('company_id'), fn ($q) => $q->where('company_id', $request->company_id))
+            ->latest()
+            ->get(['id', 'prod_no']);
+
+        return response()->json(['vouchers' => $vouchers]);
+    }
+
+    /** Used by the Production Voucher screens. */
+    public function getBreakdownsByPlantAndDate(Request $request)
+    {
+        $breakdown = PlantBreakdown::with('items.breakdownType')
+            ->whereDate('date', $request->date)
+            ->where('plant_id', $request->plant_id)
+            ->when($request->filled('company_id'), fn ($q) => $q->where('company_id', $request->company_id))
+            ->first();
+
+        return response()->json([
+            'breakdown' => $breakdown,
+            'items' => $breakdown ? $breakdown->items : [],
+        ]);
     }
 
     /**
-     * Job orders chosen for one machine card: all of them in job_order_ids,
-     * the first in job_order_id for code that reads a single job order.
+     * Write the plan's machine rows from the form. Existing rows are reused in order
+     * (so their breakdowns stay); extra old rows and machines no longer on the plant are removed.
      */
-    private function machineJobOrderData(Request $request, $machineId): array
+    private function saveMachineSlots(MachinePlanSetting $plan, Request $request): void
     {
-        $ids = array_values(array_unique(array_filter(array_map(
-            'intval',
-            (array) $request->input("machine_job_order_id.{$machineId}", [])
-        ))));
+        $allIds = array_values(array_unique(array_filter(array_map('intval', (array) $request->input('all_machine_ids', [])))));
+        $enabledIds = array_map('intval', (array) $request->input('production_machine_id', []));
 
-        return [
-            'job_order_ids' => $ids ?: null,
-        ];
+        $existing = ProductionVoucherMachineTime::where('machine_plan_setting_id', $plan->id)->orderBy('id')->get()->groupBy('production_machine_id');
+        $keepIds = [];
+
+        foreach ($allIds as $machineId) {
+            $isEnabled = in_array($machineId, $enabledIds, true);
+            $starts = array_values((array) $request->input("machine_start_time.{$machineId}", []));
+            $ends = array_values((array) $request->input("machine_end_time.{$machineId}", []));
+
+            $slots = [];
+            foreach ($starts as $i => $start) {
+                $end = $ends[$i] ?? null;
+                if ($start || $end) {
+                    $slots[] = [$start ?: null, $end ?: null, $i]; // $i: the slot's position on the form (its breakdowns use it)
+                }
+            }
+            if (!$slots) {
+                $slots[] = [null, null, null]; // machine is listed on the plan even without a time
+            }
+
+            $old = $existing->get($machineId, collect())->values();
+            foreach ($slots as $i => [$start, $end, $formIndex]) {
+                $minutes = ($start && $end) ? self::minutesBetween($start, $end) : 0;
+                $data = [
+                    'company_id' => $plan->company_id,
+                    'machine_plan_setting_id' => $plan->id,
+                    'production_voucher_id' => $plan->production_voucher_id,
+                    'production_machine_id' => $machineId,
+                    'job_order_ids' => $plan->job_order_id ? [(int) $plan->job_order_id] : null,
+                    'start_time' => $start,
+                    'end_time' => $end,
+                    'duration_minutes' => $minutes,
+                    'hours' => round($minutes / 60, 2),
+                    'is_enabled' => $isEnabled,
+                ];
+
+                if ($row = $old->get($i)) {
+                    $row->update($data);
+                } else {
+                    $row = ProductionVoucherMachineTime::create($data);
+                }
+                $keepIds[] = $row->id;
+
+                // Inner breakdowns of this slot (slot_breakdown_*[machine][slot][])
+                MachineTimeBreakdown::where('production_voucher_machine_time_id', $row->id)->delete();
+                if ($formIndex !== null) {
+                    $this->saveSlotBreakdowns($plan, $row->id, $request, $machineId, $formIndex);
+                }
+            }
+        }
+
+        $removeIds = $existing->flatten()->pluck('id')->diff($keepIds);
+        if ($removeIds->isNotEmpty()) {
+            MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $removeIds)->delete();
+            ProductionVoucherMachineTime::whereIn('id', $removeIds)->delete();
+        }
+    }
+
+    private function saveSlotBreakdowns(MachinePlanSetting $plan, int $itemId, Request $request, int $machineId, int $slotIndex): void
+    {
+        $froms = (array) $request->input("slot_breakdown_from.{$machineId}.{$slotIndex}", []);
+        $tos = (array) $request->input("slot_breakdown_to.{$machineId}.{$slotIndex}", []);
+        $remarks = (array) $request->input("slot_breakdown_remarks.{$machineId}.{$slotIndex}", []);
+
+        foreach ($froms as $b => $from) {
+            $to = $tos[$b] ?? null;
+            if (!$from) {
+                continue;
+            }
+            MachineTimeBreakdown::create([
+                'company_id' => $plan->company_id,
+                'production_voucher_machine_time_id' => $itemId,
+                'from' => $from,
+                'to' => $to ?: null,
+                'hours' => $to ? self::hoursBetween($from, $to) : null,
+                'remarks' => $remarks[$b] ?? null,
+            ]);
+        }
+    }
+
+    /** Overall plant breakdown rows of the form (breakdown_type_id[], from[], to[], breakdown_remarks[]). */
+    private function savePlantBreakdown(MachinePlanSetting $plan, Request $request): void
+    {
+        $rows = [];
+        foreach ((array) $request->input('breakdown_type_id', []) as $i => $typeId) {
+            $from = $request->input("from.{$i}");
+            if ($typeId && $from) {
+                $to = $request->input("to.{$i}") ?: null;
+                $rows[] = [
+                    'breakdown_type_id' => $typeId,
+                    'from' => $from,
+                    'to' => $to,
+                    'hours' => $to ? self::hoursBetween($from, $to) : null,
+                    'remarks' => $request->input("breakdown_remarks.{$i}"),
+                ];
+            }
+        }
+
+        $breakdown = PlantBreakdown::whereDate('date', $plan->date)->where('plant_id', $plan->plant_id)->first();
+        if (!$rows && !$breakdown) {
+            return;
+        }
+        if (!$breakdown) {
+            $breakdown = PlantBreakdown::create([
+                'company_id' => $plan->company_id,
+                'date' => $plan->date,
+                'plant_id' => $plan->plant_id,
+                'production_voucher_id' => $plan->production_voucher_id,
+                'user_id' => auth()->user()->id,
+            ]);
+        }
+
+        // The form shows the day's saved rows, so what comes back replaces them
+        $breakdown->items()->delete();
+        foreach ($rows as $row) {
+            PlantBreakdownItem::create($row + ['company_id' => $plan->company_id, 'plant_breakdown_id' => $breakdown->id]);
+        }
+        $breakdown->update(['user_id' => auth()->user()->id]);
+    }
+
+    /** Minutes from start to end; an end before the start runs past midnight. */
+    private static function minutesBetween($start, $end): int
+    {
+        [$from, $to] = self::range($start, $end);
+        return (int) ($to - $from);
+    }
+
+    private static function hoursBetween($start, $end): float
+    {
+        return round(self::minutesBetween($start, $end) / 60, 2);
+    }
+
+    /**
+     * [from, to] in minutes of the day; an end before the start runs past midnight.
+     * With $after, times earlier than it are taken as the next day (a slot that crosses midnight).
+     */
+    private static function range($start, $end, ?int $after = null): array
+    {
+        if (!$start || !$end) {
+            return [null, null];
+        }
+        $toMin = fn ($t) => ((int) substr($t, 0, 2)) * 60 + (int) substr($t, 3, 2);
+        $from = $toMin($start);
+        $to = $toMin($end);
+        if ($after !== null && $from < $after) {
+            $from += 1440;
+            $to += 1440;
+        }
+        if ($to < $from) {
+            $to += 1440;
+        }
+        return [$from, $to];
+    }
+
+    private function refreshAutoAnalysis(): void
+    {
+        try {
+            app(\App\Services\Production\Milling\AutoAnalysisRequestService::class)->checkAndGenerateRequests();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('AutoAnalysis checkAndGenerateRequests error on machine plan save: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -924,33 +645,13 @@ class MachinePlanSettingController extends Controller
         $companyId = $companyId ?: (auth()->user()->company_id ?? null);
 
         return JobOrder::with('product')
-            ->when($companyId, function ($q) use ($companyId) {
-                return $q->where('company_id', $companyId);
-            })
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->whereIn('status', [1, 'active'])
             ->where(function ($sub) use ($locationId) {
                 $sub->where('company_location_id', $locationId)
-                    ->orWhereHas('packingItems', function ($pi) use ($locationId) {
-                        $pi->where('company_location_id', $locationId);
-                    });
+                    ->orWhereHas('packingItems', fn ($pi) => $pi->where('company_location_id', $locationId));
             })
             ->orderBy('job_order_no', 'desc')
             ->get();
-    }
-
-    public function getBreakdownsByPlantAndDate(Request $request)
-    {
-        $breakdown = PlantBreakdown::with('items.breakdownType')
-            ->whereDate('date', $request->date)
-            ->where('plant_id', $request->plant_id)
-            ->when($request->filled('company_id'), function ($q) use ($request) {
-                return $q->where('company_id', $request->company_id);
-            })
-            ->first();
-
-        return response()->json([
-            'breakdown' => $breakdown,
-            'items' => $breakdown ? $breakdown->items : []
-        ]);
     }
 }

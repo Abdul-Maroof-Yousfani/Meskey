@@ -20,6 +20,8 @@ class Plant extends Model
         'name',
         'description',
         'production_labour_charges_per_kg',
+        'shift_start_time',
+        'shift_end_time',
         'status',
         'auto_analysis_enabled',
         'require_last_completed',
@@ -29,8 +31,11 @@ class Plant extends Model
         'input_max_interval',
         'output_min_interval',
         'output_max_interval',
+        'machine_min_interval',
+        'machine_max_interval',
         'next_input_analysis_at',
         'next_output_analysis_at',
+        'next_machine_analysis_at',
     ];
 
     protected $casts = [
@@ -42,8 +47,11 @@ class Plant extends Model
         'input_max_interval' => 'integer',
         'output_min_interval' => 'integer',
         'output_max_interval' => 'integer',
+        'machine_min_interval' => 'integer',
+        'machine_max_interval' => 'integer',
         'next_input_analysis_at' => 'datetime',
         'next_output_analysis_at' => 'datetime',
+        'next_machine_analysis_at' => 'datetime',
     ];
 
     public function getInputMinInterval(): int
@@ -64,6 +72,16 @@ class Plant extends Model
     public function getOutputMaxInterval(): int
     {
         return $this->output_max_interval ?: ($this->max_analysis_interval ?: 60);
+    }
+
+    public function getMachineMinInterval(): int
+    {
+        return $this->machine_min_interval ?: ($this->min_analysis_interval ?: 20);
+    }
+
+    public function getMachineMaxInterval(): int
+    {
+        return $this->machine_max_interval ?: ($this->max_analysis_interval ?: 60);
     }
 
     // Relationship with the Company model (if you have one)

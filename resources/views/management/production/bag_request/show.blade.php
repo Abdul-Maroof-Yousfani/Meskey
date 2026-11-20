@@ -15,9 +15,6 @@
                 <div class="col-md-3">
                     <p><strong>Company Location:</strong> {{ $bagRequest->companyLocation->name ?? 'N/A' }}</p>
                 </div>
-                <div class="col-md-3">
-                    <p><strong>Arrival Location:</strong> {{ $bagRequest->arrivalLocation->name ?? 'N/A' }}</p>
-                </div>
                 @if($bagRequest->gala)
                 <div class="col-md-3">
                     <p><strong>Gala:</strong> {{ $bagRequest->gala->name }}</p>
@@ -42,6 +39,8 @@
                 <table class="table table-bordered table-striped">
                     <thead class="thead-light">
                         <tr>
+                            <th>Factory Location</th>
+                            <th>Plant</th>
                             <th>Item</th>
                             <th>Brand</th>
                             <th>Packing Size (Kg)</th>
@@ -52,6 +51,8 @@
                     <tbody>
                         @foreach($bagRequest->items as $item)
                             <tr>
+                                <td>{{ $item->arrivalLocation->name ?? ($bagRequest->arrivalLocation->name ?? 'N/A') }}</td>
+                                <td>{{ $item->plant->name ?? '-' }}</td>
                                 <td>{{ $item->item->name ?? 'N/A' }}</td>
                                 <td>{{ $item->brand->name ?? 'N/A' }}</td>
                                 <td>{{ $item->display_size ?? '' }}</td>

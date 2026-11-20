@@ -38,6 +38,7 @@ Route::get('/export-users-test', [UserTestController::class, 'exportToExcel'])->
 Route::get('/check-username-test', [UserTestController::class, 'checkUsernameAvailability']);
 Route::get('/get-company-locations/{companyId}', [UserTestController::class, 'getCompanyLocations']);
 Route::get('/get-arrival-locations/{companyLocationId}', [UserTestController::class, 'getArrivalLocations']);
+Route::get('/get-arrival-plants', [UserTestController::class, 'getArrivalPlants']);
 // store
 Route::get('users/{id}/assign-details', [UserTestController::class, 'assignDetails'])->name('users-test.assign');
 Route::post('users/{id}/assign-details', [UserTestController::class, 'saveAssignDetails'])->name('users-test.assign.save');

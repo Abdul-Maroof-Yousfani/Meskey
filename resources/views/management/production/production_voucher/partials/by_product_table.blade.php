@@ -365,6 +365,75 @@
             @endif
         @endif
 
+        {{-- Mode 3: every BY product of the selected product's family gets its own row, so the table
+             loads as soon as the product is selected. A product that already has a row (saved output, or a
+             selected job order of that product from Mode 2) is skipped: the job order takes over its row. --}}
+        @php
+            $productIdsWithRows = collect($savedRows ?? [])->pluck('product_id')
+                ->merge(collect($jobOrders ?? [])->pluck('product_id'))
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->all();
+        @endphp
+        @foreach($allByCommodities as $familyProduct)
+            @php
+                if (in_array((int) $familyProduct->id, $productIdsWithRows, true)) {
+                    continue;
+                }
+                $renderedRowCount++;
+            @endphp
+            <tr>
+                <td>
+                    {!! $renderByCommoditySelect($familyProduct->id) !!}
+                    <input type="hidden" name="job_order_packing_item_id[]" value="">
+                </td>
+                <td>
+                    <input type="number" name="output_no_of_bags[]" class="form-control" step="1" min="0" value="">
+                </td>
+                <td>
+                    <input type="number" name="output_bag_size[]" class="form-control" step="0.01" min="0.01" value="">
+                </td>
+                <td>
+                    <input type="number" name="output_qty[]" class="form-control" step="0.01" min="0.01" value="">
+                </td>
+                <td>
+                    <input type="number" name="output_avg_weight_per_bag[]" class="form-control" step="0.01" min="0.01" readonly value="">
+                </td>
+                <td>
+                    <input type="number" name="output_yield[]" class="form-control" step="0.01" min="0.01" readonly value="">
+                </td>
+                <td>
+                    <select name="output_arrival_sub_location_id[]" class="form-control select2">
+                        <option value="">Select Storage Location</option>
+                        @foreach($arrivalSubLocations as $arrivalSubLocation)
+                            <option value="{{ $arrivalSubLocation->id }}">{{ $arrivalSubLocation->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <select name="output_brand_id[]" class="form-control select2">
+                        <option value="">Select Brand</option>
+                        @foreach($brands as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <select name="output_job_order_id[]" class="form-control select2">
+                        {!! $renderJobOrderOptions('', $familyProduct->id) !!}
+                    </select>
+                </td>
+                <td>
+                    <textarea name="output_remarks[]" class="form-control" rows="1"></textarea>
+                </td>
+                <td class="text-center align-middle">
+                    <button type="button" class="btn btn-sm btn-primary copythis"><i class="fa fa-copy"></i></button>
+                    <button type="button" class="btn btn-sm btn-danger removethis"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>
+        @endforeach
+
         {{-- Total Row --}}
         <tr class="by-total-row commodity-total-row {{ $renderedRowCount > 0 ? '' : 'd-none' }}">
             <td>

@@ -172,32 +172,17 @@ $(document).on('change', '#commoditiesSelect', function() {
     const companyLocationId = $('#locationSelect').val();
     
     if (selectedCommodities && selectedCommodities.length > 0 && jobOrderId) {
-        // Show loading
-        $('#qcCommoditiesSection').html('<div class="text-center py-4"><i class="ft-loader spinner"></i> Loading QC tables...</div>');
-        
-        // Load QC tables via AJAX with existing data
-        $.ajax({
-            url: '{{ route("load_qc_commodities_tables") }}',
-            type: 'GET',
-            data: {
-                commodities: selectedCommodities,
-                job_order_id: jobOrderId,
-                company_location_id: companyLocationId,
-                qc_id: {{ $qc->id }}
-            },
-            success: function(response) {
-                $('#qcCommoditiesSection').html(response);
-                
-                // Initial calculations
-                $('.commodity-table').each(function() {
-                    const commodityId = $(this).data('commodity-id');
-                    calculateWeightedAverage(commodityId);
-                });
-                updateCombinedAverage();
-            },
-            error: function() {
-                $('#qcCommoditiesSection').html('<div class="alert alert-danger">Error loading QC tables</div>');
-            }
+        // Load QC tables with the saved data; tables already on the page (and what was typed in them) are kept
+        loadQcCommoditiesTables('{{ route("load_qc_commodities_tables") }}', {
+            commodities: selectedCommodities,
+            job_order_id: jobOrderId,
+            company_location_id: companyLocationId,
+            qc_id: {{ $qc->id }}
+        }, function() {
+            $('.commodity-table').each(function() {
+                calculateWeightedAverage($(this).data('commodity-id'));
+            });
+            updateCombinedAverage();
         });
     } else {
         $('#qcCommoditiesSection').html('<div class="alert alert-warning">Please select at least one material</div>');

@@ -54,6 +54,10 @@
                                             <span class="text-success font-weight-bold"><i class="ft-arrow-up mr-1"></i>Output Analysis</span>
                                             <div class="font-small-1 text-muted">Min &ndash; Max (Minutes)</div>
                                         </th>
+                                        <th style="width: 220px;" class="text-center col-header-machine">
+                                            <span class="text-warning font-weight-bold"><i class="ft-settings mr-1"></i>Machine Analysis</span>
+                                            <div class="font-small-1 text-muted">Min &ndash; Max (Minutes)</div>
+                                        </th>
                                         <th style="width: 220px;">Next Scheduled Request</th>
                                         <th style="width: 80px;" class="text-center">Action</th>
                                     </tr>
@@ -75,6 +79,9 @@
                                                 'next_output_due' => null,
                                                 'input_note' => 'Paused – no plan',
                                                 'output_note' => 'Paused – no plan',
+                                                'pending_machine' => null,
+                                                'next_machine_due' => null,
+                                                'machine_note' => 'Paused – no plan',
                                             ];
                                         @endphp
                                         <tr id="plant-row-{{ $plant->id }}" class="plant-setting-row" data-plant-id="{{ $plant->id }}">
@@ -186,6 +193,29 @@
                                                 </div>
                                             </td>
 
+                                            <td class="align-middle text-center col-cell-machine">
+                                                <div class="range-input-box machine-box">
+                                                    <input type="number"
+                                                           min="1"
+                                                           max="1440"
+                                                           name="plants[{{ $plant->id }}][machine_min]"
+                                                           value="{{ $plant->getMachineMinInterval() }}"
+                                                           class="range-num-input plant-machine-min"
+                                                           placeholder="Min"
+                                                           title="Minimum minutes interval for Machine Analysis (e.g. 20)">
+                                                    <span class="range-sep">&ndash;</span>
+                                                    <input type="number"
+                                                           min="1"
+                                                           max="1440"
+                                                           name="plants[{{ $plant->id }}][machine_max]"
+                                                           value="{{ $plant->getMachineMaxInterval() }}"
+                                                           class="range-num-input plant-machine-max"
+                                                           placeholder="Max"
+                                                           title="Maximum minutes interval for Machine Analysis (e.g. 60)">
+                                                    <span class="range-unit">min</span>
+                                                </div>
+                                            </td>
+
                                             <td class="align-middle">
                                                 <div class="sched-row mb-1 d-flex align-items-center flex-wrap">
                                                     <span class="tag-analysis-type tag-analysis-input mr-1">Input</span>
@@ -236,6 +266,32 @@
                                                     @elseif(!$live['pending_output'])
                                                         <span class="sched-text-range">
                                                             Between {{ $plant->getOutputMinInterval() }}&ndash;{{ $plant->getOutputMaxInterval() }}m
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <div class="sched-row mt-1 d-flex align-items-center flex-wrap">
+                                                    <span class="tag-analysis-type tag-analysis-machine mr-1">Machine</span>
+                                                    @if($live['pending_machine'])
+                                                        <span class="sched-badge-pending mr-1 mb-1" title="Pending Analysis Request ({{ $live['pending_machine_count'] ?? 1 }} total pending)">
+                                                            <i class="ft-alert-circle mr-1"></i>Req #{{ $live['pending_machine']->request_no }}
+                                                            @if(($live['pending_machine_count'] ?? 1) > 1)
+                                                                <span class="badge badge-pill badge-warning ml-1" title="{{ $live['pending_machine_count'] }} pending requests">{{ $live['pending_machine_count'] }}</span>
+                                                            @endif
+                                                        </span>
+                                                    @endif
+                                                    @if(!empty($live['is_machine_due_now']))
+                                                        <span class="sched-badge-due mb-1" style="background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;" title="Interval reached &ndash; ready to generate on next check">
+                                                            <i class="ft-zap mr-1 text-warning"></i>Due Now
+                                                        </span>
+                                                    @elseif($live['next_machine_due'])
+                                                        <span class="sched-badge-due mb-1" title="Next scheduled auto request run">
+                                                            <i class="ft-clock mr-1"></i>Next: {{ $live['next_machine_due'] }}
+                                                        </span>
+                                                    @elseif(!empty($live['machine_note']))
+                                                        <span class="sched-text-range text-muted">{{ $live['machine_note'] }}</span>
+                                                    @elseif(!$live['pending_machine'])
+                                                        <span class="sched-text-range">
+                                                            Between {{ $plant->getMachineMinInterval() }}&ndash;{{ $plant->getMachineMaxInterval() }}m
                                                         </span>
                                                     @endif
                                                 </div>

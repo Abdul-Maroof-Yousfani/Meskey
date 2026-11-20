@@ -9,6 +9,7 @@ use App\Models\Production\MachinePlanSetting;
 use App\Models\Production\PlantBreakdown;
 use App\Models\Production\ProductionAnalysis;
 use App\Models\Production\ProductionAnalysisRequest;
+use App\Models\Production\ProductionMachineAnalysis;
 use App\Models\Production\ProductionVoucher;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,35 @@ use Illuminate\Support\Facades\Log;
 
 class AutoAnalysisRequestService
 {
+    /** Request types the auto generator handles. */
+    public const AUTO_TYPES = [
+        ProductionAnalysisRequest::TYPE_INPUT,
+        ProductionAnalysisRequest::TYPE_OUTPUT,
+        ProductionAnalysisRequest::TYPE_MACHINE,
+    ];
+
+    /** [min, max] minutes of a plant's range for the given request type (max never below min). */
+    public function intervalFor(Plant $plant, string $requestType): array
+    {
+        [$min, $max] = match ($requestType) {
+            ProductionAnalysisRequest::TYPE_INPUT => [$plant->getInputMinInterval(), $plant->getInputMaxInterval()],
+            ProductionAnalysisRequest::TYPE_MACHINE => [$plant->getMachineMinInterval(), $plant->getMachineMaxInterval()],
+            default => [$plant->getOutputMinInterval(), $plant->getOutputMaxInterval()],
+        };
+
+        return [$min, max($min, $max)];
+    }
+
+    /** Plant column that stores the next due time of the given request type. */
+    public function nextDueColumn(string $requestType): string
+    {
+        return match ($requestType) {
+            ProductionAnalysisRequest::TYPE_INPUT => 'next_input_analysis_at',
+            ProductionAnalysisRequest::TYPE_MACHINE => 'next_machine_analysis_at',
+            default => 'next_output_analysis_at',
+        };
+    }
+
     /**
      * Check all active plants and automatically generate Input/Output Analysis Requests
      * if Machine Plan Setting is running and no active breakdown exists.
@@ -58,13 +88,8 @@ class AutoAnalysisRequestService
                 continue;
             }
 
-            // 3. Process both Input and Output Analysis Types
-            $types = [
-                ProductionAnalysisRequest::TYPE_INPUT,
-                ProductionAnalysisRequest::TYPE_OUTPUT,
-            ];
-
-            foreach ($types as $type) {
+            // 3. Process Input, Output and Machine Analysis Types
+            foreach (self::AUTO_TYPES as $type) {
                 // If the plant requires it, wait until the last request of this type is completed
                 if ($plant->require_last_completed) {
                     $lastRequest = $this->getLastRequest($plant, $type);
@@ -91,7 +116,7 @@ class AutoAnalysisRequestService
                         ];
                     }
                 } else {
-                    $nextCol = ($type === ProductionAnalysisRequest::TYPE_INPUT) ? 'next_input_analysis_at' : 'next_output_analysis_at';
+                    $nextCol = $this->nextDueColumn($type);
                     $plant->refresh();
                     $targetTime = $plant->$nextCol ? Carbon::parse($plant->$nextCol)->format('h:i A') : 'later';
                     $skipped[] = [
@@ -318,20 +343,23 @@ class AutoAnalysisRequestService
      */
     public function getReferenceTimestamp(Plant $plant, string $requestType, array $runningInfo, Carbon $atTime): Carbon
     {
-        $isInput = ($requestType === ProductionAnalysisRequest::TYPE_INPUT);
-        $analysisType = $isInput ? 'input' : 'output';
-
         $lastRequest = ProductionAnalysisRequest::where('plant_id', $plant->id)
             ->where('type', $requestType)
             ->whereDate('request_date', $atTime->toDateString())
             ->latest('id')
             ->first();
 
-        $lastAnalysis = ProductionAnalysis::where('plant_id', $plant->id)
-            ->where('production_analysis_type', $analysisType)
-            ->whereDate('analysis_date', $atTime->toDateString())
-            ->latest('id')
-            ->first();
+        // Machine analyses live in their own table; Input / Output share production_analysis
+        $lastAnalysis = $requestType === ProductionAnalysisRequest::TYPE_MACHINE
+            ? ProductionMachineAnalysis::where('plant_id', $plant->id)
+                ->whereDate('analysis_date', $atTime->toDateString())
+                ->latest('id')
+                ->first()
+            : ProductionAnalysis::where('plant_id', $plant->id)
+                ->where('production_analysis_type', $requestType === ProductionAnalysisRequest::TYPE_INPUT ? 'input' : 'output')
+                ->whereDate('analysis_date', $atTime->toDateString())
+                ->latest('id')
+                ->first();
 
         $referenceTimestamp = null;
         if ($lastRequest) {
@@ -384,19 +412,15 @@ class AutoAnalysisRequestService
             $plant->update([
                 'next_input_analysis_at' => null,
                 'next_output_analysis_at' => null,
+                'next_machine_analysis_at' => null,
             ]);
             return;
         }
 
         $updates = [];
-        foreach ([ProductionAnalysisRequest::TYPE_INPUT, ProductionAnalysisRequest::TYPE_OUTPUT] as $type) {
-            $isInput = ($type === ProductionAnalysisRequest::TYPE_INPUT);
-            $min = $isInput ? $plant->getInputMinInterval() : $plant->getOutputMinInterval();
-            $max = $isInput ? $plant->getInputMaxInterval() : $plant->getOutputMaxInterval();
-            if ($max < $min) {
-                $max = $min;
-            }
-            $nextCol = $isInput ? 'next_input_analysis_at' : 'next_output_analysis_at';
+        foreach (self::AUTO_TYPES as $type) {
+            [$min, $max] = $this->intervalFor($plant, $type);
+            $nextCol = $this->nextDueColumn($type);
 
             $refTime = $this->getReferenceTimestamp($plant, $type, $runningInfo, $atTime);
             $elapsedMinutes = $refTime->diffInMinutes($atTime, false);
@@ -428,15 +452,9 @@ class AutoAnalysisRequestService
     public function isAnalysisDue(Plant $plant, string $requestType, array $runningInfo, ?Carbon $atTime = null): bool
     {
         $atTime = $atTime ?: now();
-        $isInput = ($requestType === ProductionAnalysisRequest::TYPE_INPUT);
 
-        $min = $isInput ? $plant->getInputMinInterval() : $plant->getOutputMinInterval();
-        $max = $isInput ? $plant->getInputMaxInterval() : $plant->getOutputMaxInterval();
-        if ($max < $min) {
-            $max = $min;
-        }
-
-        $nextDueCol = $isInput ? 'next_input_analysis_at' : 'next_output_analysis_at';
+        [$min, $max] = $this->intervalFor($plant, $requestType);
+        $nextDueCol = $this->nextDueColumn($requestType);
         $refTime = $this->getReferenceTimestamp($plant, $requestType, $runningInfo, $atTime);
         $elapsedMinutes = $refTime->diffInMinutes($atTime, false);
 
@@ -501,20 +519,11 @@ class AutoAnalysisRequestService
                 $plant->company_location_id
             );
 
-            $isInput = ($type === ProductionAnalysisRequest::TYPE_INPUT);
-            $min = $isInput ? $plant->getInputMinInterval() : $plant->getOutputMinInterval();
-            $max = $isInput ? $plant->getInputMaxInterval() : $plant->getOutputMaxInterval();
-            if ($max < $min) {
-                $max = $min;
-            }
+            [$min, $max] = $this->intervalFor($plant, $type);
             $currentInterval = rand($min, $max);
 
-            // Requests are made against the running plan's Production Voucher; older plans get their draft now
+            // Requests are made against the running plan: its job order, and its voucher once one is attached
             $plan = $runningInfo['plan'] ?? null;
-            if ($plan && !$plan->production_voucher_id) {
-                app(MachinePlanDraftVoucherService::class)->syncForPlan($plan);
-                $plan->refresh();
-            }
 
             $analysisRequest = ProductionAnalysisRequest::create([
                 'request_no' => $requestNo,
@@ -523,7 +532,7 @@ class AutoAnalysisRequestService
                 'company_location_id' => $plant->company_location_id,
                 'arrival_location_id' => $plant->arrival_location_id,
                 'plant_id' => $plant->id,
-                'job_order_id' => null, // Job orders come from the Production Voucher
+                'job_order_id' => $plan->job_order_id ?? null,
                 'production_voucher_id' => $plan->production_voucher_id ?? null,
                 'machine_plan_setting_id' => $plan->id ?? null,
                 'type' => $type,
@@ -539,8 +548,7 @@ class AutoAnalysisRequestService
             // Immediately schedule the NEXT target due time so subsequent auto requests continue without waiting on pending status
             $nextInterval = rand($min, $max);
             $nextDue = (clone $now)->addMinutes($nextInterval);
-            $nextDueCol = $isInput ? 'next_input_analysis_at' : 'next_output_analysis_at';
-            $plant->update([$nextDueCol => $nextDue]);
+            $plant->update([$this->nextDueColumn($type) => $nextDue]);
 
             DB::commit();
 
@@ -554,24 +562,25 @@ class AutoAnalysisRequestService
     }
 
     /**
-     * Hook invoked when an Input or Output Production Analysis is performed/stored.
+     * Hook invoked when an Input, Output or Machine Analysis is performed/stored.
      * Computes the next scheduled due time between min and max minutes from analysis time.
      */
-    public function onAnalysisCompleted(ProductionAnalysis $analysis): ?Carbon
+    public function onAnalysisCompleted(ProductionAnalysis|ProductionMachineAnalysis $analysis): ?Carbon
     {
         $plant = $analysis->plant;
         if (!$plant || !$plant->auto_analysis_enabled) {
             return null;
         }
 
-        $type = $analysis->production_analysis_type; // 'input' or 'output'
-        $isInput = ($type === 'input');
-
-        $min = $isInput ? $plant->getInputMinInterval() : $plant->getOutputMinInterval();
-        $max = $isInput ? $plant->getInputMaxInterval() : $plant->getOutputMaxInterval();
-        if ($max < $min) {
-            $max = $min;
+        if ($analysis instanceof ProductionMachineAnalysis) {
+            $type = 'machine';
+            $requestType = ProductionAnalysisRequest::TYPE_MACHINE;
+        } else {
+            $type = $analysis->production_analysis_type; // 'input' or 'output'
+            $requestType = $type === 'input' ? ProductionAnalysisRequest::TYPE_INPUT : ProductionAnalysisRequest::TYPE_OUTPUT;
         }
+
+        [$min, $max] = $this->intervalFor($plant, $requestType);
 
         // Determine analysis time (e.g. 2:00 PM)
         $timeStr = $analysis->items()->max('analysis_time') ?? now()->format('H:i:s');
@@ -581,8 +590,7 @@ class AutoAnalysisRequestService
         $randomMinutes = rand($min, $max);
         $nextDue = (clone $analysisDateTime)->addMinutes($randomMinutes);
 
-        $col = $isInput ? 'next_input_analysis_at' : 'next_output_analysis_at';
-        $plant->update([$col => $nextDue]);
+        $plant->update([$this->nextDueColumn($requestType) => $nextDue]);
 
         Log::info("Scheduled next {$type} analysis for {$plant->name} at {$nextDue->toDateTimeString()} ({$randomMinutes}m after {$timeStr})");
         return $nextDue;
@@ -625,6 +633,13 @@ class AutoAnalysisRequestService
             ->where('status', 'pending')
             ->count();
 
+        $pendingMachineQuery = ProductionAnalysisRequest::where('plant_id', $plant->id)
+            ->where('type', ProductionAnalysisRequest::TYPE_MACHINE)
+            ->whereDate('request_date', $todayDate)
+            ->where('status', 'pending');
+        $pendingMachine = (clone $pendingMachineQuery)->latest('id')->first();
+        $pendingMachineCount = $pendingMachineQuery->count();
+
         $statusBadge = 'idle';
         $statusLabel = 'Plan Idle';
         $badgeClass = 'badge-secondary';
@@ -663,6 +678,16 @@ class AutoAnalysisRequestService
             }
         }
 
+        $isMachineDueNow = false;
+        if ($runningInfo['is_running'] && $plant->auto_analysis_enabled) {
+            $machineMax = $plant->getMachineMaxInterval();
+            $refMachine = $this->getReferenceTimestamp($plant, ProductionAnalysisRequest::TYPE_MACHINE, $runningInfo, $atTime);
+            $elapsedMachine = $refMachine->diffInMinutes($atTime, false);
+            if ($elapsedMachine >= $machineMax || ($plant->next_machine_analysis_at && $plant->next_machine_analysis_at->lte($atTime))) {
+                $isMachineDueNow = true;
+            }
+        }
+
         // Show a "Next" time only while the schedule is actually active
         $scheduleNote = null;
         if (!$plant->auto_analysis_enabled) {
@@ -676,8 +701,10 @@ class AutoAnalysisRequestService
 
         $nextInputDue = $scheduleActive && $plant->next_input_analysis_at ? $plant->next_input_analysis_at->format('h:i A') : null;
         $nextOutputDue = $scheduleActive && $plant->next_output_analysis_at ? $plant->next_output_analysis_at->format('h:i A') : null;
+        $nextMachineDue = $scheduleActive && $plant->next_machine_analysis_at ? $plant->next_machine_analysis_at->format('h:i A') : null;
         $inputNote = $scheduleNote;
         $outputNote = $scheduleNote;
+        $machineNote = $scheduleNote;
 
         // Not "due" while waiting for the last request to be completed
         if ($plant->require_last_completed) {
@@ -695,6 +722,14 @@ class AutoAnalysisRequestService
                 if ($scheduleActive) {
                     $nextOutputDue = null;
                     $outputNote = 'Waiting for Req #' . $lastOut->request_no . ' to complete';
+                }
+            }
+            $lastMachine = $this->getLastRequest($plant, ProductionAnalysisRequest::TYPE_MACHINE);
+            if ($lastMachine && $lastMachine->status !== 'completed') {
+                $isMachineDueNow = false;
+                if ($scheduleActive) {
+                    $nextMachineDue = null;
+                    $machineNote = 'Waiting for Req #' . $lastMachine->request_no . ' to complete';
                 }
             }
         }
@@ -717,6 +752,11 @@ class AutoAnalysisRequestService
             'next_output_due' => $nextOutputDue,
             'is_output_due_now' => $isOutputDueNow,
             'output_note' => $outputNote,
+            'pending_machine' => $pendingMachine,
+            'pending_machine_count' => $pendingMachineCount,
+            'next_machine_due' => $nextMachineDue,
+            'is_machine_due_now' => $isMachineDueNow,
+            'machine_note' => $machineNote,
         ];
     }
 }

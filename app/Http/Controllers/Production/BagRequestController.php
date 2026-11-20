@@ -65,7 +65,7 @@ class BagRequestController extends Controller
         $data['arrival_locations'] = collect();
         $data['jobOrders'] = collect();
         $data['request_number'] = $this->getNumber(date('Y-m-d'));
-        
+
         return view('management.production.bag_request.create', $data);
     }
 
@@ -76,10 +76,10 @@ class BagRequestController extends Controller
     {
         DB::beginTransaction();
         try {
-            $companyId = $request->company_id 
-                ?? auth()->user()?->current_company_id 
+            $companyId = $request->company_id
+                ?? auth()->user()?->current_company_id
                 ?? ($request->company_location_id ? CompanyLocation::find($request->company_location_id)?->company_id : null)
-                ?? session('current_company_id') 
+                ?? session('current_company_id')
                 ?? 1;
 
             $company = Company::find($companyId);
@@ -98,10 +98,10 @@ class BagRequestController extends Controller
                 foreach ($aggregatedItems as $key => $group) {
                     $first = $group->first();
                     $totalRequested = $group->sum('quantity');
-                    
+
                     // We are checking that we have stock of the item in the gala
                     $available_stock = getStockByItem($first['item_id'], $first['brand_id'], $request->gala_id);
-                    
+
                     if ($available_stock < $totalRequested) {
                         DB::rollBack();
                         $productName = optional($products->where("id", $first["item_id"])->first())->name ?? 'item';
@@ -119,7 +119,8 @@ class BagRequestController extends Controller
             $bagRequest = BagRequest::create([
                 'request_number' => $this->getNumber($request->request_date),
                 'request_date' => $request->request_date,
-                'arrival_location_id' => $request->arrival_location_id,
+                // Arrival Location is chosen per item; the header keeps the first one for older screens
+                'arrival_location_id' => collect($request->items ?? [])->pluck('arrival_location_id')->filter()->first(),
                 'gala_id' => $request->gala_id ?? null,
                 'job_order_ids' => $request->job_order_ids,
                 'remarks' => $request->remarks,
@@ -131,7 +132,7 @@ class BagRequestController extends Controller
             if ($request->has('items')) {
                 foreach ($request->items as $item) {
                     $remainingToDistribute = $item['quantity'];
-                    
+
                     if (!empty($request->job_order_ids)) {
                         // Find all packing items for the selected Job Orders that match this item and brand
                         $matchingPackingItems = JobOrderPackingItem::whereIn('job_order_id', $request->job_order_ids)
@@ -145,14 +146,15 @@ class BagRequestController extends Controller
                             $consumed = \App\Models\Production\BagRequestItem::where('job_order_id', $pi->job_order_id)
                                 ->where('item_id', $pi->bag_product_id)
                                 ->sum('quantity');
-                            
+
                             $availableInJO = $pi->total_bags - $consumed;
                             if ($availableInJO <= 0) continue;
 
                             $take = min($remainingToDistribute, $availableInJO);
-                            
+
                             $bagRequest->items()->create([
                                 'job_order_id' => $pi->job_order_id,
+                                'arrival_location_id' => $item['arrival_location_id'] ?? null, 'plant_id' => $item['plant_id'] ?? null,
                                 'item_id' => $item['item_id'],
                                 'brand_id' => $item['brand_id'],
                                 'unit_id' => $item['unit_id'],
@@ -202,6 +204,7 @@ class BagRequestController extends Controller
 
                                 $bagRequest->items()->create([
                                     'job_order_id' => $si->packingItem->job_order_id,
+                                    'arrival_location_id' => $item['arrival_location_id'] ?? null, 'plant_id' => $item['plant_id'] ?? null,
                                     'item_id' => $item['item_id'],
                                     'brand_id' => $item['brand_id'],
                                     'unit_id' => $item['unit_id'],
@@ -218,6 +221,7 @@ class BagRequestController extends Controller
                     if ($remainingToDistribute > 0) {
                         $bagRequest->items()->create([
                             'job_order_id' => !empty($request->job_order_ids) ? $request->job_order_ids[0] : null,
+                            'arrival_location_id' => $item['arrival_location_id'] ?? null, 'plant_id' => $item['plant_id'] ?? null,
                             'item_id' => $item['item_id'],
                             'brand_id' => $item['brand_id'],
                             'unit_id' => $item['unit_id'],
@@ -244,8 +248,8 @@ class BagRequestController extends Controller
 
     public function show($id)
     {
-        $bagRequest = BagRequest::with(['items.item', 'items.brand', 'items.unit', 'gala', 'arrivalLocation', 'issuances'])->findOrFail($id);
-        
+        $bagRequest = BagRequest::with(['items.item', 'items.brand', 'items.unit', 'items.arrivalLocation', 'items.plant', 'gala', 'arrivalLocation', 'issuances'])->findOrFail($id);
+
         foreach ($bagRequest->items as $item) {
             $packing = \App\Models\Production\JobOrder\JobOrderPackingItem::where('job_order_id', $item->job_order_id)
                 ->where('bag_product_id', $item->item_id)
@@ -270,8 +274,8 @@ class BagRequestController extends Controller
      */
     public function edit($id)
     {
-        $bagRequest = BagRequest::with(['items.item', 'items.brand', 'items.unit'])->findOrFail($id);
-        
+        $bagRequest = BagRequest::with(['items.item', 'items.brand', 'items.unit', 'items.arrivalLocation'])->findOrFail($id);
+
         // Calculate issued quantity for each item
         foreach($bagRequest->items as $item) {
             $item->issued_qty = \App\Models\Procurement\Store\BagIssuanceItem::whereHas('bagIssuance', function($q) use ($id) {
@@ -281,7 +285,7 @@ class BagRequestController extends Controller
                 ->where('brand_id', $item->brand_id)
                 ->where('job_order_id', $item->job_order_id)
                 ->sum('quantity');
-            
+
             // Re-calculate display size
             $packing = \App\Models\Production\JobOrder\JobOrderPackingItem::where('job_order_id', $item->job_order_id)
                 ->where('bag_product_id', $item->item_id)
@@ -318,9 +322,10 @@ class BagRequestController extends Controller
         $data['brands'] = Brands::where('status', 'active')->get();
         $data['units'] = UnitOfMeasure::all();
         $data['company_locations'] = CompanyLocation::where('status', 'active')->get();
-        
+
         $data['arrival_locations'] = ArrivalLocation::where('company_location_id', $bagRequest->company_location_id)->where('status', 'active')->get();
-        
+        $data['plants'] = $this->plantsOfCompanyLocation($bagRequest->company_location_id);
+
         $selectedJoIds = $bagRequest->job_order_ids ?? [];
         $jobOrders = JobOrder::with(['packingItems', 'packingItems.subItems'])
             ->where(function($q) use ($bagRequest) {
@@ -395,20 +400,20 @@ class BagRequestController extends Controller
 
         $bagRequest = BagRequest::findOrFail($id);
 
-        $companyId = $bagRequest->company_id 
-            ?? $request->company_id 
-            ?? auth()->user()?->current_company_id 
-            ?? ($request->company_location_id ? CompanyLocation::find($request->company_location_id)?->company_id : null) 
+        $companyId = $bagRequest->company_id
+            ?? $request->company_id
+            ?? auth()->user()?->current_company_id
+            ?? ($request->company_location_id ? CompanyLocation::find($request->company_location_id)?->company_id : null)
             ?? 1;
 
         $company = Company::find($companyId);
         $stockCheckSetting = $company ? $company->settings()->where('key', 'stock_check')->first() : null;
         $isStockCheckRequired = $stockCheckSetting && filter_var($stockCheckSetting->value, FILTER_VALIDATE_BOOLEAN);
-        
+
         // Validation: Ensure we don't reduce quantity below what's already issued
         if ($request->items) {
             foreach($request->items as $itemData) {
-                // This is complex because the items are mapped to JOs. 
+                // This is complex because the items are mapped to JOs.
                 // For now, I'll let the user edit but ideally we should validate.
             }
         }
@@ -423,10 +428,10 @@ class BagRequestController extends Controller
             foreach ($aggregatedItems as $key => $group) {
                 $first = $group->first();
                 $totalRequested = $group->sum('quantity');
-                
+
                 // We are checking that we have stock of the item in the gala
                 $available_stock = getStockByItem($first['item_id'], $first['brand_id'], $request->gala_id);
-                
+
                 if ($available_stock < $totalRequested) {
                     DB::rollBack();
                     $productName = optional($products->where("id", $first["item_id"])->first())->name ?? 'item';
@@ -443,7 +448,8 @@ class BagRequestController extends Controller
 
         $bagRequest->update([
                 'request_date' => $request->request_date,
-                'arrival_location_id' => $request->arrival_location_id,
+                // Arrival Location is chosen per item; the header keeps the first one for older screens
+                'arrival_location_id' => collect($request->items ?? [])->pluck('arrival_location_id')->filter()->first(),
                 'gala_id' => $request->gala_id ?? null,
                 'job_order_ids' => $request->job_order_ids,
                 'remarks' => $request->remarks,
@@ -456,7 +462,7 @@ class BagRequestController extends Controller
             if ($request->has('items')) {
                 foreach ($request->items as $item) {
                     $remainingToDistribute = $item['quantity'];
-                    
+
                     if (!empty($request->job_order_ids)) {
                         // Find all packing items for the selected Job Orders that match this item and brand
                         $matchingPackingItems = JobOrderPackingItem::whereIn('job_order_id', $request->job_order_ids)
@@ -471,14 +477,15 @@ class BagRequestController extends Controller
                                 ->where('item_id', $pi->bag_product_id)
                                 ->where('bag_request_id', '!=', $id) // Exclude current request
                                 ->sum('quantity');
-                            
+
                             $availableInJO = $pi->total_bags - $consumed;
                             if ($availableInJO <= 0) continue;
 
                             $take = min($remainingToDistribute, $availableInJO);
-                            
+
                             $bagRequest->items()->create([
                                 'job_order_id' => $pi->job_order_id,
+                                'arrival_location_id' => $item['arrival_location_id'] ?? null, 'plant_id' => $item['plant_id'] ?? null,
                                 'item_id' => $item['item_id'],
                                 'brand_id' => $item['brand_id'],
                                 'unit_id' => $item['unit_id'],
@@ -529,6 +536,7 @@ class BagRequestController extends Controller
 
                                 $bagRequest->items()->create([
                                     'job_order_id' => $si->packingItem->job_order_id,
+                                    'arrival_location_id' => $item['arrival_location_id'] ?? null, 'plant_id' => $item['plant_id'] ?? null,
                                     'item_id' => $item['item_id'],
                                     'brand_id' => $item['brand_id'],
                                     'unit_id' => $item['unit_id'],
@@ -545,6 +553,7 @@ class BagRequestController extends Controller
                     if ($remainingToDistribute > 0) {
                         $bagRequest->items()->create([
                             'job_order_id' => !empty($request->job_order_ids) ? $request->job_order_ids[0] : null,
+                            'arrival_location_id' => $item['arrival_location_id'] ?? null, 'plant_id' => $item['plant_id'] ?? null,
                             'item_id' => $item['item_id'],
                             'brand_id' => $item['brand_id'],
                             'unit_id' => $item['unit_id'],
@@ -714,6 +723,24 @@ class BagRequestController extends Controller
         return response()->json($locations);
     }
 
+    // Plants of the company location; each item row shows the ones of its Arrival Location
+    public function getPlants(Request $request)
+    {
+        return response()->json($this->plantsOfCompanyLocation($request->company_location_id));
+    }
+
+    private function plantsOfCompanyLocation($companyLocationId)
+    {
+        if (!$companyLocationId) {
+            return collect();
+        }
+
+        return \App\Models\Master\Plant::where('company_location_id', $companyLocationId)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'arrival_location_id']);
+    }
+
     public function getGalas(Request $request)
     {
         $galas = ArrivalSubLocation::where('arrival_location_id', $request->arrival_location_id)
@@ -761,7 +788,7 @@ class BagRequestController extends Controller
                 $packingItems = $jo->packingItems;
             }
             $totalNeeded = $packingItems->sum('total_bags');
-            
+
             $subItems = JobOrderPackingSubItem::whereIn('job_order_packing_item_id', $packingItems->pluck('id'))->get();
             $totalNeeded += $subItems->sum('total_bags');
 

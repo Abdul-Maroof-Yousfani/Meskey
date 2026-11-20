@@ -31,6 +31,7 @@
             <!-- Commodity Header -->
             <h6 class="text-primary mb-3">
                 <i class="ft-box mr-1"></i> {{ $commodity->name }}
+                <span class="badge badge-info ml-1 product-qty-percent" title="Share of total Sugg. QTY">0%</span>
             </h6>
             
             <!-- QC Table -->
@@ -41,6 +42,7 @@
                             <th width="20%">Location</th>
                             <th width="20%">Sub Location</th>
                             <th width="15%">Sugg. QTY (kgs)</th>
+                            <th width="7%">%</th>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramSpec = $specs->where('spec_name', $parameter)->first();
@@ -88,6 +90,7 @@
                                        value="{{ $item->suggested_quantity }}"
                                        required>
                             </td>
+                            <td class="text-center"><span class="row-qty-percent font-weight-bold">0.00%</span></td>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramField = Illuminate\Support\Str::slug($parameter, '_');
@@ -130,6 +133,7 @@
                         <tr class="weighted-average-row">
                             <td colspan="2"><strong>Weighted Avg.</strong></td>
                             <td  class="total-quantity"><strong>{{ $items->sum('suggested_quantity') }}</strong></td>
+                            <td class="text-center total-qty-percent"><strong>0.00%</strong></td>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramField = Illuminate\Support\Str::slug($parameter, '_');
@@ -194,3 +198,5 @@
     No QC items found for this record.
 </div>
 @endif
+
+@include('management.production.job_order_raw_material_qc.partials.qty_percentage_script')

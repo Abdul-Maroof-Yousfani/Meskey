@@ -420,7 +420,7 @@ class JobOrderRequest extends FormRequest
             // Array Validation Messages
             'attention_to.*.exists' => 'One or more selected users do not exist',
             'inspection_company_id.*.exists' => 'One or more selected inspection companies do not exist',
-            'arrival_locations.*.exists' => 'One or more selected arrival locations do not exist',
+            'arrival_locations.*.exists' => 'One or more selected factory locations do not exist',
         ];
     }
 
@@ -439,7 +439,7 @@ class JobOrderRequest extends FormRequest
             'packing_items' => 'packing items',
             'attention_to' => 'attention to',
             'inspection_company_id' => 'inspection company',
-            'arrival_locations' => 'arrival locations',
+            'arrival_locations' => 'factory locations',
             'packing_items.*.company_location_id' => 'location',
             'packing_items.*.brand_id' => 'brand',
             'packing_items.*.bag_product_id' => 'bag product',

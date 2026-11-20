@@ -18,9 +18,6 @@
                 <tr>
                     <td>
                         <strong class="d-block">{{ $voucher->prod_no }}</strong>
-                        @if($voucher->is_draft)
-                            <small class="text-warning">Draft from Machine Plan &mdash; edit to complete</small>
-                        @endif
                     </td>
                     <td>{{ \Carbon\Carbon::parse($voucher->prod_date)->format('M d, Y') }}</td>
                     <td>
@@ -72,9 +69,7 @@
                         {{ $voucher->supervisor->name ?? '-' }}
                     </td>
                     <td>
-                        @if($voucher->status == 'draft')
-                            <span class="badge badge-warning">Draft</span>
-                        @elseif($voucher->status == 'active')
+                        @if($voucher->status == 'active')
                             <span class="badge badge-success">Active</span>
                         @elseif($voucher->status == 'completed')
                             <span class="badge badge-success">Completed</span>

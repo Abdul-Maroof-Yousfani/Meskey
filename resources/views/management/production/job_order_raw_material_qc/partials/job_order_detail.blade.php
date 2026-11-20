@@ -156,7 +156,85 @@
     // Initialize Select2
     $('.select2').select2();
 
+    /*
+     * Reload the QC tables for the chosen materials without losing what is already filled in:
+     * tables of materials that stay selected are kept as they are, only new materials get a fresh table
+     * and unselected ones go away. Only the latest request is applied (fast changes / two handlers).
+     */
+    window.loadQcCommoditiesTables = function (url, data, onDone) {
+        var $section = $('#qcCommoditiesSection');
+        window._qcKeptTables = window._qcKeptTables || {};
+        $section.find('.commodity-table').each(function () {
+            window._qcKeptTables[$(this).data('commodity-id')] = $(this).detach();
+        });
+        $section.html('<div class="text-center py-4"><i class="ft-loader spinner"></i> Loading QC tables...</div>');
 
+        var token = window._qcLoadToken = (window._qcLoadToken || 0) + 1;
+        $.ajax({
+            url: url,
+            type: 'GET',
+            data: data,
+            success: function (response) {
+                if (token !== window._qcLoadToken) return;
+                $section.html(response);
+                $section.find('.commodity-table').each(function () {
+                    var $kept = window._qcKeptTables[$(this).data('commodity-id')];
+                    if ($kept) {
+                        $(this).replaceWith($kept);
+                    }
+                });
+                window._qcKeptTables = {};
+                if (typeof onDone === 'function') onDone();
+                if (typeof window.updateRmQcQtyPercentages === 'function') window.updateRmQcQtyPercentages();
+            },
+            error: function () {
+                if (token !== window._qcLoadToken) return;
+                window._qcKeptTables = {};
+                $section.html('<div class="alert alert-danger">Error loading QC tables</div>');
+            }
+        });
+    };
+
+
+    // Refill the Location / Sub Location selects of every loaded QC row for the chosen company location.
+    // Values already chosen are kept when they exist for the new location.
+    window.refreshQcRowLocations = function (companyLocationId) {
+        var $rows = $('#qcCommoditiesSection .location-row');
+        if (!$rows.length) return;
+
+        $.get('{{ route("job-order-rm-qc.location-options") }}', { company_location_id: companyLocationId || '' }, function (res) {
+            var esc = function (t) { return $('<div>').text(t == null ? '' : t).html(); };
+
+            $rows.each(function () {
+                var $loc = $(this).find('select[name*="[location_id]"]');
+                var $sub = $(this).find('select[name*="[sublocation_id]"]');
+                var locVal = String($loc.val() || '');
+                var subVal = String($sub.val() || '');
+
+                var locHtml = '<option value="">Select Location</option>';
+                var locFound = false;
+                (res.locations || []).forEach(function (l) {
+                    if (String(l.id) === locVal) locFound = true;
+                    locHtml += '<option value="' + l.id + '">' + esc(l.name) + '</option>';
+                });
+                $loc.html(locHtml).val(locFound ? locVal : '');
+                var currentLoc = String($loc.val() || '');
+
+                var subHtml = '<option value="">Select Sub Location</option>';
+                var subFound = false;
+                (res.sublocations || []).forEach(function (s) {
+                    var match = currentLoc !== '' && String(s.arrival_location_id) === currentLoc;
+                    if (match && String(s.id) === subVal) subFound = true;
+                    subHtml += '<option value="' + s.id + '" data-location-id="' + s.arrival_location_id + '"' + (match ? '' : ' style="display:none"') + '>' + esc(s.name) + '</option>';
+                });
+                $sub.html(subHtml).val(subFound ? subVal : '');
+            });
+        });
+    };
+
+    $(document).off('change.rmQcLoc', '#locationSelect').on('change.rmQcLoc', '#locationSelect', function () {
+        window.refreshQcRowLocations($(this).val());
+    });
 
     $(document).ready(function () {
 
@@ -180,44 +258,32 @@
             const selectedCommodities = $(this).val();
             const company_location_id = $('*[name="company_location_id"]').val();
             if (selectedCommodities && selectedCommodities.length > 0) {
-                // Show loading
-                $('#qcCommoditiesSection').html('<div class="text-center py-4"><i class="ft-loader spinner"></i> Loading QC tables...</div>');
+                // Edit page loads the tables itself (with the saved QC), so only the create page does it here
+                if ($('#ajaxSubmit input[name="_method"]').val() === 'PUT') return;
 
-                // Load partial via AJAX
-                $.ajax({
-                    url: '{{ route("load_qc_commodities_tables") }}',
-                    type: 'GET',
-                    data: {
-                        commodities: selectedCommodities,
-                        company_location_id:company_location_id
-                    },
-                    success: function (response) {
-                        $('#qcCommoditiesSection').html(response);
-
-                        // Initial calculations
-                        $('.commodity-table').each(function () {
-                            const commodityId = $(this).data('commodity-id');
-                            calculateWeightedAverage(commodityId);
-                        });
-                        updateCombinedAverage();
-                    },
-                    error: function () {
-                        $('#qcCommoditiesSection').html('<div class="alert alert-danger">Error loading QC tables</div>');
-                    }
+                // Load the tables; already filled tables are kept
+                loadQcCommoditiesTables('{{ route("load_qc_commodities_tables") }}', {
+                    commodities: selectedCommodities,
+                    company_location_id: company_location_id
+                }, function () {
+                    $('.commodity-table').each(function () {
+                        calculateWeightedAverage($(this).data('commodity-id'));
+                    });
+                    updateCombinedAverage();
                 });
             } else {
                 $('#qcCommoditiesSection').html('<div class="alert alert-warning">Please select at least one commodity</div>');
             }
         });
 
-        // Add location row - Event delegation for dynamically loaded content
-        $(document).on('click', '.add-location-row', function () {
+        // Add location row - bound once (this partial is loaded again on every Job Order change)
+        $(document).off('click.rmQcRows', '.add-location-row').on('click.rmQcRows', '.add-location-row', function () {
             const commodityId = $(this).data('commodity-id');
             addLocationRow(commodityId);
         });
 
-        // Remove location row - Event delegation for dynamically loaded content
-        $(document).on('click', '.remove-row', function () {
+        // Remove location row - bound once
+        $(document).off('click.rmQcRows', '.remove-row').on('click.rmQcRows', '.remove-row', function () {
             const $row = $(this).closest('tr');
             const $tbody = $row.closest('tbody');
             const commodityId = $row.closest('.commodity-table').data('commodity-id');
@@ -239,8 +305,8 @@
             }
         });
 
-        // Auto-calculate totals - Event delegation for dynamically loaded content
-        $(document).on('input', '.suggested-quantity, .param-input', function () {
+        // Auto-calculate totals - bound once
+        $(document).off('input.rmQcRows', '.suggested-quantity, .param-input').on('input.rmQcRows', '.suggested-quantity, .param-input', function () {
             const commodityId = $(this).closest('.commodity-table').data('commodity-id');
             calculateWeightedAverage(commodityId);
             updateCombinedAverage();

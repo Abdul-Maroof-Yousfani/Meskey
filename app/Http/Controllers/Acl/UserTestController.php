@@ -8,6 +8,7 @@ use App\Http\Requests\User\UserTestUpdateRequest;
 use App\Models\Acl\Company;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Plant;
 use App\Models\Master\Account\Account;
 use App\Models\User;
 use Exception;
@@ -145,6 +146,44 @@ class UserTestController extends Controller
         // dd($locations);
 
         return response()->json($locations);
+    }
+
+    /** Active plants of the given arrival locations (for assigning plants to a user). */
+    public function getArrivalPlants(Request $request)
+    {
+        $arrivalIds = array_filter((array) $request->input('arrival_ids', []));
+        if (empty($arrivalIds)) {
+            return response()->json([]);
+        }
+
+        $plants = Plant::with('arrivalLocation:id,name')
+            ->whereIn('arrival_location_id', $arrivalIds)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($plant) => [
+                'id' => $plant->id,
+                'name' => $plant->name,
+                'arrival_name' => $plant->arrivalLocation->name ?? '',
+            ]);
+
+        return response()->json($plants);
+    }
+
+    /** Plant ids from the request that belong to the given arrival locations. */
+    private function plantIdsForArrivals(Request $request, array $arrivalIds): array
+    {
+        $plantIds = array_filter((array) $request->input('plant_id', []));
+        if (empty($plantIds) || empty($arrivalIds)) {
+            return [];
+        }
+
+        return Plant::whereIn('id', $plantIds)
+            ->whereIn('arrival_location_id', $arrivalIds)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
     }
 
     public function checkUsernameAvailability(Request $request)
@@ -433,6 +472,7 @@ class UserTestController extends Controller
                     'role_id' => $role->id,
                     'locations' => json_encode($locations),
                     'arrival_locations' => json_encode($arrivalData),
+                    'plants' => json_encode($this->plantIdsForArrivals($request, $arrivalData)),
                 ],
             ]);
 
@@ -514,6 +554,10 @@ class UserTestController extends Controller
             $selectedArrivals = json_decode($company->pivot->arrival_locations, true) ?? [];
         }
 
+        $selectedPlants = ($company && !empty($company->pivot->plants))
+            ? (json_decode($company->pivot->plants, true) ?? [])
+            : [];
+
         $assignedPermissions = Role::find($roleId)?->permissions->pluck('name')->toArray() ?? [];
 
         $purchaseOrderApproval = $user->purchase_order_approval;
@@ -525,6 +569,7 @@ class UserTestController extends Controller
             'companies',
             'selectedLocations',
             'selectedArrivals',
+            'selectedPlants',
             'assignedPermissions',
             'companyId',
             'roleId',
@@ -631,6 +676,7 @@ class UserTestController extends Controller
                 'role_id' => $roleId,
                 'locations' => json_encode($locations),
                 'arrival_locations' => json_encode($flatArrivalData),
+                'plants' => json_encode($this->plantIdsForArrivals($request, $flatArrivalData)),
                 'updated_at' => now(),
             ]);
 
@@ -1028,6 +1074,8 @@ class UserTestController extends Controller
 
             $locNames = !empty($locIds) ? CompanyLocation::whereIn('id', $locIds)->pluck('name')->toArray() : [];
             $arrNames = !empty($arrIds) ? ArrivalLocation::whereIn('id', $arrIds)->pluck('name')->toArray() : [];
+            $plantIds = !empty($pivot->plants) ? (json_decode($pivot->plants, true) ?? []) : [];
+            $plantNames = !empty($plantIds) ? Plant::whereIn('id', $plantIds)->pluck('name')->toArray() : [];
 
             $role = !empty($pivot->role_id) ? Role::find($pivot->role_id) : null;
             $permissions = $role ? $role->permissions->pluck('name')->toArray() : [];
@@ -1035,6 +1083,7 @@ class UserTestController extends Controller
             $compKey = "company_{$company->id}";
             $result[$compKey . '_locations'] = !empty($locNames) ? implode(', ', $locNames) : 'None';
             $result[$compKey . '_arrivals'] = !empty($arrNames) ? implode(', ', $arrNames) : 'None';
+            $result[$compKey . '_plants'] = !empty($plantNames) ? implode(', ', $plantNames) : 'None';
             if (!empty($permissions)) {
                 $result[$compKey . '_permissions'] = implode(', ', $permissions);
             }

@@ -51,6 +51,23 @@
             </div>
         </div>
 
+        <!-- Shift Time (default 09:00 AM - 09:00 PM), used to fill new machine plans of this plant -->
+        <div class="col-12">
+            <label class="font-weight-bold mb-1">Shift Time:</label>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Start Time:</label>
+                <input type="time" name="shift_start_time" value="09:00" class="form-control" required />
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>End Time:</label>
+                <input type="time" name="shift_end_time" value="21:00" class="form-control" required />
+            </div>
+        </div>
+
         <!-- Status -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">

@@ -25,6 +25,8 @@
                                     data-arrival-location-name="{{ $req->arrivalLocation?->name }}"
                                     data-plant-id="{{ $req->plant_id }}"
                                     data-plant-name="{{ $req->plant?->name }}"
+                                    data-job-order-id="{{ $req->job_order_id ?? ($req->jobOrderIdsForAnalysis()[0] ?? '') }}"
+                                    data-job-order-no="{{ $req->voucher_display }}"
                                     data-product-id="{{ $req->suggestedProductId() }}"
                                     data-request-date="{{ $req->request_date?->format('Y-m-d') }}"
                                     @selected(isset($analysisRequest) && $analysisRequest->id == $req->id)>
@@ -36,28 +38,15 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Product (Commodity): <span class="text-danger">*</span>
-                            <span id="product_fixed_badge" class="badge badge-warning ml-1 {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}">
-                                <i class="ft-lock"></i> Fixed for this Run
-                            </span>
-                        </label>
-                        <select name="product_id" id="product_id" class="form-control select2" required {{ isset($fixedProduct) && $fixedProduct ? 'disabled' : '' }}>
-                            <option value="">Select Product</option>
-                            @foreach($products as $product)
-                                @php
-                                    $isSelected = false;
-                                    if (isset($fixedProduct) && $fixedProduct) {
-                                        $isSelected = ($fixedProduct->id == $product->id);
-                                    } elseif (isset($analysisRequest) && $analysisRequest->suggestedProductId() == $product->id) {
-                                        $isSelected = true;
-                                    }
-                                @endphp
-                                <option value="{{ $product->id }}" @selected($isSelected)>
-                                    {{ $product->name }}
+                        <label>Job Order: <span class="text-danger">*</span></label>
+                        <select name="job_order_id" id="job_order_id" class="form-control select2" required>
+                            <option value="">Select Job Order</option>
+                            @foreach($jobOrders as $jo)
+                                <option value="{{ $jo->id }}" @selected(isset($selectedJobOrderId) && $selectedJobOrderId == $jo->id)>
+                                    {{ $jo->job_order_no }}
                                 </option>
                             @endforeach
                         </select>
-                        <input type="hidden" name="hidden_product_id" id="hidden_product_id" value="{{ $fixedProduct?->id ?? '' }}" {{ isset($fixedProduct) && $fixedProduct ? '' : 'disabled' }}>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -76,11 +65,14 @@
                             <i class="ft-map-pin text-primary mr-1"></i> Location: <strong id="req_disp_location">{{ $analysisRequest->companyLocation?->name ?? '' }}</strong> &bull;
                             <i class="ft-navigation text-info mr-1 ml-2"></i> Arrival: <span id="req_disp_arrival">{{ $analysisRequest->arrivalLocation?->name ?? '' }}</span> &bull;
                             <i class="ft-cpu text-success mr-1 ml-2"></i> Plant: <span id="req_disp_plant">{{ $analysisRequest->plant?->name ?? '' }}</span>
+                            <span id="req_disp_jo_wrapper" class="ml-2 {{ isset($analysisRequest) && $analysisRequest->voucher_display ? '' : 'd-none' }}">
+                                &bull; <i class="ft-file-text text-warning mr-1"></i> Voucher: <strong id="req_disp_jo">{{ $analysisRequest?->voucher_display ?? '' }}</strong>
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Hidden Location, Arrival Location, Plant dropdowns -->
+                <!-- Hidden Location, Factory Location, Plant dropdowns -->
                 <div class="d-none">
                     <select name="company_location_id" id="company_location_id">
                         <option value="">Select Location</option>
@@ -91,7 +83,7 @@
                         @endforeach
                     </select>
                     <select name="arrival_location_id" id="arrival_location_id">
-                        <option value="">Select Arrival Location</option>
+                        <option value="">Select Factory Location</option>
                         @if(isset($initialArrivalLocations))
                             @foreach($initialArrivalLocations as $arr)
                                 <option value="{{ $arr->id }}" @selected(isset($analysisRequest) && $analysisRequest->arrival_location_id == $arr->id)>
@@ -114,39 +106,9 @@
             </div>
         </div>
 
-        <!-- QC Checklist Section -->
-        <div class="col-md-12 mt-4">
-            <h6 class="header-heading-sepration font-weight-bold mb-3">
-                QC Checklist
-            </h6>
-
-            <input type="hidden" name="items[0][time]" value="{{ date('H:i:s') }}">
-            <input type="hidden" name="items[0][unit_id]" value="{{ $units->first()?->id ?? '' }}">
-
-            <div class="striped-rows qc-checklist-container" id="qcChecklistContainer">
-                @forelse($productSlabTypes as $productSlabType)
-                    <div class="form-group row qc-slab-row">
-                        <label class="col-md-3 label-control">
-                            {{ $productSlabType->name }}
-                        </label>
-                        <div class="col-md-9">
-                            <div class="input-group">
-                                <input type="text" 
-                                       name="items[0][params][{{ $productSlabType->id }}]" 
-                                       class="form-control" 
-                                       placeholder="{{ $productSlabType->qc_symbol }}">
-                                <div class="input-group-append">
-                                    <span class="input-group-text">{{ $productSlabType->qc_symbol }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="alert alert-warning m-2">
-                        No Slabs Found
-                    </div>
-                @endforelse
-            </div>
+        <!-- Input / Output QC Checklist Tabs -->
+        <div class="col-md-12 mt-1">
+            @include('management.production.production_machine_analysis.partials.qc_tabs')
         </div>
 
         <!-- Remarks Section -->
@@ -166,50 +128,6 @@
     </div>
 </form>
 
-<style>
-    .qc-checklist-container .form-group {
-        margin: 0;
-        padding: 10px 15px;
-        display: flex;
-        align-items: center;
-    }
-    .qc-checklist-container .form-group:nth-child(even) {
-        background-color: #f7f7f8;
-    }
-    .qc-checklist-container .form-group:nth-child(odd) {
-        background-color: #ffffff;
-    }
-    .qc-checklist-container label.label-control {
-        margin-bottom: 0;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #2c3e50;
-        letter-spacing: 0.5px;
-        font-size: 0.85rem;
-    }
-    .qc-checklist-container .input-group-text {
-        background-color: #f7f7f8;
-        border: 1px solid #dcdce0;
-        color: #6c757d;
-        min-width: 45px;
-        justify-content: center;
-    }
-    .layout-dark .qc-checklist-container .form-group:nth-child(even) {
-        background-color: #101010;
-    }
-    .layout-dark .qc-checklist-container .form-group:nth-child(odd) {
-        background-color: #1a1a1a;
-    }
-    .layout-dark .qc-checklist-container label.label-control {
-        color: #e2e8f0;
-    }
-    .layout-dark .qc-checklist-container .input-group-text {
-        background-color: #262626;
-        border-color: #404040;
-        color: #ffffff;
-    }
-</style>
-
 <script>
     $(document).ready(function() {
         function initSelect2(el) {
@@ -218,56 +136,6 @@
             }
         }
         initSelect2('.select2');
-
-        function renderQcChecklist(slabs) {
-            let container = $('#qcChecklistContainer');
-            container.empty();
-            if (!slabs || slabs.length === 0) {
-                container.html('<div class="alert alert-warning m-2">No Slabs Found</div>');
-                return;
-            }
-
-            let html = '';
-            slabs.forEach(function(slab) {
-                let symbol = slab.qc_symbol ? slab.qc_symbol : '%';
-                html += `
-                    <div class="form-group row qc-slab-row">
-                        <label class="col-md-3 label-control">
-                            ${slab.name}
-                        </label>
-                        <div class="col-md-9">
-                            <div class="input-group">
-                                <input type="text" 
-                                       name="items[0][params][${slab.id}]" 
-                                       class="form-control" 
-                                       placeholder="${symbol}">
-                                <div class="input-group-append">
-                                    <span class="input-group-text">${symbol}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.html(html);
-        }
-
-        function loadSlabsForProduct(productId) {
-            if(!productId) return;
-            $.ajax({
-                url: "{{ route('production-machine-analysis.get-slabs') }}",
-                type: "GET",
-                data: { product_id: productId },
-                success: function(response) {
-                    renderQcChecklist(response);
-                }
-            });
-        }
-
-        $('#product_id').on('change', function() {
-            let productId = $(this).val();
-            loadSlabsForProduct(productId);
-        });
 
         function loadMachines(arrivalId, plantId, selectedMachineId = null) {
             let $machSelect = $('#production_machine_id');
@@ -296,11 +164,11 @@
                 let $opt = $(this).find(':selected');
                 let compLocId = $opt.data('company-location-id');
                 let arrivalLocId = $opt.data('arrival-location-id');
-                let plantId = $opt.data('plant-id');
+                let jobOrderId = $opt.data('job-order-id');
+                let jobOrderNo = $opt.data('job-order-no');
                 let compLocName = $opt.data('company-location-name');
                 let arrivalLocName = $opt.data('arrival-location-name');
                 let plantName = $opt.data('plant-name');
-                let defaultProductId = $opt.data('product-id');
 
                 $('#company_location_id').val(compLocId);
                 $('#arrival_location_id').val(arrivalLocId);
@@ -309,6 +177,15 @@
                 $('#req_disp_location').text(compLocName || '');
                 $('#req_disp_arrival').text(arrivalLocName || '');
                 $('#req_disp_plant').text(plantName || '');
+                if (jobOrderId) {
+                    $('#job_order_id').val(jobOrderId).trigger('change.select2');
+                }
+                if (jobOrderNo) {
+                    $('#req_disp_jo').text(jobOrderNo);
+                    $('#req_disp_jo_wrapper').removeClass('d-none');
+                } else {
+                    $('#req_disp_jo_wrapper').addClass('d-none');
+                }
                 $('#request_details_box').removeClass('d-none');
 
                 loadMachines(arrivalLocId, plantId);
@@ -325,24 +202,8 @@
                         exclude_type: 'machine'
                     },
                     success: function(res) {
-                        if (res.is_fixed && res.product_id) {
-                            $('#product_id').val(res.product_id).trigger('change.select2');
-                            $('#product_id').prop('disabled', true);
-                            $('#hidden_product_id').val(res.product_id).prop('disabled', false);
-                            $('#product_fixed_badge').removeClass('d-none');
-                            $('#product_fixed_help').removeClass('d-none');
-                            loadSlabsForProduct(res.product_id);
-                        } else {
-                            $('#product_id').prop('disabled', false);
-                            $('#hidden_product_id').val('').prop('disabled', true);
-                            $('#product_fixed_badge').addClass('d-none');
-                            $('#product_fixed_help').addClass('d-none');
-
-                            let targetProd = res.suggested_product_id || defaultProductId;
-                            if (targetProd) {
-                                $('#product_id').val(targetProd).trigger('change');
-                            }
-                        }
+                        // Input tab: RM QC products (or all); Output tab: job order product (fixed)
+                        window.applyMachineTabProducts(res);
                     }
                 });
             } else {
@@ -351,23 +212,12 @@
                 $('#plant_id').val('');
                 $('#request_details_box').addClass('d-none');
                 $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
-                $('#product_id').prop('disabled', false);
-                $('#hidden_product_id').val('').prop('disabled', true);
-                $('#product_fixed_badge').addClass('d-none');
-                $('#product_fixed_help').addClass('d-none');
             }
         });
 
-        // Ensure product_id is sent on form submit even if disabled
-        $('#ajaxSubmit').on('submit', function() {
-            $('#product_id').prop('disabled', false);
-            $('#hidden_product_id').prop('disabled', true);
-        });
 
         if ($('#analysis_request_id').val()) {
             $('#analysis_request_id').trigger('change');
-        } else if ($('#product_id').val()) {
-            $('#product_id').trigger('change');
         }
     });
 </script>

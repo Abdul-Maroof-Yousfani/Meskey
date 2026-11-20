@@ -44,6 +44,14 @@
                     </div>
                 </div>
 
+                <!-- Plant (of the selected Arrival Locations) -->
+                <div class="col-md-12 mt-3">
+                    <label>Plant:</label>
+                    <div class="plant-wrapper">
+                        <small class="text-muted">Select an arrival location to load plants</small>
+                    </div>
+                </div>
+
       
             </div>
 
@@ -392,6 +400,7 @@
             // Reset Arrival section
             newCard.find('.arrival-wrapper')
                 .html('<small class="text-muted">Select a location to load arrival options</small>');
+            newCard.find('.plant-wrapper').html('<small class="text-muted">Select an arrival location to load plants</small>');
 
             let totalCards = $('#card-container .clonecard').length;
             newCard.find('.location-select').attr('name', `company_location_id[${totalCards}][]`);
@@ -531,3 +540,5 @@
         }
     });
 </script>
+
+@include('management.acl.users-test.partials.plant_assign_script')

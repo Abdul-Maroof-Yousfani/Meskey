@@ -28,6 +28,8 @@ class BagRequestRequest extends FormRequest
             'gala_id' => 'nullable|exists:arrival_sub_locations,id',
             'remarks' => 'nullable|string',
             'items' => 'required|array|min:1',
+            'items.*.arrival_location_id' => 'required|exists:arrival_locations,id',
+            'items.*.plant_id' => 'nullable|exists:plants,id',
             'items.*.item_id' => 'required|exists:products,id',
             'items.*.brand_id' => 'nullable|exists:brands,id',
             'items.*.unit_id' => 'required|exists:unit_of_measures,id',
@@ -44,6 +46,7 @@ class BagRequestRequest extends FormRequest
         return [
             'company_location_id.required' => 'Company location is required.',
             'items.required' => 'At least one item is required.',
+            'items.*.arrival_location_id.required' => 'Factory Location is required for all rows.',
             'items.*.item_id.required' => 'Item is required for all rows.',
             'items.*.unit_id.required' => 'Unit is required for all rows.',
             'items.*.quantity.required' => 'Quantity is required for all rows.',

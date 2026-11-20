@@ -20,7 +20,13 @@ class ProductionMachine extends Model
         'plant_id',
         'name',
         'description',
+        'is_required',
         'status',
+    ];
+
+    // Required machine: always on in a Machine Plan whenever production runs
+    protected $casts = [
+        'is_required' => 'boolean',
     ];
 
     // Relationship with the Company model (if you have one)

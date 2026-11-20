@@ -181,6 +181,19 @@ class JobOrderRawMaterialQcController extends Controller
         ));
     }
 
+    /** Location and sub location options for the QC rows of the selected company location. */
+    public function getLocationOptions(Request $request)
+    {
+        $companyLocationId = $request->company_location_id;
+
+        return response()->json([
+            'locations' => ArrivalLocation::where('company_location_id', $companyLocationId)
+                ->where('status', 1)->get(['id', 'name']),
+            'sublocations' => ArrivalSubLocation::where('company_location_id', $companyLocationId)
+                ->where('status', 1)->get(['id', 'name', 'arrival_location_id']),
+        ]);
+    }
+
     public function loadQcCommoditiesTables(Request $request)
     {
 

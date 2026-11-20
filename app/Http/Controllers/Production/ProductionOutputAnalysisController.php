@@ -12,6 +12,7 @@ use App\Models\Production\ProductionAnalysisItem;
 use App\Models\Production\ProductionAnalysisItemSlab;
 use App\Models\UnitOfMeasure;
 use App\Models\Product;
+use App\Models\Production\JobOrder\JobOrder;
 use Illuminate\Support\Facades\DB;
 
 class ProductionOutputAnalysisController extends Controller
@@ -37,7 +38,7 @@ class ProductionOutputAnalysisController extends Controller
                     $q->orWhere('id', $request->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher', 'outputAlert.remarkedBy'])
             ->latest('id')
             ->get();
 
@@ -47,7 +48,7 @@ class ProductionOutputAnalysisController extends Controller
 
         if ($request->filled('analysis_request_id')) {
             $analysisRequest = $analysisRequests->firstWhere('id', $request->analysis_request_id)
-                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher'])->find($request->analysis_request_id);
+                ?? \App\Models\Production\ProductionAnalysisRequest::with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher', 'outputAlert.remarkedBy'])->find($request->analysis_request_id);
 
             if ($analysisRequest) {
                 $preSelectedLocationId = $analysisRequest->company_location_id;
@@ -71,24 +72,22 @@ class ProductionOutputAnalysisController extends Controller
         
         $units = UnitOfMeasure::all();
         $products = getFinishGoodProducts();
-        $productSlabTypes = ProductSlabType::where('status', 'active')
-            ->where('for_general_item', 1)
-            ->get();
+        // The QC Checklist is shown only after an Analysis Request is chosen
+        $productSlabTypes = $analysisRequest
+            ? ProductSlabType::where('status', 'active')->where('for_general_item', 1)->get()
+            : collect();
 
-        $fixedProduct = null;
-        if ($analysisRequest) {
-            $fixedProduct = ProductionAnalysis::getFirstProductForRun(
-                $analysisRequest->arrival_location_id,
-                $analysisRequest->plant_id,
-                now()->format('Y-m-d'),
-                $analysisRequest->request_date?->format('Y-m-d')
-            );
-        }
+        // Output is fixed to the job order's product
+        $fixedProduct = $analysisRequest?->outputProductId() ? \App\Models\Product::find($analysisRequest->outputProductId()) : null;
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::latest('id')->get(['id', 'job_order_no']);
+        $selectedJobOrderId = $analysisRequest?->job_order_id ?? ($analysisRequest?->jobOrderIdsForAnalysis()[0] ?? null);
             
         return view('management.production.production_output_analysis.create', compact(
             'companyLocations', 
             'units', 
             'products', 
+            'jobOrders',
+            'selectedJobOrderId',
             'fixedProduct',
             'productSlabTypes', 
             'preSelectedLocationId',
@@ -114,13 +113,9 @@ class ProductionOutputAnalysisController extends Controller
             // The request's own voucher for now; once the readings are saved the analysis is linked to the voucher that fits it
             $matchingVoucherId = $analysisReq?->production_voucher_id;
 
-            $firstProduct = ProductionAnalysis::getFirstProductForRun(
-                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
-                $request->plant_id ?: $analysisReq?->plant_id,
-                $request->date,
-                $analysisReq?->request_date?->format('Y-m-d')
-            );
-            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+            // Output is fixed to the selected job order's product (else the request's job order product)
+            $finalProductId = $this->jobOrderProductId($request->job_order_id)
+                ?: ($analysisReq?->outputProductId() ?: $request->product_id);
 
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
@@ -142,20 +137,24 @@ class ProductionOutputAnalysisController extends Controller
                 'production_voucher_id' => $matchingVoucherId,
             ]);
 
-            // If created against an Analysis Request, mark it completed & link the job orders of its Production Voucher
+            // If created against an Analysis Request, mark it completed
             if ($request->filled('analysis_request_id')) {
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
                 if ($analysisReq) {
                     $analysisReq->update(['status' => 'completed']);
-                    foreach ($analysisReq->jobOrderIdsForAnalysis() as $jobOrderId) {
-                        DB::table('job_orders_against_production_analysis')->insertOrIgnore([
-                            'job_order_id' => $jobOrderId,
-                            'production_id' => $analysis->id,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
                 }
+            }
+
+            // Sync Job Orders (single select on UI, stored as multi in DB)
+            $jobOrderIds = $request->filled('job_order_id')
+                ? [$request->job_order_id]
+                : (array) $request->input('job_orders', $request->input('job_order_ids', []));
+            $jobOrderIds = array_values(array_filter(array_unique($jobOrderIds)));
+            if (empty($jobOrderIds) && $request->filled('analysis_request_id') && isset($analysisReq)) {
+                $jobOrderIds = $analysisReq->jobOrderIdsForAnalysis();
+            }
+            if (!empty($jobOrderIds)) {
+                $analysis->jobOrders()->sync($jobOrderIds);
             }
 
             // Store New Line Items
@@ -192,6 +191,8 @@ class ProductionOutputAnalysisController extends Controller
                 \Illuminate\Support\Facades\Log::error('AutoAnalysis onAnalysisCompleted (output) error: ' . $e->getMessage());
             }
 
+            $this->syncQcAlert($analysis);
+
             return response()->json(['status' => 'success', 'message' => 'Analysis stored successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -201,22 +202,37 @@ class ProductionOutputAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'items.unit', 'items.slabs.slabType'])
-            ->findOrFail($id);
-            
-        $slabTypeIds = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
-        $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
+        $item = ProductionAnalysis::with([
+            'location', 'arrivalLocation', 'plant', 'product', 'items.unit', 'items.slabs.slabType', 'jobOrders',
+            'analysisRequest.outputAlert.remarkedBy',
+        ])->findOrFail($id);
 
-        if ($productSlabTypes->isEmpty()) {
-            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
-        }
+        // Same checklist as the form: Job Order spec rows (colored), then any other saved values
+        $jobOrderId = $item->jobOrders->first()?->id ?? $item->analysisRequest?->job_order_id;
+        $checklistRows = collect(app(\App\Services\Production\OutputQcAlertService::class)->checklist($item, $jobOrderId));
+        $specSlabIds = $checklistRows->pluck('slab_type_id')->all();
 
-        return view('management.production.production_output_analysis.show', compact('item', 'productSlabTypes'));
+        $extraRows = $item->items->flatMap(fn($it) => $it->slabs)
+            ->reject(fn($slab) => in_array((int) $slab->slab_type_id, $specSlabIds, true))
+            ->unique('slab_type_id')
+            ->map(fn($slab) => [
+                'name' => $slab->slabType?->name ?? '-',
+                'qc_symbol' => $slab->slabType?->qc_symbol ?: '%',
+                'spec_text' => 'No spec',
+                'result' => $slab->production_analysis_value,
+                'status' => 'none',
+            ]);
+
+        $hasSpecs = $checklistRows->isNotEmpty();
+        $checklistRows = $checklistRows->concat($extraRows)->values()->all();
+        $alert = \App\Models\Production\ProductionOutputAlert::where('production_analysis_id', $item->id)->latest('id')->first();
+
+        return view('management.production.production_output_analysis.show', compact('item', 'checklistRows', 'hasSpecs', 'alert'));
     }
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['items.slabs.slabType'])->findOrFail($id);
+        $item = ProductionAnalysis::with(['items.slabs.slabType', 'jobOrders'])->findOrFail($id);
         
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
@@ -253,7 +269,7 @@ class ProductionOutputAnalysisController extends Controller
                     $q->orWhere('id', $item->analysis_request_id);
                 }
             })
-            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher'])
+            ->with(['companyLocation', 'arrivalLocation', 'plant', 'jobOrder', 'productionVoucher', 'outputAlert.remarkedBy'])
             ->latest('id')
             ->get();
 
@@ -262,20 +278,17 @@ class ProductionOutputAnalysisController extends Controller
             ->where('arrival_location_id', $item->arrival_location_id)
             ->get();
 
-        $fixedProduct = ProductionAnalysis::getFirstProductForRun(
-            $item->arrival_location_id,
-            $item->plant_id,
-            $item->analysis_date,
-            $item->analysisRequest?->request_date?->format('Y-m-d'),
-            $item->id,
-            'analysis'
-        );
+        $fixedProduct = $item->analysisRequest?->outputProductId() ? \App\Models\Product::find($item->analysisRequest->outputProductId()) : null;
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::latest('id')->get(['id', 'job_order_no']);
+        $selectedJobOrderId = $item->jobOrders->first()?->id ?? $item->analysisRequest?->job_order_id ?? ($item->analysisRequest?->jobOrderIdsForAnalysis()[0] ?? null);
 
         return view('management.production.production_output_analysis.edit', compact(
             'item', 
             'productSlabTypes',
             'companyLocations', 
             'products',
+            'jobOrders',
+            'selectedJobOrderId',
             'fixedProduct',
             'units',
             'analysisRequests',
@@ -299,15 +312,9 @@ class ProductionOutputAnalysisController extends Controller
                 $analysisReq = \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id);
             }
 
-            $firstProduct = ProductionAnalysis::getFirstProductForRun(
-                $request->arrival_location_id ?: $analysisReq?->arrival_location_id,
-                $request->plant_id ?: $analysisReq?->plant_id,
-                $request->date,
-                $analysisReq?->request_date?->format('Y-m-d'),
-                $analysis->id,
-                'analysis'
-            );
-            $finalProductId = $firstProduct ? $firstProduct->id : $request->product_id;
+            // Output is fixed to the selected job order's product (else the request's job order product)
+            $finalProductId = $this->jobOrderProductId($request->job_order_id)
+                ?: ($analysisReq?->outputProductId() ?: $request->product_id);
 
             $analysis->update([
                 'analysis_date' => $request->date,
@@ -322,7 +329,12 @@ class ProductionOutputAnalysisController extends Controller
                 'analysis_request_id' => $request->analysis_request_id ?? $analysis->analysis_request_id,
             ]);
 
-            $analysis->jobOrders()->detach();
+            // Sync Job Orders (single select on UI, stored as multi in DB)
+            $jobOrderIds = $request->filled('job_order_id')
+                ? [$request->job_order_id]
+                : (array) $request->input('job_orders', $request->input('job_order_ids', []));
+            $jobOrderIds = array_values(array_filter(array_unique($jobOrderIds)));
+            $analysis->jobOrders()->sync($jobOrderIds);
             $analysis->items()->delete();
 
             if($request->has('items')) {
@@ -351,10 +363,22 @@ class ProductionOutputAnalysisController extends Controller
             app(\App\Services\Production\Milling\ProductionDayPlanService::class)->syncAnalysis($analysis, $previousRequestId);
 
             DB::commit();
+
+            $this->syncQcAlert($analysis->fresh());
             return response()->json(['status' => 'success', 'message' => 'Analysis updated successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Failed to update analysis: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /** Raise (or refresh) the QC alert when a result is outside the Job Order spec. */
+    private function syncQcAlert(ProductionAnalysis $analysis): void
+    {
+        try {
+            app(\App\Services\Production\OutputQcAlertService::class)->syncForAnalysis($analysis);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Output QC Alert sync error: ' . $e->getMessage());
         }
     }
 
@@ -365,10 +389,12 @@ class ProductionOutputAnalysisController extends Controller
     private function validateQcValues(Request $request): void
     {
         $request->validate([
+            'job_order_id' => 'required|exists:job_orders,id',
             'items' => 'required|array',
             'items.*.params' => 'required|array',
             'items.*.params.*' => 'required|numeric|min:0',
         ], [
+            'job_order_id.required' => 'Job Order is required.',
             'items.*.params.*.required' => 'All QC Checklist values are required (enter 0 if none).',
             'items.*.params.*.numeric' => 'QC Checklist values must be numbers.',
             'items.*.params.*.min' => 'QC Checklist values cannot be less than 0.',
@@ -383,6 +409,11 @@ class ProductionOutputAnalysisController extends Controller
             $analysis->jobOrders()->detach();
             $requestId = $analysis->analysis_request_id;
             $analysis->delete();
+
+            // An alert nobody answered yet goes away with its analysis
+            \App\Models\Production\ProductionOutputAlert::where('production_analysis_id', $id)
+                ->where('status', \App\Models\Production\ProductionOutputAlert::STATUS_PENDING)
+                ->delete();
 
             // Request goes back to pending since its analysis no longer exists
             \App\Models\Production\ProductionAnalysisRequest::revertToPendingIfUnused($requestId);
@@ -402,7 +433,7 @@ class ProductionOutputAnalysisController extends Controller
         $plantIdsFilter = $request->plant_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant'])
+        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'jobOrders'])
             ->where('production_analysis_type', 'output')
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('location_id', $locationIdsFilter);
@@ -445,43 +476,67 @@ class ProductionOutputAnalysisController extends Controller
         return response()->json($slabTypes);
     }
 
+    /** Output analysis is fixed to the job order's product of the selected request. */
     public function checkFixedProduct(Request $request)
     {
-        $analysisReq = null;
-        if ($request->filled('analysis_request_id')) {
-            $analysisReq = \App\Models\Production\ProductionAnalysisRequest::with('jobOrder')->find($request->analysis_request_id);
-        }
+        $analysisReq = $request->filled('analysis_request_id')
+            ? \App\Models\Production\ProductionAnalysisRequest::find($request->analysis_request_id)
+            : null;
 
-        $arrivalLocationId = $request->arrival_location_id ?: $analysisReq?->arrival_location_id;
-        $plantId = $request->plant_id ?: $analysisReq?->plant_id;
-        $date = $request->date ?: now()->format('Y-m-d');
-        $requestDate = $analysisReq?->request_date?->format('Y-m-d');
-        $excludeId = $request->exclude_id;
-        $excludeType = $request->exclude_type ?? 'analysis';
-
-        $firstProduct = ProductionAnalysis::getFirstProductForRun(
-            $arrivalLocationId,
-            $plantId,
-            $date,
-            $requestDate,
-            $excludeId,
-            $excludeType
-        );
-
-        if ($firstProduct) {
-            return response()->json([
-                'status' => 'success',
-                'is_fixed' => true,
-                'product_id' => $firstProduct->id,
-                'product_name' => $firstProduct->name,
-            ]);
-        }
+        $product = $analysisReq?->outputProductId() ? \App\Models\Product::find($analysisReq->outputProductId()) : null;
 
         return response()->json([
             'status' => 'success',
-            'is_fixed' => false,
-            'suggested_product_id' => $analysisReq?->suggestedProductId(),
-            'product_id' => null,
+            'is_fixed' => (bool) $product,
+            'product_id' => $product?->id,
+            'product_name' => $product?->name,
+            'suggested_product_id' => null,
+        ]);
+    }
+
+    /** Product of a job order (the Output analysis is fixed to it). */
+    private function jobOrderProductId($jobOrderId): ?int
+    {
+        if (!$jobOrderId) {
+            return null;
+        }
+
+        $productId = JobOrder::whereKey($jobOrderId)->value('product_id');
+
+        return $productId ? (int) $productId : null;
+    }
+
+    /**
+     * Product and specifications of the selected job order.
+     * The form locks the product to it and builds the QC Checklist from these specs.
+     */
+    public function jobOrderDetails(Request $request)
+    {
+        $jobOrder = JobOrder::with(['product:id,name', 'specifications.productSlabType'])
+            ->find($request->job_order_id);
+
+        if (!$jobOrder) {
+            return response()->json(['status' => 'error', 'message' => 'Job Order not found'], 404);
+        }
+
+        $specs = $jobOrder->specifications
+            ->filter(fn($spec) => $spec->product_slab_type_id)
+            ->unique('product_slab_type_id')
+            ->map(fn($spec) => [
+                'id' => (int) $spec->product_slab_type_id,
+                'name' => $spec->productSlabType?->name ?? $spec->spec_name,
+                'qc_symbol' => $spec->productSlabType?->qc_symbol ?: ($spec->uom ?: '%'),
+                'spec_value' => $spec->spec_value,
+                'value_type' => $spec->value_type,
+                'uom' => $spec->uom,
+            ])
+            ->values();
+
+        return response()->json([
+            'status' => 'success',
+            'product_id' => $jobOrder->product_id,
+            'product_name' => $jobOrder->product?->name,
+            'specs' => $specs,
         ]);
     }
 }

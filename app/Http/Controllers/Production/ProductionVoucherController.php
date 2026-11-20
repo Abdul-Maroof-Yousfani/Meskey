@@ -75,6 +75,19 @@ class ProductionVoucherController extends Controller
             }
         }
 
+        // All BY products of the selected By Product's family (else the Head Product's family), except the head product
+        $headProductId = $request->head_product_id;
+        $byProduct = $request->filled('by_product_id')
+            ? Product::find($request->by_product_id)
+            : ($headProductId ? Product::find($headProductId) : null);
+        $familyByIds = $this->familyProductIds($byProduct, function ($q) use ($headProductId) {
+            $q->where('product_category_flags', 'by');
+            if ($headProductId) {
+                $q->where('id', '!=', $headProductId);
+            }
+        });
+        $productIds = array_values(array_unique(array_merge($productIds, $familyByIds)));
+
         $byProducts = !empty($productIds)
             ? Product::whereIn('id', $productIds)->where('status', 1)->orderBy('name')->get()
             : collect();
@@ -219,6 +232,17 @@ class ProductionVoucherController extends Controller
             }
         }
 
+        // All head products of the selected product's family (as before), plus the selected product
+        $familyHeadIds = $this->familyProductIds($product, function ($q) {
+            $q->where('product_type', '!=', 'raw_material')
+                ->where('product_type', '!=', 'general_items')
+                ->whereNotIn('product_category_flags', ['b2', 'by']);
+        });
+        if ($product->product_type !== 'raw_material') {
+            $familyHeadIds[] = $product->id;
+        }
+        $productIds = array_values(array_unique(array_merge($productIds, $familyHeadIds)));
+
         $allHeadProducts = !empty($productIds)
             ? Product::whereIn('id', $productIds)->where('status', 1)->orderBy('name')->get()
             : collect();
@@ -258,6 +282,8 @@ class ProductionVoucherController extends Controller
             $nonPackingItemsProducts = $allHeadProducts
                 ->whereNotIn('id', $productIdsWithPackingItems)
                 ->values();
+        } else {
+            $nonPackingItemsProducts = $allHeadProducts;
         }
 
         $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
@@ -333,6 +359,12 @@ class ProductionVoucherController extends Controller
             }
         }
 
+        // All B2 products of the selected product's family (as before)
+        $familyB2Ids = $this->familyProductIds($product, function ($q) use ($productId) {
+            $q->where('id', '!=', $productId)->where('product_category_flags', 'b2');
+        });
+        $productIds = array_values(array_unique(array_merge($productIds, $familyB2Ids)));
+
         $allB2Products = !empty($productIds)
             ? Product::whereIn('id', $productIds)->where('status', 1)->orderBy('name')->get()
             : collect();
@@ -369,6 +401,8 @@ class ProductionVoucherController extends Controller
             $nonPackingItemsProducts = $allB2Products
                 ->whereNotIn('id', $productIdsWithPackingItems)
                 ->values();
+        } else {
+            $nonPackingItemsProducts = $allB2Products;
         }
 
         $arrivalSubLocations = ArrivalSubLocation::where('arrival_location_id', $locationId)
@@ -598,6 +632,32 @@ class ProductionVoucherController extends Controller
         ));
     }
 
+    /**
+     * RM QC rows of the selected job orders, for filling Production Inputs:
+     * product, sub location (input location) and the QC's suggested quantity.
+     */
+    public function rmQcInputs(Request $request)
+    {
+        $jobOrderIds = array_values(array_filter(array_map('intval', (array) $request->input('job_order_ids', []))));
+        if (empty($jobOrderIds)) {
+            return response()->json(['items' => []]);
+        }
+
+        $items = DB::table('job_order_raw_material_qc_items as i')
+            ->join('job_order_raw_material_qcs as q', 'q.id', '=', 'i.job_order_rm_qc_id')
+            ->leftJoin('products as p', 'p.id', '=', 'i.product_id')
+            ->leftJoin('job_orders as jo', 'jo.id', '=', 'q.job_order_id')
+            ->whereIn('q.job_order_id', $jobOrderIds)
+            ->whereNull('q.deleted_at')
+            ->whereNotNull('i.product_id')
+            ->orderBy('q.job_order_id')->orderBy('i.id')
+            ->get([
+                'i.product_id', 'p.name as product_name', 'i.arrival_sub_location_id as location_id',
+                'i.suggested_quantity as qty', 'q.qc_no', 'jo.job_order_no',
+            ]);
+
+        return response()->json(['items' => $items]);
+    }
     public function create()
     {
         $companyLocations = CompanyLocation::where('status', 'active')->get();
@@ -1287,25 +1347,6 @@ class ProductionVoucherController extends Controller
 
     public function store(ProductionVoucherRequest $request)
     {
-        // Each Machine Plan has one voucher. When the picked plan already has its untouched draft voucher,
-        // that draft is completed in place: it keeps its number and its linked requests and analyses.
-        $choicePlan = $request->planChoice()['plan'];
-        $draftVoucher = ($choicePlan && $choicePlan->production_voucher_id)
-            ? ProductionVoucher::find($choicePlan->production_voucher_id)
-            : null;
-
-        if ($draftVoucher && $draftVoucher->is_draft) {
-            $response = $this->update($request, $draftVoucher->id);
-            if ($response->getStatusCode() !== 200) {
-                return $response;
-            }
-            return response()->json([
-                'success' => "Production Voucher {$draftVoucher->prod_no} created successfully.",
-                'redirect' => route('production-voucher.index'),
-                'data' => $response->getData(true)['data'] ?? null,
-            ], 201);
-        }
-
         DB::beginTransaction();
 
         try {
@@ -1741,9 +1782,9 @@ class ProductionVoucherController extends Controller
             'productionMachines'
         ])->findOrFail($id);
 
-        // Draft from a Machine Plan Setting: Head Product is still empty. Show the commodity of the
-        // machine cards' job orders so those job orders load pre-selected (saved only when the voucher is saved).
-        if ($productionVoucher->is_draft && !$productionVoucher->product_id && $productionVoucher->jobOrders->isNotEmpty()) {
+        // Head Product not set yet: show the commodity of the voucher's job orders
+        // so those job orders load pre-selected (saved only when the voucher is saved).
+        if (!$productionVoucher->product_id && $productionVoucher->jobOrders->isNotEmpty()) {
             $headJobOrder = $productionVoucher->jobOrders->first(function ($jo) {
                 return $jo->product && !in_array($jo->product->product_category_flags, ['b2', 'by']);
             }) ?? $productionVoucher->jobOrders->first();
@@ -1982,6 +2023,25 @@ class ProductionVoucherController extends Controller
             return in_array($j->product_id, $byFamilyProductIds);
         })->values();
 
+        // Saved job orders split into the Head / B2 / BY groups of the form (any number per group)
+        $selectedJobOrderGroups = ['head' => [], 'b2' => [], 'by' => []];
+        $headIds = $headJobOrders->pluck('id')->all();
+        $b2Ids = $b2JobOrders->pluck('id')->all();
+        $byIds = $byJobOrders->pluck('id')->all();
+        foreach ($jobOrderIds as $savedId) {
+            if (in_array($savedId, $headIds)) {
+                $selectedJobOrderGroups['head'][] = $savedId;
+            } elseif (in_array($savedId, $b2Ids)) {
+                $selectedJobOrderGroups['b2'][] = $savedId;
+            } elseif (in_array($savedId, $byIds)) {
+                $selectedJobOrderGroups['by'][] = $savedId;
+            } else {
+                // Not in any list: use the job order product's category
+                $flag = $jobOrders->firstWhere('id', $savedId)?->product?->product_category_flags;
+                $selectedJobOrderGroups[in_array($flag, ['b2', 'by']) ? $flag : 'head'][] = $savedId;
+            }
+        }
+
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $supervisors = User::where('status', 'active')->get();
         $products = Product::where('status', 1)->get();
@@ -2038,6 +2098,7 @@ class ProductionVoucherController extends Controller
             'headJobOrders',
             'b2JobOrders',
             'byJobOrders',
+            'selectedJobOrderGroups',
             'companyLocations',
             'supervisors',
             'products',
@@ -2101,12 +2162,6 @@ class ProductionVoucherController extends Controller
             $productionVoucherData['am_approval_status'] = 'approved';
             // $productionVoucherData['am_approval_status'] = 'pending';
             $productionVoucherData['am_change_made'] = 1;
-
-            // A draft made by a Machine Plan Setting becomes a normal voucher once saved here
-            if ($productionVoucher->is_draft) {
-                $productionVoucherData['is_draft'] = false;
-                $productionVoucherData['status'] = 'active';
-            }
 
             $productionVoucher->update($productionVoucherData);
 
@@ -3244,6 +3299,31 @@ class ProductionVoucherController extends Controller
      * products) must not be shown again. Rows without a job order stay only if their product
      * belongs to one of the selected job orders.
      */
+    /**
+     * Product IDs of a product's family (its parent's children, or the product itself when it has none),
+     * narrowed by $scope. Used so the output tables list all family products, as before.
+     */
+    private function familyProductIds(?Product $product, callable $scope): array
+    {
+        if (!$product) {
+            return [];
+        }
+
+        $parentId = $product->parent_id ?: $product->id;
+        $hasChildren = Product::where('parent_id', $parentId)->exists();
+
+        $query = Product::where(function ($q) use ($parentId, $hasChildren) {
+            if ($hasChildren) {
+                $q->where('parent_id', $parentId);
+            } else {
+                $q->where('id', $parentId);
+            }
+        });
+        $scope($query);
+
+        return $query->pluck('id')->toArray();
+    }
+
     private function savedOutputsForJobOrders($outputs, array $jobOrderIds, array $jobOrderProductIds)
     {
         $jobOrderIds = array_map('intval', $jobOrderIds);

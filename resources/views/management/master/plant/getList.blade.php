@@ -5,6 +5,7 @@
             <th class="col-sm-3">Company Location </th>
             <th class="col-sm-2">Arrival Location </th>
             <th class="col-sm-2">Production Labour charges/kg</th>
+            <th class="col-sm-2">Shift Time</th>
             {{-- <th class="col-sm-2">Description</th> --}}
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
@@ -33,6 +34,12 @@
                     <td>
                         <p class="m-0">
                             {{ $row->production_labour_charges_per_kg }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->shift_start_time ? date('h:i A', strtotime($row->shift_start_time)) : '--' }}
+                            - {{ $row->shift_end_time ? date('h:i A', strtotime($row->shift_end_time)) : '--' }}
                         </p>
                     </td>
                     {{-- <td>

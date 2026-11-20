@@ -67,6 +67,14 @@
                     </div>
                 </div>
 
+                <!-- Plant (of the selected Arrival Locations) -->
+                <div class="col-md-12 mt-3">
+                    <label>Plant:</label>
+                    <div class="plant-wrapper">
+                        <small class="text-muted">Select an arrival location to load plants</small>
+                    </div>
+                </div>
+
                 <!-- Purchase Order Approval -->
 
             </div>
@@ -404,6 +412,7 @@
 
             newCard.find('.arrival-wrapper')
                 .html('<small class="text-muted">Select a location to load arrival options</small>');
+            newCard.find('.plant-wrapper').html('<small class="text-muted">Select an arrival location to load plants</small>');
 
             $('#card-container').append(newCard);
 
@@ -530,6 +539,7 @@
                     selectField.select2({
                         width: '100%'
                     });
+                    window.loadAssignPlants && window.loadAssignPlants(card);
                 });
             });
         }
@@ -555,6 +565,7 @@
                 'data-select2-id');
             newCard.find('.arrival-wrapper').html(
                 '<small class="text-muted">Select a location to load arrival options</small>');
+            newCard.find('.plant-wrapper').html('<small class="text-muted">Select an arrival location to load plants</small>');
             $('#card-container').append(newCard);
             reindexCards();
             initSelect2();
@@ -710,3 +721,5 @@
         }
     });
 </script>
+
+@include('management.acl.users-test.partials.plant_assign_script')

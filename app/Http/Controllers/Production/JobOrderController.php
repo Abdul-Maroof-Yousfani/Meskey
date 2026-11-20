@@ -128,9 +128,10 @@ class JobOrderController extends Controller
             'packingItems.subItems.bagColor',
             'packingItems.subItems.brand',
             'packingItems.subItems.threadColor',
-            'specifications'
+            'specifications',
+            'containerProtectionItems'
         ])->findOrFail($id);
-        
+
         $attentionToIds = [];
         if (is_string($jobOrder->attention_to)) {
             $attentionToIds = json_decode($jobOrder->attention_to, true) ?? [];

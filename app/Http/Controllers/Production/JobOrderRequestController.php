@@ -514,6 +514,9 @@ class JobOrderRequestController extends Controller
         $request = JobOrderRequest::with([
             'companyLocation',
             'product',
+            'cropYear',
+            'exportOrder',
+            'creator',
             'packingItems.companyLocation',
             'packingItems.bagProduct',
             'packingItems.bagCondition',

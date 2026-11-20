@@ -29,17 +29,6 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Arrival Location:</label>
-                    <select name="arrival_location_id" id="arrival_location_id" class="form-control select2">
-                        <option value="">Select Arrival Location</option>
-                        @foreach($arrival_locations as $al)
-                            <option value="{{ $al->id }}">{{ $al->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
             <div class="col-md-12">
                 <div class="form-group">
                     <label>Job Order:</label>
@@ -67,18 +56,30 @@
             <table class="table table-bordered" id="itemsTable">
                 <thead>
                     <tr>
-                        <th style="width: 20%">Item</th>
-                        <th style="width: 15%">Brand</th>
-                        <th style="width: 15%">Packing Size (Kg)</th>
-                        <th style="width: 15%">Requested Quantity</th>
-                        <th style="width: 15%">Unit</th>
-                        <th style="width: 15%">Remarks</th>
+                        <th style="width: 13%">Factory Location</th>
+                        <th style="width: 12%">Plant</th>
+                        <th style="width: 14%">Item</th>
+                        <th style="width: 12%">Brand</th>
+                        <th style="width: 9%">Packing Size (Kg)</th>
+                        <th style="width: 10%">Requested Quantity</th>
+                        <th style="width: 9%">Unit</th>
+                        <th style="width: 16%">Remarks</th>
                         <th style="width: 5%">Action</th>
                     </tr>
                 </thead>
                 <tbody id="itemsBody">
                     <tr>
                         <td>
+                        <select name="items[0][arrival_location_id]" class="form-control select2 item-arrival-location" required>
+                            <option value="">Select Factory Location</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="items[0][plant_id]" class="form-control select2 item-plant">
+                            <option value="">Select Plant</option>
+                        </select>
+                    </td>
+                    <td>
                             <input type="hidden" name="items[0][item_id]">
                             <select class="form-control select2" disabled>
                                 <option value="">Select Item</option>
@@ -178,40 +179,86 @@
             fetchJobOrders();
         });
 
-        // 1. Company Location -> Arrival Location & Job Orders
-        $('#company_location_id').on('change', function() {
-            let companyLocationId = $(this).val();
-            $('#arrival_location_id').empty().append('<option value="">Select Arrival Location</option>');
+        // Factory Locations of the selected Company Location; each item row picks its own
+        var bagArrivalLocations = [];
 
-            if (companyLocationId) {
-                $.ajax({
-                    url: '{{ route("bag-requests.get-arrival-locations") }}',
-                    method: 'GET',
-                    data: { company_location_id: companyLocationId },
-                    success: function(response) {
-                        response.forEach(function(loc) {
-                            $('#arrival_location_id').append(`<option value="${loc.id}">${loc.name}</option>`);
-                        });
-                    }
-                });
-            }
+        function arrivalLocationOptions(selected) {
+            let html = '<option value="">Select Factory Location</option>';
+            bagArrivalLocations.forEach(function(loc) {
+                let sel = String(loc.id) === String(selected) ? 'selected' : '';
+                html += `<option value="${loc.id}" ${sel}>${loc.name}</option>`;
+            });
+            return html;
+        }
+
+        // Plants of the Company Location; a row only lists the plants of its Factory Location
+        var bagPlants = [];
+
+        function plantOptions(arrivalLocationId, selected) {
+            let html = '<option value="">Select Plant</option>';
+            bagPlants.forEach(function(plant) {
+                if (!arrivalLocationId || String(plant.arrival_location_id) !== String(arrivalLocationId)) return;
+                let sel = String(plant.id) === String(selected) ? 'selected' : '';
+                html += `<option value="${plant.id}" ${sel}>${plant.name}</option>`;
+            });
+            return html;
+        }
+
+        function refreshRowPlants($row) {
+            let $plant = $row.find('.item-plant');
+            let current = $plant.val();
+            $plant.html(plantOptions($row.find('.item-arrival-location').val(), current)).trigger('change.select2');
+        }
+
+        // Refresh every row's Factory Location and Plant lists, keeping what was already picked
+        function refreshItemArrivalLocations() {
+            $('#itemsBody .item-arrival-location').each(function() {
+                let current = $(this).val();
+                $(this).html(arrivalLocationOptions(current)).trigger('change.select2');
+                refreshRowPlants($(this).closest('tr'));
+            });
+        }
+
+        // Factory Location picked in a row -> that row's plants
+        $(document).off('change.bagRequestPlant', '#itemsBody .item-arrival-location')
+            .on('change.bagRequestPlant', '#itemsBody .item-arrival-location', function() {
+                refreshRowPlants($(this).closest('tr'));
+            });
+
+        function loadArrivalLocations(companyLocationId) {
+            bagArrivalLocations = [];
+            bagPlants = [];
+            refreshItemArrivalLocations();
+            if (!companyLocationId) return;
+            $.ajax({
+                url: '{{ route("bag-requests.get-arrival-locations") }}',
+                method: 'GET',
+                data: { company_location_id: companyLocationId },
+                success: function(response) {
+                    bagArrivalLocations = response || [];
+                    refreshItemArrivalLocations();
+                }
+            });
+            $.ajax({
+                url: '{{ route("bag-requests.get-plants") }}',
+                method: 'GET',
+                data: { company_location_id: companyLocationId },
+                success: function(response) {
+                    bagPlants = response || [];
+                    refreshItemArrivalLocations();
+                }
+            });
+        }
+
+        // 1. Company Location -> Factory Locations (for item rows) & Job Orders
+        $('#company_location_id').on('change', function() {
+            loadArrivalLocations($(this).val());
             fetchJobOrders();
         });
 
         // Auto-fetch if company location is already selected on load
         if ($('#company_location_id').val()) {
-            let initialLocationId = $('#company_location_id').val();
-            $.ajax({
-                url: '{{ route("bag-requests.get-arrival-locations") }}',
-                method: 'GET',
-                data: { company_location_id: initialLocationId },
-                success: function(response) {
-                    $('#arrival_location_id').empty().append('<option value="">Select Arrival Location</option>');
-                    response.forEach(function(loc) {
-                        $('#arrival_location_id').append(`<option value="${loc.id}">${loc.name}</option>`);
-                    });
-                }
-            });
+            loadArrivalLocations($('#company_location_id').val());
             fetchJobOrders();
         }
 
@@ -235,6 +282,12 @@
                                 let newRow = `
                                     <tr>
                                         <td>
+                        <select name="items[${rowIndex}][arrival_location_id]" class="form-control select2 item-arrival-location" required>${arrivalLocationOptions('')}</select>
+                    </td>
+                    <td>
+                        <select name="items[${rowIndex}][plant_id]" class="form-control select2 item-plant">${plantOptions('', '')}</select>
+                    </td>
+                    <td>
                                             <input type="hidden" name="items[${rowIndex}][item_id]" value="${item.item_id}">
                                             <select class="form-control select2" disabled>
                                                 <option value="${item.item_id}" selected>${item.item_name}</option>
@@ -296,6 +349,12 @@
             let newRow = `
                 <tr>
                     <td>
+                        <select name="items[0][arrival_location_id]" class="form-control select2 item-arrival-location" required>${arrivalLocationOptions('')}</select>
+                    </td>
+                    <td>
+                        <select name="items[0][plant_id]" class="form-control select2 item-plant">${plantOptions('', '')}</select>
+                    </td>
+                    <td>
                         <input type="hidden" name="items[0][item_id]">
                         <select class="form-control select2" disabled>
                             <option value="">Select Item</option>
@@ -346,6 +405,12 @@
         $('#addItemRow').on('click', function() {
             let newRow = `
                 <tr>
+                    <td>
+                        <select name="items[${rowIndex}][arrival_location_id]" class="form-control select2 item-arrival-location" required>${arrivalLocationOptions('')}</select>
+                    </td>
+                    <td>
+                        <select name="items[${rowIndex}][plant_id]" class="form-control select2 item-plant">${plantOptions('', '')}</select>
+                    </td>
                     <td>
                         <input type="hidden" name="items[${rowIndex}][item_id]">
                         <select class="form-control select2" disabled>
@@ -405,3 +470,11 @@
         $('#request_date').trigger('change');
     });
 </script>
+
+<style>
+    /* Item Details: fixed column widths, every select fills its cell the same way on every row */
+    #itemsTable { table-layout: fixed; width: 100%; }
+    #itemsTable th, #itemsTable td { vertical-align: middle; padding: 6px; }
+    #itemsTable .select2-container { width: 100% !important; }
+    #itemsTable .form-control { width: 100%; }
+</style>

@@ -29,6 +29,7 @@ class ProductionAnalysisRequest extends Model
         'job_order_id',
         'production_voucher_id',
         'machine_plan_setting_id',
+        'output_alert_id',
         'type',
         'remarks',
         'status',
@@ -116,6 +117,12 @@ class ProductionAnalysisRequest extends Model
         return $this->belongsTo(MachinePlanSetting::class, 'machine_plan_setting_id');
     }
 
+    /** QC alert this re-check request was created from. */
+    public function outputAlert()
+    {
+        return $this->belongsTo(ProductionOutputAlert::class, 'output_alert_id');
+    }
+
     /**
      * Job orders an analysis made from this request belongs to: those of its Production Voucher,
      * plus the single job order older requests were created against.
@@ -128,6 +135,14 @@ class ProductionAnalysisRequest extends Model
 
         if ($this->job_order_id) {
             $ids[] = $this->job_order_id;
+        }
+
+        // Requests made from a Machine Plan (no voucher yet) use the plan's job order
+        if ($this->machine_plan_setting_id) {
+            $planJobOrderId = MachinePlanSetting::whereKey($this->machine_plan_setting_id)->value('job_order_id');
+            if ($planJobOrderId) {
+                $ids[] = $planJobOrderId;
+            }
         }
 
         return array_values(array_unique(array_map('intval', $ids)));
@@ -153,13 +168,57 @@ class ProductionAnalysisRequest extends Model
         return $this->suggestedProductIdCache = $productId ? (int) $productId : null;
     }
 
-    /** "PV no [Draft] - JO-1, JO-2" for the analysis forms; the job order no. for older requests. */
+    /** Products chosen in the RM QC of this request's job orders. */
+    public function rmQcProductIds(): array
+    {
+        $jobOrderIds = $this->jobOrderIdsForAnalysis();
+        if (empty($jobOrderIds)) {
+            return [];
+        }
+
+        return \App\Models\Production\JobOrder\JobOrderRawMaterialQcItem::whereIn(
+                'job_order_rm_qc_id',
+                \App\Models\Production\JobOrder\JobOrderRawMaterialQc::whereIn('job_order_id', $jobOrderIds)->select('id')
+            )
+            ->distinct()
+            ->pluck('product_id')
+            ->filter()
+            ->map(fn($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Product list for an Input analysis: the RM QC products of the request,
+     * or the same product list as before (getFinishGoodProducts) when no RM QC exists.
+     * $includeId keeps an already saved product in the list.
+     */
+    public static function inputProductOptions(?self $request, $includeId = null)
+    {
+        $rmQcIds = $request ? $request->rmQcProductIds() : [];
+
+        if (empty($rmQcIds)) {
+            return getFinishGoodProducts($includeId);
+        }
+
+        return \App\Models\Product::whereIn('id', array_filter(array_merge($rmQcIds, [$includeId])))
+            ->orderBy('name')
+            ->get();
+    }
+
+    /** Product an Output analysis is fixed to: the job order's product. */
+    public function outputProductId(): ?int
+    {
+        return $this->suggestedProductId();
+    }
+
+    /** "PV no - JO-1, JO-2" for the analysis forms; the job order no. for older requests. */
     public function getVoucherDisplayAttribute(): ?string
     {
         $voucher = $this->productionVoucher;
         if ($voucher) {
             $jobOrders = $voucher->jobOrders()->pluck('job_order_no')->implode(', ');
-            return $voucher->prod_no . ($voucher->is_draft ? ' [Draft]' : '') . ($jobOrders ? ' - ' . $jobOrders : '');
+            return $voucher->prod_no . ($jobOrders ? ' - ' . $jobOrders : '');
         }
 
         return $this->jobOrder?->job_order_no;

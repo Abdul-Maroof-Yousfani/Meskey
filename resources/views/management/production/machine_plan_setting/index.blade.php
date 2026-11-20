@@ -40,7 +40,7 @@
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
+                                                    placeholder="Job order, plant or voucher" name="search"
                                                     value="{{ request('search', '') }}">
                                             </div>
                                         </div>
@@ -54,14 +54,13 @@
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Location</th>
+                                            <th>Job Order</th>
                                             <th>Plant</th>
-                                            <th>Production Voucher</th>
-                                            <th>User</th>
-                                            <th>Machines</th>
-                                            <th>Breakdown Items</th>
-                                            <th>Remarks</th>
-                                            <th>Action</th>
+                                            <th>Running Machines</th>
+                                            <th>Breakdowns</th>
+                                            <th>Voucher</th>
+                                            <th>Created By</th>
+                                            <th class="text-right">Action</th>
                                         </tr>
                                     </thead>
 

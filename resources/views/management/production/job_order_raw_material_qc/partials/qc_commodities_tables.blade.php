@@ -13,6 +13,7 @@
             <!-- Commodity Header -->
             <h6 class="text-primary mb-3">
                 <i class="ft-box mr-1"></i> {{ $commodity->name }}
+                <span class="badge badge-info ml-1 product-qty-percent" title="Share of total Sugg. QTY">0%</span>
             </h6>
             
             <!-- QC Table -->
@@ -23,6 +24,7 @@
                             <th width="20%">Location</th>
                             <th width="20%">Sub Location</th>
                             <th width="15%">Sugg. QTY (kgs)</th>
+                            <th width="7%">%</th>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramSpec = $specsData->where('spec_name', $parameter)->first();
@@ -67,6 +69,7 @@
                                        min="0"
                                        required>
                             </td>
+                            <td class="text-center"><span class="row-qty-percent font-weight-bold">0.00%</span></td>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramField = Illuminate\Support\Str::slug($parameter, '_');
@@ -99,8 +102,9 @@
                     </tbody>
                     <tfoot class="bg-light">
                         <tr class="weighted-average-row">
-                            <td><strong>Weighted Avg.</strong></td>
+                            <td colspan="2"><strong>Weighted Avg.</strong></td>
                             <td class="total-quantity"><strong>0</strong></td>
+                            <td class="text-center total-qty-percent"><strong>0.00%</strong></td>
                             @foreach($qcParameters as $parameter)
                                 @php
                                     $paramField = Illuminate\Support\Str::slug($parameter, '_');
@@ -243,3 +247,5 @@ $(document).ready(function() {
 
 });
 </script>
+
+@include('management.production.job_order_raw_material_qc.partials.qty_percentage_script')

@@ -83,11 +83,12 @@
                                 <td class="font-weight-bold">{{ $users->count() > 0 ? $users->pluck('name')->implode(', ') : '-' }}</td>
                             </tr>
                             @php
-                                $arrivalLocs = $jobOrder->arrivalLocationRecords()->pluck('name')->implode(', ');
+                                $decodeIds = function ($v) { while (is_string($v)) { $d = json_decode($v, true); if ($d === null) break; $v = $d; } return array_values(array_filter((array) $v, fn($x) => $x !== null && $x !== '')); };
+                                $arrivalLocs = \App\Models\Master\ArrivalLocation::whereIn('id', $decodeIds($jobOrder->arrival_locations))->pluck('name')->implode(', ');
                             @endphp
                             @if($arrivalLocs)
                             <tr>
-                                <th class="text-uppercase bg-light">Arrival Locations</th>
+                                <th class="text-uppercase bg-light">Factory Locations</th>
                                 <td>{{ $arrivalLocs }}</td>
                             </tr>
                             @endif
@@ -205,184 +206,13 @@
             </div>
             @endif
 
-            {{-- ROW 3: PACKING DETAILS & MASTER PACKING --}}
-            @if($jobOrder->packingItems && $jobOrder->packingItems->count() > 0)
-                @foreach($jobOrder->packingItems as $index => $item)
-                <div class="packing-item-block mb-3">
-                    <table class="table table-bordered job-info-table mb-0">
-                        <thead>
-                            <tr class="section-header">
-                                <th colspan="8" class="text-center py-1">
-                                    PACKING ITEM #{{ $index + 1 }}
-                                    @if($item->companyLocation)
-                                        - <span class="text-dark">{{ $item->companyLocation->name }}</span>
-                                    @endif
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{-- Row 1: Primary Material Info --}}
-                            <tr>
-                                <th width="12%" class="text-uppercase bg-light">Brand</th>
-                                <td width="13%" class="font-weight-bold">{{ $item->brand->name ?? '-' }}</td>
-                                <th width="12%" class="text-uppercase bg-light">Bag Product</th>
-                                <td width="13%">{{ $item->bagProduct->name ?? '-' }}</td>
-                                <th width="12%" class="text-uppercase bg-light">Bag Condition</th>
-                                <td width="13%">{{ $item->bagCondition->name ?? '-' }}</td>
-                                <th width="12%" class="text-uppercase bg-light">Bag Size</th>
-                                <td width="13%">{{ $item->bag_size ? number_format($item->bag_size, 2) . ' KG' : '-' }}</td>
-                            </tr>
-                            {{-- Row 2: Color, Stitching, Specs --}}
-                            <tr>
-                                <th class="text-uppercase bg-light">Bag Color</th>
-                                <td>{{ $item->bagColor->color ?? '-' }}</td>
-                                <th class="text-uppercase bg-light">Thread Color</th>
-                                <td>{{ $item->threadColor->color ?? '-' }}</td>
-                                <th class="text-uppercase bg-light">Stitching</th>
-                                <td>{{ $item->stitching->name ?? '-' }}</td>
-                                <th class="text-uppercase bg-light">Min Bag Wt.</th>
-                                <td>{{ $item->min_weight_empty_bags ? $item->min_weight_empty_bags . ' g' : '-' }}</td>
-                            </tr>
-                            {{-- Row 3: Quantities --}}
-                            <tr>
-                                <th class="text-uppercase bg-light">No. of Bags</th>
-                                <td class="font-weight-bold">{{ $item->no_of_bags ? number_format($item->no_of_bags) : '0' }}</td>
-                                <th class="text-uppercase bg-light">Extra Bags</th>
-                                <td>
-                                    {{ $item->extra_bags ? number_format($item->extra_bags) : '0' }}
-                                    @if(($item->extra_bags_percentage ?? 0) > 0)
-                                        ({{ $item->extra_bags_percentage }}%)
-                                    @endif
-                                </td>
-                                <th class="text-uppercase bg-light">Empty Bags</th>
-                                <td>{{ $item->empty_bags ? number_format($item->empty_bags) : '0' }}</td>
-                                <th class="text-uppercase bg-light">Total Bags</th>
-                                <td class="font-weight-bold text-primary">{{ $item->total_bags ? number_format($item->total_bags) : '0' }}</td>
-                            </tr>
-                            {{-- Row 4: Weights & Shipping --}}
-                            <tr>
-                                <th class="text-uppercase bg-light">Total KGs</th>
-                                <td class="font-weight-bold">{{ $item->total_kgs ? number_format($item->total_kgs, 2) : '0.00' }}</td>
-                                <th class="text-uppercase bg-light">Net Wt. (MT)</th>
-                                <td class="font-weight-bold text-success">{{ $item->metric_tons ? number_format($item->metric_tons, 3) : '0.000' }}</td>
-                                <th class="text-uppercase bg-light">Stuffing/Cont.</th>
-                                <td>{{ $item->stuffing_in_container ? $item->stuffing_in_container . ' MT' : '-' }}</td>
-                                <th class="text-uppercase bg-light">Containers</th>
-                                <td>{{ $item->no_of_containers ?? '0' }}</td>
-                            </tr>
-                            {{-- Row 5: Logistics, Dates, Attachment --}}
-                            <tr>
-                                <th class="text-uppercase bg-light">Delivery Date</th>
-                                <td>{{ $item->delivery_date ? $item->delivery_date->format('d.m.Y') : '-' }}</td>
-                                <th class="text-uppercase bg-light">Fumigation By</th>
-                                @php
-                                    $fumiIds = is_array($item->fumigation_company_id) ? $item->fumigation_company_id : (json_decode($item->fumigation_company_id, true) ?? []);
-                                    if (!empty($fumiIds) && in_array('null', (array)$fumiIds)) {
-                                        $fumis = 'N/A';
-                                    } else {
-                                        $fumis = !empty($fumiIds) ? \App\Models\Master\FumigationCompany::whereIn('id', $fumiIds)->pluck('name')->implode(', ') : '-';
-                                    }
-                                @endphp
-                                <td>{{ $fumis }}</td>
-                                <th class="text-uppercase bg-light">Fumigation Type</th>
-                                <td>
-                                    {{ $item->fumigation_type ? ucfirst($item->fumigation_type) : ($jobOrder->fumigation_type ? ucfirst($jobOrder->fumigation_type) : '-') }}
-                                </td>
-                                <th class="text-uppercase bg-light">Fumigation Dosage</th>
-                                <td>{{ $item->fumigation_dosage ?: ($jobOrder->exportOrder->fumigation_dosage ?? '-') }}</td>
-                            </tr>
-                            <tr>
-                                <th class="text-uppercase bg-light">Attachment</th>
-                                <td colspan="7">
-                                    @if($item->attachment)
-                                        <a href="{{ asset('storage/' . $item->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">
-                                            <i class="ft-file"></i> View
-                                        </a>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                            </tr>
-                            @if($item->description || $item->location_instruction)
-                            <tr>
-                                @if($item->description)
-                                    <th class="text-uppercase bg-light">Description</th>
-                                    <td colspan="{{ $item->location_instruction ? 3 : 7 }}" class="small">{!! nl2br(e($item->description)) !!}</td>
-                                @endif
-                                @if($item->location_instruction)
-                                    <th class="text-uppercase bg-light">Location Instr.</th>
-                                    <td colspan="{{ $item->description ? 3 : 7 }}" class="small">{!! nl2br(e($item->location_instruction)) !!}</td>
-                                @endif
-                            </tr>
-                            @endif
-                        </tbody>
-                    </table>
-
-                    {{-- SUB-SECTION: MASTER PACKING --}}
-                    @if($item->subItems && $item->subItems->count() > 0)
-                    <table class="table table-bordered job-info-table mt-1 mb-0">
-                        <thead>
-                            <tr class="sub-section-header">
-                                <th colspan="12" class="py-1 px-2 small font-weight-bold text-center">
-                                    MASTER PACKING FOR ITEM #{{ $index + 1 }}
-                                </th>
-                            </tr>
-                            <tr>
-                                <th class="bg-light small">MP Bag</th>
-                                <th class="bg-light small">Bag Size</th>
-                                <th class="bg-light small">Brand</th>
-                                <th class="bg-light small">Color / Thread</th>
-                                <th class="bg-light small">Stitching</th>
-                                <th class="bg-light small text-center">Primaries/MP</th>
-                                <th class="bg-light small text-center">Pack Size (kg)</th>
-                                <th class="bg-light small text-center">No. of Bags</th>
-                                <th class="bg-light small text-center">Extra (Qty/%)</th>
-                                <th class="bg-light small text-center">Total Bags</th>
-                                <th class="bg-light small text-center">Bag Wt.</th>
-                                <th class="bg-light small text-center">Attachment</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($item->subItems as $subIndex => $sub)
-                                <tr>
-                                    <td class="small">{{ $sub->bagType->name ?? $sub->bagProduct->name ?? '-' }}</td>
-                                    <td class="small">{{ $sub->bagSize->size ?? '-' }}</td>
-                                    <td class="small">{{ $sub->brand->name ?? '-' }}</td>
-                                    <td class="small">
-                                        {{ $sub->bagColor->color ?? '-' }}
-                                        @if($sub->threadColor) / {{ $sub->threadColor->color }} @endif
-                                    </td>
-                                    <td class="small">{{ $sub->stitching->name ?? '-' }}</td>
-                                    <td class="small text-center">{{ $sub->no_of_primary_bags ?? '-' }}</td>
-                                    <td class="small text-center">
-                                        {{ $sub->packing_size ?: (($item->bag_size ?? 0) * ($sub->no_of_primary_bags ?? 0)) }}
-                                    </td>
-                                    <td class="small text-center">{{ $sub->no_of_bags ? number_format($sub->no_of_bags) : '-' }}</td>
-                                    <td class="small text-center">
-                                        {{ $sub->extra_bags ? number_format($sub->extra_bags) : '0' }}
-                                        @if(($sub->extra_bags_percentage ?? 0) > 0)
-                                            ({{ $sub->extra_bags_percentage }}%)
-                                        @endif
-                                    </td>
-                                    <td class="small text-center font-weight-bold">{{ $sub->total_bags ? number_format($sub->total_bags) : '-' }}</td>
-                                    <td class="small text-center">{{ $sub->empty_bag_weight ? $sub->empty_bag_weight . ' g' : '-' }}</td>
-                                    <td class="small text-center">
-                                        @if($sub->attachment)
-                                            <a href="{{ asset('storage/' . $sub->attachment) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-1">
-                                                <i class="ft-file"></i> View
-                                            </a>
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @endif
-                </div>
-                @endforeach
-            @endif
+            {{-- ROW 3: PACKING DETAILS, MASTER PACKING & CONTAINER PROTECTION --}}
+            @include('management.production.partials.view_packing_details', [
+                'packingItems' => $jobOrder->packingItems,
+                'containerItems' => $jobOrder->containerProtectionItems,
+                'fallbackFumigationType' => $jobOrder->fumigation_type,
+                'fallbackDosage' => $jobOrder->exportOrder->fumigation_dosage ?? null,
+            ])
 
             {{-- ROW 4: OPERATIONAL DETAILS --}}
             <div class="row mb-3">
@@ -400,11 +230,11 @@
                                 <th width="20%" class="text-uppercase bg-light">Inspection By</th>
                                 <td width="30%">
                                     @php 
-                                        $inspIds = is_string($jobOrder->inspection_company_id) ? json_decode($jobOrder->inspection_company_id, true) : $jobOrder->inspection_company_id;
+                                        $inspIds = $decodeIds($jobOrder->inspection_company_id);
                                         if (!empty($inspIds) && in_array('null', (array)$inspIds)) {
                                             $insps = 'N/A';
                                         } else {
-                                            $insps = !empty($inspIds) ? \App\Models\Master\InspectionCompany::whereIn('id', $inspIds)->pluck('name')->implode(', ') : '-';
+                                            $insps = !empty($inspIds) ? \App\Models\Master\InspectionCompany::whereIn('id', (array) $inspIds)->pluck('name')->implode(', ') : '-';
                                         }
                                     @endphp
                                     {{ $insps }}

@@ -20,6 +20,7 @@ class MachinePlanSetting extends Model
         'company_location_id',
         'date',
         'plant_id',
+        'job_order_id',
         'production_voucher_id',
         'user_id',
         'remarks'
@@ -39,14 +40,20 @@ class MachinePlanSetting extends Model
         return $this->belongsTo(\App\Models\Master\CompanyLocation::class, 'company_location_id');
     }
 
+    /** Each plan is made for one job order. */
+    public function jobOrder()
+    {
+        return $this->belongsTo(\App\Models\Production\JobOrder\JobOrder::class, 'job_order_id');
+    }
+
     public function productionVoucher()
     {
         return $this->belongsTo(ProductionVoucher::class);
     }
 
     /**
-     * Once its Production Voucher is completed (no longer a draft), the plan's machine rows are the
-     * voucher's actual times; they can then only be changed from the Production Voucher.
+     * Once a Production Voucher is made for the plan, the plan's machine rows are the voucher's
+     * actual times; they can then only be changed from the Production Voucher.
      */
     public function isLocked(): bool
     {
@@ -54,7 +61,7 @@ class MachinePlanSetting extends Model
             return false;
         }
         $voucher = $this->relationLoaded('productionVoucher') ? $this->productionVoucher : $this->productionVoucher()->first();
-        return $voucher && !$voucher->is_draft;
+        return (bool) $voucher;
     }
 
     public function user()

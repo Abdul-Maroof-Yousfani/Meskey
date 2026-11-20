@@ -3105,3 +3105,89 @@ $(document).ready(function () {
     $.extend($.fn.select2, originalSelect2);
 })(window.jQuery);
 /* ===== END: Select2 modal scroll fix ===== */
+
+/* ===== START: Drawer / modal scroll guard (added 2026-11-20) =====
+ * Problem: sometimes the page or an open drawer stops scrolling.
+ *  1. body.drawer-opened (overflow hidden) stayed on after a drawer was closed by some paths.
+ *  2. A Select2 dropdown left open when the drawer content was replaced keeps its scroll lock
+ *     on the drawer forever, so the drawer jumps back on every scroll.
+ *  3. A Bootstrap modal closed abnormally leaves body.modal-open and padding-right.
+ * Fix: whenever drawers / modals / popups change (and on scroll attempts), bring the page back
+ * in line with what is really open. To undo: delete everything from START to END.
+ */
+(function ($) {
+    if (!$) return;
+
+    var SCROLL_PARENTS = '.modal-sidebar, .modal-sidebar-content, .modal-tab-content, .modal-body, .clean-sidebar-drawer, .clean-drawer-body';
+
+    function anyDrawerOpen() {
+        return $('.modal-sidebar.open').length > 0 || $('.clean-sidebar-drawer').length > 0;
+    }
+
+    // Remove Select2 scroll locks that no open dropdown needs any more
+    function releaseSelect2Locks() {
+        if ($('.select2-container--open').length) return;
+        $(SCROLL_PARENTS).off('scroll.select2');
+        $(window).off('scroll.select2 resize.select2 orientationchange.select2');
+    }
+
+    function syncScrollLock() {
+        $('body').toggleClass('drawer-opened', anyDrawerOpen());
+
+        // Bootstrap modal leftovers when no modal is showing
+        if (!$('.modal.show').length && !$('.modal-backdrop').length) {
+            $('body').removeClass('modal-open').css('padding-right', '');
+        }
+        // Inline overflow left on body / html by an interrupted popup
+        if (!$('.modal.show').length && !$('.swal2-container').length) {
+            document.body.style.removeProperty('overflow');
+            document.documentElement.style.removeProperty('overflow');
+        }
+
+        releaseSelect2Locks();
+    }
+
+    var timer = null;
+    function schedule() {
+        clearTimeout(timer);
+        timer = setTimeout(syncScrollLock, 80);
+    }
+    window.syncDrawerScrollLock = syncScrollLock;
+
+    $(function () {
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(schedule);
+            // Drawers opening / closing
+            document.querySelectorAll('.modal-sidebar').forEach(function (el) {
+                observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+            });
+            // Clean drawers, popups and backdrops being added / removed
+            observer.observe(document.body, { childList: true });
+        }
+
+        $(document)
+            .on('hidden.bs.modal.scrollGuard', schedule)
+            .on('click.scrollGuard', '.modal-sidebar-close, .clean-close-btn, [data-close="model"]', schedule)
+            .on('keyup.scrollGuard', function (e) { if (e.key === 'Escape') schedule(); })
+            .ajaxComplete(schedule);
+
+        // Scrolling a drawer with no dropdown open: drop any stale Select2 lock right away
+        $(document).on('wheel.scrollGuard touchstart.scrollGuard', SCROLL_PARENTS, function (e) {
+            if ($('.select2-container--open').length) return;
+            // The lock sits on every scrollable parent of the dropdown (drawer, table wrappers...)
+            $(e.target).parents().addBack().off('scroll.select2');
+            releaseSelect2Locks();
+        });
+
+        // Drawer content is about to be replaced: close open dropdowns first so they unlock
+        $(document).on('mousedown.scrollGuard', '.modal-sidebar-close, .clean-close-btn', function () {
+            $('.modal-sidebar .select2-hidden-accessible, .clean-sidebar-drawer .select2-hidden-accessible').each(function () {
+                var s2 = $(this).data('select2');
+                if (s2 && typeof s2.isOpen === 'function' && s2.isOpen()) s2.close();
+            });
+        });
+
+        syncScrollLock();
+    });
+})(window.jQuery);
+/* ===== END: Drawer / modal scroll guard ===== */

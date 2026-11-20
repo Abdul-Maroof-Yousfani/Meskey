@@ -37,6 +37,8 @@ class PlantRequest extends FormRequest
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'shift_start_time' => 'required|date_format:H:i',
+            'shift_end_time' => 'required|date_format:H:i',
             'auto_analysis_enabled' => 'nullable|boolean',
             'input_min_interval' => 'nullable|integer|min:1|max:1440',
             'input_max_interval' => 'nullable|integer|min:1|max:1440',
@@ -63,6 +65,10 @@ class PlantRequest extends FormRequest
             'description.max' => 'The description must not exceed 500 characters.',
             'status.required' => 'The status is required.',
             'status.in' => 'The status must be either active or inactive.',
+            'shift_start_time.required' => 'The Shift Start Time is required.',
+            'shift_start_time.date_format' => 'The Shift Start Time must be a valid time.',
+            'shift_end_time.required' => 'The Shift End Time is required.',
+            'shift_end_time.date_format' => 'The Shift End Time must be a valid time.',
         ];
     }
 }

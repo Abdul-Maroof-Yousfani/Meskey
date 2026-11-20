@@ -40,7 +40,13 @@
                 </div>
                 <div class="col-md-4">
                     <fieldset>
-                        <label>Job Order Request (Optional):</label>
+                        <label class="d-flex justify-content-between align-items-center w-100">
+                            <span>Job Order Request (Optional):</span>
+                            <button type="button" class="btn btn-sm btn-outline-info py-0 px-1 d-none" id="viewJobOrderRequestBtn"
+                                data-url="{{ route('job-order-requests.show', '__ID__') }}">
+                                <i class="ft-eye"></i> View Request
+                            </button>
+                        </label>
                         <div class="input-group">
                             @php
                                 $selectedRequestId = request('job_order_request_id', request('request_id'));
@@ -176,6 +182,13 @@
 
             <div id="packingItems">
                 <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
+                    <div class="col-12 packing-item-header">
+                        <span class="packing-item-title"></span>
+                        <span class="packing-item-actions">
+                            <button type="button" class="btn btn-sm btn-outline-info duplicate-packing-item"><i class="ft-copy"></i> Duplicate</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-packing-item"><i class="ft-trash-2"></i> Remove</button>
+                        </span>
+                    </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Location: <span class="text-danger">*</span></label>
@@ -200,17 +213,6 @@
                             </select>
                         </div>
                     </div>
-                    <!-- <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Bag Type:</label>
-                            <select name="packing_items[0][bag_type_id]" class="form-control select2">
-                                <option value="">Select Bag Type</option>
-                                @foreach($bagTypes as $bagType)
-                                    <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div> -->
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Type/Product:</label>
@@ -233,7 +235,6 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Color: <span class="text-danger">*</span></label>
@@ -267,69 +268,69 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Packing Size (kg): <span class="text-danger">*</span></label>
                             <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size"
                                 step="0.01" min="0.01" required>
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>No. of Bags: <span class="text-danger">*</span></label>
                             <input type="number" name="packing_items[0][no_of_bags]" class="form-control no-of-bags" min="1" required>
                         </div>
                     </div>
-                    <div class="col-md-1">
-                        <div class="form-group">
-                            <label>Extra Bags:</label>
-                            <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags"
-                                value="0">
-                        </div>
-                    </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Extra Bags %:</label>
                             <input type="number" name="packing_items[0][extra_bags_percentage]" class="form-control extra-bags-percentage"
                                 step="0.01" value="0">
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
-                            <label>Empty Bags:</label>
-                            <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags"
+                            <label>Extra Bags:</label>
+                            <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags"
                                 value="0">
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Empty Bags %:</label>
                             <input type="number" name="packing_items[0][empty_bags_percentage]" class="form-control empty-bags-percentage"
                                 step="0.01" value="0">
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Empty Bags:</label>
+                            <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags"
+                                value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Total Bags:</label>
                             <input type="number" min="0" name="packing_items[0][total_bags]"
                                 class="form-control total-bags" readonly>
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Total KGs:</label>
                             <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs"
                                 step="0.01" readonly>
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Metric Tons:</label>
                             <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons"
                                 step="0.01" min="0" readonly>
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Stuffing (MTs):</label>
                             <input type="number" name="packing_items[0][stuffing_in_container]" 
@@ -368,7 +369,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Fumigation Type:</label>
                             <select name="packing_items[0][fumigation_type]" class="form-control select2 fumigation-locked">
@@ -385,13 +386,26 @@
                             <input type="text" name="packing_items[0][fumigation_dosage]" class="form-control fumigation-dosage" value="" placeholder="Enter dosage">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label>Attachment:</label>
                             <div class="existing-attachment-wrap"></div>
                             <input type="file" name="packing_items[0][attachment]" class="form-control packing-attachment" accept="image/*,application/pdf,.doc,.docx">
                         </div>
                     </div>
+
+                    <!-- <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Type:</label>
+                            <select name="packing_items[0][bag_type_id]" class="form-control select2">
+                                <option value="">Select Bag Type</option>
+                                @foreach($bagTypes as $bagType)
+                                    <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div> -->
+
                     <!-- <div class="col-md-2">
                         <div class="form-group">
                             <label>Brand:</label>
@@ -468,13 +482,6 @@
                         </div>
                     </div>
 
-                    <div class="col-md-1">
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <button type="button"
-                                class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -709,6 +716,21 @@
 @endsection
 
 @section('script')
+@include('management.production.partials.packing_duplicate')
+<style>
+    /* Job Order made from a request: only Location / No. of Bags and the first 4 Master Packing columns are shown */
+    #ajaxSubmit.jor-packing-mode .jor-hidden-col,
+    #ajaxSubmit.jor-packing-mode #addPackingItem,
+    #ajaxSubmit.jor-packing-mode .add-sub-packing-item,
+    #ajaxSubmit.jor-packing-mode #packingItems table thead th:nth-child(n+5),
+    #ajaxSubmit.jor-packing-mode #packingItems .sub-packing-items-container > tr > td:nth-child(n+5) {
+        display: none !important;
+    }
+    /* Request fields shown but locked */
+    #ajaxSubmit.jor-packing-mode .jor-locked { background-color: #eef1f4 !important; }
+    #ajaxSubmit.jor-packing-mode select.jor-locked ~ .select2-container { pointer-events: none; }
+    #ajaxSubmit.jor-packing-mode select.jor-locked ~ .select2-container .select2-selection { background-color: #eef1f4 !important; }
+</style>
 <script>
     $(document).ready(function () {
         // Remove all existing event handlers to prevent multiple bindings when modal is loaded multiple times
@@ -853,7 +875,11 @@
         // Job Order Request selection change
         $('#jobOrderRequestSelect').off('change.jobOrderCreate').on('change.jobOrderCreate', function() {
             let id = $(this).val();
+            $('#viewJobOrderRequestBtn').toggleClass('d-none', !id);
             if(!id) {
+                applyRequestPackingMode(false);
+                jorRemainingKg = null;
+                checkRequestQtyLimit();
                 $('input[name="ref_no"]').val('');
                 $('textarea[name="remarks"]').val('');
                 $('textarea[name="order_description"]').val('');
@@ -964,7 +990,7 @@
                     updateFumigationRequirement();
                 }
 
-                // Company Location & Arrival Locations
+                // Company Location & Factory Locations
                 let arrivalLocationsToSelect = (data.arrival_locations || []).map(String);
                 let companyLocationToSet = data.company_location_id || $('#company_location_id').val();
 
@@ -975,7 +1001,7 @@
                     fetchJobOrderNumber();
                 }
 
-                // Load arrival locations and select saved arrival locations
+                // Load factory locations and select saved factory locations
                 let locIds = companyLocationToSet ? [companyLocationToSet] : [];
                 $.ajax({
                     url: "{{ route('job-orders.get-arrival-locations') }}",
@@ -1026,6 +1052,10 @@
                 if (data.container_protection_items && data.container_protection_items.length > 0) {
                     addContainerProtectionRows(data.container_protection_items);
                 }
+
+                applyRequestPackingMode(true);
+                jorRemainingKg = parseFloat(data.remaining_kgs) || 0;
+                checkRequestQtyLimit();
 
             }).fail(function(xhr) {
                 window.isPopulatingFromJobOrderRequest = false;
@@ -1128,7 +1158,8 @@
                     $(this).val(value).prop('readonly', true).addClass('dosage-auto');
                 } else {
                     if ($(this).hasClass('dosage-auto')) $(this).val('');
-                    $(this).prop('readonly', false).removeClass('dosage-auto');
+                    // Locked request dosage (Job Order made from a request) stays readonly
+                    $(this).prop('readonly', $(this).hasClass('jor-locked')).removeClass('dosage-auto');
                 }
             });
         }
@@ -1423,6 +1454,10 @@
                 row.find(`input[name="packing_items[${index}][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                // Stuffing per container stays as in the request; containers follow the quantity
+                row.attr('data-req-stuffing', item.stuffing_in_container || '');
+                // Delivery Date of the Job Order can not go after this date
+                row.attr('data-req-delivery-date', item.delivery_date || '');
                 // Fumigation Dosage saved on the request (the export order dosage, if any, overrides it later)
                 row.find(`input[name="packing_items[${index}][fumigation_dosage]"]`).val(item.fumigation_dosage || '').prop('readonly', false).removeClass('dosage-auto');
                 if (item.delivery_date) {
@@ -1657,59 +1692,9 @@
             isAddingItem = false;
         }
 
-        // Duplicate packing item - PROPERLY FIXED VERSION
+        // Duplicate packing item (with its master packing sub items) right below it
         $(document).off('click.jobOrderCreate', '.duplicate-packing-item').on('click.jobOrderCreate', '.duplicate-packing-item', function () {
-            var currentItem = $(this).closest('.packing-item');
-
-            // Pehle original item ki values capture karo BEFORE destroying Select2
-            var originalValues = {};
-            currentItem.find('select').each(function () {
-                var $select = $(this);
-                originalValues[$select.attr('name')] = $select.val();
-            });
-
-            // Ab clone karo WITHOUT destroying Select2 first
-            var newItem = currentItem.clone();
-
-            // Update indexes for new item
-            var newIndex = $('.packing-item').length;
-            newItem.find('input, select').each(function () {
-                var name = $(this).attr('name');
-                if (name) {
-                    name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
-                    $(this).attr('name', name);
-                }
-            });
-
-            // New item ke Select2 containers ko properly handle karo
-            newItem.find('select').each(function () {
-                var $select = $(this);
-
-                // Select2 container remove karo
-                $select.siblings('.select2-container').remove();
-                $select.show().removeClass('select2-hidden-accessible');
-                $select.next('.select2-container').remove();
-            });
-
-            // Insert after current item
-            currentItem.after(newItem);
-
-            // Re-initialize Select2 for duplicated item with ORIGINAL values
-            newItem.find('select').each(function () {
-                var $select = $(this);
-                var originalName = $select.attr('name').replace(/\[\d+\]/, '[0]'); // Get original name
-                var preservedValue = originalValues[originalName];
-
-                $select.select2();
-                if (preservedValue) {
-                    $select.val(preservedValue).trigger('change');
-                } else if ($select.hasClass('packing-company-location-id')) {
-                    $select.val($('#company_location_id').val() || '').trigger('change');
-                }
-            });
-            currentItem.find('select').select2();
-
-            // Re-index all items
+            duplicatePackingItem($(this).closest('.packing-item'));
             reindexPackingItems();
             updateFumigationRequirement();
         });
@@ -1993,6 +1978,149 @@
             calculateTotals(item);
         });
 
+        // Request mode: keep the request's stuffing per container and work out containers from the new quantity
+        $(document).off('input.jobOrderCreateReq', '.no-of-bags').on('input.jobOrderCreateReq', '.no-of-bags', function () {
+            if (!$('#ajaxSubmit').hasClass('jor-packing-mode')) return;
+            var item = $(this).closest('.packing-item');
+            var reqStuffing = parseFloat(item.attr('data-req-stuffing')) || 0;
+            if (reqStuffing > 0) {
+                item.find('.stuffing').val(reqStuffing);
+                calculateContainers(item);
+            }
+        });
+
+        /*
+         * When the Job Order is made from a request:
+         * - Editable: Location, No. of Bags, Delivery Date (not after the request's Delivery Date)
+         * - Shown but locked: Brand, Packing Size, Extra/Empty Bags and %, Total Bags, Total KGs, Metric Tons, Fumigation Dosage
+         * - Master Packing: only Bag Type, Bag Size, Packing Size and No. of Primary Bags
+         * Everything else stays filled from the request (hidden) and is recalculated automatically.
+         * A required field the request left empty stays visible and editable so it can be filled.
+         */
+        var REQ_EDITABLE = '.packing-company-location-id, .no-of-bags, .sub-packing-items-container, input[name$="[delivery_date]"]';
+        var REQ_LOCKED = 'select[name$="[brand_id]"], .bag-size, .extra-bags-percentage, .extra-bags, .empty-bags-percentage, .empty-bags, .total-bags, .total-kgs, .metric-tons, .fumigation-dosage';
+
+        function isEmptyValue(v) {
+            return v === null || v === '' || (Array.isArray(v) && !v.length);
+        }
+
+        function applyRequestPackingMode(on) {
+            var $form = $('#ajaxSubmit');
+            $form.toggleClass('jor-packing-mode', !!on);
+            $('#packingItems .packing-item').each(function () {
+                var $item = $(this);
+                $item.children('[class*="col-md-"]').each(function () {
+                    var $col = $(this);
+                    var keep = $col.find(REQ_EDITABLE).length > 0 || $col.find(REQ_LOCKED).not('.sub-packing-items-container *').length > 0;
+                    var emptyRequired = $col.find('[required]').filter(function () { return isEmptyValue($(this).val()); }).length > 0;
+                    $col.toggleClass('jor-hidden-col', !!on && !keep && !emptyRequired);
+                });
+
+                // Lock / unlock the shown request fields (readonly so they are still submitted)
+                $item.find(REQ_LOCKED).not('.sub-packing-items-container *').each(function () {
+                    var $f = $(this);
+                    var lock = !!on && !($f.prop('required') && isEmptyValue($f.val()));
+                    if (lock && !$f.hasClass('jor-locked')) {
+                        $f.addClass('jor-locked');
+                        if ($f.is('input') && !$f.prop('readonly')) {
+                            $f.prop('readonly', true).addClass('jor-made-readonly');
+                        }
+                    } else if (!lock && $f.hasClass('jor-locked')) {
+                        $f.removeClass('jor-locked');
+                        if ($f.hasClass('jor-made-readonly')) {
+                            $f.prop('readonly', false).removeClass('jor-made-readonly');
+                        }
+                    }
+                });
+
+                // Delivery Date can not go after the request's Delivery Date
+                var $date = $item.find('input[name$="[delivery_date]"]').first();
+                var reqDate = $item.attr('data-req-delivery-date') || '';
+                if (on && reqDate) {
+                    $date.attr('max', reqDate);
+                } else {
+                    $date.removeAttr('max');
+                }
+            });
+        }
+
+        /*
+         * Live check of the Job Order quantity against the request's remaining quantity
+         * (same rule as the server: master packing bags x packing size, otherwise Total KGs).
+         */
+        var jorRemainingKg = null;
+        function checkRequestQtyLimit() {
+            var $msg = $('#jor-qty-limit-msg');
+            if (!$msg.length) {
+                $msg = $('<div id="jor-qty-limit-msg" class="alert alert-danger py-1 px-2 mb-2" style="display:none;"></div>');
+                $('#packingItems').before($msg);
+            }
+            if (jorRemainingKg === null || !$('#jobOrderRequestSelect').val()) {
+                $msg.hide();
+                $('#packingItems .no-of-bags').removeClass('is-invalid');
+                return true;
+            }
+
+            var currentKg = 0;
+            $('#packingItems .packing-item').each(function () {
+                var $item = $(this);
+                var $subRows = $item.find('.sub-packing-item-row');
+                if ($subRows.length) {
+                    $subRows.each(function () {
+                        var bags = parseFloat($(this).find('.sub-no-of-bags').val()) || 0;
+                        var size = parseFloat($(this).find('.sub-calculated-packing-size').val()) || 0;
+                        currentKg += bags * size;
+                    });
+                } else {
+                    currentKg += parseFloat($item.find('.total-kgs').val()) || 0;
+                }
+            });
+
+            var exceeded = currentKg > jorRemainingKg + 0.01;
+            $('#packingItems .no-of-bags').toggleClass('is-invalid', exceeded);
+            if (exceeded) {
+                $msg.html('<i class="ft-alert-triangle mr-1"></i> Total Quantity (<strong>' + currentKg.toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+                    ' KG</strong>) exceeds the remaining capacity of Job Order Request (<strong>' +
+                    jorRemainingKg.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' KG</strong>).').show();
+            } else {
+                $msg.hide();
+            }
+            return !exceeded;
+        }
+
+        // Re-check after every quantity change (runs after the field calculations)
+        $(document).off('input.jorQtyLimit change.jorQtyLimit', '#packingItems input')
+            .on('input.jorQtyLimit change.jorQtyLimit', '#packingItems input', function () {
+                setTimeout(checkRequestQtyLimit, 0);
+            });
+        $(document).off('click.jorQtyLimit', '.remove-packing-item, .duplicate-packing-item, .remove-sub-packing-item')
+            .on('click.jorQtyLimit', '.remove-packing-item, .duplicate-packing-item, .remove-sub-packing-item', function () {
+                setTimeout(checkRequestQtyLimit, 0);
+            });
+
+        // Request mode: Delivery Date after the request's Delivery Date goes back to the request date
+        $(document).off('change.jobOrderCreateReq', '#packingItems input[name$="[delivery_date]"]').on('change.jobOrderCreateReq', '#packingItems input[name$="[delivery_date]"]', function () {
+            if (!$('#ajaxSubmit').hasClass('jor-packing-mode')) return;
+            var reqDate = $(this).closest('.packing-item').attr('data-req-delivery-date') || '';
+            var val = $(this).val();
+            if (reqDate && val && val > reqDate) {
+                $(this).val(reqDate);
+                var shown = reqDate.split('-').reverse().join('/');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'Invalid Delivery Date', text: 'Delivery Date can not be after the request Delivery Date (' + shown + ').' });
+                } else {
+                    alert('Delivery Date can not be after the request Delivery Date (' + shown + ').');
+                }
+            }
+        });
+
+        // Open the selected Job Order Request in the side view
+        $(document).off('click.jobOrderCreate', '#viewJobOrderRequestBtn').on('click.jobOrderCreate', '#viewJobOrderRequestBtn', function () {
+            var id = $('#jobOrderRequestSelect').val();
+            if (!id) return;
+            openModal(this, $(this).data('url').replace('__ID__', id), 'Job Order Request View', false, '85%');
+        });
+
         // Calculate extra bags from percentage
         $(document).off('input.jobOrderCreate', '.extra-bags-percentage').on('input.jobOrderCreate', '.extra-bags-percentage', function () {
             var item = $(this).closest('.packing-item');
@@ -2248,7 +2376,7 @@
         }
     });
 
-    // Auto-populate arrival locations based on company location selection
+    // Auto-populate factory locations based on company location selection
     $(document).on('change', '#company_location_id, select[name*="company_location_id"]', function() {
         if (window.isPopulatingFromJobOrderRequest) return;
 

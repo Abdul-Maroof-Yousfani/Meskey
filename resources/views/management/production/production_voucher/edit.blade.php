@@ -144,13 +144,7 @@
                         <div class="card-header">
                             <h4 class="mb-0">
                                 Edit Production Voucher #{{ $productionVoucher->prod_no }}
-                                @if($productionVoucher->is_draft)
-                                    <span class="badge badge-warning ml-1">Draft</span>
-                                @endif
                             </h4>
-                            @if($productionVoucher->is_draft)
-                                <small class="text-muted">Created from the Machine Plan Setting. Complete the details and save; it then stops being a draft.</small>
-                            @endif
                         </div>
                         <div class="card-body">
 <form action="{{ route('production-voucher.update', $productionVoucher->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -229,6 +223,25 @@
                                         @endif
                                     @endforeach
                                 </select>
+                                {{-- Shown when the plant has machines: opens the Production Machines modal --}}
+                                <div id="productionMachinesSection" class="mt-2" style="display: {{ $productionVoucher->plant_id ? 'block' : 'none' }};">
+                                    <button type="button" class="btn btn-sm btn-outline-primary mb-2" data-toggle="modal" data-target="#productionMachinesModal">
+                                        <i class="fa fa-cogs mr-1"></i> View Machines
+                                    </button>
+                                        {{-- A plant can have several Machine Plans on a day (one voucher each): pick which one this voucher is for --}}
+                                        <div id="voucherPlanPicker" class="d-flex align-items-center flex-wrap mb-2" style="{{ count($voucherPlanOptions ?? []) > 1 ? '' : 'display: none !important;' }} gap: 8px;">
+                                            <label for="machine_plan_setting_id" class="mb-0" style="font-weight: 600; font-size: 13px;">Machine Plan:</label>
+                                            <select name="machine_plan_setting_id" id="machine_plan_setting_id" class="form-control form-control-sm" style="width: auto; min-width: 260px;">
+                                                @foreach($voucherPlanOptions ?? [] as $planOption)
+                                                    <option value="{{ $planOption['id'] }}" {{ $planOption['available'] ? '' : 'disabled' }}
+                                                        {{ isset($machinePlanSetting) && $machinePlanSetting && $machinePlanSetting->id == $planOption['id'] ? 'selected' : '' }}>
+                                                        {{ $planOption['label'] }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">This plant has several plans on this date; each plan gets its own voucher.</small>
+                                        </div>
+                                </div>
                             </div>
                         </div>
 
@@ -274,141 +287,7 @@
 
                 <!-- Right Side: 9 Job Order selects grouped by Head, B2, and BY with Headings -->
                 <div class="col-md-6">
-                    @php
-                        $selectedJobOrderIds = $jobOrderIds ?? [];
-                        if (empty($selectedJobOrderIds) && !empty($productionVoucher->job_order_id)) {
-                            $selectedJobOrderIds = [$productionVoucher->job_order_id];
-                        }
-                    @endphp
-
-                    <!-- Head Products Job Orders (1-3) -->
-                    <div class="header-heading-sepration py-1 px-2 mb-1" style="background-color: #93c3f2;">
-                        <h6 class="m-0 font-weight-bold" style="font-size: 12px; color: #000;">Head Products</h6>
-                    </div>
-                    <div class="row mb-1">
-                        @for ($i = 0; $i < 3; $i++)
-                            @php
-                                $currentVal = $selectedJobOrderIds[$i] ?? null;
-                            @endphp
-                            <div class="col-md-4">
-                                <div class="form-group mb-1">
-                                    <label class="mb-0 small font-weight-bold">Job Ord. {{ $i + 1 }}:</label>
-                                    <select name="job_order_id[]" id="job_order_id_{{ $i + 1 }}"
-                                        class="form-control select2 job-order-select job-order-head"
-                                        data-category="head"
-                                        onchange="onJobOrderChanged();">
-                                        <option value="">Select Job Order</option>
-                                        @php
-                                            $headList = $headJobOrders ?? collect();
-                                            $foundHead = false;
-                                        @endphp
-                                        @foreach($headList as $jobOrder)
-                                            @if($currentVal == $jobOrder->id) @php $foundHead = true; @endphp @endif
-                                            <option value="{{ $jobOrder->id }}" {{ $currentVal == $jobOrder->id ? 'selected' : '' }}>
-                                                {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif @if($jobOrder->product) - {{ $jobOrder->product->name }}@endif
-                                            </option>
-                                        @endforeach
-                                        @if($currentVal && !$foundHead)
-                                            @php
-                                                $curJo = ($jobOrders ?? collect())->firstWhere('id', $currentVal);
-                                            @endphp
-                                            @if($curJo)
-                                                <option value="{{ $curJo->id }}" selected>
-                                                    {{ $curJo->job_order_no }}@if($curJo->ref_no) ({{ $curJo->ref_no }})@endif @if($curJo->product) - {{ $curJo->product->name }}@endif
-                                                </option>
-                                            @endif
-                                        @endif
-                                    </select>
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-
-                    <!-- B2 Products Job Orders (4-6) -->
-                    <div class="header-heading-sepration py-1 px-2 mb-1 mt-1" style="background-color: #93c3f2;">
-                        <h6 class="m-0 font-weight-bold" style="font-size: 12px; color: #000;">B2 Products</h6>
-                    </div>
-                    <div class="row mb-1">
-                        @for ($i = 3; $i < 6; $i++)
-                            @php
-                                $currentVal = $selectedJobOrderIds[$i] ?? null;
-                            @endphp
-                            <div class="col-md-4">
-                                <div class="form-group mb-1">
-                                    <label class="mb-0 small font-weight-bold">Job Ord. {{ $i - 2 }}:</label>
-                                    <select name="job_order_id[]" id="job_order_id_{{ $i + 1 }}"
-                                        class="form-control select2 job-order-select job-order-b2"
-                                        data-category="b2"
-                                        onchange="onJobOrderChanged();">
-                                        <option value="">Select Job Order</option>
-                                        @php
-                                            $b2List = $b2JobOrders ?? collect();
-                                            $foundB2 = false;
-                                        @endphp
-                                        @foreach($b2List as $jobOrder)
-                                            @if($currentVal == $jobOrder->id) @php $foundB2 = true; @endphp @endif
-                                            <option value="{{ $jobOrder->id }}" {{ $currentVal == $jobOrder->id ? 'selected' : '' }}>
-                                                {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif @if($jobOrder->product) - {{ $jobOrder->product->name }}@endif
-                                            </option>
-                                        @endforeach
-                                        @if($currentVal && !$foundB2)
-                                            @php
-                                                $curJo = ($jobOrders ?? collect())->firstWhere('id', $currentVal);
-                                            @endphp
-                                            @if($curJo)
-                                                <option value="{{ $curJo->id }}" selected>
-                                                    {{ $curJo->job_order_no }}@if($curJo->ref_no) ({{ $curJo->ref_no }})@endif @if($curJo->product) - {{ $curJo->product->name }}@endif
-                                                </option>
-                                            @endif
-                                        @endif
-                                    </select>
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-
-                    <!-- BY Products Job Orders (7-9) -->
-                    <div class="header-heading-sepration py-1 px-2 mb-1 mt-1" style="background-color: #93c3f2;">
-                        <h6 class="m-0 font-weight-bold" style="font-size: 12px; color: #000;">BY Products</h6>
-                    </div>
-                    <div class="row mb-1">
-                        @for ($i = 6; $i < 9; $i++)
-                            @php
-                                $currentVal = $selectedJobOrderIds[$i] ?? null;
-                            @endphp
-                            <div class="col-md-4">
-                                <div class="form-group mb-1">
-                                    <label class="mb-0 small font-weight-bold">Job Ord. {{ $i - 5 }}:</label>
-                                    <select name="job_order_id[]" id="job_order_id_{{ $i + 1 }}"
-                                        class="form-control select2 job-order-select job-order-by"
-                                        data-category="by"
-                                        onchange="onJobOrderChanged();">
-                                        <option value="">Select Job Order</option>
-                                        @php
-                                            $byList = $byJobOrders ?? collect();
-                                            $foundBy = false;
-                                        @endphp
-                                        @foreach($byList as $jobOrder)
-                                            @if($currentVal == $jobOrder->id) @php $foundBy = true; @endphp @endif
-                                            <option value="{{ $jobOrder->id }}" {{ $currentVal == $jobOrder->id ? 'selected' : '' }}>
-                                                {{ $jobOrder->job_order_no }}@if($jobOrder->ref_no) ({{ $jobOrder->ref_no }})@endif @if($jobOrder->product) - {{ $jobOrder->product->name }}@endif
-                                            </option>
-                                        @endforeach
-                                        @if($currentVal && !$foundBy)
-                                            @php
-                                                $curJo = ($jobOrders ?? collect())->firstWhere('id', $currentVal);
-                                            @endphp
-                                            @if($curJo)
-                                                <option value="{{ $curJo->id }}" selected>
-                                                    {{ $curJo->job_order_no }}@if($curJo->ref_no) ({{ $curJo->ref_no }})@endif @if($curJo->product) - {{ $curJo->product->name }}@endif
-                                                </option>
-                                            @endif
-                                        @endif
-                                    </select>
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
+                    @include('management.production.production_voucher.partials.job_order_groups', ['selectedJobOrderGroups' => $selectedJobOrderGroups ?? []])
                 </div>
 
                 <div class="col-md-12">
@@ -523,9 +402,6 @@
                         <input type="number" name="input_qty[]" class="form-control" step="0.01" min="0.01" required oninput="loadCostingPreview();">
                     </td>
                     <td>
-                        <input type="number" name="input_rate[]" class="form-control" step="0.01" min="0" placeholder="Auto" oninput="loadCostingPreview();" title="Leave blank for automatic stock-in cost price">
-                    </td>
-                    <td>
                         <input type="number" name="input_yield[]" class="form-control" step="0.01" min="0.01" readonly>
                     </td>
                     <td>
@@ -540,6 +416,8 @@
 
             <div class="row">
                 <div class="col-md-12">
+                    {{-- The first input row cannot be deleted --}}
+                    <style>#productionInputsTable tbody tr:first-child .removethis { display: none; }</style>
                     <div id="productionInputsTable">
                         <table class="table table-bordered">
                             <thead>
@@ -547,9 +425,8 @@
                                     <th class="col-2">Commodity</th>
                                     <th class="col-2">Location</th>
                                     <th class="col-1">Qty (kg)</th>
-                                    <th class="col-1">Rate (PKR)</th>
                                     <th class="col-1">Yield %</th>
-                                    <th class="col-4">Remarks</th>
+                                    <th class="col-5">Remarks</th>
                                     <th class="col-1">Actions</th>
                                 </tr>
                             </thead>
@@ -579,9 +456,6 @@
                                             </td>
                                             <td>
                                                 <input type="number" name="input_qty[]" class="form-control" step="0.01" min="0.01" required value="{{ $input->qty }}" oninput="loadCostingPreview();">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="input_rate[]" class="form-control" step="0.01" min="0" placeholder="Auto" value="{{ $input->rate > 0 ? $input->rate : '' }}" oninput="loadCostingPreview();" title="Leave blank for automatic stock-in cost price">
                                             </td>
                                             <td>
                                                 <input type="number" name="input_yield[]" class="form-control" step="0.01" min="0.01" readonly>
@@ -617,9 +491,6 @@
                                             <input type="number" name="input_qty[]" class="form-control" step="0.01" min="0.01" required oninput="loadCostingPreview();">
                                         </td>
                                         <td>
-                                            <input type="number" name="input_rate[]" class="form-control" step="0.01" min="0" placeholder="Auto" oninput="loadCostingPreview();" title="Leave blank for automatic stock-in cost price">
-                                        </td>
-                                        <td>
                                             <input type="number" name="input_yield[]" class="form-control" step="0.01" min="0.01" readonly>
                                         </td>
                                         <td>
@@ -639,7 +510,6 @@
                                     <td>
                                         <input type="number" name="input_total_qty[]" class="form-control" step="0.01" min="0.01" readonly>
                                     </td>
-                                    <td></td>
                                     <td>
                                         <input type="number" name="input_total_yield[]" class="form-control" step="0.01" min="0.01" readonly>
                                     </td>
@@ -808,11 +678,14 @@
                                         </table>
                                     </div>
                                 </div>
-                                <div class="row mt-3" id="productionMachinesSection" style="display: {{ $productionVoucher->plant_id ? 'block' : 'none' }};">
-                                    <div class="col-md-12">
-                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center" style="background-color: #93c3f2;">
-                                            <div class="col-md-12 d-flex justify-content-between align-items-center py-1">
-                                                <h6 class="m-0">Production Machines</h6>
+                                @include('management.production.production_voucher.partials.machines_modal_script')
+                                {{-- Production Machines live in this modal (opened by "View Machines" under Plant). It stays inside the form, so the machine inputs are still saved. --}}
+                                <div class="modal fade" id="productionMachinesModal" tabindex="-1" role="dialog" aria-labelledby="productionMachinesModalTitle" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header align-items-center" style="background-color: #93c3f2;">
+                                                <h5 class="modal-title mb-0" id="productionMachinesModalTitle"><i class="fa fa-cogs mr-1"></i> Production Machines &amp; Plant Breakdown</h5>
+                                                <div class="ml-auto mr-2">
                                                 <div id="machinePlanSettingBadge">
                                                     @if(isset($machinePlanSetting) && $machinePlanSetting)
                                                         <span class="badge badge-success" style="font-size: 11px;">
@@ -824,21 +697,10 @@
                                                         </span>
                                                     @endif
                                                 </div>
+                                                </div>
+                                                <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                             </div>
-                                        </div>
-                                        {{-- A plant can have several Machine Plans on a day (one voucher each): pick which one this voucher is for --}}
-                                        <div id="voucherPlanPicker" class="d-flex align-items-center flex-wrap mb-2" style="{{ count($voucherPlanOptions ?? []) > 1 ? '' : 'display: none !important;' }} gap: 8px;">
-                                            <label for="machine_plan_setting_id" class="mb-0" style="font-weight: 600; font-size: 13px;">Machine Plan:</label>
-                                            <select name="machine_plan_setting_id" id="machine_plan_setting_id" class="form-control form-control-sm" style="width: auto; min-width: 260px;">
-                                                @foreach($voucherPlanOptions ?? [] as $planOption)
-                                                    <option value="{{ $planOption['id'] }}" {{ $planOption['available'] ? '' : 'disabled' }}
-                                                        {{ isset($machinePlanSetting) && $machinePlanSetting && $machinePlanSetting->id == $planOption['id'] ? 'selected' : '' }}>
-                                                        {{ $planOption['label'] }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-muted">This plant has several plans on this date; each plan gets its own voucher.</small>
-                                        </div>
+                                            <div class="modal-body">
                                         <div id="productionMachinesContainer">
                                             <!-- Machines will be loaded here -->
                                             @if($productionVoucher->plant_id)
@@ -1025,9 +887,6 @@
                                                 @endif
                                             @endif
                                         </div>
-                                    </div>
-                                </div>
-
                                 <div class="row mt-3" id="overallPlantBreakdownSection">
                                     <div class="col-md-12">
                                         <div class="row header-heading-sepration w-100 mx-auto mb-2 align-items-center"
@@ -1119,6 +978,14 @@
                                         </div>
                                     </div>
                                 </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
         </div>
 
         
@@ -2391,8 +2258,8 @@
             const jobOrderIds = getSelectedJobOrderIds();
             const headProductId = $('[name="product_id"]').val();
 
-            // Only load if job order(s) are selected
-            if (!jobOrderIds || jobOrderIds.length === 0) {
+            // Load as soon as the Head Product and location are selected; job orders are optional
+            if (!headProductId || !locationId) {
                 resetOutputTableToEmpty('productionByProductsTable');
                 calculateByProducts();
                 calculateNetTotalInput();
@@ -2429,8 +2296,8 @@
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = getSelectedJobOrderIds();
 
-            // Only load if job order(s) are selected
-            if (!jobOrderIds || jobOrderIds.length === 0) {
+            // Load as soon as the Head Product and location are selected; job orders are optional
+            if (!productId || !locationId) {
                 resetOutputTableToEmpty('productionHeadProductsTable');
                 calculateHeadProducts();
                 calculateNetTotalInput();
@@ -2467,8 +2334,8 @@
             const locationId = $('[name="location_id"]').val();
             const jobOrderIds = getSelectedJobOrderIds();
 
-            // Only load if job order(s) are selected
-            if (!jobOrderIds || jobOrderIds.length === 0) {
+            // Load as soon as the Head Product and location are selected; job orders are optional
+            if (!productId || !locationId) {
                 resetOutputTableToEmpty('productionB2ProductsTable');
                 calculateB2Products();
                 calculateNetTotalInput();
@@ -4064,4 +3931,5 @@
         calculateBreakdownHours();
     });
 </script>
+    @include('management.production.production_voucher.partials.rm_qc_inputs_script')
 @endsection

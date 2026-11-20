@@ -122,7 +122,7 @@
                                 <th class="text-uppercase bg-light">Status</th>
                                 <td>
                                     <span class="badge badge-{{ $productionVoucher->status === 'completed' || $productionVoucher->status === 'approved' ? 'success' : 'warning' }}">
-                                        {{ ucfirst($productionVoucher->status ?? 'Draft') }}
+                                        {{ ucfirst($productionVoucher->status ?? 'Active') }}
                                     </span>
                                 </td>
                             </tr>

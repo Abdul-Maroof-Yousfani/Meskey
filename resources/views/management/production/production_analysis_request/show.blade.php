@@ -31,9 +31,6 @@
                                 <span class="badge badge-light text-dark font-weight-bold">
                                     {{ $item->productionVoucher->prod_no }}
                                 </span>
-                                @if($item->productionVoucher->is_draft)
-                                    <span class="badge badge-warning">Draft</span>
-                                @endif
                             @elseif($item->jobOrder)
                                 <span class="badge badge-light text-dark font-weight-bold">
                                     {{ $item->jobOrder->job_order_no }}
@@ -49,7 +46,7 @@
                         <h6>{{ $item->companyLocation->name ?? 'N/A' }}</h6>
                     </div>
                     <div class="col-md-4 mb-2">
-                        <label class="text-muted d-block mb-1">Arrival Location</label>
+                        <label class="text-muted d-block mb-1">Factory Location</label>
                         <h6>{{ $item->arrivalLocation->name ?? 'N/A' }}</h6>
                     </div>
                     <div class="col-md-4 mb-2">

@@ -63,7 +63,7 @@ class ProductionMachineController extends Controller
         $data = $request->validated();
         $arrival_locations = ProductionMachine::create($request->all());
 
-        return response()->json(['success' => 'Arrival Sub Location created successfully.', 'data' => $arrival_locations], 201);
+        return response()->json(['success' => 'Production Machine created successfully.', 'data' => $arrival_locations], 201);
     }
 
     /**
@@ -86,7 +86,7 @@ class ProductionMachineController extends Controller
         $data = $request->validated();
         $data = $request->all();
         $production_machine->update($data);
-        return response()->json(['success' => 'Arrival Sub Location updated successfully.', 'data' => $production_machine], 200);
+        return response()->json(['success' => 'Production Machine updated successfully.', 'data' => $production_machine], 200);
     }
 
     /**
@@ -96,7 +96,7 @@ class ProductionMachineController extends Controller
     {
         $production_machine = ProductionMachine::findOrFail($id);
         $production_machine->delete();
-        return response()->json(['success' => 'Arrival Sub Location deleted successfully.'], 200);
+        return response()->json(['success' => 'Production Machine deleted successfully.'], 200);
     }
 
 

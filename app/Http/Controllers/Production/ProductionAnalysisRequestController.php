@@ -491,7 +491,6 @@ class ProductionAnalysisRequestController extends Controller
     {
         $jobOrders = $voucher->jobOrders->pluck('job_order_no')->implode(', ');
         return $voucher->prod_no
-            . ($voucher->is_draft ? ' [Draft]' : '')
             . ($jobOrders ? ' - ' . $jobOrders : '');
     }
 

@@ -21,26 +21,11 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
             if ($req) {
                 $arrivalLocId = $this->arrival_location_id ?: $req->arrival_location_id;
                 $plantId = $this->plant_id ?: $req->plant_id;
-                $date = $this->date ?: now()->format('Y-m-d');
-                $reqDate = $req->request_date?->format('Y-m-d');
-                $excludeId = $this->route('production_machine_analysis') ?: $this->route('id');
-
-                $firstProduct = \App\Models\Production\ProductionAnalysis::getFirstProductForRun(
-                    $arrivalLocId,
-                    $plantId,
-                    $date,
-                    $reqDate,
-                    $excludeId,
-                    'machine'
-                );
-
-                $resolvedProductId = $firstProduct ? $firstProduct->id : $this->product_id;
-
+                // Products are chosen per tab (input) or fixed to the job order (output), see the controller
                 $this->merge([
                     'company_location_id' => $this->company_location_id ?: $req->company_location_id,
                     'arrival_location_id' => $arrivalLocId,
                     'plant_id' => $plantId,
-                    'product_id' => $resolvedProductId ?: $this->product_id,
                 ]);
             }
         }
@@ -55,7 +40,10 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
     {
         return [
             'analysis_request_id' => 'required|exists:production_analysis_requests,id',
-            'product_id' => 'required|exists:products,id',
+            'job_order_id' => 'required|exists:job_orders,id',
+            'job_orders' => 'nullable|array',
+            'job_orders.*' => 'nullable|exists:job_orders,id',
+            'product_id' => 'nullable|exists:products,id',
             'date' => 'required|date',
             'company_location_id' => 'required|exists:company_locations,id',
             'arrival_location_id' => 'required|exists:arrival_locations,id',
@@ -63,8 +51,19 @@ class StoreProductionMachineAnalysisRequest extends FormRequest
             'production_machine_id' => 'required|exists:production_machines,id',
             'items' => 'required|array|min:1',
             'items.*.time' => 'required',
+            'items.*.analysis_type' => 'nullable|in:input,output',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.0.product_id' => 'required|exists:products,id',
             'items.*.unit_id' => 'nullable|exists:unit_of_measures,id',
             'items.*.params' => 'nullable|array'
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'job_order_id.required' => 'Job Order is required.',
+            'items.0.product_id.required' => 'Please select the product in the Input Analysis tab.',
         ];
     }
 }

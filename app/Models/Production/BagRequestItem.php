@@ -12,6 +12,8 @@ class BagRequestItem extends Model
     protected $fillable = [
         'bag_request_id',
         'job_order_id',
+        'arrival_location_id',
+        'plant_id',
         'item_id',
         'brand_id',
         'unit_id',
@@ -27,6 +29,16 @@ class BagRequestItem extends Model
     public function jobOrder()
     {
         return $this->belongsTo(\App\Models\Production\JobOrder\JobOrder::class, 'job_order_id');
+    }
+
+    public function arrivalLocation()
+    {
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, 'arrival_location_id');
+    }
+
+    public function plant()
+    {
+        return $this->belongsTo(\App\Models\Master\Plant::class, 'plant_id');
     }
 
     public function item()

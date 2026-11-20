@@ -1,155 +1,90 @@
-{{-- resources/views/management/production/machine_plan_setting/getList.blade.php --}}
-
-<table class="table m-0">
+{{-- One row per plan = one job order. Manage Logs adds breakdowns; Edit changes machines / times. --}}
+<table class="table m-0 mps-list">
     <thead>
         <tr>
             <th>Date</th>
-            <th>Location</th>
+            <th>Job Order</th>
             <th>Plant</th>
-            <th>Production Voucher</th>
-            <th>User</th>
-            <th>Machines</th>
-            <th>Breakdown Items</th>
-            <th>Remarks</th>
-            <th>Action</th>
+            <th>Running Machines</th>
+            <th>Breakdowns</th>
+            <th>Voucher</th>
+            <th>Created By</th>
+            <th class="text-right">Action</th>
         </tr>
     </thead>
     <tbody>
-        @if (count($machinePlanSettings) != 0)
-            @foreach ($machinePlanSettings as $key => $row)
-                <tr>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->date->format('Y-m-d') }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->companyLocation->name ?? ($row->plant->companyLocation->name ?? '--') }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->plant->arrivalLocation->name ?? '' }} - {{ $row->plant->name ?? '--' }}
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            @if($row->productionVoucher)
-                                <a href="{{ route('production-voucher.edit', $row->productionVoucher->id) }}" target="_blank">{{ $row->productionVoucher->prod_no }}</a>
-                                @if($row->productionVoucher->is_draft)
-                                    <span class="badge badge-warning">Draft</span>
-                                @endif
-                            @else
-                                --
-                            @endif
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->user->name ?? '--' }}
-                        </p>
-                    </td>
-                    <td>
-                        <div class="div-box-b">
-                            @if($row->items->count() > 0)
-                                <ul class="m-0 pl-3">
-                                    @foreach($row->items as $item)
-                                        <li>
-                                            <small>
-                                                @if($item->is_enabled)
-                                                    <span class="badge badge-success">ON</span>
-                                                @else
-                                                    <span class="badge badge-secondary">OFF</span>
-                                                @endif
-                                                <strong>{{ $item->machine->name ?? '--' }}</strong>
-                                                @foreach($item->job_order_id_list as $joId)
-                                                    @if(isset($jobOrderNos[$joId]))
-                                                        <span class="badge badge-info">{{ $jobOrderNos[$joId] }}</span>
-                                                    @endif
-                                                @endforeach
-                                                @if($item->start_time && $item->end_time)
-                                                    <span class="text-muted">({{ date('H:i', strtotime($item->start_time)) }}-{{ date('H:i', strtotime($item->end_time)) }})</span>
-                                                @endif
-                                            </small>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @else
-                                <p class="m-0"><small>--</small></p>
-                            @endif
+        @forelse ($machinePlanSettings as $row)
+            @php
+                $onItems = $row->items->where('is_enabled', true);
+                $breakdowns = $row->items->flatMap->breakdowns;
+            @endphp
+            <tr>
+                <td class="text-nowrap">{{ $row->date->format('d-m-Y') }}</td>
+                <td>
+                    @if($row->jobOrder)
+                        <strong>{{ $row->jobOrder->job_order_no }}</strong>
+                        <div class="text-muted small">{{ $row->jobOrder->product->name ?? '' }}</div>
+                    @else
+                        <span class="text-muted">--</span>
+                    @endif
+                </td>
+                <td>
+                    {{ $row->plant->name ?? '--' }}
+                    <div class="text-muted small">{{ $row->companyLocation->name ?? ($row->plant->companyLocation->name ?? '') }}{{ $row->plant?->arrivalLocation ? ' / ' . $row->plant->arrivalLocation->name : '' }}</div>
+                </td>
+                <td>
+                    @forelse($onItems->groupBy('production_machine_id') as $slots)
+                        <div class="small text-nowrap">
+                            <strong>{{ $slots->first()->machine->name ?? '--' }}</strong>
+                            <span class="text-muted">
+                                {{ $slots->filter(fn ($s) => $s->start_time && $s->end_time)->map(fn ($s) => date('h:i A', strtotime($s->start_time)) . ' - ' . date('h:i A', strtotime($s->end_time)))->implode(', ') ?: 'no time' }}
+                            </span>
                         </div>
-                    </td>
-                    <td>
-                        @php
-                            $breakdownKey = $row->date->format('Y-m-d') . '_' . $row->plant_id;
-                            $pBreakdown = isset($plantBreakdowns[$breakdownKey]) ? $plantBreakdowns[$breakdownKey]->first() : null;
-                        @endphp
-                        @if($pBreakdown && $pBreakdown->items->count() > 0)
-                            <div class="div-box-b">
-                                <ul class="m-0 pl-3">
-                                    @foreach($pBreakdown->items as $bItem)
-                                        <li>
-                                            <small>
-                                                <strong>{{ $bItem->breakdownType->name ?? 'Breakdown' }}:</strong>
-                                                @if($bItem->hours)
-                                                    {{ $bItem->hours }} hrs
-                                                @endif
-                                                @if($bItem->from && $bItem->to)
-                                                    <span class="text-muted">({{ date('H:i', strtotime($bItem->from)) }}-{{ date('H:i', strtotime($bItem->to)) }})</span>
-                                                @elseif($bItem->from)
-                                                    <span class="text-muted">(From: {{ date('H:i', strtotime($bItem->from)) }})</span>
-                                                @endif
-                                            </small>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @else
-                            <p class="m-0"><small class="text-muted">--</small></p>
-                        @endif
-                    </td>
-                    <td>
-                        <p class="m-0">{{ $row->remarks ?? '--' }}</p>
-                    </td>
-                    <td>
-                        @canAccess('machine-plan-setting-edit')
-                        <a onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan Setting',false,'85%')"
-                            class="info p-1 text-center mr-2 position-relative" title="Edit">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
-                        @endcanAccess
-                        @canAccess('machine-plan-setting-delete')
+                    @empty
+                        <span class="text-muted small">No machine on</span>
+                    @endforelse
+                </td>
+                <td>
+                    @if($breakdowns->isNotEmpty())
+                        <span class="badge badge-warning">{{ $breakdowns->count() }} &bull; {{ number_format($breakdowns->sum('hours'), 2) }} hrs</span>
+                    @else
+                        <span class="text-muted small">None</span>
+                    @endif
+                </td>
+                <td>
+                    @if($row->productionVoucher)
+                        {{ $row->productionVoucher->prod_no }}
+                    @else
+                        <span class="text-muted small">--</span>
+                    @endif
+                </td>
+                <td>
+                    {{ $row->user->name ?? '--' }}
+                    @if($row->remarks)
+                        <div class="text-muted small" title="{{ $row->remarks }}">{{ \Illuminate\Support\Str::limit($row->remarks, 40) }}</div>
+                    @endif
+                </td>
+                <td class="text-right text-nowrap">
+                    <button type="button" class="btn btn-sm btn-outline-warning"
+                            onclick="openModal(this,'{{ route('machine-plan-setting.logs', $row->id) }}','Manage Logs - {{ $row->jobOrder->job_order_no ?? 'Plan #' . $row->id }}')"
+                            title="View plan and add breakdowns">
+                        <i class="ft-clipboard"></i> Manage Logs
+                    </button>
+                    @canAccess('machine-plan-setting-edit')
+                        <a onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan',false,'85%')"
+                           class="info p-1 ml-1" title="Edit"><i class="ft-edit font-medium-3"></i></a>
+                    @endcanAccess
+                    @canAccess('machine-plan-setting-delete')
                         <a onclick="deletemodal('{{ route('machine-plan-setting.destroy', $row->id) }}','{{ route('get.machine-plan-setting') }}')"
-                            class="danger p-1 text-center mr-2 position-relative" title="Delete">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
-                        @endcanAccess
-                    </td>
-                </tr>
-            @endforeach
-        @else
-            <tr class="ant-table-placeholder">
-                <td colspan="9" class="ant-table-cell text-center">
-                    <div class="my-5">
-                        <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
-                            <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
-                                <ellipse fill="#f5f5f5" cx="32" cy="33" rx="32" ry="7"></ellipse>
-                                <g fill-rule="nonzero" stroke="#d9d9d9">
-                                    <path
-                                        d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z">
-                                    </path>
-                                    <path
-                                        d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z"
-                                        fill="#fafafa"></path>
-                                </g>
-                            </g>
-                        </svg>
-                        <p class="ant-empty-description">No data</p>
-                    </div>
+                           class="danger p-1" title="Delete"><i class="ft-x font-medium-3"></i></a>
+                    @endcanAccess
                 </td>
             </tr>
-        @endif
+        @empty
+            <tr>
+                <td colspan="8" class="text-center text-muted py-4">No machine plans found.</td>
+            </tr>
+        @endforelse
     </tbody>
 </table>
 

@@ -14,6 +14,8 @@ class ProductionMachineAnalysisItem extends Model
 
     protected $fillable = [
         'machine_analysis_id',
+        'analysis_type',
+        'product_id',
         'analysis_time',
         'unit_id'
     ];
@@ -26,6 +28,11 @@ class ProductionMachineAnalysisItem extends Model
     public function unit()
     {
         return $this->belongsTo(UnitOfMeasure::class, 'unit_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'product_id');
     }
 
     public function slabs()

@@ -91,6 +91,11 @@ class ProductionAnalysis extends Model
         return $this->hasMany(ProductionAnalysisItem::class, 'production_analysis_id');
     }
 
+    public function otherProducts()
+    {
+        return $this->hasMany(ProductionAnalysisOtherProduct::class, 'production_analysis_id');
+    }
+
     public function allItemSlabs()
     {
         return $this->hasManyThrough(

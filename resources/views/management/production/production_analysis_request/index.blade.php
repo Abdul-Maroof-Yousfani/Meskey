@@ -46,7 +46,7 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-2 text-left">
-                                                <label for="arrival_location_ids" class="form-label">Arrival Location</label>
+                                                <label for="arrival_location_ids" class="form-label">Factory Location</label>
                                                 <select name="arrival_location_ids[]" id="arrival_location_ids" class="form-control select2-filter" multiple data-placeholder="Select Arrival(s)">
                                                     @foreach($arrivalLocations as $arrival)
                                                         <option value="{{ $arrival->id }}">{{ $arrival->name }}</option>

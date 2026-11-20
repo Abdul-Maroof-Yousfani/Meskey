@@ -17,7 +17,7 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Arrival Location:</label>
+                    <label>Factory Location:</label>
                     <p class="form-control-static">{{ $item->arrivalLocation->name ?? 'N/A' }}</p>
                 </div>
             </div>
@@ -25,6 +25,12 @@
                 <div class="form-group">
                     <label>Plant:</label>
                     <p class="form-control-static">{{ $item->plant->name ?? 'N/A' }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Job Order:</label>
+                    <p class="form-control-static">{{ $item->jobOrders->pluck('job_order_no')->implode(', ') ?: ($item->analysisRequest?->voucher_display ?? 'N/A') }}</p>
                 </div>
             </div>
             <div class="col-md-3">
@@ -66,6 +72,37 @@
             </table>
         </div>
     </div>
+
+    <!-- Other Products Section -->
+    @if($item->otherProducts->isNotEmpty())
+        <div class="col-md-12 mt-4">
+            <h6 class="header-heading-sepration">Other Products</h6>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th>Product</th>
+                        <th style="width: 200px;">Percent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($item->otherProducts as $other)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $other->product->name ?? 'N/A' }}</td>
+                            <td>{{ rtrim(rtrim(number_format($other->percentage, 2), '0'), '.') }}%</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2" class="text-right">Total</th>
+                        <th>{{ rtrim(rtrim(number_format($item->otherProducts->sum('percentage'), 2), '0'), '.') }}%</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    @endif
 
     <!-- Remarks Section -->
     <div class="col-md-12 mt-4">

@@ -163,6 +163,13 @@
 
                                 <div id="packingItems">
                                     <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
+                                        <div class="col-12 packing-item-header">
+                                            <span class="packing-item-title"></span>
+                                            <span class="packing-item-actions">
+                                                <button type="button" class="btn btn-sm btn-outline-info duplicate-packing-item"><i class="ft-copy"></i> Duplicate</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger remove-packing-item"><i class="ft-trash-2"></i> Remove</button>
+                                            </span>
+                                        </div>
                                         <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Location: <span class="text-danger">*</span></label>
@@ -209,7 +216,6 @@
                                                 </select>
                                             </div>
                                         </div>
-
                                         <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Bag Color: <span class="text-danger">*</span></label>
@@ -243,61 +249,61 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Packing Size (kg): <span class="text-danger">*</span></label>
                                                 <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" min="0.01" required>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>No. of Bags: <span class="text-danger">*</span></label>
                                                 <input type="number" name="packing_items[0][no_of_bags]" class="form-control no-of-bags" min="1" required>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
-                                            <div class="form-group">
-                                                <label>Extra Bags:</label>
-                                                <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags" value="0">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Extra Bags %:</label>
                                                 <input type="number" name="packing_items[0][extra_bags_percentage]" class="form-control extra-bags-percentage" step="0.01" value="0">
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
-                                                <label>Empty Bags:</label>
-                                                <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags" value="0">
+                                                <label>Extra Bags:</label>
+                                                <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags" value="0">
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Empty Bags %:</label>
                                                 <input type="number" name="packing_items[0][empty_bags_percentage]" class="form-control empty-bags-percentage" step="0.01" value="0">
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Empty Bags:</label>
+                                                <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Total Bags:</label>
                                                 <input type="number" min="0" name="packing_items[0][total_bags]" class="form-control total-bags" readonly>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Total KGs:</label>
                                                 <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" step="0.01" readonly>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Metric Tons:</label>
                                                 <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" step="0.01" min="0" readonly>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Stuffing (MTs):</label>
                                                 <input type="number" name="packing_items[0][stuffing_in_container]" value="0" class="form-control stuffing" step="0.001" min="0">
@@ -332,7 +338,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <div class="form-group">
                                                 <label>Fumigation Type:</label>
                                                 <select name="packing_items[0][fumigation_type]" class="form-control select2 fumigation-locked">
@@ -349,7 +355,7 @@
                                                 <input type="text" name="packing_items[0][fumigation_dosage]" class="form-control fumigation-dosage" value="" placeholder="Enter dosage">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Attachment:</label>
                                                 <div class="existing-attachment-wrap"></div>
@@ -397,13 +403,7 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div class="col-md-1">
-                                            <div class="form-group">
-                                                <label>&nbsp;</label>
-                                                <button type="button" class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -614,6 +614,7 @@
 @endsection
 
 @section('script')
+@include('management.production.partials.packing_duplicate')
 <script>
     $(document).ready(function () {
         $(document).off('.jobOrderRequestCreate');
@@ -1100,6 +1101,14 @@
                 updateOverallTotalRequestQty();
                 updateFumigationRequirement();
             }
+        });
+
+        // Duplicate packing item (with its master packing sub items) right below it
+        $(document).off('click.jobOrderRequestCreate', '.duplicate-packing-item').on('click.jobOrderRequestCreate', '.duplicate-packing-item', function () {
+            duplicatePackingItem($(this).closest('.packing-item'));
+            reindexPackingItems();
+            updateOverallTotalRequestQty();
+            updateFumigationRequirement();
         });
 
         // Add Sub Packing Item

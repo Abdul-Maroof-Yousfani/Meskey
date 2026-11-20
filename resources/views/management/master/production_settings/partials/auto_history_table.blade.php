@@ -105,6 +105,7 @@
                             $genTime = $req->auto_generated_at ?: $req->created_at;
                             $isInput = ($req->type === \App\Models\Production\ProductionAnalysisRequest::TYPE_INPUT);
                             $isOutput = ($req->type === \App\Models\Production\ProductionAnalysisRequest::TYPE_OUTPUT);
+                            $isMachine = ($req->type === \App\Models\Production\ProductionAnalysisRequest::TYPE_MACHINE);
                         @endphp
                         <tr>
                             <td class="text-center font-small-2 text-muted align-middle font-weight-bold">
@@ -155,6 +156,10 @@
                                 @elseif($isOutput)
                                     <span class="type-badge type-badge-output">
                                         <i class="ft-arrow-up mr-1"></i>Output Analysis
+                                    </span>
+                                @elseif($isMachine)
+                                    <span class="type-badge" style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a;">
+                                        <i class="ft-settings mr-1"></i>Machine Analysis
                                     </span>
                                 @else
                                     <span class="badge badge-secondary px-2 py-1 font-small-2 font-weight-bold">
@@ -250,6 +255,12 @@
                                             <a href="{{ route('production-output-analysis.index') }}"
                                                class="btn-action-perform"
                                                title="Perform Output Analysis">
+                                                <i class="ft-edit-2"></i>
+                                            </a>
+                                        @elseif($isMachine)
+                                            <a href="{{ route('production-machine-analysis.index') }}"
+                                               class="btn-action-perform"
+                                               title="Perform Machine Analysis">
                                                 <i class="ft-edit-2"></i>
                                             </a>
                                         @endif

@@ -5,7 +5,7 @@
             <th>Date</th>
             <th>Type</th>
             <th>Company Location</th>
-            <th>Arrival Location</th>
+            <th>Factory Location</th>
             <th>Plant</th>
             <th>Production Voucher</th>
             <th>Remarks</th>
@@ -31,9 +31,6 @@
                         <span class="badge badge-light text-dark font-weight-bold">
                             {{ $item->productionVoucher->prod_no }}
                         </span>
-                        @if($item->productionVoucher->is_draft)
-                            <span class="badge badge-warning">Draft</span>
-                        @endif
                     @elseif($item->jobOrder)
                         {{-- Older requests made against a job order --}}
                         <span class="badge badge-light text-dark font-weight-bold">

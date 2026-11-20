@@ -12,7 +12,7 @@
                         <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Analysis Request: <span class="text-danger">*</span></label>
                         <select name="analysis_request_id" id="analysis_request_id" class="form-control select2" required>
@@ -25,7 +25,7 @@
                                     data-arrival-location-name="{{ $req->arrivalLocation?->name }}"
                                     data-plant-id="{{ $req->plant_id }}"
                                     data-plant-name="{{ $req->plant?->name }}"
-                                    data-job-order-id="{{ $req->job_order_id }}"
+                                    data-job-order-id="{{ $req->job_order_id ?? ($req->jobOrderIdsForAnalysis()[0] ?? '') }}"
                                     data-job-order-no="{{ $req->voucher_display }}"
                                     data-product-id="{{ $req->suggestedProductId() }}"
                                     data-request-date="{{ $req->request_date?->format('Y-m-d') }}"
@@ -36,11 +36,27 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Job Order: <span class="text-danger">*</span></label>
+                        <select name="job_order_id" id="job_order_id" class="form-control select2" required>
+                            <option value="">Select Job Order</option>
+                            @foreach($jobOrders as $jo)
+                                <option value="{{ $jo->id }}" @selected(isset($selectedJobOrderId) && $selectedJobOrderId == $jo->id)>
+                                    {{ $jo->job_order_no }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label>Product (Commodity): <span class="text-danger">*</span>
                             <span id="product_fixed_badge" class="badge badge-warning ml-1 {{ isset($fixedProduct) && $fixedProduct ? '' : 'd-none' }}">
                                 <i class="ft-lock"></i> Fixed for this Run
+                            </span>
+                            <span id="product_rmqc_badge" class="badge badge-info ml-1 {{ !empty($analysisRequest) && $analysisRequest->rmQcProductIds() ? '' : 'd-none' }}" title="Products of this job order's RM QC">
+                                <i class="ft-check-square"></i> From RM QC
                             </span>
                         </label>
                         <select name="product_id" id="product_id" class="form-control select2" required {{ isset($fixedProduct) && $fixedProduct ? 'disabled' : '' }}>
@@ -77,7 +93,7 @@
                     </div>
                 </div>
 
-                <!-- Hidden Location, Arrival Location, Plant dropdowns -->
+                <!-- Hidden Location, Factory Location, Plant dropdowns -->
                 <div class="d-none">
                     <select name="location_id" id="location_id">
                         <option value="">Select Location</option>
@@ -88,7 +104,7 @@
                         @endforeach
                     </select>
                     <select name="arrival_location_id" id="arrival_location_id">
-                        <option value="">Select Arrival Location</option>
+                        <option value="">Select Factory Location</option>
                         @if(isset($initialArrivalLocations))
                             @foreach($initialArrivalLocations as $arr)
                                 <option value="{{ $arr->id }}" @selected(isset($analysisRequest) && $analysisRequest->arrival_location_id == $arr->id)>
@@ -145,6 +161,9 @@
                 @endforelse
             </div>
         </div>
+
+        <!-- Other Products Section -->
+        @include('management.production.production_input_analysis.partials.other_products', ['otherProductOptions' => $otherProductOptions ?? getFinishGoodProducts()])
 
         <!-- Remarks Section -->
         <div class="col-md-12 mt-4">
@@ -207,6 +226,7 @@
     }
 </style>
 
+@include('management.production.partials.analysis_product_options_script')
 <script>
     $(document).ready(function() {
         function initSelect2(el) {
@@ -295,6 +315,9 @@
                 $('#req_disp_location').text(compLocName || '');
                 $('#req_disp_arrival').text(arrivalLocName || '');
                 $('#req_disp_plant').text(plantName || '');
+                if (jobOrderId) {
+                    $('#job_order_id').val(jobOrderId).trigger('change.select2');
+                }
                 if (jobOrderNo) {
                     $('#req_disp_jo').text(jobOrderNo);
                     $('#req_disp_jo_wrapper').removeClass('d-none');
@@ -328,7 +351,9 @@
                             $('#product_fixed_badge').addClass('d-none');
                             $('#product_fixed_help').addClass('d-none');
 
-                            let targetProd = res.suggested_product_id || defaultProductId;
+                            // Product list = RM QC products of the request (or all products when there is no RM QC)
+                            window.fillAnalysisProductOptions($('#product_id'), res.products || []);                            $('#product_rmqc_badge').toggleClass('d-none', !res.from_rm_qc);
+                            let targetProd = $('#product_id').val() || res.suggested_product_id;
                             if (targetProd) {
                                 $('#product_id').val(targetProd).trigger('change');
                             }

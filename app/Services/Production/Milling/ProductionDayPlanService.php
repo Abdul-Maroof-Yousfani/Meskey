@@ -206,14 +206,14 @@ class ProductionDayPlanService
     // Plan choice for a Production Voucher
     // ---------------------------------------------------------------------
 
-    /** A plan is free for a voucher when it has no voucher yet, an untouched draft, or this voucher. */
+    /** A plan is free for a voucher when it has no voucher yet (or the voucher is gone), or it is this voucher. */
     public static function planIsAvailable(MachinePlanSetting $plan, ?int $voucherId = null): bool
     {
         if (!$plan->production_voucher_id || ($voucherId && $plan->production_voucher_id == $voucherId)) {
             return true;
         }
         $voucher = $plan->relationLoaded('productionVoucher') ? $plan->productionVoucher : $plan->productionVoucher()->first();
-        return !$voucher || $voucher->is_draft;
+        return !$voucher;
     }
 
     /** Options for the voucher form's plan picker: id, label, available. */
@@ -293,8 +293,8 @@ class ProductionDayPlanService
     }
 
     /**
-     * Put a voucher on a plan. An untouched draft voucher of that plan is merged into it
-     * (its analysis requests and analyses move over) and then removed.
+     * Put a voucher on a plan. The analysis requests (and their analyses) made against the plan
+     * before it had a voucher move to this voucher.
      */
     public function attachVoucherToPlan(ProductionVoucher $voucher, MachinePlanSetting $plan): void
     {
@@ -303,33 +303,33 @@ class ProductionDayPlanService
         }
 
         $old = $plan->production_voucher_id ? ProductionVoucher::find($plan->production_voucher_id) : null;
-        if ($old && !$old->is_draft) {
-            throw new \RuntimeException("Machine Plan #{$plan->id} already belongs to voucher {$old->prod_no}.");
-        }
-
         if ($old) {
-            foreach ([ProductionAnalysisRequest::class, ProductionAnalysis::class, ProductionMachineAnalysis::class, PlantBreakdown::class, ProductionVoucherMachineTime::class] as $model) {
-                $model::where('production_voucher_id', $old->id)->update(['production_voucher_id' => $voucher->id]);
-            }
-            $old->jobOrders()->detach();
-            $old->delete();
+            throw new \RuntimeException("Machine Plan #{$plan->id} already belongs to voucher {$old->prod_no}.");
         }
 
         $plan->update(['production_voucher_id' => $voucher->id]);
         ProductionVoucherMachineTime::where('machine_plan_setting_id', $plan->id)->update(['production_voucher_id' => $voucher->id]);
+
+        $requestIds = ProductionAnalysisRequest::where('machine_plan_setting_id', $plan->id)
+            ->whereNull('production_voucher_id')
+            ->pluck('id');
+        if ($requestIds->isNotEmpty()) {
+            ProductionAnalysisRequest::whereIn('id', $requestIds)->update(['production_voucher_id' => $voucher->id]);
+            ProductionAnalysis::whereNull('production_voucher_id')->whereIn('analysis_request_id', $requestIds)->update(['production_voucher_id' => $voucher->id]);
+            ProductionMachineAnalysis::whereNull('production_voucher_id')->whereIn('analysis_request_id', $requestIds)->update(['production_voucher_id' => $voucher->id]);
+        }
     }
 
     /**
-     * Take a voucher off its plan (its plant, date or plan changed). The plan keeps its machine rows,
-     * gets a fresh draft voucher, and the requests / analyses made against the plan go with it.
+     * Take a voucher off its plan (its plant, date or plan changed). The plan keeps its machine rows;
+     * the requests / analyses made against the plan stay with the plan (no voucher until one is attached again).
      */
     public function releaseVoucherFromPlan(ProductionVoucher $voucher, MachinePlanSetting $plan): void
     {
         $plan->update(['production_voucher_id' => null]);
         ProductionVoucherMachineTime::where('machine_plan_setting_id', $plan->id)->update(['production_voucher_id' => null]);
 
-        $draft = app(MachinePlanDraftVoucherService::class)->syncForPlan($plan->fresh(['plant', 'items']));
-        $draftId = $draft?->id;
+        $draftId = null;
 
         $requestIds = ProductionAnalysisRequest::where('production_voucher_id', $voucher->id)
             ->where('machine_plan_setting_id', $plan->id)

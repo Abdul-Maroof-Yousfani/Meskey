@@ -44,9 +44,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Arrival Location: <span class="text-danger">*</span></label>
+                        <label>Factory Location: <span class="text-danger">*</span></label>
                         <select name="arrival_location_id" id="req_arrival_location_id" class="form-control select2" required @disabled(!$preSelectedLocationId)>
-                            <option value="">Select Arrival Location</option>
+                            <option value="">Select Factory Location</option>
                             @foreach($arrivalLocations as $arrival)
                                 <option value="{{ $arrival->id }}">{{ $arrival->name }}</option>
                             @endforeach
@@ -151,7 +151,7 @@
             loadProductionVouchers();
         });
 
-        // Company Location Change -> Update Request # and Load Arrival Locations & Production Vouchers
+        // Company Location Change -> Update Request # and Load Factory Locations & Production Vouchers
         $('#req_company_location_id').on('change', function() {
             let companyLocationId = $(this).val();
             let $arrivalSelect = $('#req_arrival_location_id');
@@ -160,7 +160,7 @@
             // Refresh Request # for the newly selected location
             refreshRequestNumber();
 
-            $arrivalSelect.html('<option value="">Select Arrival Location</option>').prop('disabled', true);
+            $arrivalSelect.html('<option value="">Select Factory Location</option>').prop('disabled', true);
             $plantSelect.html('<option value="">Select Plant</option>').prop('disabled', true);
 
             if (!companyLocationId) {
@@ -169,11 +169,11 @@
                 return;
             }
 
-            // Load Arrival Locations
+            // Load Factory Locations
             $arrivalSelect.html('<option value="">Loading...</option>');
             let arrivalUrl = "{{ route('production-analysis-request.get-arrival-locations', ':id') }}".replace(':id', companyLocationId);
             $.get(arrivalUrl, function(data) {
-                $arrivalSelect.html('<option value="">Select Arrival Location</option>').prop('disabled', false);
+                $arrivalSelect.html('<option value="">Select Factory Location</option>').prop('disabled', false);
                 $.each(data, function(i, item) {
                     $arrivalSelect.append(`<option value="${item.id}">${item.name}</option>`);
                 });
@@ -183,7 +183,7 @@
             loadProductionVouchers();
         });
 
-        // Arrival Location Change -> Load Plants
+        // Factory Location Change -> Load Plants
         $('#req_arrival_location_id').on('change', function() {
             let companyLocationId = $('#req_company_location_id').val();
             let arrivalId = $(this).val();
