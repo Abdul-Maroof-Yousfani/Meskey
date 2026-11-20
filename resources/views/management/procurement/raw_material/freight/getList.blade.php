@@ -1,3 +1,14 @@
+{{-- ===== MOBILE: cards (mobile-ui.css section 6) ===== --}}
+<div class="tkc-list">
+    @forelse ($purchaseTickets as $ticket)
+        @include('management.procurement.raw_material.freight.partials.mobile-card', ['ticket' => $ticket])
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No records found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par cards dikhte hain) ===== --}}
+<div class="tk-table-wrap">
  <table class="table m-0">
      <thead>
          <tr>
@@ -76,6 +87,7 @@
          @endif
      </tbody>
  </table>
+</div>
 
  <div class="row d-flex" id="paginationLinks">
      <div class="col-md-12 text-right">

@@ -7,17 +7,22 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Payment Request Approval</h2>
+            {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Procurement</div>
+                    <h2 class="page-title mb-0">Payment Request Approval</h2>
                 </div>
+                {{-- mobile par filter button yahan aata hai --}}
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions"></div>
             </div>
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form" data-filter-apply>
-                                <div class="d-flex mx-0" style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
+                                <div class="row mx-0 d-flex" style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
                                     <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="contract_no" class="form-label">Ticket / Contract</label>
                                         <input type="text" class="form-control" id="contract_no"
@@ -93,7 +98,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th style="width: 12%;">Ticket No / Contract No</th>

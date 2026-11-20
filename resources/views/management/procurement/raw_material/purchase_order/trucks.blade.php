@@ -29,23 +29,30 @@
 <style>
     .ats-box {
         border: 1px solid #e3e6ef;
-        border-radius: 6px;
-        padding: 12px 14px;
+        border-radius: 8px;
+        padding: 10px 12px;
         background: #fff;
         height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .ats-box .ats-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #6b6f82;
         text-transform: uppercase;
         letter-spacing: .3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .ats-box .ats-value {
-        font-size: 22px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         line-height: 1.3;
+        color: #2b2a35;
     }
 
     .ats-box.ats-danger .ats-value {
@@ -65,6 +72,28 @@
         color: #fff;
         font-size: 9px;
         vertical-align: middle;
+    }
+
+    .tkc-truck-cards {
+        display: none;
+    }
+
+    @media (max-width: 767.98px) {
+        .tkc-truck-cards {
+            display: block !important;
+        }
+        .tkc-truck-cards .tkc {
+            margin-bottom: 10px;
+        }
+        .truck-table-wrap {
+            display: none !important;
+        }
+        .ats-box {
+            padding: 8px 10px;
+        }
+        .ats-box .ats-value {
+            font-size: 15px;
+        }
     }
 </style>
 
@@ -97,6 +126,75 @@
     </div>
 </div>
 
+{{-- ===== MOBILE: Truck Cards (sirf mobile par dikhenge) ===== --}}
+<div class="tkc-list tkc-truck-cards">
+    @forelse ($tickets as $ticket)
+        @php
+            $status = $truckStatus($ticket);
+            $isRej = ($status === 'rejected');
+            $statusClass = match ($status) {
+                'rejected' => 'is-rejected',
+                'completed' => 'is-approved',
+                default => 'is-pending',
+            };
+            $statusLabel = match ($status) {
+                'rejected' => 'Rejected',
+                'completed' => 'Completed',
+                default => 'In Process',
+            };
+            $diffWeight = (float) $ticket->arrived_net_weight - (float) $ticket->net_weight;
+        @endphp
+        <div class="tkc {{ $isRej ? 'tkc-tint-red is-rejected' : '' }}">
+            <div class="tkc-main" style="padding: 12px 14px;">
+                <div class="tkc-top">
+                    <div class="tkc-no">
+                        #{{ $ticket->unique_no ?? 'N/A' }}
+                        @if ($ticket->is_ticket_verified == 1)
+                            <span class="ats-verified" title="Verified"><i class="fa fa-check"></i></span>
+                        @endif
+                    </div>
+                    <span class="tkc-qc {{ $statusClass }}">{{ $statusLabel }}</span>
+                </div>
+
+                <div class="tkc-date">
+                    <i class="ft-clock"></i>
+                    {{ $ticket->created_at ? $ticket->created_at->format('d M Y, h:i A') : 'N/A' }}
+                </div>
+
+                <div class="tkc-chips mb-2">
+                    <span class="tkc-chip"><i class="ft-truck"></i> {{ $ticket->truck_no ?? 'N/A' }}</span>
+                    <span class="tkc-chip"><i class="ft-file-text"></i> {{ $ticket->bilty_no ?? 'N/A' }}</span>
+                </div>
+
+                <div class="tkc-grid">
+                    <div>
+                        <span class="tkc-label">Loaded Weight</span>
+                        <span class="tkc-val">{{ number_format((float) $ticket->net_weight, 2) }} kg</span>
+                    </div>
+                    <div>
+                        <span class="tkc-label">Arrived Weight</span>
+                        <span class="tkc-val font-weight-bold">{{ number_format((float) $ticket->arrived_net_weight, 2) }} kg</span>
+                    </div>
+                    <div>
+                        <span class="tkc-label">Weight Diff</span>
+                        <span class="tkc-val {{ $diffWeight < 0 ? 'text-danger' : ($diffWeight > 0 ? 'text-success' : 'text-muted') }}">
+                            {{ ($diffWeight > 0 ? '+' : '') . number_format($diffWeight, 2) }} kg
+                        </span>
+                    </div>
+                    <div>
+                        <span class="tkc-label">Status</span>
+                        <span class="tkc-val">{{ $statusLabel }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No trucks found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: Table (mobile par cards dikhte hain) ===== --}}
+<div class="tk-table-wrap truck-table-wrap">
 <div class="table-responsive">
     <table class="table table-bordered table-sm mb-0">
         <thead>
@@ -156,4 +254,5 @@
             </tfoot>
         @endif
     </table>
+</div>
 </div>

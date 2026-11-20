@@ -10,6 +10,7 @@
             $isCompulsury = $paymentRequestData->samplingResults->whereNull('slab_type_id')->isNotEmpty();
             $showLumpSum = false;
         @endphp
+        <div class="tkf-page tkf-2col">
         <form action="{{ route('raw-material.ticket.payment-request.update', $paymentRequestData->id) }}" method="POST"
             id="ajaxSubmit">
             @csrf
@@ -411,13 +412,14 @@
                     </div>
                 @endif
             </div>
-            <div class="row bottom-button-bar">
+            <div class="row bottom-button-bar tkf-actions">
                 <div class="col-12">
                     <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
                     <button type="submit" class="btn btn-primary submitbutton">Save</button>
                 </div>
             </div>
         </form>
+        </div>
         <script>
             $(document).ready(function() {
                 $('input[name="payment_request_amount"], input[name="paid_amount"], input[name="freight_pay_request_amount"]')

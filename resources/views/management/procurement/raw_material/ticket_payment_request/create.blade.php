@@ -1,3 +1,5 @@
+{{-- tkf-page: mobile form UI, fields 2 columns (tkf-grid2) - mobile-ui.css section 7 + 9. Desktop same. --}}
+<div class="tkf-page">
 <form action="{{ route('raw-material.ticket.payment-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.ticket.get.payment-request') }}" />
@@ -44,7 +46,7 @@
         </div>
     @endif
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             @if ($purchaseOrder->decision_making == 0)
@@ -53,3 +55,4 @@
         </div>
     </div>
 </form>
+</div>

@@ -1,3 +1,5 @@
+{{-- tkf-page: mobile form UI, fields 2 columns (tkf-grid2) - mobile-ui.css section 7 + 9. Desktop same. --}}
+<div class="tkf-page">
 <form
     action="{{ route($paymentRequest->is_advance_payment == 0 ? 'raw-material.payment-request-approval.store' : 'raw-material.advance-payment-request-approval.store') }}"
     method="POST" id="ajaxSubmit">
@@ -18,7 +20,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row tkf-grid2">
         @if ($paymentRequest->is_advance_payment == 0)
             <div class="col-md-4">
                 <div class="form-group">
@@ -95,7 +97,7 @@
         </div>
     @endif
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1">Close</a>
             @if (!$isUpdated)
@@ -104,6 +106,7 @@
         </div>
     </div>
 </form>
+</div>
 
 <script>
     $(document).ready(function () {

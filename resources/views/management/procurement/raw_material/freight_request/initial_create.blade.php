@@ -1,3 +1,4 @@
+<div class="tkf-page">
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12">
         <div class="form-group">
@@ -15,6 +16,7 @@
 </div>
 
 <div id="fullFreightFormContainer"></div>
+</div>
 
 <script>
     $(document).ready(function() {

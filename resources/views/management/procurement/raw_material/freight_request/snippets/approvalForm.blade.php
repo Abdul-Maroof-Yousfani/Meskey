@@ -1,3 +1,4 @@
+<div class="tkf-page">
 <form action="{{ route('raw-material.advance-payment-request-approval.store') }}" method="POST" id="ajaxSubmit">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
@@ -29,7 +30,7 @@
         </div>
     @endif
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1">Close</a>
             @if (!$isUpdated)
@@ -38,6 +39,7 @@
         </div>
     </div>
 </form>
+</div>
 
 <script>
     $(document).ready(function() {

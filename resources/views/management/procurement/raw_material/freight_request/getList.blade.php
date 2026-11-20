@@ -1,3 +1,31 @@
+@php
+    // har ticket ka last payment status EK dafa (table + mobile card dono yahi use karte hain)
+    $lastStatuses = [];
+    foreach ($tickets as $t) {
+        $mId = $t['model']->id ?? null;
+        if ($mId) {
+            $lastStatuses[$mId] = lastpaymentStatus($mId, 'freight_payment');
+        }
+    }
+@endphp
+
+{{-- ===== MOBILE: cards (mobile-ui.css section 6) ===== --}}
+<div class="tkc-list">
+    @forelse ($tickets as $ticket)
+        @php
+            $mId = $ticket['model']->id ?? null;
+        @endphp
+        @include('management.procurement.raw_material.freight_request.partials.mobile-card', [
+            'ticket' => $ticket,
+            'lastPaymentApproval' => $lastStatuses[$mId] ?? null,
+        ])
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No records found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par cards dikhte hain) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -139,6 +167,7 @@
         @endif
     </tbody>
 </table>
+</div>
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">

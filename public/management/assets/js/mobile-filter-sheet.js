@@ -176,6 +176,9 @@
         if (!form) return;
         if (window.jQuery) {
             window.jQuery(form).trigger('submit');
+            // jQuery ka trigger('submit') native addEventListener('submit') nahi chalata
+            // (aur page ka handler preventDefault karta hai) -> applied stripe yahin update karo
+            updateAppliedStripe();
         } else {
             form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
         }

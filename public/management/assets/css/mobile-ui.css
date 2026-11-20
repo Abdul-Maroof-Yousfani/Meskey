@@ -496,25 +496,33 @@ body.layout-dark .m-applied-clear-all:active {
 
     /* filters: desktop wali horizontal row -> mobile par ek ke neeche ek */
     .m-sheet-body form,
-    .m-sheet-body form .row {
+    .m-sheet-body form .row,
+    .m-sheet-body form .d-flex {
         margin: 0 !important;
     }
 
-    .m-sheet-body form .row {
+    .m-sheet-body form .row,
+    .m-sheet-body form .d-flex {
+        display: flex !important;
         flex-wrap: wrap !important;
         overflow: visible !important;
+        white-space: normal !important;
         padding-bottom: 0 !important;
     }
 
     .m-sheet-body form .row > [class*="col"],
-    .m-sheet-body form .row > div {
+    .m-sheet-body form .row > div,
+    .m-sheet-body form .d-flex > [class*="col"],
+    .m-sheet-body form .d-flex > div {
         flex: 1 1 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        width: 100% !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
         margin-bottom: 14px;
         text-align: left !important;
+        white-space: normal !important;
     }
 
     .m-sheet-body label {
@@ -524,10 +532,15 @@ body.layout-dark .m-applied-clear-all:active {
         color: #4b4a57;
     }
 
-    .m-sheet-body .form-control {
-        height: 46px;
-        border-radius: 12px;
-        font-size: 14px;
+    .m-sheet-body .form-control,
+    .m-sheet-body input.form-control,
+    .m-sheet-body select.form-control {
+        height: 46px !important;
+        min-height: 46px !important;
+        line-height: normal !important;
+        border-radius: 12px !important;
+        font-size: 15px !important;
+        padding: 8px 14px !important;
     }
 
     .m-sheet-body .select2-container {
@@ -535,15 +548,16 @@ body.layout-dark .m-applied-clear-all:active {
     }
 
     .m-sheet-body .select2-container .select2-selection--single {
-        height: 46px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
+        height: 46px !important;
+        min-height: 46px !important;
+        border-radius: 12px !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     /* text/arrow ki vertical alignment section 8 (global) karta hai */
     .m-sheet-body .select2-container .select2-selection--single .select2-selection__rendered {
-        font-size: 14px;
+        font-size: 15px !important;
     }
 
     .m-sheet-foot {
@@ -2872,23 +2886,26 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         color: #6b6b80;
     }
 
-    /* 16px: iPhone input par zoom na kare */
-    .tkf-page .form-control {
-        height: 44px;
-        padding: 8px 12px;
-        border-radius: 10px;
-        border-color: #e3e5ee;
-        font-size: 16px;
+    /* 15-16px: iPhone input par zoom na kare */
+    .tkf-page .form-control,
+    .tkf-page input.form-control,
+    .tkf-page select.form-control {
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 8px 12px !important;
+        border-radius: 10px !important;
+        border-color: #e3e5ee !important;
+        font-size: 15px !important;
     }
 
     /* native select: right me chevron (section 8) ki jagah */
     .tkf-page select.form-control {
-        padding-right: 34px;
+        padding-right: 34px !important;
     }
 
     .tkf-page textarea.form-control {
-        height: auto;
-        min-height: 90px;
+        height: auto !important;
+        min-height: 90px !important;
     }
 
     .tkf-page .form-control:focus {
@@ -2907,9 +2924,10 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
     }
 
     .tkf-page .select2-container .select2-selection--single {
-        display: flex;
-        align-items: center;
-        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 46px !important;
+        min-height: 46px !important;
         border-radius: 10px !important;
         border-color: #e3e5ee !important;
     }
@@ -2917,21 +2935,32 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
     .tkf-page .select2-container .select2-selection--single .select2-selection__rendered {
         padding-left: 12px;
         padding-right: 30px;
-        font-size: 16px;
+        font-size: 15px !important;
     }
 
     .tkf-page .select2-container--disabled .select2-selection--single {
         background: #f5f6fa !important;
     }
 
-    /* Ticket No# : button + input ek hi pill */
-    .tkf-page .input-group-prepend .btn {
-        height: 44px;
-        padding: 0 14px;
-        border-radius: 10px 0 0 10px !important;
+    /* Ticket No# / Search input group: button + input */
+    .tkf-page .input-group-prepend .btn,
+    .tkf-page .input-group-append .btn {
+        height: 46px !important;
+        padding: 0 14px !important;
         font-size: 13px;
         font-weight: 600;
         box-shadow: none !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tkf-page .input-group-prepend .btn {
+        border-radius: 10px 0 0 10px !important;
+    }
+
+    .tkf-page .input-group-append .btn {
+        border-radius: 0 10px 10px 0 !important;
     }
 
     /* sirf "button + input" wale (Ticket No#) - QC ke "input + unit" wale nahi */
@@ -3330,7 +3359,7 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
-        height: 40px;
+        height: 44px;
         padding: 0 34px 0 12px;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
@@ -3351,10 +3380,17 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
     .select2-container--default .select2-selection--single {
         display: flex;
         align-items: center;
-        height: 40px;
+        height: 44px;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
         background-color: #fff;
+    }
+
+    /* ---- general mobile text/date inputs ---- */
+    input.form-control:where(:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])) {
+        height: 44px;
+        border-radius: 8px;
+        font-size: 15px;
     }
 
     /* Theme (components.css) rendered par height:100% + fixed line-height (~39px) lagati hai:

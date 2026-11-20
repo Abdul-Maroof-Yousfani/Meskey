@@ -1,3 +1,14 @@
+{{-- ===== MOBILE: cards (mobile-ui.css section 6) ===== --}}
+<div class="tkc-list">
+    @forelse ($paymentRequests as $request)
+        @include('management.procurement.raw_material.payment_request_approval.partials.mobile-card', ['request' => $request])
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No payment requests found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par cards dikhte hain) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -129,6 +140,7 @@
         @endif
     </tbody>
 </table>
+</div>
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">

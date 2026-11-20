@@ -1,10 +1,11 @@
+<div class="tkf-page">
 <form action="{{ route('raw-material.freight.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
     enctype="multipart/form-data">
     @csrf
     <input type="hidden" name="arrival_purchase_order_id" value="{{ $purchaseOrder->id }}" />
     <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight') }}" />
 
-    <div class="row form-mar">
+    <div class="row form-mar tkf-grid2">
         <div class="col-md-6">
             <div class="form-group">
                 <label>Contract #</label>
@@ -146,13 +147,14 @@
         </div>
     </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar tkf-actions">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
     </div>
 </form>
+</div>
 
 <script>
     $(document).ready(function() {

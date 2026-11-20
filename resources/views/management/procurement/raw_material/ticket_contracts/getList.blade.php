@@ -1,3 +1,14 @@
+{{-- ===== MOBILE: cards (mobile-ui.css section 6) ===== --}}
+<div class="tkc-list">
+    @forelse ($tickets as $row)
+        @include('management.procurement.raw_material.ticket_contracts.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty"><i class="ft-inbox"></i> No tickets found</div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par cards dikhte hain) ===== --}}
+<div class="tk-table-wrap">
 <x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="1" :emptyMessage="'No tickets found'" :pagination="$tickets->links()">
     @slot('head')
         <th>Ticket #</th>
@@ -178,3 +189,4 @@
         @endforeach
     @endslot
 </x-sticky-table>
+</div>

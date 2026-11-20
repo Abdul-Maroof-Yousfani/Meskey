@@ -45,6 +45,21 @@ class PurchaseFreightController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = '%' . $request->search . '%';
+                return $q->where(function ($sub) use ($search) {
+                    $sub->where('unique_no', 'like', $search)
+                        ->orWhereHas('purchaseOrder', function ($poQ) use ($search) {
+                            $poQ->where('contract_no', 'like', $search)
+                                ->orWhereHas('supplier', function ($supQ) use ($search) {
+                                    $supQ->where('name', 'like', $search);
+                                })
+                                ->orWhereHas('product', function ($prodQ) use ($search) {
+                                    $prodQ->where('name', 'like', $search);
+                                });
+                        });
+                });
+            })
             ->where('company_id', $request->company_id)
             ->whereNotNull('purchase_order_id')
             ->latest()

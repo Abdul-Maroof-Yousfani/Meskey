@@ -30,22 +30,34 @@
         }
     @endphp
 
-    <div class="container-fluid">
+    {{-- mph-head: mobile par app-bar (partials/mobile-page-head). Desktop same. --}}
+    @include('management.layouts.partials.mobile-page-head')
+    <div class="row w-100 mx-auto align-items-center mph-head">
+        <a href="{{ route('raw-material.ticket-contracts.index') }}" class="mph-back" title="Back to Tickets">
+            <i class="ft-arrow-left"></i>
+        </a>
+        <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8 mph-title-col">
+            <div class="mph-sub">Contract Linking</div>
+            <h2 class="page-title mb-0">
+                Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}
+                @if ($arrivalTicket->first_qc_status == 'rejected')
+                    <span class="badge badge-danger ml-2">Rejected</span>
+                @elseif($arrivalTicket->is_ticket_verified == 1)
+                    <span class="badge badge-success ml-2">Contract Verified</span>
+                @endif
+            </h2>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4 text-right mph-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="park_arrival_btn">
+                Park Arrival
+            </button>
+        </div>
+    </div>
+
+    <div class="container-fluid tkf-page">
         <div class="row">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
-                        
-                        <h4 class="card-title">
-                            Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}
-                            @if ($arrivalTicket->first_qc_status == 'rejected')
-                                <span class="badge badge-danger ml-2">Rejected</span>
-                            @elseif($arrivalTicket->is_ticket_verified == 1)
-                                <span class="badge badge-success ml-2">Contract Verified</span>
-                            @endif
-                            <button type="button" class="btn btn-primary btn-sm float-right" id="park_arrival_btn">Park Arrival</button>
-                        </h4>
-                    </div>
                     <div class="card-body">
                         <form action="{{ route('raw-material.ticket-contracts.store') }}" method="POST" id="ajaxSubmit">
                             @csrf
@@ -580,6 +592,16 @@
                 $('.contract-row').removeClass('table-active');
                 $(this).closest('.contract-row').addClass('table-active');
 
+                // Sync mobile cards
+                const mobileRadio = $(`.tkc-contract-card[data-contract-id="${contractId}"] .tkc-contract-radio`);
+                if (mobileRadio.length && !mobileRadio.is(':checked')) {
+                    mobileRadio.prop('checked', true);
+                }
+                $('.tkc-contract-card').removeClass('is-selected');
+                $(`.tkc-contract-card[data-contract-id="${contractId}"]`).addClass('is-selected');
+                $('.m-freight-section').hide();
+                $(`.m-freight-section[data-contract-id="${contractId}"]`).show();
+
                 $('.freight-row').hide();
                 $(`.freight-row[data-contract-id="${contractId}"]`).show();
 
@@ -593,6 +615,25 @@
                 }
             });
 
+            // Mobile contract card click & radio change
+            $(document).on('click', '.tkc-contract-card', function(e) {
+                if ($(e.target).closest('button, a, input, select, label').length) return;
+                $(this).find('.tkc-contract-radio:not(:disabled)').prop('checked', true).trigger('change');
+            });
+
+            $(document).on('change', '.tkc-contract-radio', function() {
+                const contractId = $(this).val();
+                $('.tkc-contract-card').removeClass('is-selected');
+                $(this).closest('.tkc-contract-card').addClass('is-selected');
+                $('.m-freight-section').hide();
+                $(`.m-freight-section[data-contract-id="${contractId}"]`).slideDown(200);
+
+                const desktopRadio = $(`.contract-row[data-id="${contractId}"] input[name="selected_contract"]`);
+                if (desktopRadio.length && !desktopRadio.is(':checked')) {
+                    desktopRadio.prop('checked', true).trigger('change');
+                }
+            });
+
             $(document).on('change', 'input[name^="selected_freight_"]', function() {
                 const freightId = $(this).val();
                 const contractId = $(this).data('contract-id');
@@ -603,6 +644,29 @@
 
                     $(`.freight-item`).removeClass('table-success');
                     $(this).closest('.freight-item').addClass('table-success');
+
+                    // Sync mobile freight
+                    const mobileFreight = $(`.m-freight-radio[value="${freightId}"]`);
+                    if (mobileFreight.length && !mobileFreight.is(':checked')) {
+                        mobileFreight.prop('checked', true);
+                        $(`.m-freight-item`).removeClass('is-selected');
+                        mobileFreight.closest('.m-freight-item').addClass('is-selected');
+                    }
+                }
+            });
+
+            $(document).on('change', '.m-freight-radio', function() {
+                const freightId = $(this).val();
+                const contractId = $(this).data('contract-id');
+
+                $(`.m-freight-item`).removeClass('is-selected');
+                $(this).closest('.m-freight-item').addClass('is-selected');
+
+                const desktopFreight = $(`input[name="selected_freight_${contractId}"][value="${freightId}"]`);
+                if (desktopFreight.length && !desktopFreight.is(':checked')) {
+                    desktopFreight.prop('checked', true).trigger('change');
+                } else {
+                    $('#selected_freight_input').val(freightId);
                 }
             });
 
@@ -1012,6 +1076,15 @@
         .contract-results {
             border: 1px solid #dee2e6;
             border-radius: 4px;
+        }
+
+        @media (max-width: 767.98px) {
+            .contract-results {
+                border: 0 !important;
+                background: transparent !important;
+                max-height: none !important;
+                overflow-y: visible !important;
+            }
         }
 
         .contract-results table {

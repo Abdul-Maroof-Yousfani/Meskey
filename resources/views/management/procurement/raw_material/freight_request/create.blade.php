@@ -51,6 +51,7 @@
         ? ($hasContract ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.pohouch-freight-payment-request-approval-wo-contract')
         : 'raw-material.freight-request.store';
 @endphp
+<div class="tkf-page tkf-2col">
 <form action="{{ route($targetRoute) }}" method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
     @csrf
     <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
@@ -66,6 +67,18 @@
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
     @else
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
+    @endif
+
+    @php
+        $ticketIdForLogs = $ticket->id ?? null;
+        $ticketNoForLogs = $ticket->unique_no ?? 'N/A';
+    @endphp
+    @if ($ticketIdForLogs)
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('raw-material.freight-request.audit-logs', $ticketIdForLogs) }}','Audit Logs: Ticket #{{ $ticketNoForLogs }}', false, '55%')">
+            <i class="fa fa-history mr-1"></i> Audit Logs
+        </button>
+    </div>
     @endif
 
     <div class="row">
@@ -787,7 +800,7 @@
     @endphp
 
     @if (!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
-        <div class="row bottom-button-bar">
+        <div class="row bottom-button-bar tkf-actions">
             <div class="col-12">
                 <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
                 <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
@@ -795,6 +808,7 @@
         </div>
     @endif
 </form>
+</div>
 <script>
 
 
