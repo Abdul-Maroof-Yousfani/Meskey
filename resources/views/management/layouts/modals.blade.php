@@ -4,10 +4,16 @@
         <div class="modal-header-row">
             <div class="row  w-100 mx-auto align-items-center">
                 <div class="col-10 ">
+                    {{-- Mobile only: back button (same classes as X, so same close/reload behaviour) --}}
+                    <a class="modal-sidebar-close top-wala modal-back-btn d-md-none" href="javascript:;"
+                        aria-label="Back">
+                        <i class="ft-arrow-left"></i>
+                    </a>
                     <h4 class="modal-title my-3">Unknown</h4>
                 </div>
-                <div class="col-2 text-right">
-                    <a class="modal-sidebar-close top-wala position-relative top-1">
+                <div class="col-2 text-right modal-close-col">
+                    {{-- X: desktop only, hidden on mobile via mobile-ui.css --}}
+                    <a class="modal-sidebar-close top-wala modal-close-x position-relative top-1">
                         <i class="ft-x font-medium-3  darken-1"></i>
                     </a>
                 </div>

@@ -3590,6 +3590,26 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         font-size: 18px !important;
     }
 
+    /* Mobile: back button left of the title, X hidden (desktop keeps the X) */
+    #modal-sidebar .modal-header-row .modal-close-col {
+        display: none !important;
+    }
+
+    #modal-sidebar .modal-header-row > .row > [class*="col"]:first-child {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #modal-sidebar .modal-header-row a.modal-back-btn {
+        display: inline-flex !important;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        text-decoration: none;
+    }
+
     /* ---- content: kam padding, neeche safe area ---- */
     #modal-sidebar .modal-sidebar-content > .row:not(.modal-header-row),
     #modal-sidebar2 .modal-sidebar-content > .row:not(.modal-header-row) {
