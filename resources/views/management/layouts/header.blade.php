@@ -626,6 +626,9 @@
             $.ajax({
                 url: "{{ route('notifications.count') }}",
                 type: "GET",
+                // Background badge update: not counted in jQuery.active, so the page loader
+                // and global ajaxStart/ajaxStop handlers don't wait for it
+                global: false,
                 success: function(res) {
                     $('#notification-badge-count').text(res.count);
                     

@@ -603,22 +603,22 @@
   });
 
     // main menu internationalization
-
-    // init i18n and load language file
-    i18next
-        .use(window.i18nextXHRBackend)
-        .init({
-            debug: false,
-            fallbackLng: "en",
-            backend: {
-                loadPath: "../../../app-assets/data/locales/{{lng}}.json",
-            },
-            returnObjects: true
-        },
-        function (err, t) {
-            // resources have been loaded
-            jqueryI18next.init(i18next, $);
-        });
+    // Disabled: the ERP has no language switcher and never calls .localize(), so this
+    // only made an extra en.json request on every page load.
+    // i18next
+    //     .use(window.i18nextXHRBackend)
+    //     .init({
+    //         debug: false,
+    //         fallbackLng: "en",
+    //         backend: {
+    //             loadPath: "../../../app-assets/data/locales/{{lng}}.json",
+    //         },
+    //         returnObjects: true
+    //     },
+    //     function (err, t) {
+    //         // resources have been loaded
+    //         jqueryI18next.init(i18next, $);
+    //     });
 
     // change language according to data-language of dropdown item
     $(".dropdown-language + .dropdown-menu .dropdown-item").on("click", function () {
