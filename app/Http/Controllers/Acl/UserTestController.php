@@ -470,6 +470,7 @@ class UserTestController extends Controller
             $roleNames
         )));
 
+        \App\Services\PermissionService::flush();
         $user->refresh();
         $newAssignments = $this->buildUserAssignmentAuditValues($user);
 
@@ -643,6 +644,7 @@ class UserTestController extends Controller
 
         $this->syncUserCompanyLocations($user);
 
+        \App\Services\PermissionService::flush();
         $user->refresh();
         $newAssignments = $this->buildUserAssignmentAuditValues($user);
 
@@ -689,6 +691,7 @@ class UserTestController extends Controller
 
         $this->syncUserCompanyLocations($user);
 
+        \App\Services\PermissionService::flush();
         $user->refresh();
         $newAssignments = $this->buildUserAssignmentAuditValues($user);
 
@@ -726,6 +729,7 @@ class UserTestController extends Controller
             );
 
             $contact = $user->delete();
+            \App\Services\PermissionService::flush();
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();

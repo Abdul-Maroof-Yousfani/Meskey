@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\PermissionService;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -33,24 +34,21 @@ class CheckCurrentCompany
 
         $currentCompanyId = $user->current_company_id;
 
-        // Fetch the user's role for the current company
-        $companyRole = $user->companies()
-            ->where('company_id', $currentCompanyId)
-            ->first();
+        // Fetch the user's role and permissions for the current company (cached)
+        $access = PermissionService::resolve($user);
 
-        if (!$companyRole) {
+        if ($access === null) {
             abort(403, 'No company role found for the current company.');
         }
 
-        $roleId = $companyRole->pivot->role_id;
-        $role = $user->roles()->find($roleId);
-
-        if (!$role) {
+        if ($access['permissions'] === null) {
             abort(403, 'User role not found for this company.');
         }
 
+        $roleId = $access['role_id'];
+
         // Check if the role has the required permission
-        $permissions = $role->permissions->pluck('name')->toArray();
+        $permissions = $access['permissions'];
         if ($permission && !in_array($permission, $permissions)) {
             abort(403, 'User does not have the required permission for this company.');
         }

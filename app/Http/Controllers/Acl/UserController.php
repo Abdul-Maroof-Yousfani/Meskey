@@ -84,6 +84,7 @@ class UserController extends Controller
         $rolesname = Role::whereIn('id', $roles)->pluck('name')->toArray();
 
         $user->assignRole($rolesname);
+        \App\Services\PermissionService::flush();
 
         return response()->json(['success' => 'Successfully Saved.', 'data' => $user]);
     }
@@ -197,6 +198,7 @@ class UserController extends Controller
             DB::table('model_has_roles')->where('model_id', $id)->delete();
             $rolesname = Role::whereIn('id', $roles)->pluck('name')->toArray();
             $user->assignRole($rolesname);
+            \App\Services\PermissionService::flush();
 
             return response()->json([
                 'success' => 'Successfully Saved.',
@@ -228,6 +230,7 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             $contact = User::find($id)->delete();
+            \App\Services\PermissionService::flush();
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();

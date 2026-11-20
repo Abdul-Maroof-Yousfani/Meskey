@@ -358,20 +358,19 @@ class ExportLoadingProgramController extends Controller
 
         $sBillNo = $loadingProgram->s_bill_no ?: $loadingProgram->loadingProgramItems->first()?->s_bill_no;
 
-        // Transporters from the selected export order's logistics. Only when there is exactly one
-        // is it auto-selected and locked; with more than one the user picks it.
-        $logisticsTransporters = \App\Models\Sales\Logistics::with('items.transporter')
-            ->whereIn('export_order_id', $ExportOrders->pluck('id'))
-            ->get()
-            ->flatMap->items
-            ->pluck('transporter')
-            ->filter()
-            ->unique('id')
-            ->values();
+        // Logistics transporters that still have trucks left (0 left = not shown). Only when exactly one
+        // is left is it auto-selected and locked; with more than one the user picks it.
+        $truckAvailability = $this->transporterTruckAvailability($loadingProgram);
+        $logisticsTransporters = $truckAvailability === null
+            ? collect()
+            : \App\Models\Master\Transporter::whereIn(
+                'id',
+                $truckAvailability->filter(fn ($trucks) => $trucks['available'] > 0)->keys()
+            )->get();
         $logisticsTransporter = $logisticsTransporters->count() === 1 ? $logisticsTransporters->first() : null;
 
         // Dropdown shows only the logistics transporters; all active ones only when the EO has no logistics
-        $transporters = $logisticsTransporters->isNotEmpty()
+        $transporters = $truckAvailability !== null
             ? $logisticsTransporters->values()
             : \App\Models\Master\Transporter::where('status', 'active')->get();
 
@@ -410,8 +409,13 @@ class ExportLoadingProgramController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
+            if ($truckErrors = $this->transporterTruckLimitErrors($loadingProgram, $request->loading_program_items)) {
+                DB::rollBack();
+                return response()->json(['errors' => $truckErrors], 422);
+            }
+
             $submittedItemIds = collect($request->loading_program_items)->pluck('id')->filter()->toArray();
-            
+
             // 1. Delete items not in request
             $loadingProgram->loadingProgramItems()->whereNotIn('id', $submittedItemIds)->delete();
 
@@ -461,6 +465,99 @@ class ExportLoadingProgramController extends Controller
         }
 
         return response()->json(['success' => 'Loading Program completed successfully.'], 200);
+    }
+
+    /**
+     * A transporter cannot get more trucks than the "No. of Truck" given to it in the export order's logistics.
+     * Trucks already used by the export order's other loading programs count against the same limit.
+     * No check when the export order has no logistics.
+     */
+    private function transporterTruckLimitErrors(LoadingProgram $loadingProgram, array $items): array
+    {
+        $availability = $this->transporterTruckAvailability($loadingProgram);
+        if ($availability === null) {
+            return [];
+        }
+
+        // Rows locked after first weighbridge post no transporter (disabled select): use the saved one
+        $savedTransporters = LoadingProgramItem::where('loading_program_id', $loadingProgram->id)->pluck('transporter_id', 'id');
+        $submitted = collect($items)
+            ->map(function ($item) use ($savedTransporters) {
+                if (empty($item['transporter_id']) && !empty($item['id'])) {
+                    $item['transporter_id'] = $savedTransporters->get($item['id']);
+                }
+                return $item;
+            })
+            ->filter(fn ($item) => !empty($item['transporter_id']));
+        $transporterNames = \App\Models\Master\Transporter::whereIn('id', $submitted->pluck('transporter_id')->unique())
+            ->pluck('name', 'id');
+
+        $errors = [];
+        foreach ($submitted->groupBy('transporter_id', true) as $transporterId => $rows) {
+            $allowed = $availability[$transporterId]['allowed'] ?? 0;
+            $available = $availability[$transporterId]['available'] ?? 0;
+
+            if ($rows->count() <= $available) {
+                continue;
+            }
+
+            $name = $transporterNames->get($transporterId, 'This transporter');
+            $message = $allowed === 0
+                ? "{$name} has no trucks in the logistics of this export order."
+                : "{$name} has {$allowed} truck(s) in logistics, only {$available} available here. You have entered {$rows->count()}.";
+
+            // Flag the first row over the limit (one popup message per transporter)
+            $index = $rows->keys()->get($available);
+            $errors["loading_program_items.{$index}.transporter_id"] = [$message];
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Trucks per transporter for this loading program's export order(s):
+     * [transporter_id => ['allowed' => No. of Truck in logistics, 'available' => allowed minus trucks
+     * used by the export order's other loading programs]].
+     * Null when the export order has no logistics transporters (no limit applies).
+     */
+    private function transporterTruckAvailability(LoadingProgram $loadingProgram): ?\Illuminate\Support\Collection
+    {
+        $exportOrderIds = $loadingProgram->exportOrders()->pluck('export_orders.id')
+            ->push($loadingProgram->export_order_id)
+            ->filter()->unique()->values();
+
+        if ($exportOrderIds->isEmpty()) {
+            return null;
+        }
+
+        $allowedTrucks = \App\Models\Sales\LogisticsItem::whereHas('logistics', function ($q) use ($exportOrderIds) {
+            $q->whereIn('export_order_id', $exportOrderIds);
+        })
+            ->whereNotNull('transporter_id')
+            ->get()
+            ->groupBy('transporter_id')
+            ->map(fn ($rows) => (int) $rows->sum('qty'));
+
+        if ($allowedTrucks->isEmpty()) {
+            return null;
+        }
+
+        $otherProgramIds = LoadingProgram::where('id', '!=', $loadingProgram->id)
+            ->where(function ($q) use ($exportOrderIds) {
+                $q->whereIn('export_order_id', $exportOrderIds)
+                    ->orWhereHas('exportOrders', fn ($sq) => $sq->whereIn('export_orders.id', $exportOrderIds));
+            })
+            ->pluck('id');
+
+        $usedElsewhere = LoadingProgramItem::whereIn('loading_program_id', $otherProgramIds)
+            ->whereNotNull('transporter_id')
+            ->get()
+            ->countBy('transporter_id');
+
+        return $allowedTrucks->map(fn ($allowed, $transporterId) => [
+            'allowed' => $allowed,
+            'available' => max($allowed - $usedElsewhere->get($transporterId, 0), 0),
+        ]);
     }
 
     public function destroy($id)

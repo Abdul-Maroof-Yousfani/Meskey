@@ -61,6 +61,7 @@ class PermissionController extends Controller
 
         // Invalidate Spatie permission cache
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+        \App\Services\PermissionService::flush();
 
         return response()->json([
             'success' => 'Permission created successfully.',
@@ -89,6 +90,7 @@ class PermissionController extends Controller
 
         // Invalidate Spatie permission cache
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+        \App\Services\PermissionService::flush();
 
         return response()->json([
             'success' => 'Permission updated successfully.',
@@ -114,6 +116,7 @@ class PermissionController extends Controller
 
         // Invalidate Spatie permission cache
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+        \App\Services\PermissionService::flush();
 
         return response()->json([
             'success' => 'Permission deleted successfully.'

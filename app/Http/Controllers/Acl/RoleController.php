@@ -59,6 +59,7 @@ class RoleController extends Controller
     {
         $role = Role::create(['name' => $request->input('name'), 'description' => $request->input('description')]);
         $role->syncPermissions($request->input('permission'));
+        \App\Services\PermissionService::flush();
         return response()->json(['success' => 'Successfully Saved.', 'data' => $role]);
     }
     /**
@@ -107,6 +108,7 @@ class RoleController extends Controller
         $role->save();
 
         $role->syncPermissions($request->input('permission'));
+        \App\Services\PermissionService::flush();
 
         return response()->json(['success' => 'Successfully Saved.', 'data' => $role]);
     }
@@ -121,6 +123,7 @@ class RoleController extends Controller
         DB::beginTransaction();
         try {
             $contact = DB::table('roles')->where('id', $id)->delete();
+            \App\Services\PermissionService::flush();
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();

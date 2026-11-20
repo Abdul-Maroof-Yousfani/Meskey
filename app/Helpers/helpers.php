@@ -39,37 +39,8 @@ const SLAB_TYPES_CALCULATED_ON = [
 if (!function_exists('canAccess')) {
     function canAccess($permission)
     {
-        $user = auth()->user();
-
-        if ($user->user_type === 'super-admin') {
-            //For Developers
-            return true;
-        }
-
-        $currentCompanyId = $user->current_company_id;
-
-        $companyRolePermissions = $user->companies()->where('company_id', $currentCompanyId)->first();
-
-        if (!$companyRolePermissions) {
-            abort(403, 'No company role found for the current company.');
-        }
-
-        $roleId = $companyRolePermissions->pivot->role_id;
-
-        $role = $user->roles()->where('id', $roleId)->first();
-
-        if ($role) {
-            $permissions = $role->permissions->pluck('name')->toArray();
-
-            if ($permission && !in_array($permission, $permissions)) {
-                return false;
-                abort(403, 'User does not have the required permission for this company.');
-            }
-
-            return true;
-        } else {
-            return false;
-        }
+        // Cached lookup, see App\Services\PermissionService
+        return \App\Services\PermissionService::canAccess($permission);
     }
 }
 
