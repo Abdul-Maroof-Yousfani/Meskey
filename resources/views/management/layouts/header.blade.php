@@ -14,60 +14,90 @@
     <meta name="author" content="Innovative Network">
 
     <title>@yield('title') - {{ config('app.name') }}</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('management') }}/app-assets/img/ico/favicon.ico">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('management') }}/app-assets/img/ico/favicon-32x32.png">
+    <script src="{{ versioned_asset('management/vendor/jquery/3.6.0/jquery.min.js') }}"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="{{ versioned_asset('management/app-assets/img/ico/favicon.ico') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ versioned_asset('management/app-assets/img/ico/favicon-32x32.png') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-touch-fullscreen" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ versioned_asset('management/vendor/sweetalert2/11.26.25/sweetalert2.all.min.js') }}"></script>
 
     <link
         href="https://fonts.googleapis.com/css?family=Rubik:300,400,500,700,900%7CMontserrat:300,400,500,600,700,800,900"
         rel="stylesheet">
     <!-- BEGIN VENDOR CSS-->
     <!-- font icons-->
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/fonts/feather/style.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/fonts/feather/style.min.css') }}">
     <link rel="stylesheet" type="text/css"
-        href="{{ asset('management/app-assets/fonts/simple-line-icons/style.css') }}">
+        href="{{ versioned_asset('management/app-assets/fonts/simple-line-icons/style.css') }}">
     <link rel="stylesheet" type="text/css"
-        href="{{ asset('management/app-assets/fonts/font-awesome/css/font-awesome.min.css') }}">
+        href="{{ versioned_asset('management/app-assets/fonts/font-awesome/css/font-awesome.min.css') }}">
     <link rel="stylesheet" type="text/css"
-        href="{{ asset('management/app-assets/vendors/css/perfect-scrollbar.min.css') }}">
+        href="{{ versioned_asset('management/app-assets/vendors/css/perfect-scrollbar.min.css') }}">
 
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/vendors/css/prism.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/vendors/css/switchery.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/vendors/css/chartist.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/vendors/css/prism.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/vendors/css/switchery.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/vendors/css/chartist.min.css') }}">
     <!-- END VENDOR CSS-->
     <!-- BEGIN APEX CSS-->
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/bootstrap.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/bootstrap-extended.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/colors.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/components.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/themes/layout-dark.css') }}">
-    <link rel="stylesheet" href="{{ asset('management/app-assets/css/plugins/switchery.css') }}">
-    <link rel="stylesheet" href="{{ asset('management/app-assets/vendors/css/select2.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/css/bootstrap.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/css/bootstrap-extended.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/css/colors.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/css/components.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/css/themes/layout-dark.css') }}">
+    <link rel="stylesheet" href="{{ versioned_asset('management/app-assets/css/plugins/switchery.css') }}">
+    <link rel="stylesheet" href="{{ versioned_asset('management/app-assets/vendors/css/select2.min.css') }}">
 
     <link rel="stylesheet" type="text/css"
-        href="{{ asset('management/app-assets/css/core/menu/horizontal-menu.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/css/pages/dashboard1.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/style.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
-    <script src="{{ asset('assets/js/custom.js') }}"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/app-assets/vendors/css/toastr.css') }}">
-    <script src="{{ asset('management/app-assets/vendors/js/toastr.min.js') }}"></script>
+        href="{{ versioned_asset('management/app-assets/css/core/menu/horizontal-menu.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/css/pages/dashboard1.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/assets/css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('assets/css/style.css') }}">
+    <script src="{{ versioned_asset('assets/js/custom.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/vendor/daterangepicker/4.0.2/daterangepicker.css') }}" />
+<link rel="stylesheet" href="{{ versioned_asset('management/vendor/datatables/1.13.4/css/jquery.dataTables.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/app-assets/vendors/css/toastr.css') }}">
+    <script src="{{ versioned_asset('management/app-assets/vendors/js/toastr.min.js') }}"></script>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
     <script>
         const SUBMISSION_ON_ENTER = @json(env('SUBMISSION_ON_ENTER', false));
         const IS_LOCAL = @json(env('IS_LOCAL', false));
         let purchaseRequestRowIndex = 1;
+
+        // Header "Clear Cache" button: server drops this site's browser cache
+        // (Clear-Site-Data header), then the page reloads with fresh files.
+        function clearAppCache(el) {
+            if (el.dataset.busy) return;
+            el.dataset.busy = '1';
+            var icon = el.querySelector('i');
+            if (icon) icon.classList.add('spinner');
+
+            var done = function() {
+                window.location.reload();
+            };
+
+            fetch(@json(route('clear.cache')), {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            }).then(function() {
+                // Also empty any Cache Storage a script may have filled
+                if (window.caches && caches.keys) {
+                    return caches.keys().then(function(keys) {
+                        return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+                    });
+                }
+            }).then(done, done);
+        }
     </script>
     {{-- Saari custom UI styling: public/management/assets/css/mobile-ui.css --}}
-    <link rel="stylesheet" type="text/css" href="{{ asset('management/assets/css/mobile-ui.css') }}?v={{ @filemtime(public_path('management/assets/css/mobile-ui.css')) }}">
+    <link rel="stylesheet" type="text/css" href="{{ versioned_asset('management/assets/css/mobile-ui.css') }}">
 </head>
 
 <body
@@ -138,6 +168,14 @@
                                 <span class="pm-label">
                                     Edit Profile
                                     <small>Name, photo &amp; password</small>
+                                </span>
+                                <i class="ft-chevron-right pm-arrow"></i>
+                            </a>
+                            <a class="pm-item" href="javascript:;" onclick="clearAppCache(this)">
+                                <span class="pm-ic"><i class="ft-refresh-ccw"></i></span>
+                                <span class="pm-label">
+                                    Clear Cache
+                                    <small>Reload fresh files</small>
                                 </span>
                                 <i class="ft-chevron-right pm-arrow"></i>
                             </a>
@@ -262,6 +300,13 @@
                             @endif
                         @endif
 
+
+                        <li class="nav-item d-flex align-items-center mr-2">
+                            <a class="nav-link header-icon-btn" href="javascript:;" title="Clear Cache"
+                                onclick="clearAppCache(this)">
+                                <i class="ft-refresh-ccw"></i>
+                            </a>
+                        </li>
 
                         <li class="nav-item d-flex align-items-center mr-2">
                             <input type="checkbox" class="d-none" id="color-switch-1"

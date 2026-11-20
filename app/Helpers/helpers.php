@@ -36,6 +36,26 @@ const SLAB_TYPES_CALCULATED_ON = [
     SLAB_TYPE_QTY => 'Qty.'
 ];
 
+if (!function_exists('versioned_asset')) {
+    /**
+     * asset() URL with ?v=<file modified time>, so the browser can cache the file
+     * for a long time and still fetch the new copy as soon as the file changes.
+     */
+    function versioned_asset(string $path): string
+    {
+        static $versions = [];
+
+        $path = ltrim($path, '/');
+        if (!array_key_exists($path, $versions)) {
+            $versions[$path] = @filemtime(public_path($path)) ?: null;
+        }
+
+        $url = asset($path);
+
+        return $versions[$path] ? $url . '?v=' . $versions[$path] : $url;
+    }
+}
+
 if (!function_exists('canAccess')) {
     function canAccess($permission)
     {

@@ -69,8 +69,8 @@
             </div>
         </section>
     </div>
-    <link rel="stylesheet" href="https://printjs-4de6.kxcdn.com/print.min.css">
-    <script src="https://printjs-4de6.kxcdn.com/print.min.js"></script>
+    <link rel="stylesheet" href="{{ versioned_asset('management/vendor/printjs/print.min.css') }}">
+    <script src="{{ versioned_asset('management/vendor/printjs/print.min.js') }}"></script>
 @endsection
 @section('script')
     <script>

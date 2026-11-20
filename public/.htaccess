@@ -19,3 +19,31 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# ---------------------------------------------------------------------------
+# Browser cache for static files (only real files on disk, never Laravel pages)
+#   CSS/JS with ?v=...  -> 1 year (versioned_asset() changes the URL when the file changes)
+#   CSS/JS without ?v=  -> cached, but browser checks every time (304 if unchanged)
+#   Fonts               -> 1 year
+#   Images              -> 7 days
+# HTML pages and AJAX responses are not touched: Laravel keeps them uncached.
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    <If "-f %{REQUEST_FILENAME} && %{REQUEST_URI} =~ m#\.(?:css|js)$#i && %{QUERY_STRING} =~ /(?:^|&)v=/">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+    <ElseIf "-f %{REQUEST_FILENAME} && %{REQUEST_URI} =~ m#\.(?:css|js)$#i">
+        Header set Cache-Control "public, no-cache"
+    </ElseIf>
+    <ElseIf "-f %{REQUEST_FILENAME} && %{REQUEST_URI} =~ m#\.(?:woff2?|ttf|otf|eot)$#i">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </ElseIf>
+    <ElseIf "-f %{REQUEST_FILENAME} && %{REQUEST_URI} =~ m#\.(?:png|jpe?g|gif|svg|webp|ico)$#i">
+        Header set Cache-Control "public, max-age=604800"
+    </ElseIf>
+</IfModule>
+
+# Compress text files (smaller downloads)
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript text/javascript application/json image/svg+xml
+</IfModule>

@@ -50,7 +50,7 @@
                                 }
                             @endphp
 
-                            <link rel="stylesheet" href="{{ asset('css/arrival-slip-styles.css') }}">
+                            <link rel="stylesheet" href="{{ versioned_asset('css/arrival-slip-styles.css') }}">
                             <form action="{{ route('arrival-slip.store') }}" method="POST" id="ajaxSubmit"
                                 autocomplete="off">
                                 @csrf
@@ -825,8 +825,8 @@
             </div>
         </section>
     </div>
-    <link rel="stylesheet" href="https://printjs-4de6.kxcdn.com/print.min.css">
-    <script src="https://printjs-4de6.kxcdn.com/print.min.js"></script>
+    <link rel="stylesheet" href="{{ versioned_asset('management/vendor/printjs/print.min.css') }}">
+    <script src="{{ versioned_asset('management/vendor/printjs/print.min.js') }}"></script>
 @endsection
 @section('script')
     <script>

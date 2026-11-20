@@ -111,7 +111,7 @@
 @endsection
 
 @section('script')
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="{{ versioned_asset('management/vendor/xlsx/0.18.5/xlsx.full.min.js') }}"></script>
     <script>
         $(document).ready(function() {
             // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn

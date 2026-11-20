@@ -434,6 +434,10 @@ Route::group(['middleware' => ['auth']], function () {
         $request->session()->regenerateToken();
         return redirect('/');
     })->name('logouts');
+
+    // Header "Clear Cache" button
+    Route::post('clear-cache', [\App\Http\Controllers\CacheController::class, 'clear'])->name('clear.cache');
+
     // Database Backup Route
     Route::get('/download-database-zip', [DatabaseBackupController::class, 'downloadDatabaseZip'])->name('database.download-zip');
     Route::get('/download-db-zip', [DatabaseBackupController::class, 'downloadDatabaseZip'])->name('database.download-db-zip');

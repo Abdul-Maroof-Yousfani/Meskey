@@ -314,38 +314,38 @@
 <div class="sidenav-overlay"></div>
 <div class="drag-target"></div>
 <!-- BEGIN VENDOR JS-->
-<script src="{{ asset('management/app-assets/vendors/js/vendors.min.js') }}"></script>
-<script src="{{ asset('management/app-assets/vendors/js/switchery.min.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/vendors/js/vendors.min.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/vendors/js/switchery.min.js') }}"></script>
 <!-- BEGIN VENDOR JS-->
 <!-- BEGIN PAGE VENDOR JS-->
 {{--
-<script src="{{asset('management/app-assets/vendors/js/chartist.min.js')}}"></script> --}}
+<script src="{{ versioned_asset('management/app-assets/vendors/js/chartist.min.js') }}"></script> --}}
 <!-- END PAGE VENDOR JS-->
 <!-- BEGIN APEX JS-->
-<script src="{{ asset('management/app-assets/js/core/app-menu.js') }}"></script>
-<script src="{{ asset('management/app-assets/js/core/app.js') }}"></script>
-<script src="{{ asset('management/app-assets/js/notification-sidebar.js') }}"></script>
-<script src="{{ asset('management/app-assets/js/customizer.js') }}"></script>
-<script src="{{ asset('management/app-assets/js/scroll-top.js') }}"></script>
-<script src="{{ asset('management/app-assets/vendors/js/select2.full.min.js') }}"></script>
-<script src="{{ asset('management/app-assets/js/select2.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/core/app-menu.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/core/app.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/notification-sidebar.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/customizer.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/scroll-top.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/vendors/js/select2.full.min.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/select2.js') }}"></script>
 
 <!-- END APEX JS-->
 <!-- BEGIN PAGE LEVEL JS-->
-<script src="{{ asset('management/app-assets/js/dashboard1.js') }}"></script>
+<script src="{{ versioned_asset('management/app-assets/js/dashboard1.js') }}"></script>
 <!-- END PAGE LEVEL JS-->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script type="text/javascript" src="{{ versioned_asset('management/vendor/moment/moment.min.js') }}"></script>
+<script type="text/javascript" src="{{ versioned_asset('management/vendor/daterangepicker/4.0.2/daterangepicker.min.js') }}"></script>
 <!-- BEGIN: Custom CSS-->
 {{--
-<script src="{{ asset('management/assets/js/pageload.js') }}"></script> --}}
+<script src="{{ versioned_asset('management/assets/js/pageload.js') }}"></script> --}}
 
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="{{ versioned_asset('management/vendor/datatables/1.13.4/js/jquery.dataTables.min.js') }}"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="{{ asset('management/assets/js/scripts.js') }}?v={{ @filemtime(public_path('management/assets/js/scripts.js')) }}"></script>
-<script src="{{ asset('management/assets/js/mobile-filter-sheet.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-filter-sheet.js')) }}"></script><script src="{{ asset('management/assets/js/mobile-scroll-bars.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-scroll-bars.js')) }}"></script><script src="{{ asset('management/assets/js/mobile-card-sheet.js') }}?v={{ @filemtime(public_path('management/assets/js/mobile-card-sheet.js')) }}"></script>
-<script src="{{ asset('management/assets/js/fetch-dynamic-html.js') }}"></script>
+<script src="{{ versioned_asset('management/vendor/xlsx/0.18.5/xlsx.full.min.js') }}"></script>
+<script src="{{ versioned_asset('management/assets/js/scripts.js') }}"></script>
+<script src="{{ versioned_asset('management/assets/js/mobile-filter-sheet.js') }}"></script><script src="{{ versioned_asset('management/assets/js/mobile-scroll-bars.js') }}"></script><script src="{{ versioned_asset('management/assets/js/mobile-card-sheet.js') }}"></script>
+<script src="{{ versioned_asset('management/assets/js/fetch-dynamic-html.js') }}"></script>
 <!-- END: Custom CSS-->
 <script>
     function exportToExcelbk($tabletoexport, docname) {

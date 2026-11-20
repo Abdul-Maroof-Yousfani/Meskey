@@ -152,7 +152,7 @@
 @endsection
 
 @section('script')
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script src="{{ versioned_asset('management/vendor/sortablejs/1.14.0/Sortable.min.js') }}"></script>
     <script>
         $(document).ready(function() {
             var sortableContainer = document.getElementById('sortable-tbody');
