@@ -90,30 +90,35 @@
 
          <div class="col-xs-12 col-sm-12 col-md-12">
              <!-- Supplier KYC Alert Container -->
-             <div id="supplierKycAlert" class="my-2 p-3 bg-light-info rounded border-left-info shadow-sm"
-                 style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;" bis_skin_checked="1">
-
-                 <div class="d-flex justify-content-between align-items-start">
-                     <div>
-                         <h6 class="text-info font-weight-bold mb-2"> Supplier KYC
-                         </h6>
-
-                         <div class="mt-1" style="font-size:13px; line-height:1.6;">
-                             <div><strong>Owner Name:</strong> <span
-                                     id="kycName">{{ $arrivalPurchaseOrder->supplier->owner_name ?? 'N/A' }}</span>
-                             </div>
-                             <div><strong>Phone:</strong> <span
-                                     id="kycPhone">{{ $arrivalPurchaseOrder->supplier->owner_mobile_no ?? 'N/A' }}</span>
-                             </div>
-                             <div><strong>CNIC:</strong> <span
-                                     id="kycCnic">{{ $arrivalPurchaseOrder->supplier->owner_cnic_no ?? 'N/A' }}</span>
-                             </div>
-                             <!-- <div><strong>Email:</strong> <span id="kycEmail">{{ $arrivalPurchaseOrder->supplier->email ?? 'N/A' }}</span></div> -->
-                         </div>
+             {{-- design: mobile-ui.css section 18 (.kyc-card) --}}
+             @php
+                 $kycSup = $arrivalPurchaseOrder->supplier;
+                 $kycOwner = $kycSup->owner_name ?? null;
+                 $kycPhone = $kycSup->owner_mobile_no ?? null;
+                 $kycCnic = $kycSup->owner_cnic_no ?? null;
+             @endphp
+             <div id="supplierKycAlert" class="kyc-card {{ $kycSup ? '' : 'd-none' }}">
+                 <div class="kyc-head">
+                     <span class="kyc-head-icon"><i class="ft-shield"></i></span>
+                     <div class="kyc-title">
+                         <small>Supplier KYC</small>
+                         <strong id="kycSupplier">{{ $kycSup->name ?? '-' }}</strong>
                      </div>
-                     <!-- <button type="button" class="close ml-2" id="closeKycAlert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button> -->
+                     <span class="kyc-badge"><i class="ft-check"></i> Selected</span>
+                 </div>
+                 <div class="kyc-grid">
+                     <div class="kyc-item">
+                         <i class="ft-user"></i>
+                         <div><span class="kyc-label">Owner Name</span><span class="kyc-value {{ $kycOwner ? '' : 'is-na' }}" id="kycName">{{ $kycOwner ?: 'N/A' }}</span></div>
+                     </div>
+                     <div class="kyc-item">
+                         <i class="ft-phone"></i>
+                         <div><span class="kyc-label">Phone</span><span class="kyc-value {{ $kycPhone ? '' : 'is-na' }}" id="kycPhone">{{ $kycPhone ?: 'N/A' }}</span></div>
+                     </div>
+                     <div class="kyc-item">
+                         <i class="ft-credit-card"></i>
+                         <div><span class="kyc-label">CNIC</span><span class="kyc-value {{ $kycCnic ? '' : 'is-na' }}" id="kycCnic">{{ $kycCnic ?: 'N/A' }}</span></div>
+                     </div>
                  </div>
              </div>
          </div>
@@ -925,10 +930,11 @@
              var email = selectedOption.data('email') || 'N/A';
              var ownerName = selectedOption.data('owner_name') || 'N/A';
 
-             $('#kycPhone').text(phone);
-             $('#kycCnic').text(cnic);
+             $('#kycPhone').text(phone).toggleClass('is-na', phone === 'N/A');
+             $('#kycCnic').text(cnic).toggleClass('is-na', cnic === 'N/A');
              $('#kycEmail').text(email);
-             $('#kycName').text(ownerName);
+             $('#kycName').text(ownerName).toggleClass('is-na', ownerName === 'N/A');
+             $('#kycSupplier').text($.trim(selectedOption.text()) || '-');
 
              $('#supplierKycAlert').removeClass('d-none');
          });

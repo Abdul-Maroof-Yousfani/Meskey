@@ -20,6 +20,8 @@
    15. Approval signatures (Prepared By / Approved By) - GLOBAL, sirf mobile
    16. Indicative Prices (inline editable table) - sirf mobile, .content-wrapper.indicative
    17. Desktop navigation (horizontal menu bar) - sirf desktop >= 1200px
+   18. Supplier KYC card (purchase order create / edit) - desktop + mobile
+   19. Inputs + select2 - UNIVERSAL (poora project) - desktop / tablet >= 768px
    ===================================================================== */
 
 /* #####################################################################
@@ -5179,5 +5181,467 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
 
     body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item > i.submenu-icon {
         background: #4a4a55;
+    }
+}
+
+/* #####################################################################
+   18. Supplier KYC card (supplier select karne ke baad) - desktop + mobile
+   Markup: procurement/raw_material/purchase_order/create + edit (#supplierKycAlert .kyc-card)
+   ##################################################################### */
+.kyc-card {
+    margin: 4px 0 12px;
+    padding: 14px;
+    border: 1px solid #e3e8f4;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f7f9ff 0%, #fff 100%);
+    box-shadow: 0 4px 14px rgba(39, 72, 154, .06);
+}
+
+.kyc-card .kyc-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.kyc-card .kyc-head-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 17px;
+    color: #fff;
+    background: #27489a;
+    box-shadow: 0 4px 10px rgba(39, 72, 154, .25);
+}
+
+.kyc-card .kyc-title {
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.kyc-card .kyc-title small {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #8a90a6;
+}
+
+.kyc-card .kyc-title strong {
+    display: block;
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 700;
+    color: #26324d;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kyc-card .kyc-badge {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #1e7a4c;
+    background: rgba(40, 167, 99, .12);
+}
+
+.kyc-card .kyc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.kyc-card .kyc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid #edf0f7;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.kyc-card .kyc-item > i {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    font-size: 15px;
+    color: #27489a;
+    background: rgba(39, 72, 154, .08);
+}
+
+.kyc-card .kyc-item > div {
+    min-width: 0;
+    line-height: 1.3;
+}
+
+.kyc-card .kyc-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8a90a6;
+}
+
+.kyc-card .kyc-value {
+    display: block;
+    overflow: hidden;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #26324d;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* data na ho (N/A) to halka */
+.kyc-card .kyc-value.is-na {
+    font-weight: 500;
+    font-style: italic;
+    color: #b0b4c3;
+}
+
+@media (max-width: 767.98px) {
+    .kyc-card {
+        padding: 12px;
+    }
+
+    .kyc-card .kyc-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+}
+
+/* dark mode */
+body.layout-dark .kyc-card {
+    border-color: #2a2f3d;
+    background: linear-gradient(180deg, #1c2130 0%, #1a1a1f 100%);
+    box-shadow: none;
+}
+
+body.layout-dark .kyc-card .kyc-title strong,
+body.layout-dark .kyc-card .kyc-value {
+    color: #e4e6ee;
+}
+
+body.layout-dark .kyc-card .kyc-item {
+    border-color: #2a2f3d;
+    background: #20232c;
+}
+
+body.layout-dark .kyc-card .kyc-item > i {
+    color: #9db4f0;
+    background: rgba(90, 130, 230, .14);
+}
+
+body.layout-dark .kyc-card .kyc-value.is-na {
+    color: #6b7080;
+}
+
+/* #####################################################################
+   19. Inputs + select2 - UNIVERSAL (poora project), desktop / tablet >= 768px
+   Mobile ke apne designs hain (filter sheet, tkf forms, section 8/9) - un par asar nahi.
+   - .form-control: 40px, gol kone, focus par neela border + halki chamak, readonly saleti
+   - select2 (single + multiple) usi jaisa + khuli list (gol card, neela highlight)
+   - Table ke andar wale aur .form-control-sm inputs ki unchai nahi badalti (inline editing tables)
+   - .input-group ke jude kinare sidhe rehte hain
+   Pasand na aaye: poora section hata do.
+   ##################################################################### */
+@media (min-width: 768px) {
+
+    /* labels (form-group ke) */
+    body .form-group > label,
+    body label.form-label {
+        margin-bottom: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #4a5168;
+    }
+
+    /* ---- inputs ---- */
+    body .form-control {
+        border: 1px solid #dde2ee;
+        border-radius: 10px;
+        font-size: 13.5px;
+        color: #1f2a44;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(20, 30, 70, .03);
+        transition: border-color .15s, box-shadow .15s, background-color .15s;
+    }
+
+    /* unchai sirf normal inputs ki (table / chhote inputs nahi) */
+    body .form-control:not(.form-control-sm):not(.form-control-lg):not(textarea):not([multiple]):not([size]):not(table .form-control) {
+        height: 40px;
+        padding: 8px 12px;
+    }
+
+    body textarea.form-control {
+        padding: 8px 12px;
+    }
+
+    body .form-control::placeholder {
+        color: #a3a9ba;
+    }
+
+    body .form-control:hover {
+        border-color: #c5cde0;
+    }
+
+    body .form-control:focus {
+        border-color: #27489a;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .14);
+        outline: 0;
+    }
+
+    body .form-control[readonly],
+    body .form-control:disabled {
+        color: #5b6275;
+        background-color: #f0f2f7;
+        box-shadow: none;
+    }
+
+    /* table ke andar: chhote kone, shadow nahi */
+    body table .form-control {
+        border-radius: 8px;
+        box-shadow: none;
+    }
+
+    /* input-group: jude hue kinare sidhe */
+    body .input-group > .form-control:not(:first-child),
+    body .input-group > .select2-container:not(:first-child) .select2-selection {
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+    }
+
+    body .input-group > .form-control:not(:last-child),
+    body .input-group > .select2-container:not(:last-child) .select2-selection {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+
+    body .input-group > .input-group-prepend > .input-group-text,
+    body .input-group > .input-group-append > .input-group-text {
+        border-color: #dde2ee;
+        background: #f3f5fa;
+    }
+
+    body .input-group > .input-group-prepend:first-child > .input-group-text {
+        border-radius: 10px 0 0 10px;
+    }
+
+    body .input-group > .input-group-append:last-child > .input-group-text,
+    body .input-group > .input-group-append:last-child > .btn {
+        border-radius: 0 10px 10px 0;
+    }
+
+    /* ---- select2 (single + multiple) ---- */
+    body .select2-container--default .select2-selection--single {
+        border: 1px solid #dde2ee !important;
+        border-radius: 10px !important;
+        background: #fff !important;
+        box-shadow: 0 1px 2px rgba(20, 30, 70, .03);
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    body .select2-container--default:not(table .select2-container) .select2-selection--single {
+        height: 40px !important;
+    }
+
+    body .select2-container--default:not(table .select2-container) .select2-selection--single .select2-selection__rendered {
+        padding-left: 12px !important;
+        padding-right: 34px !important;
+        line-height: 38px !important;
+    }
+
+    body .select2-container--default:not(table .select2-container) .select2-selection--single .select2-selection__arrow {
+        top: 0 !important;
+        right: 6px !important;
+        height: 38px !important;
+    }
+
+    body .select2-container--default .select2-selection--single .select2-selection__rendered {
+        font-size: 13.5px;
+        color: #1f2a44;
+    }
+
+    body .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #a3a9ba;
+    }
+
+    body table .select2-container--default .select2-selection--single {
+        border-radius: 8px !important;
+        box-shadow: none;
+    }
+
+    body .select2-container--default .select2-selection--multiple {
+        min-height: 40px;
+        border: 1px solid #dde2ee !important;
+        border-radius: 10px !important;
+        background: #fff;
+    }
+
+    /* chip: theme ka selector (.select2-selection__rendered ke saath) zyada specific tha -> uska
+       gehra neela background jeet raha tha aur hamara neela text us par ghayab. Isi liye poora selector. */
+    body .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__choice,
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        border: 0 !important;
+        border-radius: 7px !important;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #27489a !important;
+        background: rgba(39, 72, 154, .1) !important;
+    }
+
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice__display {
+        color: #27489a !important;
+    }
+
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #27489a !important;
+        opacity: .6;
+    }
+
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #e5484d !important;
+        background: transparent !important;
+        opacity: 1;
+    }
+
+    body .select2-container--default:hover .select2-selection {
+        border-color: #c5cde0 !important;
+    }
+
+    body .select2-container--default.select2-container--focus .select2-selection,
+    body .select2-container--default.select2-container--open .select2-selection {
+        border-color: #27489a !important;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .14);
+    }
+
+    body .select2-container--default.select2-container--disabled .select2-selection {
+        background: #f0f2f7 !important;
+        box-shadow: none;
+    }
+
+    /* select2 ki khuli list (body me banti hai) */
+    body .select2-container--open .select2-dropdown {
+        overflow: hidden;
+        border: 1px solid #e1e6f1 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 14px 36px rgba(20, 30, 70, .16);
+    }
+
+    body .select2-container--open .select2-dropdown--below {
+        margin-top: 4px;
+    }
+
+    body .select2-container--open .select2-dropdown--above {
+        margin-top: -4px;
+    }
+
+    body .select2-search--dropdown {
+        padding: 8px;
+    }
+
+    body .select2-search--dropdown .select2-search__field {
+        height: 36px;
+        padding: 6px 10px;
+        border: 1px solid #dde2ee !important;
+        border-radius: 9px;
+        outline: 0;
+    }
+
+    body .select2-search--dropdown .select2-search__field:focus {
+        border-color: #27489a !important;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .12);
+    }
+
+    body .select2-results__options {
+        padding: 4px 6px 6px;
+    }
+
+    body .select2-results__option {
+        margin: 1px 0;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+
+    body .select2-container--default .select2-results__option--highlighted[aria-selected],
+    body .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        color: #fff !important;
+        background: #27489a !important;
+    }
+
+    body .select2-container--default .select2-results__option[aria-selected="true"]:not(.select2-results__option--highlighted),
+    body .select2-container--default .select2-results__option--selected:not(.select2-results__option--highlighted) {
+        font-weight: 600;
+        color: #27489a;
+        background: rgba(39, 72, 154, .08);
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark .form-group > label,
+    body.layout-dark label.form-label {
+        color: #a9adbb;
+    }
+
+    body.layout-dark .form-control,
+    body.layout-dark .select2-container--default .select2-selection {
+        border-color: #30323c !important;
+        color: #e4e6ee;
+        background: #1d1e24 !important;
+        box-shadow: none;
+    }
+
+    body.layout-dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #e4e6ee;
+    }
+
+    body.layout-dark .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__choice,
+    body.layout-dark .select2-container--default .select2-selection--multiple .select2-selection__choice,
+    body.layout-dark .select2-container--default .select2-selection--multiple .select2-selection__choice__display,
+    body.layout-dark .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #c9d6ff !important;
+    }
+
+    body.layout-dark .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__choice,
+    body.layout-dark .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background: rgba(90, 130, 230, .2) !important;
+    }
+
+    body.layout-dark .form-control[readonly],
+    body.layout-dark .form-control:disabled {
+        color: #a9adbb;
+        background: #17181d !important;
+    }
+
+    body.layout-dark .input-group > .input-group-prepend > .input-group-text,
+    body.layout-dark .input-group > .input-group-append > .input-group-text {
+        border-color: #30323c;
+        color: #a9adbb;
+        background: #17181d;
+    }
+
+    body.layout-dark .select2-container--open .select2-dropdown {
+        border-color: #30323c !important;
+        background: #1d1e24;
+        box-shadow: 0 14px 36px rgba(0, 0, 0, .5);
+    }
+
+    body.layout-dark .select2-search--dropdown .select2-search__field {
+        border-color: #30323c !important;
+        color: #e4e6ee;
+        background: #17181d;
     }
 }
