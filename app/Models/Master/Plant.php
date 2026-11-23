@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Acl\Company;
@@ -10,7 +11,7 @@ use App\Models\Master\CompanyLocation;
 
 class Plant extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
 
     protected $fillable = [

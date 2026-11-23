@@ -2,6 +2,7 @@
 
 namespace App\Models\Acl;
 
+use App\Traits\Cacheable;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Support\Str;
 
 class Company extends Model
 {
-    use HasFactory;
+    use HasFactory, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     /**
      * The attributes that are mass assignable.

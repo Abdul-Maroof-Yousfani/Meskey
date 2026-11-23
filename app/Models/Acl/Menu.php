@@ -2,13 +2,14 @@
 
 namespace App\Models\Acl;
 
+use App\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Menu extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     /**
      * The attributes that are mass assignable.

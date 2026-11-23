@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TruckSizeRange extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $fillable = ['min_number', 'max_number', 'status'];
 

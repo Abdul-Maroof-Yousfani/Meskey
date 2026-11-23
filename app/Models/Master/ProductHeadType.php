@@ -2,12 +2,13 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductHeadType extends Model
 {
-    use HasFactory;
+    use HasFactory, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $table = 'product_head_types';
 

@@ -2,13 +2,14 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class QcReliefParameter extends Model
 {
-    use HasFactory;
+    use HasFactory, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $fillable = [
         'product_id',

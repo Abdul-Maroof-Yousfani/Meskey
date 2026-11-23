@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Acl\Company;
 use App\Models\ClearingAgentCompanyBankDetail;
 use App\Models\ClearingAgentOwnerBankDetail;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ClearingAgent extends Model
 {
-    use HasFactory;
+    use HasFactory, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $fillable = [
         'company_id',

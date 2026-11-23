@@ -2,13 +2,14 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Master\Account\Account;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Variable extends Model
 {
-    use HasFactory;
+    use HasFactory, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
     
     protected $fillable = [
         'title',

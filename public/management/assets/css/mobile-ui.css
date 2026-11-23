@@ -18,6 +18,7 @@
    13. Arrival Slip document view (slip-page) - CSS: public/css/arrival-slip-styles.css
    14. Dashboard box -> side modal list (dl-mobile cards / dl-cards table)
    15. Approval signatures (Prepared By / Approved By) - GLOBAL, sirf mobile
+   16. Indicative Prices (inline editable table) - sirf mobile, .content-wrapper.indicative
    ===================================================================== */
 
 /* #####################################################################
@@ -4454,5 +4455,229 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
 
     body.layout-dark .dash-item .approver-name {
         color: #a9a9b5 !important;
+    }
+}
+
+/* #####################################################################
+   16. Indicative Prices (inline editable table) - sirf mobile
+   Page: procurement/raw_material/indicative_prices/index.blade.php (.content-wrapper.indicative)
+   Table ki har row ek card; JS ki banayi rows (naya entry / Edit mode) bhi khud card.
+   Columns fixed (13, isi tarteeb me) -> label CSS nth-child se. Column badle to labels bhi badlo.
+   ##################################################################### */
+@media (max-width: 767.98px) {
+
+    /* date filter: card-header saaf */
+    .indicative .card-header {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    .indicative .card-header .form-group {
+        margin-bottom: 10px;
+    }
+
+    .indicative .card:has(#indicativePricesTable) {
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .indicative #filteredData {
+        padding: 0 !important;
+        overflow: visible !important;
+        background: transparent !important;
+    }
+
+    /* ---- table -> cards ---- */
+    #indicativePricesTable,
+    #indicativePricesTable > tbody {
+        display: block;
+        width: 100% !important;
+        border: 0 !important;
+    }
+
+    #indicativePricesTable > thead {
+        display: none;
+    }
+
+    #indicativePricesTable > tbody > tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px 12px;
+        margin: 0 0 12px;
+        padding: 14px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+    }
+
+    /* naya entry / edit ho raha card: dashed blue border */
+    #indicativePricesTable > tbody > tr:is(.empty-row, .new-row, .editing) {
+        border: 1.5px dashed rgba(39, 72, 154, .35);
+        box-shadow: none;
+    }
+
+    #indicativePricesTable > tbody > tr > td {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        padding: 0 !important;
+        border: 0 !important;
+        font-size: 13px;
+        font-weight: 600;
+        word-break: break-word;
+        color: #342e49;
+        background: transparent !important;
+    }
+
+    /* label (tkc-label jaisa) */
+    #indicativePricesTable > tbody > tr > td::before {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        color: #9a9aa8;
+    }
+
+    #indicativePricesTable > tbody > tr > td:nth-child(2)::before { content: "Commodity"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(3)::before { content: "Location"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(4)::before { content: "Type"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(5)::before { content: "Crop Year"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(6)::before { content: "Delivery Condition"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(7)::before { content: "Cash Rate"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(8)::before { content: "Cash Days"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(9)::before { content: "Credit Rate"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(10)::before { content: "Credit Days"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(11)::before { content: "Others"; }
+    #indicativePricesTable > tbody > tr > td:nth-child(12)::before { content: "Remarks"; }
+
+    /* S.No / "#" ki zaroorat nahi */
+    #indicativePricesTable > tbody > tr > td:nth-child(1) {
+        display: none;
+    }
+
+    /* "Loading..." jaisi ek-column row (colspan): dikhe, poori line */
+    #indicativePricesTable > tbody > tr > td:only-child {
+        display: block;
+        grid-column: 1 / -1;
+        padding: 10px 0 !important;
+        text-align: center;
+        font-weight: 400;
+        color: #8a8a99;
+    }
+
+    /* Commodity: poori line, bara (tkc-commodity jaisa) */
+    #indicativePricesTable > tbody > tr > td:nth-child(2) {
+        grid-column: 1 / -1;
+        font-size: 15px;
+        font-weight: 700;
+        color: #27489a;
+    }
+
+    /* Location, Type (select2 dropdown - aadhi chaurai me text + x + arrow fit nahi hote),
+       Delivery condition, Others, Remarks: poori line */
+    /* mobile par sab fields alag alag line, poori chaurai (Cash Rate / Days, Credit Rate / Days bhi) */
+    #indicativePricesTable > tbody > tr > td:is(:nth-child(3), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(9), :nth-child(10), :nth-child(11), :nth-child(12)) {
+        grid-column: 1 / -1;
+    }
+
+    /* Cash Rate | Cash Days, Credit Rate | Credit Days (aadhi chaurai): theme table inputs ko min-width deti hai
+       -> input cell se bahar nikal kar agle se mil jata tha. Cell ke andar hi rakho. */
+    #indicativePricesTable > tbody > tr > td > .form-control,
+    #indicativePricesTable > tbody > tr > td > select.form-control {
+        box-sizing: border-box;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* select2: card ke andar hi rahe (init par inline width lag jati hai) */
+    #indicativePricesTable td .select2-container {
+        width: 100% !important;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    #indicativePricesTable td .select2-container .select2-selection--single {
+        height: 40px !important;
+        border-radius: 10px !important;
+    }
+
+    #indicativePricesTable td .select2-container .select2-selection__rendered {
+        font-size: 15px;
+        font-weight: 400;
+    }
+
+    /* actions: poori line, buttons barabar */
+    #indicativePricesTable > tbody > tr > td:nth-child(13) {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        gap: 8px;
+        padding-top: 10px !important;
+        border-top: 1px solid #f0f1f5 !important;
+    }
+
+    #indicativePricesTable > tbody > tr > td:nth-child(13) .btn {
+        flex: 1 1 0;
+        height: 38px;
+        margin: 0;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    #indicativePricesTable > tbody > tr > td:nth-child(13) .btn[disabled] {
+        opacity: .45;
+    }
+
+    /* inputs card me poori chaurai */
+    #indicativePricesTable .form-control,
+    #indicativePricesTable .select2-container {
+        width: 100% !important;
+    }
+
+    #indicativePricesTable .form-control {
+        height: 40px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 400;
+    }
+
+    #indicativePricesTable .error-message {
+        font-size: 11px;
+        font-weight: 400;
+    }
+
+    /* "Add New Row" poori chaurai */
+    .indicative #addNewRow {
+        width: 100%;
+        height: 44px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    /* pagination (getList table ke andar bhejta hai) */
+    #indicativePricesTable #paginationLinks {
+        grid-column: 1 / -1;
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark #indicativePricesTable > tbody > tr {
+        background: #1b1b1f;
+        box-shadow: none;
+    }
+
+    body.layout-dark #indicativePricesTable > tbody > tr > td {
+        color: #e4e4e8;
+    }
+
+    body.layout-dark #indicativePricesTable > tbody > tr > td:nth-child(2) {
+        color: #9db4f0;
+    }
+
+    body.layout-dark #indicativePricesTable > tbody > tr > td:nth-child(13) {
+        border-top-color: #2a2a30 !important;
     }
 }

@@ -8,13 +8,14 @@ use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Production\JobOrder\JobOrderPackingItem;
 use App\Models\User;
 use App\Models\Master\ProductionPhase;
+use App\Traits\Cacheable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class CompanyLocation extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $fillable = [
         'company_id',

@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Acl\Company;
 use App\Models\Product;
 use App\Models\User;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ProductionRecipe extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $table = 'production_recipes';
 

@@ -3,15 +3,24 @@
     Indicative Prices
 @endsection
 @section('content')
+    {{-- indicative: mobile par table ki har row ek card (mobile-ui.css section 16). Desktop same. --}}
     <div class="content-wrapper indicative">
         <section id="extended">
+            {{-- mph-head: sirf mobile app-bar (desktop par title neeche form ke andar hi hai) --}}
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto align-items-center mph-head show-mobile">
+                <div class="col-12 mph-title-col">
+                    <div class="mph-sub">Purchase Contract</div>
+                    <h2 class="page-title mb-0">Indicative Prices</h2>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
                                 <div class="row">
-                                    <div class="col-md-6 my-1">
+                                    <div class="col-md-6 my-1 hide-mobile">
                                         <h2 class="page-title"> Indicative Prices</h2>
                                     </div>
                                     <div class="col-md-6 my-1">

@@ -2,13 +2,14 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Acl\Company;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class ArrivalTruckType extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
 
     protected $fillable = [

@@ -6,13 +6,14 @@ use App\Models\Acl\Company;
 use App\Models\Master\ExportProductSlab;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\QcReliefParameter;
+use App\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     // Fillable attributes for mass assignment
     protected $fillable = [

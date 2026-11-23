@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Acl\Company;
 use App\Models\CustomerCompanyBankDetail;
 use App\Models\CustomerConsignee;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $fillable = [
         'company_id',

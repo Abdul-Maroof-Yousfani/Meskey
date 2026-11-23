@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Traits\Cacheable;
 use App\Models\Acl\Company;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductSlabForRmPo extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Cacheable; // master data: queries cache (app/Traits/Cacheable.php)
 
     protected $table = 'product_slab_for_rm_po';
 
