@@ -344,7 +344,7 @@
 
 <script src="{{ versioned_asset('management/vendor/xlsx/0.18.5/xlsx.full.min.js') }}"></script>
 <script src="{{ versioned_asset('management/assets/js/scripts.js') }}"></script>
-<script src="{{ versioned_asset('management/assets/js/mobile-filter-sheet.js') }}"></script><script src="{{ versioned_asset('management/assets/js/mobile-scroll-bars.js') }}"></script><script src="{{ versioned_asset('management/assets/js/mobile-card-sheet.js') }}"></script>
+<script src="{{ versioned_asset('management/assets/js/mobile-filter-sheet.js') }}"></script><script src="{{ versioned_asset('management/assets/js/mobile-scroll-bars.js') }}"></script><script src="{{ versioned_asset('management/assets/js/mobile-card-sheet.js') }}"></script><script src="{{ versioned_asset('management/assets/js/desktop-nav.js') }}"></script>
 <script src="{{ versioned_asset('management/assets/js/fetch-dynamic-html.js') }}"></script>
 <!-- END: Custom CSS-->
 <script>

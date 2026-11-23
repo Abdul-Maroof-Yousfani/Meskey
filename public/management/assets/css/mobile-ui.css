@@ -19,6 +19,7 @@
    14. Dashboard box -> side modal list (dl-mobile cards / dl-cards table)
    15. Approval signatures (Prepared By / Approved By) - GLOBAL, sirf mobile
    16. Indicative Prices (inline editable table) - sirf mobile, .content-wrapper.indicative
+   17. Desktop navigation (horizontal menu bar) - sirf desktop >= 1200px
    ===================================================================== */
 
 /* #####################################################################
@@ -956,6 +957,18 @@ body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active > 
 body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.open > a > i.submenu-icon {
     background: #27489a;
     box-shadow: 0 0 0 3px rgba(39, 72, 154, .15);
+}
+/* asal page wala item (has-sub nahi): solid blue - JS: desktop-nav.js markActive */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active:not(.has-sub) > a,
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active:not(.has-sub) > a:hover {
+    color: #fff !important;
+    font-weight: 600;
+    background: #27489a;
+    box-shadow: 0 3px 10px rgba(39, 72, 154, .25);
+}
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li.active:not(.has-sub) > a > i.submenu-icon {
+    background: #fff;
+    box-shadow: none;
 }
 /* 3rd level */
 body.vertical-overlay-menu .main-menu.app-sidebar .navigation li ul li ul {
@@ -4679,5 +4692,485 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
 
     body.layout-dark #indicativePricesTable > tbody > tr > td:nth-child(13) {
         border-top-color: #2a2a30 !important;
+    }
+}
+
+/* #####################################################################
+   17. Desktop navigation (horizontal menu bar) - sirf desktop
+   Markup: resources/views/management/layouts/navigation.blade.php (badla nahi)
+   Theme yeh bar sirf >= 1200px par horizontal rakhta hai (body.horizontal-menu);
+   is se chhoti screen par yahi menu side nav ban jata hai (section 4) - us par asar nahi.
+   Pehle: gehri neeli patti + gradient hover + purple active. Ab: safed bar, pill items,
+   active = solid blue, saaf dropdowns.
+   ##################################################################### */
+@media (min-width: 1200px) {
+
+    /* ---- bar ---- */
+    body.horizontal-menu .header-navbar.navbar-horizontal {
+        background: #fff !important;
+        border-top: 1px solid #f0f1f5;
+        border-bottom: 1px solid #eceef4;
+        box-shadow: 0 6px 18px rgba(30, 20, 60, .05) !important;
+    }
+
+    /* saare menu EK line me; jagah kam ho to side (x-axis) scroll */
+    /* dabba screen se bahar na phaile, warna ul scroll ki jagah bas kat jata hai */
+    body.horizontal-menu .navbar-horizontal .main-menu-content {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul {
+        flex-wrap: nowrap !important;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        align-items: center;
+        gap: 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(39, 72, 154, .25) transparent;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul::-webkit-scrollbar {
+        height: 5px;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        background: rgba(39, 72, 154, .25);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li {
+        flex: 0 0 auto;
+        margin-right: 0 !important;
+        border-radius: 12px;
+        background: none !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link {
+        white-space: nowrap;
+    }
+
+    /* scroll wala dabba apne andar ke absolute dropdown ko kaat deta hai -> top dropdown "fixed";
+       jagah JS deta hai: public/management/assets/js/desktop-nav.js */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .dropdown-menu {
+        position: fixed !important;
+        margin-top: 0 !important;
+    }
+
+    /* ---- top level item: pill ---- */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link {
+        gap: 8px;
+        padding: 6px 12px 6px 6px !important;
+        border-radius: 12px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #4b4a57 !important;
+        transition: background-color .15s, color .15s, box-shadow .15s;
+    }
+
+    /* icon: chhota soft dabba */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link > i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        margin: 0 !important;
+        border-radius: 9px;
+        font-size: 15px !important;
+        color: #27489a;
+        background: rgba(39, 72, 154, .07);
+        transition: background-color .15s, color .15s;
+    }
+
+    /* dropdown wale item par chhota neeche ka teer */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.dropdown > .nav-link::after {
+        content: "\e842";               /* ft-chevron-down */
+        margin-left: 2px;
+        border: 0 !important;
+        vertical-align: 0;
+        font-family: "feather";
+        font-size: 12px;
+        color: #9a9aa8;
+        transition: transform .2s;
+    }
+
+    /* bina dropdown wale (e.g. Dashboard) link par bhi "dropdown-toggle" class hai -> bootstrap ka teer nahi */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li:not(.dropdown) > .nav-link::after {
+        display: none !important;
+    }
+
+    /* hover / khula hua */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li:hover > .nav-link,
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.show > .nav-link {
+        color: #27489a !important;
+        background: rgba(39, 72, 154, .06);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li:hover > .nav-link > i,
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.show > .nav-link > i {
+        color: #fff;
+        background: #27489a;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.show > .nav-link::after {
+        transform: rotate(180deg);
+    }
+
+    /* active (jis module ka page khula hai) */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link {
+        color: #fff !important;
+        background: #27489a;
+        box-shadow: 0 4px 12px rgba(39, 72, 154, .25);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link > i {
+        color: #fff;
+        background: rgba(255, 255, 255, .16);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link::after {
+        color: rgba(255, 255, 255, .75);
+    }
+
+    /* ---- dropdown panel ---- */
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu {
+        min-width: 15rem;
+        margin-top: 6px !important;
+        padding: 6px;
+        border: 1px solid #efeff4;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 14px 36px rgba(30, 20, 60, .14);
+        animation: navDropIn .16s ease-out !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-submenu > .dropdown-menu {
+        top: -6px !important;
+        margin-left: 6px !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu > li {
+        border-radius: 10px !important;
+        background: none !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item {
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 10px !important;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4b4a57 !important;
+        background: none !important;
+        transition: background-color .12s, color .12s;
+    }
+
+    /* "→" icon ki jagah chhota dot */
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item > i.submenu-icon {
+        flex-shrink: 0;
+        width: 6px;
+        height: 6px;
+        margin: 0 !important;
+        border-radius: 50%;
+        font-size: 0 !important;
+        background: #c9cbd6;
+        transition: background-color .12s, transform .12s;
+    }
+
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item:hover,
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu li.show > .dropdown-item,
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item:focus {
+        color: #27489a !important;
+        background: rgba(39, 72, 154, .07) !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item:hover > i.submenu-icon,
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu li.show > .dropdown-item > i.submenu-icon {
+        background: #27489a;
+        transform: scale(1.3);
+    }
+
+    /* jis page par ho, us ka item (theme purple deti thi) */
+    /* asal page wala item: solid blue (JS: desktop-nav.js markActive) */
+    body.horizontal-menu .navbar-horizontal .main-menu-content .dropdown .dropdown-menu li.active:not(.dropdown-submenu) > .dropdown-item,
+    body.horizontal-menu .navbar-horizontal .main-menu-content .dropdown .dropdown-menu li.active:not(.dropdown-submenu) > .dropdown-item:hover {
+        font-weight: 600;
+        color: #fff !important;
+        background: #27489a !important;
+        box-shadow: 0 3px 10px rgba(39, 72, 154, .25);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content .dropdown .dropdown-menu li.active:not(.dropdown-submenu) > .dropdown-item > i.submenu-icon {
+        background: #fff;
+        transform: scale(1.3);
+    }
+
+    /* jis submenu ke andar active page hai (jaise Setup): halka blue */
+    body.horizontal-menu .navbar-horizontal .main-menu-content .dropdown .dropdown-menu li.active.dropdown-submenu > .dropdown-item {
+        font-weight: 600;
+        color: #27489a !important;
+        background: rgba(39, 72, 154, .10) !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content .dropdown .dropdown-menu li.active.dropdown-submenu > .dropdown-item > i.submenu-icon {
+        background: #27489a;
+    }
+
+    /* submenu (andar wala dropdown) ka teer */
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-submenu > .dropdown-item::after {
+        content: "\e844";               /* ft-chevron-right */
+        margin-left: auto;
+        border: 0 !important;
+        font-family: "feather";
+        font-size: 12px;
+        color: #9a9aa8;
+    }
+
+    /* =====================================================================
+       Bar ka rang: BLUE (prominent) - upar wale safed-bar rules ko override karta hai.
+       Likhai / icons safed, ACTIVE menu = safed pill (blue likhai). Dropdown panels safed hi.
+       ===================================================================== */
+    body.horizontal-menu .header-navbar.navbar-horizontal {
+        border: 0 !important;
+        background: linear-gradient(90deg, #233f88 0%, #27489a 45%, #2f5cc4 100%) !important;
+        box-shadow: 0 6px 18px rgba(39, 72, 154, .28) !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul {
+        scrollbar-color: rgba(255, 255, 255, .35) transparent;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, .35);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link {
+        color: rgba(255, 255, 255, .9) !important;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link > i {
+        color: #fff;
+        background: rgba(255, 255, 255, .14);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.dropdown > .nav-link::after {
+        color: rgba(255, 255, 255, .7);
+    }
+
+    /* hover / khula */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li:hover > .nav-link,
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.show > .nav-link {
+        color: #fff !important;
+        background: rgba(255, 255, 255, .12);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li:hover > .nav-link > i,
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.show > .nav-link > i {
+        color: #fff;
+        background: rgba(255, 255, 255, .24);
+    }
+
+    /* active: safed pill, blue likhai + icon */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link,
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active:hover > .nav-link {
+        color: #27489a !important;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(15, 25, 60, .18);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link > i {
+        color: #27489a;
+        background: rgba(39, 72, 154, .10);
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link::after {
+        color: #27489a;
+    }
+
+    /* click se khula (pin) dropdown hover chhodne par bhi dikhta rahe - JS: desktop-nav.js */
+    body.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.nav-pinned > .dropdown-menu {
+        display: block;
+    }
+
+    /* ---- ‹ › buttons (menu bahar nikle to) - JS: desktop-nav.js ----
+       buttons aa gaye -> neeche wala scrollbar chhupa (wheel / trackpad scroll chalta rehta hai) */
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll {
+        position: relative;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll > ul {
+        padding-bottom: 0;
+        scrollbar-width: none;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll > ul::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* kinaron par halka fade - pata chale ke aur menu hain */
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll::before,
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 2;
+        width: 56px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .2s;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll::before {
+        left: 0;
+        background: linear-gradient(90deg, #233f88 35%, rgba(35, 63, 136, 0));
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll::after {
+        right: 0;
+        background: linear-gradient(270deg, #2f5cc4 35%, rgba(47, 92, 196, 0));
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content.can-prev::before,
+    body.horizontal-menu .navbar-horizontal .main-menu-content.can-next::after {
+        opacity: 1;
+    }
+
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn {
+        position: absolute;
+        top: 50%;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        color: #27489a;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(15, 25, 60, .25);
+        transform: translateY(-50%);
+        cursor: pointer;
+        transition: transform .15s, box-shadow .15s;
+    }
+
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn[hidden] {
+        display: none;
+    }
+
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn.is-prev { left: 4px; }
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn.is-next { right: 4px; }
+
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn i {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn:hover {
+        box-shadow: 0 4px 14px rgba(15, 25, 60, .35);
+        transform: translateY(-50%) scale(1.08);
+    }
+
+    body.horizontal-menu .navbar-horizontal .nav-scroll-btn:active {
+        transform: translateY(-50%) scale(.95);
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll::before {
+        background: linear-gradient(90deg, #172b5e 35%, rgba(23, 43, 94, 0));
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content.has-nav-scroll::after {
+        background: linear-gradient(270deg, #23408a 35%, rgba(35, 64, 138, 0));
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .nav-scroll-btn {
+        color: #1d3573;
+        background: #e8eeff;
+    }
+
+    /* dark mode: gehra blue bar, active halka safed */
+    body.layout-dark.horizontal-menu .header-navbar.navbar-horizontal {
+        background: linear-gradient(90deg, #172b5e 0%, #1d3573 55%, #23408a 100%) !important;
+        box-shadow: none !important;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link {
+        color: rgba(255, 255, 255, .85) !important;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link > i {
+        color: #fff;
+        background: rgba(255, 255, 255, .12);
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link {
+        color: #1d3573 !important;
+        background: #e8eeff;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link > i {
+        color: #1d3573;
+        background: rgba(29, 53, 115, .12);
+    }
+
+    @keyframes navDropIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- dark mode ---- */
+    body.layout-dark.horizontal-menu .header-navbar.navbar-horizontal {
+        border-color: #26262c;
+        background: #1b1b1f !important;
+        box-shadow: none !important;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link {
+        color: #c9c8d1 !important;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li > .nav-link > i {
+        color: #9db4f0;
+        background: rgba(90, 130, 230, .12);
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li:hover > .nav-link,
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.show > .nav-link {
+        color: #fff !important;
+        background: rgba(90, 130, 230, .12);
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .main-menu-content > ul > li.active > .nav-link {
+        color: #fff !important;
+        background: #27489a;
+        box-shadow: none;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu {
+        border-color: #2a2a30;
+        background: #1f1f24;
+        box-shadow: 0 14px 36px rgba(0, 0, 0, .5);
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item {
+        color: #c9c8d1 !important;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item:hover,
+    body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu li.show > .dropdown-item,
+    body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu li.active > .dropdown-item {
+        color: #fff !important;
+        background: rgba(90, 130, 230, .14) !important;
+    }
+
+    body.layout-dark.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-item > i.submenu-icon {
+        background: #4a4a55;
     }
 }
