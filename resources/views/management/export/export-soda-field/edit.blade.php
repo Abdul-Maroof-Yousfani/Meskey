@@ -266,18 +266,7 @@
 
 <script>
 $(document).ready(function() {
-    // Shipment Date To cannot be before Shipment Date From
-    function syncShipmentDates() {
-        let from = $('input[name="shipment_date_from"]');
-        let to = $('input[name="shipment_date_to"]');
-        to.attr('min', from.val() || null);
-        if (from.val() && to.val() && to.val() < from.val()) {
-            to.val('');
-            Swal.fire('Invalid Date', 'Shipment Date To cannot be before Shipment Date From.', 'warning');
-        }
-    }
-    $('input[name="shipment_date_from"], input[name="shipment_date_to"]').on('change', syncShipmentDates);
-    $('input[name="shipment_date_to"]').attr('min', $('input[name="shipment_date_from"]').val() || null);
+    // Shipment Date To < From wali validation ab sirf save par (controller) hoti hai
 
     $('.select2').select2({ width: '100%'});
 

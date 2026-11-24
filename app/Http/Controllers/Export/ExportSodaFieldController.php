@@ -54,7 +54,17 @@ class ExportSodaFieldController extends Controller
         $incoterms = IncoTerm::where('status', 1)->get();
         $modeofterms = ModeOfTerm::where('status', 1)->get();
         $bagTypes = BagType::where('status', 1)->get();
-        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
+        // Sirf wo quotations jin me abhi capacity (ton) baqi hai
+        $quotations = Quotation::with(['buyer', 'product'])
+            ->withSum('packingItems as quotation_qty', 'metric_tons')
+            ->where('am_approval_status', 'approved')
+            ->latest()
+            ->get();
+        $used = $this->usedQtyByQuotation($quotations);
+        $quotations = $quotations->filter(function ($q) use ($used) {
+            $q->remaining_qty = (float) $q->quotation_qty - ($used[$q->id] ?? 0);
+            return $q->remaining_qty > 0;
+        })->values();
 
         return view('management.export.export-soda-field.create', compact(
             'users',
@@ -77,6 +87,19 @@ class ExportSodaFieldController extends Controller
         ], [
             'shipment_date_to.after_or_equal' => 'Shipment Date To cannot be before Shipment Date From.',
         ]);
+
+        // Jis quotation ki capacity poori ho chuki ho us par naya sauda nahi ban sakta
+        if ($request->filled('quotation_id')) {
+            $quotation = Quotation::withSum('packingItems as quotation_qty', 'metric_tons')->find($request->quotation_id);
+            if ($quotation) {
+                $used = $this->usedQtyByQuotation(collect([$quotation]))[$quotation->id] ?? 0;
+                if ((float) $quotation->quotation_qty - $used <= 0) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'quotation_id' => 'Is quotation ki poori quantity (' . (float) $quotation->quotation_qty . ' MT) ke sauda ban chuke hain. Naya sauda nahi ban sakta.',
+                    ]);
+                }
+            }
+        }
 
         DB::beginTransaction();
 
@@ -367,5 +390,54 @@ class ExportSodaFieldController extends Controller
             'specifications' => $q->specifications,
         ]);
     }
-    
+
+    /**
+     * Har quotation par ban chuke saudas ki total quantity (MT): [quotation_id => used_mt]
+     * Sauda quotation se do tarah juda hota hai: export_soda_fields.quotation_id, ya purana link quotations.export_soda_id.
+     * Rejected sauda capacity nahi khata.
+     */
+    private function usedQtyByQuotation($quotations): array
+    {
+        $ids = $quotations->pluck('id')->all();
+        if (empty($ids)) {
+            return [];
+        }
+
+        $sodaToQuotation = [];
+        ExportSodaField::whereIn('quotation_id', $ids)
+            ->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'))
+            ->pluck('quotation_id', 'id')
+            ->each(function ($qid, $sodaId) use (&$sodaToQuotation) {
+                $sodaToQuotation[$sodaId] = $qid;
+            });
+
+        $legacy = $quotations->filter(fn ($q) => $q->export_soda_id && !isset($sodaToQuotation[$q->export_soda_id]));
+        if ($legacy->isNotEmpty()) {
+            $valid = ExportSodaField::whereIn('id', $legacy->pluck('export_soda_id'))
+                ->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'))
+                ->pluck('id')->flip();
+            foreach ($legacy as $q) {
+                if (isset($valid[$q->export_soda_id])) {
+                    $sodaToQuotation[$q->export_soda_id] = $q->id;
+                }
+            }
+        }
+
+        if (empty($sodaToQuotation)) {
+            return [];
+        }
+
+        $used = [];
+        DB::table('export_soda_packing_items')
+            ->whereIn('export_soda_id', array_keys($sodaToQuotation))
+            ->selectRaw('export_soda_id, SUM(metric_tons) as mt')
+            ->groupBy('export_soda_id')
+            ->get()
+            ->each(function ($row) use (&$used, $sodaToQuotation) {
+                $qid = $sodaToQuotation[$row->export_soda_id];
+                $used[$qid] = ($used[$qid] ?? 0) + (float) $row->mt;
+            });
+
+        return $used;
+    }
 }

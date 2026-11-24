@@ -49,7 +49,7 @@ class ExportDeliveryOrderController extends Controller
 
     public function create(): View
     {
-        $buyers = Customer::get();
+        $buyers = Customer::where('type', 'international')->get(); // Customer dropdown: sirf international
 
         // Filter only Export Orders that have remaining capacity (Total MT - Consumed MT > 0)
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders' => fn($q) => $q->notCancelled()->with('exportPackingItems')])
@@ -195,7 +195,9 @@ class ExportDeliveryOrderController extends Controller
                     'no_of_bags' => $subRemainingBags,
                     'empty_bags' => $sub->empty_bags,
                     'extra_bags' => $sub->extra_bags,
-                    'extra_bags_percentage' => ($sub->no_of_bags > 0 && $sub->extra_bags > 0) ? round(($sub->extra_bags / $sub->no_of_bags) * 100, 2) : 0,
+                    'extra_bags_percentage' => (float) ($sub->extra_bags_percentage ?: (($sub->no_of_bags > 0 && $sub->extra_bags > 0) ? round(($sub->extra_bags / $sub->no_of_bags) * 100, 2) : 0)),
+                    // DO ke bags ke hisaab se empty bags dobara calculate karne ke liye
+                    'empty_bags_percentage' => (float) ($sub->empty_bags_percentage ?: (($sub->no_of_bags > 0 && $sub->empty_bags > 0) ? round(($sub->empty_bags / $sub->no_of_bags) * 100, 2) : 0)),
                     'empty_bag_weight' => $sub->empty_bag_weight,
                     'total_bags' => $subRemainingBags + ($sub->extra_bags ?? 0) + ($sub->empty_bags ?? 0),
                 ];
@@ -214,6 +216,10 @@ class ExportDeliveryOrderController extends Controller
                 'extra_bags' => $item->extra_bags,
                 'extra_bags_percentage' => $item->extra_bags_percentage ?? (($item->no_of_bags > 0 && $item->extra_bags > 0) ? round(($item->extra_bags / $item->no_of_bags) * 100, 2) : 0),
                 'empty_bags' => $item->empty_bags,
+                'empty_bags_percentage' => (float) ($item->empty_bags_percentage ?: (($item->no_of_bags > 0 && $item->empty_bags > 0) ? round(($item->empty_bags / $item->no_of_bags) * 100, 2) : 0)),
+                // Export Order row ki asli qty / amount: DO commission isi ke hisaab se nikalti hai
+                'eo_metric_tons' => $originalMt,
+                'eo_amount' => (float) $item->amount,
                 'total_bags' => $remainingBagsInItem + ($item->extra_bags ?? 0) + ($item->empty_bags ?? 0),
                 'total_kgs' => $remainingMtInItem * 1000,
                 'metric_tons' => $remainingMtInItem,

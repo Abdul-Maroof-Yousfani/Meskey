@@ -315,7 +315,7 @@
 
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$quotation" />
+        <x-approval-status :model="$quotation" :list-refresh="route('get.quotation')" />
     </div>
 </div>
 

@@ -1033,7 +1033,7 @@
 
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$exportOrder" />
+        <x-approval-status :model="$exportOrder" :list-refresh="route('get.export-order')" />
     </div>
 </div>
 

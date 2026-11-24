@@ -235,6 +235,24 @@
         for (var i = 0; i < inner.length; i++) { clearGrace(inner[i]); inner[i].classList.remove(PIN, 'show'); }
     }
 
+    // sub aur top menu ke beech ke saare submenu li (andar se bahar)
+    function parentSubs(sub, top) {
+        var list = [];
+        var li = sub.parentElement ? sub.parentElement.closest('li.dropdown-submenu') : null;
+        while (li && li !== top && (!top || top.contains(li))) {
+            list.push(li);
+            li = li.parentElement ? li.parentElement.closest('li.dropdown-submenu') : null;
+        }
+        return list;
+    }
+
+    function pinAll(list) {
+        for (var i = 0; i < list.length; i++) {
+            clearGrace(list[i]);
+            list[i].classList.add(PIN, 'show');
+        }
+    }
+
     function unpinAll(except) {
         var list = document.querySelectorAll(ANY + '.' + PIN + ', ' + ANY + '.show');
         for (var i = 0; i < list.length; i++) {
@@ -262,27 +280,35 @@
             return;
         }
 
-        // submenu (jaise Setup) par click -> submenu + parent dono pin
+        // submenu (jaise Setup) par click -> submenu + us ke upar ke saare menu pin
+        // (teesra level, jaise Production > Milling > Production Analysis: beech wala Milling bhi
+        //  pin hona zaroori hai, warna mouse hatte hi Milling band ho kar andar wala bhi band kar deta)
         var subToggle = e.target.closest(SUB + ' > .dropdown-item');
         if (subToggle) {
             var sub = subToggle.parentElement;
             var willPin = !sub.classList.contains(PIN);
             var top = topLi(sub);
+            var parents = parentSubs(sub, top);
             if (willPin) {
                 unpinAll(sub);
                 // bahan submenu band
                 var sibs = sub.parentElement.children;
                 for (var s = 0; s < sibs.length; s++) if (sibs[s] !== sub && sibs[s].classList.contains('dropdown')) closeLi(sibs[s]);
                 sub.classList.add(PIN);
+                pinAll(parents);
                 if (top) { clearGrace(top); top.classList.add(PIN, 'show'); }
             } else {
-                sub.classList.remove(PIN);
+                closeLi(sub); // khud + andar ke khule / pinned submenu band
             }
             // theme ka click handler .show toggle karta hai -> us ke baad sahi state
             setTimeout(function () {
                 clearGrace(sub);
                 sub.classList.toggle('show', willPin);
-                if (willPin && top) top.classList.add('show');
+                if (willPin) {
+                    pinAll(parents);
+                    if (top) top.classList.add('show');
+                    placeSub(sub);
+                }
             }, 0);
             return;
         }

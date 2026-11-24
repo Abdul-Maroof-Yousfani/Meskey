@@ -69,7 +69,7 @@ class ExportOrderController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = Customer::get();
+        $users = Customer::where('type', 'international')->get(); // Buyer's Name: sirf international buyers
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->where('broker_type','international')->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -81,6 +81,17 @@ class ExportOrderController extends Controller
         $currencies = Currency::where('status', 1)->get();
         $exportSodas = $this->availableExportSodas();
         $quotations = Quotation::with(['buyer', 'product', 'exportSoda', 'sodaByQuotation'])->where('am_approval_status', 'approved')->latest()->get();
+
+        // Sirf wo quotations jin ka koi sauda Export Soda dropdown me load ho sakta hai.
+        // Sauda-quotation link wahi jo getExportSodaDetails() use karta hai:
+        // sauda.quotation_id, ya quotation.export_soda_id (quotationBySoda).
+        $sodaIds = $exportSodas->pluck('id')->flip();
+        $quotationIdsWithSoda = $exportSodas->map(fn ($s) => $s->linked_quotation_id)->filter()->flip();
+        $quotations = $quotations->filter(function ($q) use ($sodaIds, $quotationIdsWithSoda) {
+            return isset($quotationIdsWithSoda[$q->id])
+                || ($q->linked_soda_id && isset($sodaIds[$q->linked_soda_id]));
+        })->values();
+
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = Size::where('status', 1)->get();

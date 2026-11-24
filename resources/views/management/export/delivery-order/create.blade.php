@@ -77,7 +77,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Financial Instrument No: <span class="text-danger">*</span></label>
-                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control">
+                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control" readonly placeholder="Form-E select karein">
                     </div>
                 </div>
             </div>
@@ -1069,7 +1069,7 @@
                 if(res.success && res.data) {
                     var opts = '<option value="">Select Form-E</option>';
                     res.data.forEach(function(fe) {
-                        opts += '<option value="'+fe.id+'">'+(fe.form_e_no || 'FE-'+fe.id)+' (Remaining: '+fe.remaining_mt+' / '+fe.input_quantity+' MT)</option>';
+                        opts += '<option value="'+fe.id+'" data-form-e-no="'+$('<div>').text(fe.form_e_no || '').html().replace(/"/g, '&quot;')+'">'+(fe.form_e_no || 'FE-'+fe.id)+' (Remaining: '+fe.remaining_mt+' / '+fe.input_quantity+' MT)</option>';
                     });
                     $('#export_form_e_id').html(opts).trigger('change');
                     // Hide qty alert until a Form-E is actually selected
@@ -1227,6 +1227,8 @@
 
         $('#export_form_e_id').on('change', function() {
             var formEId = $(this).val();
+            // Financial Instrument No = selected Form-E ka number (readonly)
+            $('#financial_instrument_no').val(formEId ? ($(this).find(':selected').data('form-e-no') || '') : '');
             if (!formEId) {
                 currentFormERemainingMt = 0;
                 currentFormETotalMt = 0;
@@ -1332,14 +1334,9 @@
                 $('#snap_specificationsSection').hide();
             }
             
-            // Commission
-            let totalMt = packingItemsAuto ? packingItemsAuto.reduce((sum, item) => sum + (parseFloat(item.metric_tons) || 0), 0) : 0;
-            let commission = parseFloat(data.commission) || 0;
-            let amtPerTon = totalMt > 0 ? (commission / totalMt) : (parseFloat(data.commission_amount_per_ton) || 0);
-
-            $('[data-name="commission_percentage"]').val(data.commission_percentage);
-            $('[data-name="commission_amount_per_ton"]').val(amtPerTon.toFixed(2));
-            $('[data-name="commission"]').val(commission.toFixed(2));
+            // Commission: Export Order ke % / Amt per ton yahan dikhte hain,
+            // Total Commission is Delivery Order ki qty ke hisaab se (recalcDOCommission) banti hai.
+            setupDOCommission(data, packingItemsAuto || []);
 
             // Export Table fields static options
             $('[data-name="packing_type"]').val(data.packing_type).trigger('change');
@@ -1358,6 +1355,11 @@
             if (packingItemsAuto && packingItemsAuto.length > 0) {
                 addPackingRowsFromExportOrder(packingItemsAuto);
                 togglePackingTypeColumns();
+                // Extra / Empty bags DO ke bags ke hisaab se + commission
+                $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
+                    recalcRowBags($(this));
+                });
+                recalcDOCommission();
             } else {
                 $('#packingItems').find('.packing-item:not(#dummyPackingRow)').remove();
                 if ($('#packingItems').find('tbody.empty-placeholder').length === 0) {
@@ -1438,9 +1440,13 @@
                 row.find(`input[name="packing_items[0][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
                 row.find('.min-weight').val(item.min_weight_empty_bags || 0);
+                // Commission aur empty bags ke liye Export Order row ki values
+                row.attr('data-eo-mt', parseFloat(item.eo_metric_tons) || 0);
+                row.attr('data-eo-amount', parseFloat(item.eo_amount) || 0);
+                row.attr('data-empty-pct', parseFloat(item.empty_bags_percentage) || 0);
 
 
-                
+
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);
@@ -1494,7 +1500,7 @@
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][extra_bags_percentage]"]`).val(sub.extra_bags_percentage);
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bag_weight]"]`).val(sub.empty_bag_weight);
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][total_bags]"]`).val(sub.total_bags);
-                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][total_bags]"]`).val(sub.total_bags);
+                        subRow.attr('data-empty-pct', parseFloat(sub.empty_bags_percentage) || 0);
 
                         // Prevent Select2 duplicates
                         subRow.find('select.select2').each(function () {
@@ -1582,33 +1588,101 @@
                 item.find('.stuffing, .containers').val(0);
             }
 
-            // Recalculate Total Bags (Crucial: User wants NO auto-increase of extra bags when no-of-bags changes)
-            var totalBags = noOfBags + extraBags + emptyBags;
-            var totalKgs = noOfBags * bagSize;
-            
-            item.find('.total-bags').val(totalBags);
-            item.find('.total-kgs').val(totalKgs.toFixed(2));
-            
-            checkCapacity();
+            // Extra / Empty bags, Total Bags, Total KGs aur master packing: DO ke bags ke hisaab se
+            recalcRowBags(item);
 
-            // Now auto-calculate sub-items master packing no-of-bags
+            checkCapacity();
+            recalcDOCommission();
+        });
+
+        // Extra / Empty bags = DO ke No. of Bags x Export Order ka % (Export Order form wala hi formula).
+        // Phir Total Bags, Total KGs aur Master Packing rows bhi isi se.
+        function recalcRowBags(item) {
+            var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+            var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
+            var extraPct = parseFloat(item.find('.extra-bags-percentage').val()) || 0;
+            var emptyPct = parseFloat(item.attr('data-empty-pct')) || 0;
+
+            var extraBags = Math.round((noOfBags * extraPct) / 100);
+            var emptyBags = Math.round((noOfBags * emptyPct) / 100);
+            item.find('.extra-bags').val(extraBags);
+            item.find('.empty-bags').val(emptyBags);
+
+            var totalBags = noOfBags + extraBags + emptyBags;
+            item.find('.total-bags').val(totalBags);
+            item.find('.total-kgs').val((noOfBags * bagSize).toFixed(2));
+
             item.find('.sub-packing-item-row').each(function () {
                 var subRow = $(this);
                 var primaryBagsInMaster = parseInt(subRow.find('.sub-no-of-primary-bags').val()) || 0;
                 if (primaryBagsInMaster > 0 && totalBags > 0) {
                     var masterNoOfBags = Math.ceil(totalBags / primaryBagsInMaster);
-                    subRow.find('.sub-no-of-bags').val(masterNoOfBags); // Update value
-                    
-                    // Recalculate Sub-Total Bags
-                    var subExtra = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
-                    var subEmpty = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
+                    var subExtraPct = parseFloat(subRow.find('.sub-extra-bags-percentage').val()) || 0;
+                    var subEmptyPct = parseFloat(subRow.attr('data-empty-pct')) || 0;
+                    var subExtra = Math.round((masterNoOfBags * subExtraPct) / 100);
+                    var subEmpty = Math.round((masterNoOfBags * subEmptyPct) / 100);
+
+                    subRow.find('.sub-no-of-bags').val(masterNoOfBags);
+                    subRow.find('.sub-extra-bags').val(subExtra);
+                    subRow.find('.sub-empty-bags').val(subEmpty);
                     subRow.find('.sub-total-bags').val(masterNoOfBags + subExtra + subEmpty);
                 } else {
-                    subRow.find('.sub-no-of-bags').val(0);
-                    subRow.find('.sub-total-bags').val(0);
+                    subRow.find('.sub-no-of-bags, .sub-extra-bags, .sub-empty-bags, .sub-total-bags').val(0);
                 }
             });
-        });
+        }
+
+        // ---- Commission (Delivery Order ki qty ke hisaab se) ----
+        // Export Order me user ne % dala tha ya Amt/Ton: jis se EO ki saved Total Commission banti hai wahi mode.
+        var doCommission = { mode: null, pct: 0, perTon: 0 };
+
+        function setupDOCommission(data, items) {
+            var pct = parseFloat(data.commission_percentage) || 0;
+            var perTon = parseFloat(data.commission_amount_per_ton) || 0;
+            var eoCommission = parseFloat(data.commission) || 0;
+            var eoMt = 0, eoAmount = 0;
+            items.forEach(function(it) {
+                eoMt += parseFloat(it.eo_metric_tons) || 0;
+                eoAmount += parseFloat(it.eo_amount) || 0;
+            });
+
+            var mode = null;
+            if (pct > 0 && perTon > 0) {
+                var byPct = (eoAmount * pct) / 100;
+                var byPerTon = eoMt * perTon;
+                mode = Math.abs(byPct - eoCommission) <= Math.abs(byPerTon - eoCommission) ? 'percentage' : 'per_ton';
+            } else if (pct > 0) {
+                mode = 'percentage';
+            } else if (perTon > 0) {
+                mode = 'per_ton';
+            }
+
+            doCommission = { mode: mode, pct: pct, perTon: perTon };
+            $('[data-name="commission_percentage"]').val(pct ? pct : '');
+            $('[data-name="commission_amount_per_ton"]').val(perTon ? perTon.toFixed(2) : '');
+            $('[data-name="commission"]').val('');
+        }
+
+        function recalcDOCommission() {
+            if (!doCommission.mode) {
+                $('[data-name="commission"]').val(doCommission.pct || doCommission.perTon ? '0.00' : '');
+                return;
+            }
+            var doMt = 0, doAmount = 0;
+            $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
+                var mt = parseFloat($(this).find('.metric-tons').val()) || 0;
+                var eoMt = parseFloat($(this).attr('data-eo-mt')) || 0;
+                var eoAmount = parseFloat($(this).attr('data-eo-amount')) || 0;
+                doMt += mt;
+                // DO row ka amount = Export Order row ka amount x (DO qty / EO qty)
+                if (eoMt > 0) doAmount += eoAmount * (mt / eoMt);
+            });
+
+            var commission = doCommission.mode === 'percentage'
+                ? (doAmount * doCommission.pct) / 100
+                : doMt * doCommission.perTon;
+            $('[data-name="commission"]').val(commission.toFixed(2));
+        }
 
         // Auto-calculation logic for sub items (manual edits to sub extra/empty)
         $(document).off('input.exportDOCreateSub', '.sub-empty-bags, .sub-extra-bags');

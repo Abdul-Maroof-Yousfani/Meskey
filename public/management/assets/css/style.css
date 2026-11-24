@@ -1323,7 +1323,12 @@ th {
   display: none !important;
 }
 
-.milling-submenu:hover>.dropdown-menu {
+/* hover ke ilawa click se khula (.show / .nav-pinned) ya mobile side nav me khula (.open) bhi dikhe,
+   warna click karne ke baad mouse hatte hi menu chhup jata tha */
+.milling-submenu:hover>.dropdown-menu,
+.milling-submenu.show>.dropdown-menu,
+.milling-submenu.nav-pinned>.dropdown-menu,
+.milling-submenu.open>.dropdown-menu {
   display: block !important;
 }
 
@@ -1331,7 +1336,10 @@ th {
   display: none !important;
 }
 
-.production-analysis-submenu:hover>.dropdown-menu {
+.production-analysis-submenu:hover>.dropdown-menu,
+.production-analysis-submenu.show>.dropdown-menu,
+.production-analysis-submenu.nav-pinned>.dropdown-menu,
+.production-analysis-submenu.open>.dropdown-menu {
   display: block !important;
   top: 0 !important;
   left: 100% !important;

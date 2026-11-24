@@ -5,15 +5,18 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto mph-head">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 mph-title-col">
+                    <div class="mph-sub">Production</div>
                     <h2 class="page-title"> Machine Plan Setting List</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right mph-actions">
                     <button
                         onclick="openModal(this,'{{ route('machine-plan-setting.create') }}','Add Machine Plan Setting',false,'85%')"
-                        type="button" class="btn btn-primary position-relative ">
-                        Add Machine Plan Setting
+                        type="button" class="btn btn-primary position-relative mph-create"
+                        aria-label="Add Machine Plan Setting" title="Add Machine Plan Setting">
+                        <i class="ft-plus mph-create-icon"></i><span class="mph-create-text">Add Machine Plan Setting</span>
                     </button>
                 </div>
             </div>
@@ -50,7 +53,7 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0 hide-mobile">
                                     <thead>
                                         <tr>
                                             <th>Date</th>

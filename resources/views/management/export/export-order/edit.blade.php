@@ -375,7 +375,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Fumigation Dosage:</label>
-                                <input type="text" name="fumigation_dosage" class="form-control"
+                                <input type="number" name="fumigation_dosage" class="form-control" step="1" min="0"
                                     value="{{ old('fumigation_dosage', $exportOrder->fumigation_dosage) }}"
                                     placeholder="Fumigation Dosage">
                             </div>
@@ -2041,6 +2041,9 @@
                     loadSodaDetails(singleSodaVal);
                 } else {
                     exportSodaSelect.val('').trigger('change.select2');
+                    // Pehle se selected sauda is quotation me nahi raha -> uski bhari hui details bhi saaf karo
+                    // ('change.select2' sirf UI update karta hai, sauda ka 'change' handler nahi chalata)
+                    if (currentSodaVal && !preserveSelection) clearFormFields();
                 }
             }
             isFiltering = false;

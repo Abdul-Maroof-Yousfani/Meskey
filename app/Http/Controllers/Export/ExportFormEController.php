@@ -53,7 +53,7 @@ class ExportFormEController extends Controller
         $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = collect();
 
         try {
-            $buyers = Customer::get();
+            $buyers = Customer::where('type', 'international')->get(); // sirf international buyers
             $job_orders = collect(); // Initially empty, will be filled via AJAX when Export Order is selected
         } catch (QueryException $e) {
         }

@@ -15,6 +15,7 @@
                                 <option value="{{ $quotation->id }}">
                                     {{ $quotation->buyer->name ?? 'N/A' }}
                                     ({{ $quotation->product->name ?? '' }})
+                                    - Remaining: {{ rtrim(rtrim(number_format($quotation->remaining_qty, 3, '.', ''), '0'), '.') }} MT
                                 </option>
                             @endforeach
                         </select>
@@ -263,17 +264,7 @@
 
 <script>
     $(document).ready(function() {
-        // Shipment Date To cannot be before Shipment Date From
-        function syncShipmentDates() {
-            let from = $('input[name="shipment_date_from"]');
-            let to = $('input[name="shipment_date_to"]');
-            to.attr('min', from.val() || null);
-            if (from.val() && to.val() && to.val() < from.val()) {
-                to.val('');
-                Swal.fire('Invalid Date', 'Shipment Date To cannot be before Shipment Date From.', 'warning');
-            }
-        }
-        $('input[name="shipment_date_from"], input[name="shipment_date_to"]').on('change', syncShipmentDates);
+        // Shipment Date To < From wali validation ab sirf save par (controller) hoti hai
 
         $('.select2').select2({
             width: '100%'
@@ -563,7 +554,6 @@
             if (dateTo) {
                 $('input[name="shipment_date_to"]').val(dateTo);
             }
-            syncShipmentDates();
 
             // Export Details (Incoterm & Payment Term)
             if (data.incoterm_id) {

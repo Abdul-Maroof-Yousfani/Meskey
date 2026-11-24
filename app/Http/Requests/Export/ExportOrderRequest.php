@@ -188,7 +188,7 @@ class ExportOrderRequest extends FormRequest
             'fumigation_by' => ['required', 'array', 'min:1'],
             'fumigation_by.*' => ['required', 'exists:fumigation_companies,id'],
             'fumigation_type' => ['nullable', 'string', 'max:100'],
-            'fumigation_dosage' => ['nullable', 'string', 'max:100'],
+            'fumigation_dosage' => ['nullable', 'integer', 'min:0'],
             'inspection_by' => ['required', 'array', 'min:1'],
             'inspection_by.*' => ['required', 'exists:inspection_companies,id'],
 

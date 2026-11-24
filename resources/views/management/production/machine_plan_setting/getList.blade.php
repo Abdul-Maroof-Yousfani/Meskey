@@ -1,4 +1,19 @@
 {{-- One row per plan = one job order. Manage Logs adds breakdowns; Edit changes machines / times. --}}
+
+{{-- ===== MOBILE: cards (wahi $machinePlanSettings, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($machinePlanSettings as $row)
+        @include('management.production.machine_plan_setting.partials.mobile-card', ['row' => $row])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No machine plans found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0 mps-list">
     <thead>
         <tr>
@@ -87,6 +102,7 @@
         @endforelse
     </tbody>
 </table>
+</div>
 
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">

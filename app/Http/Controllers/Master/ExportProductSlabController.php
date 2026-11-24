@@ -45,7 +45,7 @@ class ExportProductSlabController extends Controller
 
     public function create()
     {
-        $products = Product::where('status', 1)->get();
+        $products = Product::where('status', 1)->where('product_type','finish_good')->get();
         $slab_types = ProductSlabType::where('status', 'active')->get();
 
         // Products that already have export slabs, used to clone their config

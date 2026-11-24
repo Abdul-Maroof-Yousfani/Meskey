@@ -22,6 +22,7 @@
    17. Desktop navigation (horizontal menu bar) - sirf desktop >= 1200px
    18. Supplier KYC card (purchase order create / edit) - desktop + mobile
    19. Inputs + select2 - UNIVERSAL (poora project) - desktop / tablet >= 768px
+   20. Machine Plan Setting form + Manage Logs (mpl-*) - sirf mobile
    ===================================================================== */
 
 /* #####################################################################
@@ -912,6 +913,10 @@ body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.has-sub > a:not
 body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.open > a:not(.mm-next)::after {
     transform: translateY(-50%) rotate(90deg);
     color: #27489a;
+}
+/* Theme JS har item par has-sub laga deta hai (e.g. Dashboard): jis ke andar menu nahi us par teer nahi */
+body.vertical-overlay-menu .main-menu.app-sidebar .navigation li.has-sub:not(:has(> ul)) > a:not(.mm-next)::after {
+    display: none !important;
 }
 
 /* --- Submenu --- */
@@ -4950,14 +4955,51 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         background: #27489a;
     }
 
-    /* submenu (andar wala dropdown) ka teer */
+    /* submenu (andar wala dropdown) ka teer: jis child ke apne options hain us ke aage ">"
+       (theme ki top/margin/position wali settings reset, warna teer khisak jata hai) */
     body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-submenu > .dropdown-item::after {
-        content: "\e844";               /* ft-chevron-right */
-        margin-left: auto;
+        content: "\e844" !important;    /* ft-chevron-right */
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        margin: 0 0 0 auto !important;
+        padding-left: 10px;
         border: 0 !important;
-        font-family: "feather";
+        transform: none !important;
+        font-family: "feather" !important;
         font-size: 12px;
+        line-height: 1;
+        vertical-align: middle;
         color: #9a9aa8;
+    }
+
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-submenu:hover > .dropdown-item::after,
+    body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu .dropdown-submenu.show > .dropdown-item::after {
+        color: #27489a;
+    }
+
+    /* main menu (blue bar) ka teer: jis item ke andar menu hai us ke aage "v", khulne par ulta */
+    body.horizontal-menu .navbar-horizontal .main-menu-content .navigation-main > li.dropdown > a.dropdown-toggle::after {
+        content: "\e842" !important;    /* ft-chevron-down */
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        margin: 0 0 0 5px !important;
+        border: 0 !important;
+        font-family: "feather" !important;
+        font-size: 12px;
+        line-height: 1;
+        vertical-align: middle;
+        opacity: .8;
+        transform: rotate(0deg);
+        transition: transform .2s ease;
+    }
+
+    body.horizontal-menu .navbar-horizontal .main-menu-content .navigation-main > li.dropdown:hover > a.dropdown-toggle::after,
+    body.horizontal-menu .navbar-horizontal .main-menu-content .navigation-main > li.dropdown.show > a.dropdown-toggle::after {
+        transform: rotate(180deg);
     }
 
     /* =====================================================================
@@ -5643,5 +5685,204 @@ body.layout-dark .kyc-card .kyc-value.is-na {
         border-color: #30323c !important;
         color: #e4e6ee;
         background: #17181d;
+    }
+}
+
+/* #####################################################################
+   20. Machine Plan Setting form + Manage Logs (mpl-*) - sirf mobile < 768px
+   Files: production/machine_plan_setting/partials/form.blade.php, logs.blade.php
+   (dono ke apne <style> desktop ke liye; yahan sirf mobile override)
+   - machine tabs: ek line me side-scroll
+   - time slot: Start / End poori width, chips neeche
+   - breakdown row: card jaisa (From | To, Remarks, Duration + delete);
+     desktop ka header row mobile par chhupa hota hai, is liye From / To label ::before / ::after se
+   ##################################################################### */
+@media (max-width: 767.98px) {
+    body .mpl {
+        padding: 0;
+    }
+
+    body .mpl-card,
+    body .mpl-plant,
+    body .mpl-slot {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    body .mpl-section-title small {
+        line-height: 1.35;
+    }
+
+    /* details card ke columns ek ke neeche ek */
+    body .mpl-details .row > [class*="col-"] {
+        margin-top: 10px !important;
+    }
+
+    body .mpl-details .row > [class*="col-"]:first-child {
+        margin-top: 0 !important;
+    }
+
+    /* machine tabs: wrap nahi, side scroll */
+    body .mpl-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    body .mpl-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    body .mpl-tabs .nav-item {
+        flex: 0 0 auto;
+    }
+
+    body .mpl-tabs .nav-link {
+        padding: 8px 10px;
+        white-space: nowrap;
+    }
+
+    body .mpl-machine-bar {
+        padding: 10px 12px;
+    }
+
+    /* time slot head */
+    body .mpl-slot-head {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    body .mpl-slot-title {
+        align-self: flex-start;
+    }
+
+    body .mpl-slot-time {
+        width: 100%;
+    }
+
+    body .mpl-slot-time .mpl-field {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    body .mpl-field .form-control {
+        width: 100% !important;
+    }
+
+    body .mpl-chips {
+        margin-left: 0 !important;
+        align-self: stretch;
+    }
+
+    /* breakdown row = chhota card */
+    body .mpl-row {
+        position: relative;
+        padding: 10px;
+        border: 1px solid #e5eaf1;
+        border-radius: 10px;
+        background: #f8fafc;
+        column-gap: 8px;
+        row-gap: 6px;
+    }
+
+    body .mpl-grid-machine.mpl-row {
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-areas:
+            "lf lt"
+            "from to"
+            "rem rem"
+            "dur del";
+    }
+
+    body .mpl-grid-plant.mpl-row {
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-areas:
+            "type type"
+            "lf lt"
+            "from to"
+            "rem rem"
+            "dur del";
+    }
+
+    body .mpl-row::before,
+    body .mpl-row::after {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: #7b8794;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-bottom: -2px;
+    }
+
+    body .mpl-row::before {
+        content: "From";
+        grid-area: lf;
+    }
+
+    body .mpl-row::after {
+        content: "To";
+        grid-area: lt;
+    }
+
+    body .mpl-grid-plant.mpl-row > select {
+        grid-area: type;
+    }
+
+    body .mpl-row > .mpl-from {
+        grid-area: from;
+    }
+
+    body .mpl-row > .mpl-to {
+        grid-area: to;
+    }
+
+    body .mpl-row > input[type="text"] {
+        grid-area: rem;
+    }
+
+    body .mpl-row > .mpl-dur {
+        grid-area: dur;
+        align-self: center;
+    }
+
+    body .mpl-row > .mpl-remove {
+        grid-area: del;
+        justify-self: end;
+    }
+
+    body .mpl-row .form-control {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Manage Logs: summary 2 x 2 */
+    body .mpl-summary {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px;
+    }
+
+    body .mpl-stat {
+        padding: 10px;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    body .mpl-stat > div {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    body .mpl-stat-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    body.layout-dark .mpl-row {
+        background: #1d1e24;
+        border-color: #30323c;
     }
 }
