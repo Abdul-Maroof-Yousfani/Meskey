@@ -88,7 +88,7 @@
                 <select class="form-control select2" name="category_id" id="category_id">
                     <option value="">Select Category</option>
                     @foreach ($categories as $category)
-                        <option {{ $category->id == $product->category_id ? 'selected' : '' }} value="{{ $category->id }}">
+                        <option {{ $category->id == $product->category_id ? 'selected' : '' }} value="{{ $category->id }}" data-sub="{{ $category->isMainCategory() ? 0 : 1 }}">
                             {{ $category->name }}
                         </option>
                     @endforeach

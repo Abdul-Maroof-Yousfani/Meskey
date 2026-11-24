@@ -156,7 +156,7 @@
                         // Append new category options to the select element
                         $.each(response.categories, function (index, category) {
                             $('#category_id').append(
-                                `<option value="${category.id}">${category.name}</option>`
+                                `<option value="${category.id}" data-sub="${category.is_sub ? 1 : 0}">${category.name}</option>`
                             );
                         });
                     } else {

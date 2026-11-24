@@ -63,7 +63,7 @@
                     <option value="">Select Category</option>
                     @if (isset($categories))
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" data-sub="{{ $category->isMainCategory() ? 0 : 1 }}">{{ $category->name }}</option>
                         @endforeach
                     @endif
                 </select>

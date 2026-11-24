@@ -110,13 +110,18 @@ class CategoryController extends Controller
             $categoryType = $request->query('category_type');
             
             // Fetch categories based on category_type
-            $query = Category::select('id', 'name');
-            
+            $query = Category::select('id', 'name', 'parent_id');
+
             if ($categoryType) {
                 $query->where('category_type', $categoryType);
             }
-            
-            $categories = $query->get();
+
+            // is_sub: sub-category (has a parent) - Category Heads are not loaded for these
+            $categories = $query->get()->map(fn ($c) => [
+                'id'     => $c->id,
+                'name'   => $c->name,
+                'is_sub' => !$c->isMainCategory(),
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -346,6 +351,18 @@ class CategoryController extends Controller
     public function getCategoryHeads(Request $request, $id): JsonResponse
     {
         $category = Category::findOrFail($id);
+
+        // Category Heads belong to main (parent) categories only; a sub-category gets none
+        if (!$category->isMainCategory()) {
+            return response()->json([
+                'success'         => true,
+                'is_sub_category' => true,
+                'category'        => ['id' => $category->id, 'name' => $category->name],
+                'total_items'     => 0,
+                'groups'          => [],
+            ]);
+        }
+
         $companyId = auth()->check() ? auth()->user()->current_company_id : ($category->company_id ?? 1);
 
         $headTypes = ProductHeadType::getActiveTypes($companyId);

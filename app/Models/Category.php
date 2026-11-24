@@ -29,6 +29,15 @@ class Category extends Model
     }
 
     /**
+     * Main (parent) category: has no parent (parent_id null / 0), or its parent no longer exists.
+     * Only main categories carry Category Heads (Head, B2 & By Products).
+     */
+    public function isMainCategory(): bool
+    {
+        return !$this->parent_id || !$this->parent;
+    }
+
+    /**
      * Top-level (main) category of this category, e.g. Irri -> Rice, Sella -> Rice.
      * A category with parent_id null or 0 is its own main category.
      */
