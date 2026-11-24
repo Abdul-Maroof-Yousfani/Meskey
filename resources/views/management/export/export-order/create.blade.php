@@ -1026,6 +1026,14 @@
                                         </div>
                                         <div class="col-md-2">
                                             <div class="form-group">
+                                                <label>Extra Bags %:</label>
+                                                <input type="number" name="packing_items[0][extra_bags_percentage]"
+                                                    class="form-control extra-bags-percentage" value="0"
+                                                    step="0.01" min="0" max="100">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
                                                 <label>Extra Bags:</label>
                                                 <input type="number" name="packing_items[0][extra_bags]"
                                                     class="form-control extra-bags" value="0">
@@ -1033,10 +1041,10 @@
                                         </div>
                                         <div class="col-md-2">
                                             <div class="form-group">
-                                                <label>Extra Bags %:</label>
-                                                <input type="number" name="packing_items[0][extra_bags_percentage]"
-                                                    class="form-control extra-bags-percentage" value="0"
-                                                    step="0.01">
+                                                <label>Empty Bags %:</label>
+                                                <input type="number" name="packing_items[0][empty_bags_percentage]"
+                                                    class="form-control empty-bags-percentage" value="0"
+                                                    step="0.01" min="0" max="100">
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -1044,14 +1052,6 @@
                                                 <label>Empty Bags:</label>
                                                 <input type="number" name="packing_items[0][empty_bags]"
                                                     class="form-control empty-bags" value="0">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group">
-                                                <label>Empty Bags %:</label>
-                                                <input type="number" name="packing_items[0][empty_bags_percentage]"
-                                                    class="form-control empty-bags-percentage" value="0"
-                                                    step="0.01">
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -1136,10 +1136,10 @@
                                                                 <th style="min-width: 150px;">Primary Bags fit in
                                                                     master bag</th>
                                                                 <th style="min-width: 90px;">No. of Bags</th>
-                                                                <th style="min-width: 90px;">Empty Bags</th>
                                                                 <th style="min-width: 100px;">Empty Bags %</th>
-                                                                <th style="min-width: 90px;">Extra Bags</th>
+                                                                <th style="min-width: 90px;">Empty Bags</th>
                                                                 <th style="min-width: 100px;">Extra Bags %</th>
+                                                                <th style="min-width: 90px;">Extra Bags</th>
                                                                 <th style="min-width: 100px;">Empty Bag Weight (g)</th>
                                                                 <th style="min-width: 90px;">Total Bags</th>
                                                                 <th style="min-width: 120px;">Stitching</th>
@@ -1531,8 +1531,10 @@
                                         row.attr('data-index', index);
                                         row.find('.card-header h6').text('Packing Row #' + (index + 1));
                                         row.find('.select2-container').remove();
-                                        row.find('select').removeClass('select2-hidden-accessible').removeAttr(
-                                            'data-select2-id').show();
+                                        // select2 ke clone hue attributes hatao (tabindex="-1" reh jaye to Tab dropdowns ko skip karta hai)
+                                        row.find('select').removeClass('select2-hidden-accessible')
+                                            .removeAttr('data-select2-id aria-hidden tabindex').show();
+                                        row.find('select option').removeAttr('data-select2-id');
                                         row.find('.sub-packing-items-container').empty();
                                         row.find('input').not('[type="file"]').val(0);
                                         row.find('input[type="file"]').val('');
@@ -1814,6 +1816,18 @@
                                 togglePackingTypeColumns();
                             });
 
+                            // Extra / Empty Bags % : 0 se kam ya 100 se zyada nahi (capture = calculation se pehle chalta hai)
+                            if (!window.__bagsPctClamp) {
+                                window.__bagsPctClamp = true;
+                                document.addEventListener('input', function(e) {
+                                    var el = e.target;
+                                    if (!el.matches || !el.matches('.extra-bags-percentage, .empty-bags-percentage, .sub-extra-bags-percentage, .sub-empty-bags-percentage')) return;
+                                    var v = parseFloat(el.value);
+                                    if (v > 100) el.value = 100;
+                                    else if (v < 0) el.value = 0;
+                                }, true);
+                            }
+
                             // Calculations (JobOrder Style)
                             $(document).off('input',
                                 '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers'
@@ -1911,10 +1925,10 @@
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][packing_size]" class="form-control form-control-sm sub-packing-size" value="0" min="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_primary_bags]" class="form-control form-control-sm sub-no-of-primary-bags" value="0"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_bags]" class="form-control form-control-sm sub-no-of-bags" value="0" readonly></td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags_percentage]" class="form-control form-control-sm sub-empty-bags-percentage" value="0" step="0.01" min="0" max="100"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags]" class="form-control form-control-sm sub-empty-bags" value="0"></td>
-                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags_percentage]" class="form-control form-control-sm sub-empty-bags-percentage" value="0" step="0.01"></td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags_percentage]" class="form-control form-control-sm sub-extra-bags-percentage" value="0" step="0.01" min="0" max="100"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags]" class="form-control form-control-sm sub-extra-bags" value="0"></td>
-                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags_percentage]" class="form-control form-control-sm sub-extra-bags-percentage" value="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bag_weight]" class="form-control form-control-sm sub-empty-bag-weight" value="0" min="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][total_bags]" class="form-control form-control-sm sub-total-bags" value="0" readonly></td>
                     <td>

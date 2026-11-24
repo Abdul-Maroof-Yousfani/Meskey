@@ -33,6 +33,9 @@
                 <label>Sauda Type:</label>
                 <select name="sauda_type_id" id="sauda_type_id" class="form-control select2">
                     <option value="">Sauda Type Name</option>
+                    @foreach($sauda_type as $st)
+                        <option value="{{$st->id}}">{{$st->name}}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -753,7 +756,7 @@
 
         // initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
-        initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
         // initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', false, false);
         // initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', false, false);

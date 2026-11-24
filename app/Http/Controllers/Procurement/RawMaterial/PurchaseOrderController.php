@@ -202,6 +202,7 @@ class PurchaseOrderController extends Controller
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::whereIn('product_type', ['raw_material', 'finish_good'])->get();
         $data['brokers'] = Broker::all();
+        $data['sauda_type'] = SaudaType::all(); // create view me Sauda Type dropdown (@foreach $sauda_type)
         // $data['companyLocations'] = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
         //     return $q->where('id', auth()->user()->company_location_id);
         // })->get();
@@ -364,6 +365,7 @@ class PurchaseOrderController extends Controller
         $data['brokers'] = Broker::all();
         $po = $data['arrivalPurchaseOrder'];
         $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
+        $data['sauda_type'] = SaudaType::all();
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)

@@ -324,8 +324,9 @@ class PurchaseOrderController extends Controller
      
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
+        $sauda_type = SaudaType::all();
 
-        return view('management.procurement.store.purchase_order.create', compact('categories', 'payment_terms', 'approvedRequests'));
+        return view('management.procurement.store.purchase_order.create', compact('categories', 'payment_terms', 'approvedRequests','sauda_type'));
     }
 
     /**
@@ -485,13 +486,14 @@ class PurchaseOrderController extends Controller
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
         $taxes = Tax::select('id', 'percentage')->where('status', 'active')->get();
+        $sauda_type = SaudaType::all();
 
         // $data = PurchaseOrderData::with('purchase_order', 'category', 'item')
         //     ->findOrFail($id);
             
         $purchaseOrderDataCount = $purchaseOrder->purchaseOrderData->count();
 
-        return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount', 'payment_terms', 'taxes'));
+        return view('management.procurement.store.purchase_order.edit', compact('purchaseOrder', 'categories', 'locations', 'job_orders', 'purchaseOrderDataCount', 'payment_terms', 'taxes','sauda_type'));
     }
 
     /**

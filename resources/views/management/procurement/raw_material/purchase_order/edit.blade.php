@@ -50,8 +50,9 @@
                  <label>Sauda Type:</label>
                  <select name="sauda_type_id" id="sauda_type_id{{ $ticketcounts != 0 ? 'ub-nh-chlunga' : '' }}"
                      class="form-control ">
-                     <option value="{{ $arrivalPurchaseOrder->saudaType->id ?? null }}">
-                         {{ $arrivalPurchaseOrder->saudaType?->name ?? 'Sauda Type Name' }}</option>
+                        @foreach($sauda_type as $st)
+                            <option value="{{$st->id}}" {{ $arrivalPurchaseOrder->saudaType->id : 'selected' ? ''  }}>{{$st->name}}</option>
+                        @endforeach
                  </select>
              </div>
          </div>
@@ -906,7 +907,7 @@
 
          // Initialize dynamic select2 fields
          initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
-         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
+        //  initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
          initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);

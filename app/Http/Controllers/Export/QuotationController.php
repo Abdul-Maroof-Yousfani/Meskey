@@ -61,7 +61,7 @@ class QuotationController extends Controller
     public function create(): View
     {
         $products = Product::where('status', 1)->where('product_type','finish_good')->get();
-        $buyers = Customer::where('status', 'active')->get();
+        $buyers = Customer::where('status', 'active')->where('type','international')->get();
         $companies = Company::get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagPackings = BagPacking::where('status', 1)->get();
