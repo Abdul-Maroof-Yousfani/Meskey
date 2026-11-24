@@ -35,7 +35,7 @@ class UpdateProductRequest extends FormRequest
                     ->whereNull('deleted_at')
                     ->ignore($productId),
             ],
-            'hs_code' => 'required|string|max:255',
+            'hs_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',

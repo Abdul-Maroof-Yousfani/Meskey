@@ -29,7 +29,7 @@ class StoreProductRequest extends FormRequest
                     ->where('company_id', $this->input('company_id') ?? $this->company_id)
                     ->whereNull('deleted_at'),
             ],
-            'hs_code' => 'required|string|max:255',
+            'hs_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
