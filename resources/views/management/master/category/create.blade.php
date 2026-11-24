@@ -6,7 +6,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Category Type</label>
-                <select class="form-control" name="category_type">
+                <select class="form-control select2" name="category_type">
                     <option value="">Select Category Type</option>
                     <option value="raw_finish" selected>Raw / Finish</option>
                     <option value="general_items">General Item</option>
@@ -16,7 +16,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Parent Category <small>(Optional)</small></label>
-                <select class="form-control" name="parent_id">
+                <select class="form-control select2" name="parent_id">
                     <option value="">Select Parent Category</option>
                     @foreach ($categories as $category)
                         <option value="{{$category->id}}">{{$category->name}}</option>
@@ -40,3 +40,8 @@
         </div>
     </div>
 </form>
+
+<script>
+    // Searchable dropdowns (Select2) for this form
+    $('#ajaxSubmit select.select2').not('.select2-hidden-accessible').select2({ width: '100%' });
+</script>

@@ -48,7 +48,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Product Type:</label>
-                <select class="form-control" onchange="check(this.value)" name="product_type">
+                <select class="form-control select2" onchange="check(this.value)" name="product_type">
                     <option value="">Select Product Type</option>
                     <option value="raw_material">Raw Material</option>
                     <option value="finish_good">Finish Good</option>
@@ -59,7 +59,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Category:</label>
-                <select class="form-control" name="category_id" id="category_id">
+                <select class="form-control select2" name="category_id" id="category_id">
                     <option value="">Select Category</option>
                     @if (isset($categories))
                         @foreach ($categories as $category)
@@ -72,7 +72,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Parent Product:</label>
-                <select class="form-control" name="parent_id" id="parent_id">
+                <select class="form-control select2" name="parent_id" id="parent_id">
                     <option value="">Select Parent Product</option>
                     @foreach ($parentProducts as $parentProduct)
                         <option value="{{$parentProduct->id}}">{{$parentProduct->name}}</option>
@@ -84,7 +84,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Unit of Measure:</label>
-                <select class="form-control" name="unit_of_measure_id">
+                <select class="form-control select2" name="unit_of_measure_id">
                     <option value="">Select Unit of Measure</option>
                     @foreach ($units as $unitOfMeasure)
                         <option value="{{ $unitOfMeasure->id }}">{{ $unitOfMeasure->name }}</option>
@@ -152,7 +152,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Status:</label>
-                <select class="form-control" name="status">
+                <select class="form-control select2" name="status">
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
@@ -170,3 +170,8 @@
         </div>
     </div>
 </form>
+
+<script>
+    // Searchable dropdowns (Select2) for this form
+    $('#ajaxSubmit select.select2').not('.select2-hidden-accessible').select2({ width: '100%' });
+</script>

@@ -163,10 +163,13 @@
                         console.error('No categories found or request failed');
                         $('#category_id').html('<option value="">No categories available</option>');
                     }
+                    // Refresh the searchable (Select2) category dropdown
+                    $('#category_id').trigger('change.select2');
                 },
                 error: function (xhr, status, error) {
                     console.error('AJAX Error:', status, error);
                     $('#category_id').html('<option value="">Error loading categories</option>');
+                    $('#category_id').trigger('change.select2');
                 }
             });
         }

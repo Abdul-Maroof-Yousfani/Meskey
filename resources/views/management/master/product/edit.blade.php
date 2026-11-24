@@ -71,7 +71,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Product Type:</label>
-                <select class="form-control" onchange="check(this.value)" name="product_type">
+                <select class="form-control select2" onchange="check(this.value)" name="product_type">
                     <option value="">Select Product Type</option>
                     <option value="raw_material" {{ $product->product_type == 'raw_material' ? 'selected' : '' }}>Raw
                         Material</option>
@@ -85,7 +85,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Category:</label>
-                <select class="form-control" name="category_id" id="category_id">
+                <select class="form-control select2" name="category_id" id="category_id">
                     <option value="">Select Category</option>
                     @foreach ($categories as $category)
                         <option {{ $category->id == $product->category_id ? 'selected' : '' }} value="{{ $category->id }}">
@@ -98,7 +98,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Parent Product:</label>
-                <select class="form-control" name="parent_id" id="parent_id">
+                <select class="form-control select2" name="parent_id" id="parent_id">
                     <option value="">Select Parent Product</option>
                     @foreach ($parentProducts as $parentProduct)
                         <option {{ $parentProduct->id == $product->parent_id ? 'selected' : '' }}
@@ -111,7 +111,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Unit of Measure:</label>
-                <select class="form-control" name="unit_of_measure_id">
+                <select class="form-control select2" name="unit_of_measure_id">
                     <option value="">Select Unit of Measure</option>
                     @foreach ($units as $unitOfMeasure)
                         <option {{ $unitOfMeasure->id == $product->unit_of_measure_id ? 'selected' : '' }}
@@ -186,7 +186,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>
-                <select name="status" class="form-control">
+                <select name="status" class="form-control select2">
                     <option {{ $product->status == 'active' ? 'selected' : '' }} value="active">Active</option>
                     <option {{ $product->status == 'inactive' ? 'selected' : '' }} value="inactive">Inactive</option>
                 </select>
@@ -216,3 +216,8 @@
     </div>
 
 </form>
+
+<script>
+    // Searchable dropdowns (Select2) for this form
+    $('#ajaxSubmit select.select2').not('.select2-hidden-accessible').select2({ width: '100%' });
+</script>
