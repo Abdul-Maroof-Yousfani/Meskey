@@ -80,6 +80,23 @@
     <script>
         $(document).ready(function() {
             filterationCommon(`{{ route('get.machine-plan-setting') }}`)
+
+            // List ka ⋯ actions menu: table scroll box (table-responsive) me kat-ta tha,
+            // is liye khulte waqt screen ke hisaab se position:fixed. Scroll/resize par band.
+            $(document).on('shown.bs.dropdown', '.mps-actions', function () {
+                var $menu = $(this).children('.dropdown-menu');
+                var r = $(this).children('.mps-actions-btn')[0].getBoundingClientRect();
+                var w = $menu.outerWidth(), h = $menu.outerHeight();
+                var top = r.bottom + 4;
+                if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4); // neeche jagah nahi -> upar
+                $menu.css({ position: 'fixed', top: top, left: Math.max(8, r.right - w), right: 'auto', transform: 'none' });
+            });
+            $(window).on('scroll resize', function () {
+                $('.mps-actions.show > .mps-actions-btn').dropdown('hide');
+            });
+            $('#filteredData').on('scroll', function () {
+                $('.mps-actions.show > .mps-actions-btn').dropdown('hide');
+            });
         });
     </script>
 @endsection

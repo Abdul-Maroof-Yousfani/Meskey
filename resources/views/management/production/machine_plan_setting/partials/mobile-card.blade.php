@@ -64,22 +64,29 @@
         @endif
     </div>
 
+    {{-- saare actions ⋯ me (neeche se sheet khulti hai - mobile-card-sheet.js) --}}
     <div class="tkc-actions">
-        <button type="button" class="tkc-btn"
-            onclick="openModal(this,'{{ $logsUrl }}','Manage Logs - {{ $title }}')" title="View plan and add breakdowns">
-            <i class="ft-clipboard"></i><span>Logs</span>
+        <button type="button" class="tkc-more" aria-label="Actions" title="Actions" data-title="#{{ $title }}">
+            <i class="ft-more-horizontal"></i>
         </button>
+    </div>
+
+    <template class="tkc-extra">
+        <a href="javascript:;" class="tkc-sheet-item"
+            onclick="openModal(this,'{{ $logsUrl }}','Manage Logs - {{ $title }}')">
+            <i class="ft-clipboard"></i><span>Manage Logs</span>
+        </a>
         @canAccess('machine-plan-setting-edit')
-            <button type="button" class="tkc-btn tkc-btn-warn"
-                onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan',false,'85%')" title="Edit">
+            <a href="javascript:;" class="tkc-sheet-item"
+                onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan',false,'85%')">
                 <i class="ft-edit"></i><span>Edit</span>
-            </button>
+            </a>
         @endcanAccess
         @canAccess('machine-plan-setting-delete')
-            <button type="button" class="tkc-btn tkc-btn-danger"
-                onclick="deletemodal('{{ route('machine-plan-setting.destroy', $row->id) }}','{{ route('get.machine-plan-setting') }}')" title="Delete">
+            <a href="javascript:;" class="tkc-sheet-item is-danger"
+                onclick="deletemodal('{{ route('machine-plan-setting.destroy', $row->id) }}','{{ route('get.machine-plan-setting') }}')">
                 <i class="ft-trash-2"></i><span>Delete</span>
-            </button>
+            </a>
         @endcanAccess
-    </div>
+    </template>
 </div>

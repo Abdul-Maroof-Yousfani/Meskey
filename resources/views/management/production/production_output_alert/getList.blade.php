@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $items, koi extra query nahi) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($items as $alert)
+        @include('management.production.production_output_alert.partials.mobile-card', ['alert' => $alert])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No alerts found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -54,6 +68,7 @@
         @endforelse
     </tbody>
 </table>
+</div>
 
 <div class="pagination-wrapper mt-3">
     {{ $items->links('vendor.pagination.bootstrap-4') }}

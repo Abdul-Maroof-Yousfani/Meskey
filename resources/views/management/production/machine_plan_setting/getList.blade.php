@@ -80,19 +80,31 @@
                     @endif
                 </td>
                 <td class="text-right text-nowrap">
-                    <button type="button" class="btn btn-sm btn-outline-warning"
-                            onclick="openModal(this,'{{ route('machine-plan-setting.logs', $row->id) }}','Manage Logs - {{ $row->jobOrder->job_order_no ?? 'Plan #' . $row->id }}')"
-                            title="View plan and add breakdowns">
-                        <i class="ft-clipboard"></i> Manage Logs
-                    </button>
-                    @canAccess('machine-plan-setting-edit')
-                        <a onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan',false,'85%')"
-                           class="info p-1 ml-1" title="Edit"><i class="ft-edit font-medium-3"></i></a>
-                    @endcanAccess
-                    @canAccess('machine-plan-setting-delete')
-                        <a onclick="deletemodal('{{ route('machine-plan-setting.destroy', $row->id) }}','{{ route('get.machine-plan-setting') }}')"
-                           class="danger p-1" title="Delete"><i class="ft-x font-medium-3"></i></a>
-                    @endcanAccess
+                    {{-- Saare actions ⋯ menu me (menu position:fixed - index.blade.php script, table scroll me kat-ta nahi) --}}
+                    <div class="dropdown mps-actions d-inline-block">
+                        <button type="button" class="btn btn-sm btn-light mps-actions-btn" data-toggle="dropdown" data-display="static"
+                                aria-haspopup="true" aria-expanded="false" title="Actions">
+                            <i class="ft-more-vertical"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="javascript:;"
+                               onclick="openModal(this,'{{ route('machine-plan-setting.logs', $row->id) }}','Manage Logs - {{ $row->jobOrder->job_order_no ?? 'Plan #' . $row->id }}')">
+                                <i class="ft-clipboard mr-1 text-warning"></i> Manage Logs
+                            </a>
+                            @canAccess('machine-plan-setting-edit')
+                                <a class="dropdown-item" href="javascript:;"
+                                   onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan',false,'85%')">
+                                    <i class="ft-edit mr-1 text-info"></i> Edit
+                                </a>
+                            @endcanAccess
+                            @canAccess('machine-plan-setting-delete')
+                                <a class="dropdown-item text-danger" href="javascript:;"
+                                   onclick="deletemodal('{{ route('machine-plan-setting.destroy', $row->id) }}','{{ route('get.machine-plan-setting') }}')">
+                                    <i class="ft-trash-2 mr-1"></i> Delete
+                                </a>
+                            @endcanAccess
+                        </div>
+                    </div>
                 </td>
             </tr>
         @empty

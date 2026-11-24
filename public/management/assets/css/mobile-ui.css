@@ -23,6 +23,7 @@
    18. Supplier KYC card (purchase order create / edit) - desktop + mobile
    19. Inputs + select2 - UNIVERSAL (poora project) - desktop / tablet >= 768px
    20. Machine Plan Setting form + Manage Logs (mpl-*) - sirf mobile
+   21. Output QC Alerts (list margin + read-only QC checklist) - sirf mobile
    ===================================================================== */
 
 /* #####################################################################
@@ -5884,5 +5885,66 @@ body.layout-dark .kyc-card .kyc-value.is-na {
     body.layout-dark .mpl-row {
         background: #1d1e24;
         border-color: #30323c;
+    }
+}
+
+/* #####################################################################
+   21. Output QC Alerts - sirf mobile < 768px
+   Files: production/production_output_alert/* (list = tkc cards, show = tkf-page)
+   QC checklist (production_output_analysis/partials/qc_checklist_readonly):
+   har slab = naam upar, neeche Job Order | QC Result aadha aadha (chhote label ke saath)
+   ##################################################################### */
+@media (max-width: 767.98px) {
+    body .poa-list {
+        margin-top: 0 !important;
+    }
+
+    body .qc-readonly-checklist .form-group.qc-spec-heading {
+        display: none !important;
+    }
+
+    body .qc-readonly-checklist .form-group.qc-slab-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 8px;
+        margin: 0 !important;
+        padding: 10px 12px !important;
+    }
+
+    body .qc-readonly-checklist .qc-slab-row > [class*="col-"] {
+        width: auto;
+        max-width: none;
+        padding: 0;
+        min-width: 0;
+    }
+
+    body .qc-readonly-checklist .qc-slab-row > label.label-control {
+        grid-column: 1 / -1;
+        font-size: .8rem;
+    }
+
+    /* Job Order column na ho to QC Result poori width */
+    body .qc-readonly-checklist .qc-slab-row > label + div:last-child {
+        grid-column: 1 / -1;
+    }
+
+    body .qc-readonly-checklist .qc-slab-row > div::before {
+        content: "QC Result";
+        display: block;
+        margin-bottom: 2px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #7b8794;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    body .qc-readonly-checklist .qc-slab-row > div:has(.job-order-spec)::before {
+        content: "Job Order";
+    }
+
+    body .qc-readonly-checklist .form-control {
+        height: 36px;
+        font-size: 13px;
     }
 }

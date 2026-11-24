@@ -1,8 +1,11 @@
 {{--
-    Mobile page header (opt-in, sirf jis page me include ho) - desktop par kuch nahi badalta.
+    Mobile page header - desktop par kuch nahi badalta.
 
-    Use (page ke @section('content') ke andar kahin bhi):
-        @include('management.layouts.partials.mobile-page-head')
+    AB GLOBAL: master.blade.php isay har page par (content ke baad) include karta hai.
+    - Jis page me neeche wala markup (mph-head classes) pehle se hai -> wahi use hota hai.
+    - Baaki pages: script khud "h2.page-title" wali row dhoondh kar mph-* classes laga deta hai
+      (autoHead neeche). Kisi page ko is se bachana ho to us header row par: data-no-mph
+    - Kuch pages abhi bhi isay khud include karte hain: koi masla nahi, script sirf EK dafa chalta hai.
 
     Markup:
         <div class="row w-100 mx-auto align-items-center mph-head">
@@ -25,7 +28,84 @@
 <script>
     // ===== Mobile page header: top header se chipkao + sticky (desktop par kuch nahi) =====
     (function () {
+        // page khud bhi include kare aur master bhi -> sirf pehli dafa chalo
+        if (window.mphReady) return;
+        window.mphReady = true;
+
         var MOBILE = window.matchMedia('(max-width: 767.98px)');
+
+        // ---- Auto header: jis page par mph-head markup nahi, us ka "page-title" header khud mph bana do ----
+        // Sirf classes / icon jodta hai (desktop par .mph-sub / .mph-create-icon CSS se chhupe rehte hain).
+        function moduleName() {
+            // URL ka pehla hissa: /production/... -> "Production", /export/... -> "Export"
+            var seg = (window.location.pathname.split('/').filter(Boolean)[0] || '');
+            return seg.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        }
+
+        function autoHead() {
+            if (document.querySelector('.mph-head')) return; // page ka apna mph header hai
+            var title = document.querySelector('.content-wrapper h2.page-title, .main-content h2.page-title');
+            if (!title || title.closest('.modal, #modal-sidebar, form, table')) return;
+            var row = title.closest('.row');
+            if (!row || row.hasAttribute('data-no-mph') || row.closest('[data-no-mph]')) return;
+
+            // title wala column (row ka seedha child)
+            var titleCol = title;
+            while (titleCol.parentElement && titleCol.parentElement !== row) titleCol = titleCol.parentElement;
+            if (titleCol === title && title.parentElement !== row) return;
+
+            row.classList.add('mph-head');
+            if (titleCol !== title) titleCol.classList.add('mph-title-col');
+
+            if (!titleCol.querySelector('.mph-sub') && moduleName()) {
+                var sub = document.createElement('div');
+                sub.className = 'mph-sub';
+                sub.textContent = moduleName();
+                titleCol.insertBefore(sub, titleCol.firstChild);
+            }
+
+            // baaki columns = actions. Add / Create / New wala button -> gol ➕, doosre icon wale button -> gol icon
+            Array.prototype.forEach.call(row.children, function (col) {
+                if (col === titleCol) return;
+                col.classList.add('mph-actions');
+                var createDone = false;
+                col.querySelectorAll('a.btn, button.btn').forEach(function (btn) {
+                    var text = (btn.textContent || '').trim();
+                    var wrap = function () {
+                        if (btn.querySelector('.mph-create-text')) return;
+                        var span = document.createElement('span');
+                        span.className = 'mph-create-text';
+                        while (btn.firstChild) span.appendChild(btn.firstChild);
+                        btn.appendChild(span);
+                        if (!btn.getAttribute('aria-label') && text) btn.setAttribute('aria-label', text);
+                        if (!btn.getAttribute('title') && text) btn.setAttribute('title', text);
+                    };
+                    if (!createDone && /\b(add|create|new)\b/i.test(text)) {
+                        createDone = true;
+                        wrap();
+                        btn.classList.add('mph-create');
+                        var icon = document.createElement('i');
+                        icon.className = 'ft-plus mph-create-icon';
+                        btn.insertBefore(icon, btn.firstChild);
+                    } else {
+                        var own = btn.querySelector('i[class*="ft-"], i[class*="fa-"], i.fa');
+                        if (own && text) {
+                            // apna icon bahar, text chhupa (mobile par sirf icon)
+                            var keep = own.cloneNode(true);
+                            own.parentNode.removeChild(own);
+                            wrap();
+                            btn.insertBefore(keep, btn.firstChild);
+                            btn.classList.add('mph-icon-btn');
+                        }
+                    }
+                });
+            });
+        }
+
+        autoHead();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', autoHead);
+        }
 
         function fitHead() {
             var row = document.querySelector('.mph-head');

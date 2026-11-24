@@ -1,5 +1,7 @@
 {{-- Output QC Alert: read-only QC Checklist (colored against the Job Order spec) + plant user's remarks --}}
-<form action="{{ route('production-output-alert.resolve', $alert->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+{{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page poa-show">
+<formaction="{{ route('production-output-alert.resolve', $alert->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.production-output-alert') }}">
 
@@ -101,3 +103,4 @@
     </div>
 </form>
 
+</div>

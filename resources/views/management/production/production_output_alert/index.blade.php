@@ -5,8 +5,10 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-12">
+            @include('management.layouts.partials.mobile-page-head')
+            <div class="row w-100 mx-auto mph-head">
+                <div class="col-12 mph-title-col">
+                    <div class="mph-sub">Production</div>
                     <h2 class="page-title">Output QC Alerts</h2>
                 </div>
             </div>
@@ -44,7 +46,7 @@
                             </form>
                         </div>
                         <div class="card-content">
-                            <div class="card-body table-responsive" id="filteredData" style="margin-top: 30px;">
+                            <div class="card-body table-responsive poa-list" id="filteredData" style="margin-top: 30px;">
                                 {{-- Loaded via AJAX --}}
                             </div>
                         </div>

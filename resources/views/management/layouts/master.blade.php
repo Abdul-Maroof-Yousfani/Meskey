@@ -8,6 +8,8 @@
         <div class="main-content py-3">
             <div class="content-overlay"></div>
             @yield('content')
+            {{-- Mobile page header: har page ka "page-title" header mobile par app-bar (desktop par kuch nahi) --}}
+            @include('management.layouts.partials.mobile-page-head')
         </div>
     </div>
 </div>
