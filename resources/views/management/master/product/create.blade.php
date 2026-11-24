@@ -100,8 +100,8 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label><span class="text-danger required-asterisk">*</span>HS Code:</label>
-                <input type="text" name="hs_code" placeholder="HS Code" class="form-control" maxlength="255" required />
+                <label>HS Code:</label>
+                <input type="text" name="hs_code" placeholder="HS Code" class="form-control" maxlength="255" />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
