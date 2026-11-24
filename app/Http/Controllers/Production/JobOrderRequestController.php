@@ -577,25 +577,8 @@ class JobOrderRequestController extends Controller
             $datePart = date('m-d-Y');
         }
 
-        if (empty($locationParam)) {
-            $locationParam = request('company_location_id') ?? request('location_id') ?? auth()->user()?->company_location_id;
-        }
-
-        $locationCode = 'LOC';
-        if ($locationParam) {
-            if ($locationParam instanceof CompanyLocation) {
-                $locationCode = $locationParam->code ?: 'LOC';
-            } elseif (is_numeric($locationParam)) {
-                $loc = CompanyLocation::find($locationParam);
-                $locationCode = $loc?->code ?: 'LOC';
-            } elseif (is_string($locationParam)) {
-                $loc = CompanyLocation::where('code', $locationParam)->first();
-                $locationCode = $loc ? $loc->code : $locationParam;
-            }
-        }
-
-        $locationCode = strtoupper(trim($locationCode ?: 'LOC'));
-        $prefix = $locationCode . '-JOR-MIL';
+        // Location prefix (e.g. KHI-) is no longer part of the job order request number.
+        $prefix = 'JOR-MIL';
 
         $searchPattern = $prefix . '-%-' . $datePart;
 

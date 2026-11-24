@@ -418,10 +418,18 @@ class MachinePlanSettingController extends Controller
         }
 
         $jobOrders = $this->jobOrdersForLocation($request->company_location_id, $request->company_id)
-            ->map(fn ($jo) => [
-                'id' => $jo->id,
-                'text' => $jo->job_order_no . ($jo->ref_no ? ' (' . $jo->ref_no . ')' : '') . ($jo->product ? ' - ' . $jo->product->name : ''),
-            ])
+            ->map(function ($jo) {
+                // Several job orders in one plan must share the product's main category
+                // (e.g. Irri and Sella both fall under Rice; Wheat stays with Wheat)
+                $mainCategory = $jo->product?->category?->rootCategory();
+
+                return [
+                    'id' => $jo->id,
+                    'text' => $jo->job_order_no . ($jo->ref_no ? ' (' . $jo->ref_no . ')' : '') . ($jo->product ? ' - ' . $jo->product->name : ''),
+                    'category_id' => $mainCategory?->id,
+                    'category_name' => $mainCategory?->name,
+                ];
+            })
             ->values();
 
         return response()->json(['jobOrders' => $jobOrders]);
@@ -644,7 +652,7 @@ class MachinePlanSettingController extends Controller
     {
         $companyId = $companyId ?: (auth()->user()->company_id ?? null);
 
-        return JobOrder::with('product')
+        return JobOrder::with('product.category.parent')
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->whereIn('status', [1, 'active'])
             ->where(function ($sub) use ($locationId) {

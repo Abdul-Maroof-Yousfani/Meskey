@@ -22,19 +22,86 @@ class CategoryController extends Controller
     /**
      * Get list of categories.
      */
+    /**
+     * Hierarchy list: main (parent) categories are paginated, and each one is
+     * followed by its sub-categories (any depth), like the product list.
+     * Search matches any level: a matching sub-category is shown under its parents,
+     * a matching parent is shown with all its sub-categories.
+     */
     public function getList(Request $request)
     {
-        $categories = Category::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
-        ->with('parent') // Eager load parent category
-        ->latest()
-        ->paginate(request('per_page', 25));
+        $all = Category::orderBy('name')->get();
+        $byId = $all->keyBy('id');
 
-        return view('management.master.category.getList', compact('categories'));
+        // Main category: no parent (null / 0), or its parent no longer exists
+        $isRoot = fn ($c) => !$c->parent_id || !$byId->has($c->parent_id);
+        $childrenByParent = $all->reject($isRoot)->groupBy('parent_id');
+
+        $visibleIds = null;
+        if ($request->filled('search')) {
+            $term = mb_strtolower(trim($request->search));
+            $matched = $all->filter(fn ($c) => str_contains(mb_strtolower($c->name), $term));
+
+            $visibleIds = [];
+            foreach ($matched as $cat) {
+                // the match, its parents up to the main category ...
+                $node = $cat;
+                $guard = 0;
+                while ($node && !isset($visibleIds[$node->id]) && $guard++ < 50) {
+                    $visibleIds[$node->id] = true;
+                    $node = $isRoot($node) ? null : $byId->get($node->parent_id);
+                }
+                // ... and all of its sub-categories
+                $stack = [$cat->id];
+                while ($stack) {
+                    foreach ($childrenByParent->get(array_pop($stack), []) as $child) {
+                        if (!isset($visibleIds[$child->id])) {
+                            $visibleIds[$child->id] = true;
+                            $stack[] = $child->id;
+                        }
+                    }
+                }
+            }
+        }
+
+        $rootIds = $all->filter($isRoot)
+            ->when($visibleIds !== null, fn ($c) => $c->filter(fn ($r) => isset($visibleIds[$r->id])))
+            ->pluck('id');
+
+        $categories = Category::whereIn('id', $rootIds)
+            ->latest()
+            ->paginate(request('per_page', 25));
+
+        return view('management.master.category.getList', compact('categories', 'childrenByParent', 'visibleIds'));
+    }
+
+    /**
+     * Categories for the Parent Category dropdown (plain list by name).
+     * $exclude removes that category and all of its sub-categories (a category cannot sit under itself).
+     */
+    private function parentCategoryOptions(?Category $exclude = null)
+    {
+        $excludeIds = $exclude ? array_merge([$exclude->id], $this->descendantIds($exclude)) : [];
+
+        return Category::whereNotIn('id', $excludeIds)->orderBy('name')->get();
+    }
+
+    /** Ids of a category's sub-categories at every level. */
+    private function descendantIds(Category $category): array
+    {
+        $childrenByParent = Category::get(['id', 'parent_id'])->groupBy('parent_id');
+        $ids = [];
+        $stack = [$category->id];
+        while ($stack) {
+            foreach ($childrenByParent->get(array_pop($stack), []) as $child) {
+                if (!in_array($child->id, $ids)) {
+                    $ids[] = $child->id;
+                    $stack[] = $child->id;
+                }
+            }
+        }
+
+        return $ids;
     }
 
     public function getCategories(Request $request)
@@ -68,7 +135,7 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        $categories = Category::all(); // Fetch all categories for parent dropdown
+        $categories = $this->parentCategoryOptions(); // Parent dropdown
         return view('management.master.category.create', compact('categories'));
     }
 
@@ -91,7 +158,8 @@ class CategoryController extends Controller
     public function edit($id)
     {
         $category = Category::findOrFail($id);
-        $categories = Category::where('id', '!=', $id)->get(); // Exclude current category from parent list
+        // Parent dropdown, without this category and its own sub-categories
+        $categories = $this->parentCategoryOptions($category);
         return view('management.master.category.edit', compact('category', 'categories'));
     }
 
@@ -101,6 +169,15 @@ class CategoryController extends Controller
     public function update(CategoryRequest $request, Category $category): JsonResponse
     {
         $data = $request->validated();
+
+        // A category cannot be placed under itself or under one of its own sub-categories
+        if (!empty($data['parent_id'])
+            && ($data['parent_id'] == $category->id || in_array((int) $data['parent_id'], $this->descendantIds($category)))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'parent_id' => 'A category cannot be placed under itself or one of its own sub-categories.',
+            ]);
+        }
+
         $category->update($data);
 
         return response()->json(['success' => 'Category updated successfully.', 'data' => $category], 200);

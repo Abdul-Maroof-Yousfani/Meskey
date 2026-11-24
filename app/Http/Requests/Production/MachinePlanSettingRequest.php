@@ -75,6 +75,23 @@ class MachinePlanSettingRequest extends FormRequest
                 }
             }
 
+            // Several job orders in one plan must all be of the same main product category
+            // (sub-categories like Irri and Sella under Rice count as Rice)
+            $jobOrderIds = array_filter((array) $this->input('job_order_ids', []));
+            if (count($jobOrderIds) > 1) {
+                $categories = \App\Models\Production\JobOrder\JobOrder::with('product.category.parent')
+                    ->whereIn('id', $jobOrderIds)
+                    ->get()
+                    ->map(function ($jo) {
+                        $main = $jo->product?->category?->rootCategory();
+                        return ['id' => $main?->id, 'name' => $main?->name ?? 'No Category'];
+                    })
+                    ->unique('id');
+                if ($categories->count() > 1) {
+                    $validator->errors()->add('job_order_ids', 'All selected job orders must be of the same main product category. Selected: ' . $categories->pluck('name')->implode(', ') . '.');
+                }
+            }
+
             // At least one machine switched on, and each ON machine needs a start and end time
             $enabled = array_filter((array) $this->input('production_machine_id', []));
             if ($this->filled('plant_id') && empty($enabled)) {
