@@ -28,6 +28,36 @@ class Category extends Model
         return $this->hasMany(Category::class, 'parent_id');
     }
 
+    /**
+     * Main (parent) category: has no parent (parent_id null / 0), or its parent no longer exists.
+     * Only main categories carry Category Heads (Head, B2 & By Products).
+     */
+    public function isMainCategory(): bool
+    {
+        return !$this->parent_id || !$this->parent;
+    }
+
+    /**
+     * Top-level (main) category of this category, e.g. Irri -> Rice, Sella -> Rice.
+     * A category with parent_id null or 0 is its own main category.
+     */
+    public function rootCategory(): self
+    {
+        $category = $this;
+        $seen = [$category->id];
+
+        while ($category->parent_id && !in_array($category->parent_id, $seen)) {
+            $parent = $category->parent;
+            if (!$parent) {
+                break;
+            }
+            $seen[] = $parent->id;
+            $category = $parent;
+        }
+
+        return $category;
+    }
+
     // Relationship: Category Heads (Blueprint templates)
     public function heads()
     {

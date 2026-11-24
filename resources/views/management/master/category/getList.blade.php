@@ -9,45 +9,14 @@
     </thead>
     <tbody>
         @if (count($categories) != 0)
-            @foreach ($categories as $key => $row)
-                <tr>
-                    <td>
-                        <p class="m-0">
-                            {{ $row->name }} <br>
-                        </p>
-                    </td>
-                    <td>
-                        <p class="m-0">
-                            <small> {{ $row->parent->name ?? '--' }}</small>
-                        </p>
-                    </td>
-                    <td style="text-transform: uppercase">
-                        {{ Str::replace("_", " ", $row->category_type) }}
-                    </td>
-
-                    <td>
-                        <a onclick="openModal(this,'{{ route('category.heads.create', $row->id) }}','Configure Product Heads - {{ addslashes($row->name) }}', false, '50%')"
-                            class="success p-1 text-center mr-2 position-relative" title="Configure Head, B2 & By Products">
-                            <i class="ft-layers font-medium-3 text-success"></i>
-                        </a>
-                        @if($row->is_protected !== "yes")
-                            @can('role-edit')
-                                <a onclick="openModal(this,'{{ route('category.edit', $row->id) }}','Edit Category')"
-                                    class="info p-1 text-center mr-2 position-relative ">
-                                    <i class="ft-edit font-medium-3"></i>
-                                </a>
-                            @endcan
-                            @can('role-delete')
-                                <a onclick="deletemodal('{{ route('category.destroy', $row->id) }}','{{ route('get.category') }}')"
-                                    class="danger p-1 text-center mr-2 position-relative ">
-
-                                    <i class="ft-x font-medium-3"></i>
-                                </a>
-                            @endcan
-                        @endif
-                        
-                    </td>
-                </tr>
+            {{-- Main category row, then its sub-categories indented under it (like the product list) --}}
+            @foreach ($categories as $row)
+                @include('management.master.category.partials.row', [
+                    'row' => $row,
+                    'depth' => 0,
+                    'parentName' => null,
+                    'seen' => [],
+                ])
             @endforeach
         @else
             <tr class="ant-table-placeholder">

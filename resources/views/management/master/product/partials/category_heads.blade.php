@@ -91,8 +91,8 @@
             return;
         }
 
-        // 3. If no category data available, hide
-        if (!cachedData || !cachedData.category) {
+        // 3. If no category data available, or a sub-category is selected (heads only belong to main categories), hide
+        if (!cachedData || !cachedData.category || cachedData.is_sub_category) {
             $section.slideUp(150);
             $container.empty();
             return;
@@ -182,6 +182,14 @@
         if (!categoryId) {
             cachedData = null;
             $('#categoryHeadsSection').slideUp(150);
+            $('#categoryHeadsContainer').empty();
+            return;
+        }
+
+        // Sub-category selected: heads belong to main categories only, so close the section right away (no loading flash)
+        if (String($('#category_id option:selected').attr('data-sub')) === '1') {
+            cachedData = null;
+            $('#categoryHeadsSection').stop(true, true).hide();
             $('#categoryHeadsContainer').empty();
             return;
         }

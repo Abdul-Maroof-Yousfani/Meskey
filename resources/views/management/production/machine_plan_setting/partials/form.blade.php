@@ -225,18 +225,49 @@
             $.get('{{ route('machine-plan-setting.job-orders-by-location') }}', { company_location_id: locId }, function (res) {
                 if (isEdit) $jo.append('<option value="">Select Job Order</option>');
                 (res.jobOrders || []).forEach(function (j) {
-                    $jo.append($('<option>', { value: j.id, text: j.text, selected: keep.map(String).indexOf(String(j.id)) !== -1 }));
+                    var cat = j.category_id == null ? '' : String(j.category_id);
+                    $jo.append($('<option>', { value: j.id, text: j.text, selected: keep.map(String).indexOf(String(j.id)) !== -1 })
+                        .attr('data-category', cat).attr('data-category-name', j.category_name || ''));
                 });
                 $jo.trigger('change');
             });
         }
 
+        // Category of the first selected job order; only job orders of that category can be added
+        var joCategory = null;
+        function restrictJobOrdersToCategory() {
+            if (isEdit) return;
+            var $selected = $jo.find('option:selected');
+            if (!$selected.length) {
+                joCategory = null;
+            } else if (joCategory === null || !$selected.filter(function () { return $(this).attr('data-category') === joCategory; }).length) {
+                joCategory = $selected.first().attr('data-category');
+            }
+            // Drop any selected job order of another category
+            var dropped = false;
+            $selected.each(function () {
+                if (joCategory !== null && $(this).attr('data-category') !== joCategory) { $(this).prop('selected', false); dropped = true; }
+            });
+            if (dropped) $jo.trigger('change.select2');
+        }
+        function joCategoryOf(data) {
+            return data && data.element ? $(data.element).attr('data-category') : undefined;
+        }
+        // Hide job orders of other categories from the dropdown (returning null hides the row in Select2)
+        function joTemplateResult(data) {
+            if (isEdit || joCategory === null || data.loading || !data.id) return data.text;
+            return joCategoryOf(data) === joCategory ? data.text : null;
+        }
+
         function updateJobOrderHint() {
             if (isEdit) return;
+            restrictJobOrdersToCategory();
             var count = ($jo.val() || []).length;
+            var catName = joCategory !== null ? ($jo.find('option:selected').first().attr('data-category-name') || 'No Category') : '';
+            var catNote = catName ? ' Only <strong>' + esc(catName) + '</strong> job orders can be added.' : '';
             $('#mps_job_order_hint').html(count > 1
-                ? '<i class="ft-info text-primary"></i> <strong>' + count + ' plans</strong> will be saved, one for each job order, with the same machines, times and breakdowns.'
-                : 'Job orders of the selected location.');
+                ? '<i class="ft-info text-primary"></i> <strong>' + count + ' plans</strong> will be saved, one for each job order, with the same machines, times and breakdowns.' + catNote
+                : 'Job orders of the selected location.' + catNote);
         }
 
         // ---------- Machines (one tab each) ----------
@@ -500,7 +531,22 @@
         // ---------- Init ----------
         $location.select2({ width: '100%' });
         $plant.select2({ width: '100%' });
-        $jo.select2({ width: '100%', placeholder: $jo.data('placeholder'), closeOnSelect: isEdit });
+        $jo.select2({ width: '100%', placeholder: $jo.data('placeholder'), closeOnSelect: isEdit, templateResult: joTemplateResult });
+        // Block picking a job order of another product category (e.g. Wheat after Irri)
+        $jo.off('select2:selecting.mpf').on('select2:selecting.mpf', function (e) {
+            if (isEdit || joCategory === null) return;
+            var data = e.params && e.params.args ? e.params.args.data : null;
+            if (joCategoryOf(data) !== joCategory) {
+                e.preventDefault();
+                if (window.toastr) toastr.warning('Only job orders of the same product category can be selected together.');
+            }
+        });
+        // Re-render the open dropdown so the list follows the current category
+        $jo.off('select2:select.mpf select2:unselect.mpf').on('select2:select.mpf select2:unselect.mpf', function () {
+            restrictJobOrdersToCategory();
+            var s2 = $jo.data('select2');
+            if (s2 && s2.isOpen()) s2.trigger('query', { term: s2.$container.find('.select2-search__field').val() || '' });
+        });
 
         fillPlants($plant.data('selected'));
         loadJobOrders();

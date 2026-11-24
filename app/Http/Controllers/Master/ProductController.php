@@ -238,8 +238,11 @@ class ProductController extends Controller
         $data['account_id'] = $account->id;
         $parentProduct = Product::create($data);
 
-        // If parent product (parent_id is null) and heads are checked, create child products
-        if (empty($parentProduct->parent_id) && !empty($selectedHeads) && is_array($selectedHeads)) {
+        // If parent product (parent_id is null) and heads are checked, create child products.
+        // Heads come only from a main (parent) category, never from a sub-category.
+        $productCategory = $parentProduct->category_id ? Category::find($parentProduct->category_id) : null;
+        if (empty($parentProduct->parent_id) && !empty($selectedHeads) && is_array($selectedHeads)
+            && $productCategory && $productCategory->isMainCategory()) {
             $heads = CategoryHead::where('category_id', $parentProduct->category_id)
                 ->whereIn('id', $selectedHeads)
                 ->orderBy('sort_order')
