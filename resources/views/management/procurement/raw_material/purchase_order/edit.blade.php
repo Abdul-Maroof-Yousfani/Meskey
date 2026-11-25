@@ -48,10 +48,14 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Sauda Type:</label>
-                 <select name="sauda_type_id" id="sauda_type_id{{ $ticketcounts != 0 ? 'ub-nh-chlunga' : '' }}"
-                     class="form-control ">
+                 @if ($ticketcounts != 0)
+                     {{-- tickets ban chuke hain: sauda type lock, value hidden input se submit hogi --}}
+                     <input type="hidden" name="sauda_type_id" value="{{ $arrivalPurchaseOrder->sauda_type_id }}">
+                 @endif
+                 <select name="{{ $ticketcounts != 0 ? 'sauda_type_id_for_display' : 'sauda_type_id' }}" id="sauda_type_id"
+                     class="form-control" @disabled($ticketcounts != 0)>
                         @foreach($sauda_type as $st)
-                            <option value="{{$st->id}}" {{ $arrivalPurchaseOrder->saudaType->id : 'selected' ? ''  }}>{{$st->name}}</option>
+                            <option value="{{$st->id}}" @selected($st->id == $arrivalPurchaseOrder->sauda_type_id)>{{$st->name}}</option>
                         @endforeach
                  </select>
              </div>
