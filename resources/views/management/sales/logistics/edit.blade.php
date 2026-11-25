@@ -776,7 +776,7 @@
                 $.ajax({
                     url: url,
                     method: 'GET',
-                    data: { type: type, is_edit: 1 },
+                    data: { type: type, is_edit: 1, logistics_id: {{ $logistics->id }} },
                     success: function(data) {
                         $('#date').val(data.date);
                         $('#so_no').val(data.so_no);

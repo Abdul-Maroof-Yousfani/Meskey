@@ -599,7 +599,7 @@
                     <div class="form-group">
                         <label>Transporter:</label>
                         @php
-                            $decodedTransporters = json_decode($deliveryOrder->transporter_id, true);
+                            $decodedTransporters = json_decode($deliveryOrder->transporter_id ?? "", true);
                             $selectedTransporters = is_array($decodedTransporters) ? $decodedTransporters : ($deliveryOrder->transporter_id ? (array) $deliveryOrder->transporter_id : []);
                             $transporterNames = collect($transporters)->filter(function($t) use ($selectedTransporters) {
                                 return in_array($t->id, $selectedTransporters);

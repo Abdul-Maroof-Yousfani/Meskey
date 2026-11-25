@@ -4888,6 +4888,13 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         overscroll-behavior: contain;
         scrollbar-width: thin;
         scrollbar-color: rgba(39, 72, 154, .25) transparent;
+        /* chaurai = sab se lamba item poora (fixed dropdown pehle screen ke kinare tak ki bachi
+           jagah me sikud kar lamba text kaat deta tha). Screen se bari na ho; JS (desktop-nav.js)
+           asal chaurai naap kar dropdown ko screen ke andar khiskata hai.
+           scrollbar-gutter: scrollbar ki jagah pehle se, taake scroll wale lambe menu me bhi text na kate */
+        width: max-content;
+        max-width: calc(100vw - 16px);
+        scrollbar-gutter: stable;
     }
 
     body.horizontal-menu .navbar-horizontal .dropdown .dropdown-menu > li {

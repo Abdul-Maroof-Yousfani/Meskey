@@ -30,21 +30,14 @@ class LogisticsController extends Controller
     public function create()
     {
         abort_if(!canAccess('logistics-create') && !auth()->user()->can('logistics-create'), 403);
-        $exportOrders = ExportOrder::with('logistics')
-            ->where('cancel','!=',1)
+        // Ek Export Order ke against multiple logistics ban sakti hain, isliye approved logistic wale EO bhi list me rehte hain
+        $exportOrders = ExportOrder::where('cancel','!=',1)
             ->where('am_approval_status', 'approved')
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
             ->orderBy('id', 'desc')
-            ->get()
-            ->filter(function ($eo) {
-                $hasApprovedLogistic = $eo->logistics
-                    ->where('am_approval_status', 'approved')
-                    ->isNotEmpty();
-
-                return !$hasApprovedLogistic;
-            });
+            ->get();
 
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 'active')->get();
@@ -210,9 +203,11 @@ class LogisticsController extends Controller
 
         $logistics = null;
         if ($isEdit) {
+            // EO ki multiple logistics ho sakti hain: edit wali logistic uski id se (purane calls ke liye pehli)
             $logistics = Logistics::with(['items.transporter'])
                 ->where('type', 'export_order')
                 ->where('export_order_id', $id)
+                ->when(request()->filled('logistics_id'), fn ($q) => $q->where('id', request('logistics_id')))
                 ->first();
         }
 
@@ -301,7 +296,11 @@ class LogisticsController extends Controller
                 }
             }
 
-            $logistics = Logistics::with(['items.transporter', 'saleOrder', 'exportOrder'])->firstOrNew($lookup);
+            // Export Order: har save par nayi logistic (ek EO ke against multiple).
+            // Sale Order: pehle jaisa, usi SO ki logistic update hoti hai.
+            $logistics = $request->type === 'export_order'
+                ? new Logistics($lookup)
+                : Logistics::with(['items.transporter', 'saleOrder', 'exportOrder'])->firstOrNew($lookup);
 
             if ($logistics->exists && in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
                 return response()->json([
@@ -401,23 +400,13 @@ class LogisticsController extends Controller
             return response()->json(['error' => 'Logistics not found'], 404);
         }
 
-        $exportOrders = ExportOrder::with('logistics')
-            ->where('am_approval_status', 'approved')
+        // Ek Export Order ke against multiple logistics ban sakti hain, isliye approved logistic wale EO bhi list me rehte hain
+        $exportOrders = ExportOrder::where('am_approval_status', 'approved')
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
             ->orderBy('id', 'desc')
-            ->get()
-            ->filter(function ($eo) use ($logistics) {
-                if ($logistics->type === 'export_order' && $logistics->export_order_id == $eo->id) {
-                    return true;
-                }
-                $hasApprovedLogistic = $eo->logistics
-                    ->where('am_approval_status', 'approved')
-                    ->isNotEmpty();
-
-                return !$hasApprovedLogistic;
-            });
+            ->get();
 
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 'active')->get();

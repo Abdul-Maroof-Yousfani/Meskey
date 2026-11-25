@@ -79,6 +79,15 @@ class ExportLoadingProgramController extends Controller
             })
             ->whereIn('id', $request->export_order_id)->get();
         $exportOrder = $exportOrders->first();
+
+        // Har EO ki logistics me koi truck baqi ho, warna pehle logistic banao
+        if ($truckErrors = $this->logisticsTruckErrors($exportOrders)) {
+            return response()->json([
+                'message' => implode(' ', $truckErrors),
+                'errors' => ['export_order_id' => $truckErrors],
+            ], 422);
+        }
+
         $deliveryOrders = DeliveryOrder::with('locations')->whereIn('id', $request->delivery_order_id)->get();
 
         $companyLocationIds = $deliveryOrders->flatMap(function($do) {
@@ -184,7 +193,11 @@ class ExportLoadingProgramController extends Controller
                 }
             ])
             ->where('am_approval_status', 'approved')
-            ->get();
+            ->get()
+            // Program ke apne EO + wo EO jin ki logistics me truck baqi hai
+            ->filter(fn ($eo) => in_array($eo->id, $selectedExportOrderIds)
+                || empty($this->logisticsTruckErrors([$eo], $loadingProgram->id)))
+            ->values();
 
         $arrivalLocationIds = $loadingProgram->deliveryOrders->flatMap(function($do) {
             return $do->locations->flatMap(function($loc) {
@@ -242,6 +255,19 @@ class ExportLoadingProgramController extends Controller
                 })
                 ->whereIn('id', $request->export_order_id)->get();
             $exportOrder = $exportOrders->first();
+
+            // Edit me naya joda gaya EO: us ki logistics me truck baqi ho (pehle se jude EO ko nahi chheda)
+            $existingEoIds = $loadingProgram->exportOrders()->pluck('export_orders.id')
+                ->push($loadingProgram->export_order_id)->filter()->map(fn ($id) => (int) $id)->all();
+            $newExportOrders = $exportOrders->reject(fn ($eo) => in_array((int) $eo->id, $existingEoIds, true));
+            if ($truckErrors = $this->logisticsTruckErrors($newExportOrders, $loadingProgram->id)) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => implode(' ', $truckErrors),
+                    'errors' => ['export_order_id' => $truckErrors],
+                ], 422);
+            }
+
             $deliveryOrders = DeliveryOrder::with('locations')->whereIn('id', $request->delivery_order_id)->get();
 
             $companyLocationIds = $deliveryOrders->flatMap(function($do) {
@@ -526,12 +552,25 @@ class ExportLoadingProgramController extends Controller
             ->push($loadingProgram->export_order_id)
             ->filter()->unique()->values();
 
+        return $this->truckAvailabilityForExportOrders($exportOrderIds, $loadingProgram->id);
+    }
+
+    /**
+     * Same as transporterTruckAvailability() but for given export order ids (create form ke liye,
+     * jab loading program abhi bana hi nahi). $exceptProgramId wala program "used" me nahi ginta.
+     */
+    private function truckAvailabilityForExportOrders($exportOrderIds, ?int $exceptProgramId = null): ?\Illuminate\Support\Collection
+    {
+        $exportOrderIds = collect($exportOrderIds)->filter()->unique()->values();
+
         if ($exportOrderIds->isEmpty()) {
             return null;
         }
 
+        // EO ki saari logistics (ek EO ke against multiple) ke trucks jud kar; rejected logistic ke trucks nahi
         $allowedTrucks = \App\Models\Sales\LogisticsItem::whereHas('logistics', function ($q) use ($exportOrderIds) {
-            $q->whereIn('export_order_id', $exportOrderIds);
+            $q->whereIn('export_order_id', $exportOrderIds)
+                ->where(fn ($sq) => $sq->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'));
         })
             ->whereNotNull('transporter_id')
             ->get()
@@ -542,7 +581,7 @@ class ExportLoadingProgramController extends Controller
             return null;
         }
 
-        $otherProgramIds = LoadingProgram::where('id', '!=', $loadingProgram->id)
+        $otherProgramIds = LoadingProgram::when($exceptProgramId, fn ($q) => $q->where('id', '!=', $exceptProgramId))
             ->where(function ($q) use ($exportOrderIds) {
                 $q->whereIn('export_order_id', $exportOrderIds)
                     ->orWhereHas('exportOrders', fn ($sq) => $sq->whereIn('export_orders.id', $exportOrderIds));
@@ -558,6 +597,33 @@ class ExportLoadingProgramController extends Controller
             'allowed' => $allowed,
             'available' => max($allowed - $usedElsewhere->get($transporterId, 0), 0),
         ]);
+    }
+
+    /**
+     * Loading program tabhi bane jab har export order ki logistics me koi transporter ka truck baqi ho.
+     * Logistic hi nahi bani, ya us ke saare trucks pichle loading programs me ja chuke -> error (pehle logistic banao).
+     * Returns error messages (empty = OK).
+     */
+    private function logisticsTruckErrors($exportOrders, ?int $exceptProgramId = null): array
+    {
+        $errors = [];
+        foreach ($exportOrders as $eo) {
+            $availability = $this->truckAvailabilityForExportOrders([$eo->id], $exceptProgramId);
+            $eoNo = $eo->voucher_no ?? ('#' . $eo->id);
+
+            if ($availability === null) {
+                $errors[] = "Export Order {$eoNo} has no Logistics with transporter trucks. Please create a Logistics first.";
+                continue;
+            }
+
+            $available = $availability->sum('available');
+            if ($available <= 0) {
+                $allowed = $availability->sum('allowed');
+                $errors[] = "Export Order {$eoNo}: all {$allowed} truck(s) of its Logistics are already used in other Loading Programs. Please create a new Logistics first.";
+            }
+        }
+
+        return $errors;
     }
 
     public function destroy($id)
@@ -619,7 +685,21 @@ class ExportLoadingProgramController extends Controller
             })
             ->whereIn('id', $exportOrderIds)
             ->orderBy('id', 'desc')
-            ->get()
+            ->get();
+
+        // Sirf wo EO jin ki logistics me koi truck baqi hai (logistic nahi / trucks khatam -> dropdown me nahi).
+        // Edit: us loading program ke apne EO hamesha dikhte hain, aur wo program "used" trucks me nahi ginta.
+        $editProgramId = $request->filled('loading_program_id') ? (int) $request->loading_program_id : null;
+        $keepEoIds = [];
+        if ($editProgramId && ($editProgram = LoadingProgram::find($editProgramId))) {
+            $keepEoIds = $editProgram->exportOrders()->pluck('export_orders.id')
+                ->push($editProgram->export_order_id)->filter()->map(fn ($id) => (int) $id)->all();
+        }
+
+        $exportOrders = $exportOrders
+            ->filter(fn ($eo) => in_array((int) $eo->id, $keepEoIds, true)
+                || empty($this->logisticsTruckErrors([$eo], $editProgramId)))
+            ->values()
             ->map(function ($eo) {
                 return [
                     'id' => $eo->id,

@@ -845,9 +845,9 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Transporter: <span class="text-danger">*</span></label>
+                        <label>Transporter:</label>
                         @php
-                            $decodedTransporters = json_decode($deliveryOrder->transporter_id, true);
+                            $decodedTransporters = json_decode($deliveryOrder->transporter_id ?? "", true);
                             $selectedTransporters = is_array($decodedTransporters) ? $decodedTransporters : ($deliveryOrder->transporter_id ? (array) $deliveryOrder->transporter_id : []);
                         @endphp
                         <select name="transporter_id[]" id="transporter_id" class="form-control select2" multiple>
@@ -1268,9 +1268,10 @@
             if ($rows.length === 0 || remainingMt <= 0) return;
 
             var capped = $rows.filter(function () { return $(this).attr('data-max-mt') !== undefined; });
-            if (capped.length === $rows.length) {
-                var totalMax = 0;
-                $rows.each(function () { totalMax += parseFloat($(this).attr('data-max-mt')) || 0; });
+            var totalMax = 0;
+            $rows.each(function () { totalMax += parseFloat($(this).attr('data-max-mt')) || 0; });
+            // JO packagings already used up: JO limit is off for now, so spread the Form-E balance below instead
+            if (capped.length === $rows.length && totalMax > 0) {
                 var factor = totalMax > remainingMt && totalMax > 0 ? remainingMt / totalMax : 1;
                 $rows.each(function () {
                     var maxMt = parseFloat($(this).attr('data-max-mt')) || 0;
@@ -1802,12 +1803,14 @@
             $('#lbl_current_request_mt').text(currentRequest.toFixed(3));
             $('#lbl_remaining_mt').text(balance.toFixed(3));
 
-            // Each packaging: not more than its Job Order has left
+            // Each packaging: not more than its Job Order has left.
+            // Abhi band hai (client ke kehne par) - baad me stock panel se lagega. Wapas lagana ho to true kar dein.
+            const ENFORCE_JO_PACKAGING_LIMIT = false;
             let packagingErrors = [];
             $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function () {
                 let maxAttr = $(this).attr('data-max-mt');
                 let $mt = $(this).find('.metric-tons');
-                if (maxAttr === undefined) {
+                if (!ENFORCE_JO_PACKAGING_LIMIT || maxAttr === undefined) {
                     $mt.removeClass('is-invalid');
                     return;
                 }

@@ -239,7 +239,10 @@ class ExportDeliveryOrderController extends Controller
         })->values();
 
         // Fetch Logistics Transporters
-        $logistics = \App\Models\Sales\Logistics::with('items.transporter')->where('export_order_id', $id)->get();
+        // EO ki saari logistics (multiple ho sakti hain), rejected ke siwa
+        $logistics = \App\Models\Sales\Logistics::with('items.transporter')->where('export_order_id', $id)
+            ->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'))
+            ->get();
         $logisticsTransporters = collect();
         foreach ($logistics as $logistic) {
             foreach ($logistic->items as $item) {
@@ -304,7 +307,7 @@ class ExportDeliveryOrderController extends Controller
             'loading_date' => 'required|date',
             'estimated_payment_date' => 'required|date',
             'freight_amount' => 'required|string',
-            'transporter_id' => 'required|array',
+            'transporter_id' => 'nullable|array', // optional
             'c_agent' => 'required',
             'shipping_line' => 'required',
             'empty_container_pickup' => 'required',
@@ -366,15 +369,16 @@ class ExportDeliveryOrderController extends Controller
             ], 422);
         }
 
-        // Each packaging must be in the Form-E's Job Order and within what it has left
-        $packagingError = ExportPackagingService::validateRows($formE, $request->packing_items);
-        if ($packagingError) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => $packagingError,
-            ], 422);
-        }
+        // Per-packaging Job Order limit: abhi band hai (client ke kehne par). Jab stock panel complete ho
+        // jayega to ye check stock se lagega, JO se nahi. Tab tak sirf Form-E ka total check upar chalta hai.
+        // $packagingError = ExportPackagingService::validateRows($formE, $request->packing_items);
+        // if ($packagingError) {
+        //     DB::rollBack();
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => $packagingError,
+        //     ], 422);
+        // }
 
         $deliveryOrder = \Illuminate\Support\Facades\Cache::lock('export_do_generation', 10)->block(5, function () use ($request) {
             // Re-generate reference_no server-side to ensure uniqueness
@@ -797,7 +801,7 @@ class ExportDeliveryOrderController extends Controller
             'loading_date' => 'required|date',
             'estimated_payment_date' => 'required|date',
             'freight_amount' => 'required|string',
-            'transporter_id' => 'required|array',
+            'transporter_id' => 'nullable|array', // optional
             'c_agent' => 'required',
             'shipping_line' => 'required',
             'empty_container_pickup' => 'required',
@@ -884,15 +888,16 @@ class ExportDeliveryOrderController extends Controller
                 ], 422);
             }
 
-            // Each packaging must be in the Form-E's Job Order and within what it has left
-            $packagingError = ExportPackagingService::validateRows($formE, $request->packing_items, (int) $id);
-            if ($packagingError) {
-                DB::rollBack();
-                return response()->json([
-                    'status' => 'error',
-                    'message' => $packagingError,
-                ], 422);
-            }
+            // Per-packaging Job Order limit: abhi band hai (client ke kehne par). Jab stock panel complete ho
+            // jayega to ye check stock se lagega, JO se nahi. Tab tak sirf Form-E ka total check upar chalta hai.
+            // $packagingError = ExportPackagingService::validateRows($formE, $request->packing_items, (int) $id);
+            // if ($packagingError) {
+            //     DB::rollBack();
+            //     return response()->json([
+            //         'status' => 'error',
+            //         'message' => $packagingError,
+            //     ], 422);
+            // }
 
             $deliveryOrder->update([
                 'remarks' => $request->remarks,

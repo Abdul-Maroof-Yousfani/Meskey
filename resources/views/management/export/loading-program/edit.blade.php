@@ -177,7 +177,7 @@
                 $.ajax({
                     url: '{{ route('fetch.export.orders.by.location') }}',
                     type: 'GET',
-                    data: { location_id: locationId },
+                    data: { location_id: locationId, loading_program_id: {{ $loadingProgram->id }} },
                     success: function(response) {
                         if (response.success) {
                             window.isUpdatingUI = true;
