@@ -307,7 +307,7 @@ class ExportDeliveryOrderController extends Controller
             'loading_date' => 'required|date',
             'estimated_payment_date' => 'required|date',
             'freight_amount' => 'required|string',
-            'transporter_id' => 'nullable|array', // optional
+            'transporter_id' => 'required|array',
             'c_agent' => 'required',
             'shipping_line' => 'required',
             'empty_container_pickup' => 'required',
@@ -801,7 +801,7 @@ class ExportDeliveryOrderController extends Controller
             'loading_date' => 'required|date',
             'estimated_payment_date' => 'required|date',
             'freight_amount' => 'required|string',
-            'transporter_id' => 'nullable|array', // optional
+            'transporter_id' => 'required|array',
             'c_agent' => 'required',
             'shipping_line' => 'required',
             'empty_container_pickup' => 'required',

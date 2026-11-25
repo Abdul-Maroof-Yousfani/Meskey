@@ -845,7 +845,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Transporter:</label>
+                        <label>Transporter: <span class="text-danger">*</span></label>
                         @php
                             $decodedTransporters = json_decode($deliveryOrder->transporter_id ?? "", true);
                             $selectedTransporters = is_array($decodedTransporters) ? $decodedTransporters : ($deliveryOrder->transporter_id ? (array) $deliveryOrder->transporter_id : []);

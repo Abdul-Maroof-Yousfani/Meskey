@@ -662,7 +662,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Transporter:</label>
+                        <label>Transporter: <span class="text-danger">*</span></label>
                         <select name="transporter_id[]" id="transporter_id" class="form-control select2" multiple>
                             <!-- Options will be populated via AJAX based on selected Export Order -->
                         </select>
