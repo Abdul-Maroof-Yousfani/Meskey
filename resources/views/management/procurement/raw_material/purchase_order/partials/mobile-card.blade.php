@@ -110,7 +110,7 @@
         @endif
     </div>
 
-    {{-- View bahar; baaki (Edit / Audit Logs / Delete) ⋯ sheet me (public/management/assets/js/mobile-card-sheet.js) --}}
+    {{-- View bahar; baaki (Edit / View Trucks / Audit Logs / Delete) ⋯ sheet me (public/management/assets/js/mobile-card-sheet.js) --}}
     <div class="tkc-actions">
         <button type="button" class="tkc-btn" onclick="openModal(this,'{{ $viewUrl }}','View Purchase Order')" title="View">
             <i class="ft-eye"></i><span>View</span>
@@ -127,6 +127,12 @@
                 <i class="ft-edit"></i><span>{{ $editTitle }}</span>
             </a>
         @endif
+        @canAccess('procurement-raw-purchase-order-view-trucks')
+        <a href="javascript:;" class="tkc-sheet-item"
+            onclick="openModal(this,'{{ route('raw-material.purchase-order.trucks', $row->id) }}','Trucks: Contract #{{ $row->contract_no }}', true, '55%')">
+            <i class="fa fa-truck"></i><span>View Trucks</span>
+        </a>
+        @endcanAccess
         <a href="javascript:;" class="tkc-sheet-item"
             onclick="openModal(this,'{{ route('raw-material.purchase-order.audit-logs', $row->id) }}','Audit Logs: Contract #{{ $row->contract_no }}', false, '55%')">
             <i class="fa fa-history"></i><span>Audit Logs</span>
