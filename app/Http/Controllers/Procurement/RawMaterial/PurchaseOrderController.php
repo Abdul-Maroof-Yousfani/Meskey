@@ -52,7 +52,10 @@ class PurchaseOrderController extends Controller
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::with([
             'stockInTransitTickets',
             'rejectedArrivalTickets',
-        ])->when($request->filled('search'), function ($q) use ($request) {
+        ])
+            // truck icon ka counter (wahi tickets jo trucks modal me dikhte hain)
+            ->withCount('arrivalTickets')
+            ->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->orWhereHas('supplier', function ($supplierQ) use ($searchTerm) {

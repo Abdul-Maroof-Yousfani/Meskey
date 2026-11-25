@@ -164,10 +164,14 @@
                     <i class="ft-eye font-medium-3"></i>
                 </a>
                 
-                @canAccess('procurement-raw-purchase-order-view-trucks')
+                @canAccess('procurement-raw-purchase-order-view-grn')
                 <a onclick="openModal(this,'{{ route('raw-material.purchase-order.trucks', $row->id) }}','Trucks: Contract #{{ $row->contract_no }}', true, '55%')"
                     class="warning p-1 text-center mr-2 position-relative" title="View Trucks" style="cursor: pointer;">
                     <i class="fa fa-truck font-medium-3"></i>
+                    <span class="badge badge-pill {{ ($row->arrival_tickets_count ?? 0) > 0 ? 'badge-danger' : 'badge-secondary' }}"
+                        style="position: absolute; top: -6px; right: -8px; font-size: 9px; padding: 2px 5px; line-height: 1;">
+                        {{ $row->arrival_tickets_count ?? 0 }}
+                    </span>
                 </a>
                 @endcanAccess
 

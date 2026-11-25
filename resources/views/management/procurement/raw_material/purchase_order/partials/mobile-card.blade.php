@@ -127,10 +127,10 @@
                 <i class="ft-edit"></i><span>{{ $editTitle }}</span>
             </a>
         @endif
-        @canAccess('procurement-raw-purchase-order-view-trucks')
+        @canAccess('procurement-raw-purchase-order-view-grn')
         <a href="javascript:;" class="tkc-sheet-item"
             onclick="openModal(this,'{{ route('raw-material.purchase-order.trucks', $row->id) }}','Trucks: Contract #{{ $row->contract_no }}', true, '55%')">
-            <i class="fa fa-truck"></i><span>View Trucks</span>
+            <i class="fa fa-truck"></i><span>View Trucks ({{ $row->arrival_tickets_count ?? 0 }})</span>
         </a>
         @endcanAccess
         <a href="javascript:;" class="tkc-sheet-item"
