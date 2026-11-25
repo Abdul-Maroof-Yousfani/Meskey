@@ -44,6 +44,41 @@ class ExportLoadingSlip extends LoadingSlip
             $exportOrder?->packingItems->first(fn ($packingItem) => (float) $packingItem->min_weight_empty_bags > 0)
         )->min_weight_empty_bags;
 
+        // Line items: each packaging's empty / extra bags weigh what that packaging's bag weighs
+        $items = $this->items()->with('deliveryOrderPackingItem')->get();
+        if ($items->isNotEmpty()) {
+            $bags = 0;
+            $weightG = 0.0;
+            foreach ($items as $slipItem) {
+                $itemBags = (int) $slipItem->empty_bags + (int) $slipItem->extra_bags;
+                if ($itemBags <= 0) {
+                    continue;
+                }
+                $itemWeightG = (float) ($slipItem->deliveryOrderPackingItem?->min_weight_empty_bags ?? 0);
+                if ($itemWeightG <= 0 && $exportOrder) {
+                    $itemWeightG = (float) optional(\App\Services\Export\ExportPackagingService::matchExportOrderItem(
+                        $exportOrder->packingItems,
+                        $slipItem->bag_type_id,
+                        $slipItem->brand_id,
+                        $slipItem->bag_size,
+                        $slipItem->deliveryOrderPackingItem?->bag_condition_id,
+                        $slipItem->deliveryOrderPackingItem?->bag_color_id
+                    ))->min_weight_empty_bags;
+                }
+                if ($itemWeightG <= 0) {
+                    $itemWeightG = $perBagWeightG;
+                }
+                $bags += $itemBags;
+                $weightG += $itemBags * $itemWeightG;
+            }
+
+            return [
+                'bags' => $bags,
+                'per_bag_weight_g' => $bags > 0 ? round($weightG / $bags, 2) : $perBagWeightG,
+                'weight_kg' => round($weightG / 1000, 2),
+            ];
+        }
+
         $bags = (int) $this->empty_bags + (int) $this->extra_bags;
 
         return [
@@ -51,6 +86,12 @@ class ExportLoadingSlip extends LoadingSlip
             'per_bag_weight_g' => $perBagWeightG,
             'weight_kg' => round($bags * $perBagWeightG / 1000, 2),
         ];
+    }
+
+    /** Packagings loaded on this truck (bags / empty / extra per DO packing row). */
+    public function items()
+    {
+        return $this->hasMany(ExportLoadingSlipItem::class, 'loading_slip_id');
     }
 
     public function secondWeighbridge()

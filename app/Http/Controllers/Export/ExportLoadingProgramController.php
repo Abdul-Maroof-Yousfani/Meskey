@@ -605,6 +605,7 @@ class ExportLoadingProgramController extends Controller
                     $locQ->where('company_location_id', $location_id);
                 });
             })
+            ->orderBy('id', 'desc')
             ->pluck('export_order_id')
             ->unique()
             ->filter()
@@ -617,6 +618,7 @@ class ExportLoadingProgramController extends Controller
                 $q->select('export_order_id')->from('export_order_addendums');
             })
             ->whereIn('id', $exportOrderIds)
+            ->orderBy('id', 'desc')
             ->get()
             ->map(function ($eo) {
                 return [

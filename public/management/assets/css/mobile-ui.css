@@ -24,6 +24,7 @@
    19. Inputs + select2 - UNIVERSAL (poora project) - desktop / tablet >= 768px
    20. Machine Plan Setting form + Manage Logs (mpl-*) - sirf mobile
    21. Output QC Alerts (list margin + read-only QC checklist) - sirf mobile
+   22. Users (acl/users-test): edit page + Assigned Companies cards - sirf mobile
    ===================================================================== */
 
 /* #####################################################################
@@ -5946,5 +5947,169 @@ body.layout-dark .kyc-card .kyc-value.is-na {
     body .qc-readonly-checklist .form-control {
         height: 36px;
         font-size: 13px;
+    }
+}
+
+/* #####################################################################
+   22. Users (acl/users-test) - sirf mobile < 768px
+   Files: acl/users-test/* (list = tkc cards, edit page + popups = tkf-page)
+   Edit page: avatar beech me, "Assigned Companies & Locations" table -> har company ek card (tr.tkc, actions 3-dots sheet me)
+   ##################################################################### */
+@media (max-width: 767.98px) {
+    body .ut-edit .card.p-4 {
+        padding: 0 !important;
+    }
+
+    body .ut-edit .card-header:empty {
+        display: none;
+    }
+
+    body .ut-edit .avatar-upload {
+        margin: 0 auto 12px;
+    }
+
+    body .ut-edit .alert .row > [class*="col"] {
+        margin-bottom: 4px;
+    }
+
+    /* neeche ke buttons poori width, ek ke neeche ek */
+    body .ut-edit .bottom-button-bar .col-12,
+    body .ut-form .bottom-button-bar .col-12 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    body .ut-edit .bottom-button-bar .btn,
+    body .ut-form .bottom-button-bar .btn {
+        flex: 1 1 auto;
+        margin: 0 !important;
+    }
+
+    /* ---- Assign / Edit Company popup (assign + edit-assign) ---- */
+    /* andar wala container: form ki padding kaafi hai, apni padding kam */
+    body .ut-form #card-container {
+        padding: 0 !important;
+    }
+
+    body .ut-form .perm_form-mar,
+    body .ut-form .perm_form-group {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* "Permissions:" label ek row, Expand All / Collapse All neeche alag row (aadha aadha) */
+    body .ut-form .perm_permissions-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    body .ut-form .perm_permissions-actions {
+        width: 100%;
+        gap: 8px;
+    }
+
+    body .ut-form .perm_btn-action {
+        flex: 1 1 0;
+        height: 36px;
+    }
+
+    body .ut-form .perm_permissions-search {
+        margin-bottom: 12px;
+    }
+
+    /* permission tree: kam padding + kam indent */
+    body .ut-form .perm_permission-header {
+        padding: 10px 12px;
+    }
+
+    body .ut-form .perm_level-1,
+    body .ut-form .perm_level-2,
+    body .ut-form [class*="perm_level-"]:not(.perm_level-0) {
+        margin-left: 12px;
+    }
+
+    body .ut-form .perm_level-1 > .perm_permission-header,
+    body .ut-form .perm_level-2 > .perm_permission-header {
+        padding: 8px 10px;
+        margin-right: 0;
+    }
+
+    body .ut-form .perm_level-1 > .perm_permission-header:before,
+    body .ut-form .perm_level-2 > .perm_permission-header:before {
+        left: -12px;
+        width: 10px;
+    }
+
+    /* ---- Assigned Companies: table -> cards ---- */
+    body .ut-assigned {
+        margin-top: 20px !important;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    body .ut-assigned > [class*="col"] {
+        padding: 0;
+    }
+
+    body .ut-assigned h4 {
+        font-size: 1rem;
+    }
+
+    body .ut-assigned .card {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    body .ut-assigned table,
+    body .ut-assigned tbody,
+    body .ut-assigned tr,
+    body .ut-assigned td {
+        display: block;
+        width: 100%;
+    }
+
+    body .ut-assigned thead {
+        display: none;
+    }
+
+    body .ut-assigned tr {
+        margin-bottom: 12px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(30, 20, 60, .06);
+        overflow: hidden;
+    }
+
+    body .ut-assigned td {
+        border: 0 !important;
+        padding: 10px 14px !important;
+    }
+
+    body .ut-assigned td:first-child {
+        padding-top: 14px !important;
+        font-size: 15px;
+    }
+
+    body .ut-assigned td:first-child + td > div {
+        max-height: none !important;
+    }
+
+    /* actions: neeche ek line, right side - 3-dots (tkc-more) button; desktop links hide-mobile */
+    body .ut-assigned td:last-child {
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid #f0f1f5 !important;
+    }
+
+    body.layout-dark .ut-assigned tr {
+        background: #1d1e24;
+    }
+
+    body.layout-dark .ut-assigned td:last-child {
+        border-top-color: #30323c !important;
     }
 }

@@ -1,3 +1,5 @@
+{{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page ut-form">
 {!! Form::open([
     'route' => ['users-test.assign.save', $user->id],
     'method' => 'POST',
@@ -204,6 +206,7 @@
 </div>
 
 {!! Form::close() !!}
+</div>
 
 <script>
     $(document).ready(function() {

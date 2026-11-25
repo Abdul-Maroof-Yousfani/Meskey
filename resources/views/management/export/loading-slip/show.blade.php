@@ -66,6 +66,54 @@
                 </div>
             </div>
 
+            @if($loadingSlip->items->isNotEmpty())
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="header-heading-sepration">Packagings on this Truck</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>DO</th>
+                                        <th>Packaging</th>
+                                        <th>Bag Size</th>
+                                        <th>No. of Bags</th>
+                                        <th>Empty Bags</th>
+                                        <th>Extra Bags</th>
+                                        <th class="text-right">KG</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($loadingSlip->items as $slipItem)
+                                        <tr>
+                                            <td>{{ $slipItem->deliveryOrder->reference_no ?? '-' }}</td>
+                                            <td>
+                                                <strong>{{ $slipItem->bagType->name ?? (bag_type_name($slipItem->bag_type_id) ?: 'N/A') }}</strong>
+                                                @if($slipItem->brand)<br><small class="text-muted">{{ $slipItem->brand->name }}</small>@endif
+                                            </td>
+                                            <td>{{ rtrim(rtrim(number_format((float) $slipItem->bag_size, 2), '0'), '.') }} KG</td>
+                                            <td>{{ $slipItem->no_of_bags }}</td>
+                                            <td>{{ $slipItem->empty_bags }}</td>
+                                            <td>{{ $slipItem->extra_bags }}</td>
+                                            <td class="text-right">{{ number_format((float) $slipItem->kilogram, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-weight-bold">
+                                        <td colspan="3" class="text-right">Total</td>
+                                        <td>{{ $loadingSlip->items->sum('no_of_bags') }}</td>
+                                        <td>{{ $loadingSlip->items->sum('empty_bags') }}</td>
+                                        <td>{{ $loadingSlip->items->sum('extra_bags') }}</td>
+                                        <td class="text-right">{{ number_format((float) $loadingSlip->items->sum('kilogram'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-xs-12 col-sm-3 col-md-3">
                     <div class="form-group">

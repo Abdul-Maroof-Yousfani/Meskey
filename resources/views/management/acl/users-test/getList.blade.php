@@ -1,3 +1,17 @@
+{{-- ===== MOBILE: cards (wahi $users) - mobile-ui.css section 6 ===== --}}
+<div class="tkc-list">
+    @forelse ($users as $user)
+        @include('management.acl.users-test.partials.mobile-card', ['user' => $user])
+    @empty
+        <div class="tkc-empty">
+            <i class="ft-inbox"></i>
+            No users found
+        </div>
+    @endforelse
+</div>
+
+{{-- ===== DESKTOP: table (mobile par chhupa; pagination dono par) ===== --}}
+<div class="tk-table-wrap">
 <table class="table m-0">
     <thead>
         <tr>
@@ -235,6 +249,7 @@
         @endif
     </tbody>
 </table>
+</div>
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}

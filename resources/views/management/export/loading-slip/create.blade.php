@@ -164,37 +164,14 @@
 
         var commonInputsHtml = `
             <div class="row pt-2">
-                <div class="col-xs-12 col-sm-6 col-md-6">
-                    <div class="form-group">
-                        <label>Bag Size:</label>
-                        <input type="number" name="bag_size_display" value="${data.bag_size}" class="form-control" readonly step="0.01" />
-                        <input type="hidden" name="bag_size" value="${data.bag_size}" />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-6">
-                    <div class="form-group">
-                        <label>No. of Bags: <span class="text-danger">*</span></label>
-                        <input type="number" name="no_of_bags" id="no_of_bags" class="form-control" min="1" max="${data.remaining_bags || ''}" required>
-                        <small class="text-muted">Available bags: ${typeof data.remaining_bags !== 'undefined' ? data.remaining_bags : 0}</small>
-                    </div>
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">Packagings on this Truck</h6>
+                    ${packagingItemsTableHtml(data.packagings || [], {})}
+                    <div id="slip_items_error" class="alert alert-danger py-1 mt-1" style="display:none;"></div>
                 </div>
             </div>
 
             <div class="row">
-                <div class="col-xs-12 col-sm-3 col-md-3">
-                    <div class="form-group">
-                        <label>Empty Bags:</label>
-                        <input type="number" name="empty_bags" id="empty_bags" class="form-control" min="0" max="${data.available_empty_bags ?? 0}" placeholder="Enter Empty Bags">
-                        <small class="text-muted">Available Empty Bags: ${data.available_empty_bags ?? 0}</small>
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-3 col-md-3">
-                    <div class="form-group">
-                        <label>Extra Bags:</label>
-                        <input type="number" name="extra_bags" id="extra_bags" class="form-control" min="0" max="${data.available_extra_bags ?? 0}" placeholder="Enter Extra Bags">
-                        <small class="text-muted">Available Extra Bags: ${data.available_extra_bags ?? 0}</small>
-                    </div>
-                </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Gala: <span class="text-danger">*</span></label>
@@ -208,13 +185,13 @@
             <div class="row">
                 <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
-                        <label>Kilogram: <span class="text-danger">*</span></label>
-                        <input type="number" name="kilogram" id="kilogram" value="0.00" class="form-control" readonly required step="0.01" />
+                        <label>Kilogram (Total):</label>
+                        <input type="number" id="kilogram" value="0.00" class="form-control" readonly step="0.01" />
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
-                        <label>Metric Tons:</label>
+                        <label>Metric Tons (Total):</label>
                         <input type="number" id="metric_tons_display" value="0.00" class="form-control" readonly step="0.01" />
                     </div>
                 </div>
@@ -283,14 +260,9 @@
             }
         });
 
-        $('#no_of_bags').on('input', function() {
-            var noOfBags = parseFloat($('#no_of_bags').val()) || 0;
-            var bagSize = parseFloat($('input[name="bag_size"]').val()) || 0;
-            var kilogram = noOfBags * bagSize;
-            $('#kilogram').val(kilogram.toFixed(2));
-            $('#metric_tons_display').val((kilogram / 1000).toFixed(2));
-        });
+        recalcSlipItems();
     }
+
 
     function addStackRow() {
         var idx = $('#stacks_table tbody tr').length;
@@ -335,3 +307,5 @@
     }
 
 </script>
+
+@include('management.export.loading-slip.partials.items-script')

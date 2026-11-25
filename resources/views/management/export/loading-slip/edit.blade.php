@@ -57,36 +57,21 @@
             </div>
 
             <div class="row pt-2">
-                <div class="col-xs-12 col-sm-6 col-md-6">
-                    <div class="form-group">
-                        <label>Bag Size:</label>
-                        <input type="number" name="bag_size_display" value="{{ $loadingSlip->bag_size }}" class="form-control" readonly step="0.01" />
-                        <input type="hidden" name="bag_size" value="{{ $loadingSlip->bag_size }}" />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-6">
-                    <div class="form-group">
-                        <label>No. of Bags: <span class="text-danger">*</span></label>
-                        <input type="number" name="no_of_bags" id="no_of_bags" value="{{ $loadingSlip->no_of_bags }}" class="form-control" min="1" required>
-                    </div>
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">Packagings on this Truck</h6>
+                    @if($savedItems->isEmpty() && (int) $loadingSlip->no_of_bags > 0)
+                        <div class="alert alert-warning py-1">
+                            This slip was saved before packaging lines: Total {{ $loadingSlip->no_of_bags }} bags,
+                            {{ (int) $loadingSlip->empty_bags }} empty, {{ (int) $loadingSlip->extra_bags }} extra.
+                            Please enter them packaging-wise below.
+                        </div>
+                    @endif
+                    <div id="slip_items_container"></div>
+                    <div id="slip_items_error" class="alert alert-danger py-1 mt-1" style="display:none;"></div>
                 </div>
             </div>
 
             <div class="row">
-                <div class="col-xs-12 col-sm-3 col-md-3">
-                    <div class="form-group">
-                        <label>Empty Bags:</label>
-                        <input type="number" name="empty_bags" id="empty_bags" value="{{ $loadingSlip->empty_bags }}" class="form-control" min="0" max="{{ $extraEmptyBags['available_empty_bags'] }}" placeholder="Enter Empty Bags">
-                        <small class="text-muted">Available Empty Bags: {{ $extraEmptyBags['available_empty_bags'] }}</small>
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-3 col-md-3">
-                    <div class="form-group">
-                        <label>Extra Bags:</label>
-                        <input type="number" name="extra_bags" id="extra_bags" value="{{ $loadingSlip->extra_bags }}" class="form-control" min="0" max="{{ $extraEmptyBags['available_extra_bags'] }}" placeholder="Enter Extra Bags">
-                        <small class="text-muted">Available Extra Bags: {{ $extraEmptyBags['available_extra_bags'] }}</small>
-                    </div>
-                </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Gala: <span class="text-danger">*</span></label>
@@ -102,13 +87,13 @@
             <div class="row">
                 <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
-                        <label>Kilogram:</label>
-                        <input type="number" name="kilogram" id="kilogram" value="{{ $loadingSlip->kilogram ?? '' }}" class="form-control" readonly step="0.01" />
+                        <label>Kilogram (Total):</label>
+                        <input type="number" id="kilogram" value="{{ $loadingSlip->kilogram ?? '' }}" class="form-control" readonly step="0.01" />
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
-                        <label>Metric Tons:</label>
+                        <label>Metric Tons (Total):</label>
                         <input type="number" id="metric_tons_display" value="{{ number_format(($loadingSlip->kilogram ?? 0) / 1000, 2, '.', '') }}" class="form-control" readonly step="0.01" />
                     </div>
                 </div>
@@ -245,6 +230,8 @@
     </div>
 </form>
 
+@include('management.export.loading-slip.partials.items-script')
+
 <script>
     $(document).ready(function() {
         $(".select2-common, .select2-dynamic").select2({ width: '100%' });
@@ -270,13 +257,16 @@
             }
         });
 
-        $('#no_of_bags').on('input', function() {
-            var noOfBags = parseFloat($('#no_of_bags').val()) || 0;
-            var bagSize = parseFloat($('input[name="bag_size"]').val()) || 0;
-            var kilogram = noOfBags * bagSize;
-            $('#kilogram').val(kilogram.toFixed(2));
-            $('#metric_tons_display').val((kilogram / 1000).toFixed(2));
-        });
+        // Packaging lines (this slip's saved bags / empty / extra per packaging)
+        @php
+            $savedItemsMap = $savedItems->map(fn($i) => [
+                'no_of_bags' => (int) $i->no_of_bags,
+                'empty_bags' => (int) $i->empty_bags,
+                'extra_bags' => (int) $i->extra_bags,
+            ]);
+        @endphp
+        $('#slip_items_container').html(packagingItemsTableHtml(@json($packagings), @json((object) $savedItemsMap->all())));
+        recalcSlipItems();
     });
 
     function addStackRow() {

@@ -120,6 +120,15 @@
     $packingItem = $eoPackingItems->first();
     $packingSize = $packingItem?->bag_size ?? '';
     $bagType = $packingItem?->bagType?->name ?? '';
+
+    // Loading slip packaging lines: exactly what went on this truck
+    $slipItems = $loadingSlip ? $loadingSlip->items()->with('bagType')->where('no_of_bags', '>', 0)->get() : collect();
+    if ($slipItems->isNotEmpty()) {
+        $noOfBags = (int) $slipItems->sum('no_of_bags');
+        $emptyBags = (int) $loadingSlip->items()->sum('empty_bags');
+        $packingSize = $slipItems->map(fn($si) => rtrim(rtrim(number_format((float) $si->bag_size, 2), '0'), '.'))->unique()->implode(' / ');
+        $bagType = $slipItems->map(fn($si) => $si->bagType?->name ?? bag_type_name($si->bag_type_id))->filter()->unique()->implode(' / ');
+    }
     
     $galaa = $DispatchQc->gala ?? ($item->subArrivalLocation->name ?? '');
     $location = $DispatchQc->factory ?? ($item->arrivalLocation->name ?? '');

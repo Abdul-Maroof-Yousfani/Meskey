@@ -5,9 +5,14 @@
 
 @section('content')
     <div class="content-wrapper">
-        <section id="extended">
+        {{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 22). Desktop same. --}}
+        <section id="extended" class="tkf-page ut-edit">
 
             <div class="row w-100 mx-auto">
+                {{-- back button: sirf mobile header par (desktop par CSS se chhupa) --}}
+                <a href="{{ route('users-test.index') }}" class="mph-back" aria-label="Back" title="Back">
+                    <i class="ft-arrow-left"></i>
+                </a>
 
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">Edit User - {{ ucfirst($user->name) }}<small
@@ -56,9 +61,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-8">
+                                <div class="col-12 col-md-8">
                                     <div class="row">
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label>Name:</label>
                                                 {!! Form::text('name', null, [
@@ -68,7 +73,7 @@
                                                 ]) !!}
                                             </div>
                                         </div>
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label>Username:</label>
                                                 {!! Form::text('username', null, [
@@ -96,13 +101,13 @@
 
                                     <div class="row">
                                         <!-- Password Fields -->
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label>Password:</label>
                                                 {!! Form::password('password', ['placeholder' => 'Leave blank to keep current', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label>Confirm Password:</label>
                                                 {!! Form::password('password_confirmation', ['placeholder' => 'Confirm Password', 'class' => 'form-control']) !!}
@@ -112,7 +117,7 @@
 
                                     <div class="row">
                                         <!-- User Type Field -->
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label>User Type:</label>
                                                 <input type="hidden" name="user_type" value="{{ $user->user_type }}"
@@ -130,7 +135,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <div class="form-group">
                                                 <label>Parent User (Optional):</label>
                                                 <select name="parent_user_id" id="parent_user_id" class="form-control">
@@ -213,7 +218,7 @@
             </div>
 
             @if ($user->companies)
-                <div class="row mt-5">
+                <div class="row mt-5 ut-assigned">
                     <div class="col-md-12">
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -255,7 +260,8 @@
                                                 $role = \Spatie\Permission\Models\Role::find($pivot->role_id);
                                             @endphp
 
-                                            <tr>
+                                            {{-- tkc: mobile par ye row card banti hai (3-dots sheet ke liye) --}}
+                                            <tr class="tkc">
                                                 <!-- Company -->
                                                 <td class="align-middle">
                                                     <strong>{{ $comp->name }}</strong>
@@ -322,6 +328,7 @@
 
                                                 <!-- Actions -->
                                                 <td class="text-center align-middle">
+                                                    <span class="hide-mobile">
                                                     @canAccess('user-list')
                                                     <a onclick="openModal(this,'{{ route('users-test.company-audit-logs', ['userId' => $user->id, 'companyId' => $comp->id]) }}','Audit Logs: {{ $comp->name }}', false, '55%')"
                                                         class="info p-1 text-center mr-2 position-relative cursor-pointer"
@@ -347,7 +354,33 @@
                                                         <i class="ft-x font-medium-3"></i>
                                                     </a>
                                                     @endcanAccess
+                                                    </span>
 
+                                                    {{-- mobile: saare actions 3-dots sheet me (mobile-card-sheet.js) --}}
+                                                    <button type="button" class="tkc-more show-mobile" aria-label="Actions"
+                                                        title="Actions" data-title="{{ $comp->name }}">
+                                                        <i class="ft-more-horizontal"></i>
+                                                    </button>
+                                                    <template class="tkc-extra">
+                                                        @canAccess('company-edit')
+                                                        <a href="javascript:;" class="tkc-sheet-item"
+                                                            onclick="openModal(this,'{{ route('users-test.edit-assign', ['userId' => $user->id, 'companyId' => $comp->id, 'roleId' => $role->id]) }}','Edit Company')">
+                                                            <i class="ft-edit"></i><span>Edit</span>
+                                                        </a>
+                                                        @endcanAccess
+                                                        @canAccess('user-list')
+                                                        <a href="javascript:;" class="tkc-sheet-item"
+                                                            onclick="openModal(this,'{{ route('users-test.company-audit-logs', ['userId' => $user->id, 'companyId' => $comp->id]) }}','Audit Logs: {{ $comp->name }}', false, '55%')">
+                                                            <i class="fa fa-history"></i><span>Audit Logs</span>
+                                                        </a>
+                                                        @endcanAccess
+                                                        @canAccess('company-delete')
+                                                        <a href="javascript:;" class="tkc-sheet-item is-danger"
+                                                            onclick="deletemodal('{{ route('users-test.delete-assign', ['userId' => $user->id, 'companyId' => $comp->id, 'roleId' => $role->id]) }}','{{ route('get.users.test') }}')">
+                                                            <i class="ft-trash-2"></i><span>Delete</span>
+                                                        </a>
+                                                        @endcanAccess
+                                                    </template>
                                                 </td>
                                             </tr>
                                         @endforeach

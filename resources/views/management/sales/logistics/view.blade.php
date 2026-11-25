@@ -150,10 +150,12 @@
                                 <th>Rate</th>
                                 <th>{{ $partnerLabel }}</th>
                                 <th>{{ $isExport ? 'No. of containers' : 'Qty' }}</th>
+                                {{-- Brand / Packing Size (export order only) hata diye; zaroorat ho to yeh comment hata dein
                                 @if($isExport)
                                 <th>Brand</th>
                                 <th>Packing Size</th>
                                 @endif
+                                --}}
                             </tr>
                         </thead>
                         <tbody>
@@ -163,10 +165,12 @@
                                     <td>{{ number_format($item->rate, 2) }}</td>
                                     <td>{{ $item->transporter_name ?? $item->transporter?->company_name ?? $item->transporter?->name ?? 'N/A' }}</td>
                                     <td>{{ round($item->qty) }}</td>
+                                    {{-- Brand / Packing Size (export order only) hata diye
                                     @if($isExport)
                                     <td>{{ $item->brand }}</td>
                                     <td>{{ $item->packing_size }}</td>
                                     @endif
+                                    --}}
                                 </tr>
                             @endforeach
                         </tbody>

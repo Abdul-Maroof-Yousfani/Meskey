@@ -66,7 +66,7 @@
 
             // baaki columns = actions. Add / Create / New wala button -> gol ➕, doosre icon wale button -> gol icon
             Array.prototype.forEach.call(row.children, function (col) {
-                if (col === titleCol) return;
+                if (col === titleCol || col.classList.contains('mph-back')) return; // back button jaisa hai waisa rahe
                 col.classList.add('mph-actions');
                 var createDone = false;
                 col.querySelectorAll('a.btn, button.btn').forEach(function (btn) {

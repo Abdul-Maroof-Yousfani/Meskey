@@ -1344,3 +1344,22 @@ th {
   top: 0 !important;
   left: 100% !important;
 }
+/* ===== Sticky table (x-sticky-table) - EMPTY state =====
+   Bohat columns wali table (jaise /reports/arrival/truck-detail) me "No records" icon poori chauri
+   table ke beech me banta tha (screen se bahar). Ab wo dikhne wale hisse (scroller) ke beech me rehta hai.
+   Sirf tab lagta hai jab table khaali ho (:has placeholder). */
+.sticky-table-scroller:has(.ant-table-placeholder) {
+  container-type: inline-size;
+}
+
+.sticky-table .ant-table-placeholder > td {
+  text-align: left !important;
+}
+
+.sticky-table .ant-table-placeholder > td > div {
+  position: sticky;
+  left: 0;
+  width: 100cqw;
+  max-width: 100cqw;
+  text-align: center;
+}

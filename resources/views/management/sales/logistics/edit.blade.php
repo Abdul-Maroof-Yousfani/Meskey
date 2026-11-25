@@ -241,8 +241,10 @@
                                     <th>Rate</th>
                                     <th id="partner_column_label">Transporter</th>
                                     <th id="qty_column_label">Qty</th>
+                                    {{-- Brand / Packing Size (export order only) hata diye; DB columns nullable hain, zaroorat ho to yeh comments hata dein
                                     <th class="export-only-fields" style="display: none;">Brand</th>
                                     <th class="export-only-fields" style="display: none;">Packing Size</th>
+                                    --}}
                                     <th width="50">Action</th>
                                 </tr>
                             </thead>
@@ -269,6 +271,7 @@
                                         <input type="number" name="items[0][qty]" class="form-control"
                                             step="0.01" required>
                                     </td>
+                                    {{-- Brand / Packing Size (export order only) hata diye
                                     <td class="export-only-fields" style="display: none;">
                                         <select name="items[0][brand]" class="form-control brand-select">
                                             <option value="">Select Brand</option>
@@ -279,6 +282,7 @@
                                             <option value="">Select Size</option>
                                         </select>
                                     </td>
+                                    --}}
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-danger remove-row"
                                             disabled>
@@ -531,6 +535,7 @@
                     <td>
                         <input type="number" name="items[${rowCount}][qty]" class="form-control" step="0.01" value="${qty}" required>
                     </td>
+                    {{-- Brand / Packing Size (export order only) hata diye
                     <td class="export-only-fields" ${displayStyle}>
                         <select name="items[${rowCount}][brand]" class="form-control brand-select">
                             ${brandOptionsHtml}
@@ -541,7 +546,11 @@
                             ${packingSizeOptionsHtml}
                         </select>
                     </td>
+                    --}}
                     <td class="text-center">
+                        {{-- Fields hidden hain: purane record ki saved Brand / Packing Size update par null na ho --}}
+                        <input type="hidden" name="items[${rowCount}][brand]" value="${$('<div>').text(brand || '').html().replace(/"/g, '&quot;')}">
+                        <input type="hidden" name="items[${rowCount}][packing_size]" value="${$('<div>').text(packingSize || '').html().replace(/"/g, '&quot;')}">
                         <button type="button" class="btn btn-sm btn-danger remove-row">
                             <i class="fa fa-trash"></i>
                         </button>

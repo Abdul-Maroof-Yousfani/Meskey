@@ -499,6 +499,7 @@ class ExportDeliveryChallanController extends Controller
             'exportLoadingSlip.deliveryOrder.exportPackingItems.brand',
             'exportLoadingSlip.deliveryOrder.exportOrder.packingItems',
             'exportLoadingSlip.secondWeighbridge',
+            'exportLoadingSlip.items',
         ])->where('id', $ticket_id)->get();
         $items = Product::select('id', 'name')->get();
         $existingRows = collect();
@@ -844,12 +845,8 @@ class ExportDeliveryChallanController extends Controller
             return 0;
         }
 
-        $eoPackings = $doRow->deliveryOrder?->exportOrder?->packingItems ?? collect();
-        $bagSize = round((float) ($doRow->bag_size ?? 0), 3);
-
-        $eoPacking = $eoPackings->firstWhere('brand_id', $doRow->brand_id)
-            ?? $eoPackings->first(fn ($p) => round((float) $p->bag_size, 3) === $bagSize)
-            ?? $eoPackings->first();
+        // Same packaging (bag type + brand + size + condition + colour) first, then the older brand / size fallbacks
+        $eoPacking = \App\Services\Export\ExportPackagingService::exportOrderItemForDoRow($doRow);
 
         return round((float) ($eoPacking->rate ?? 0), 2);
     }

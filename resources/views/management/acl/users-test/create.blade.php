@@ -1,4 +1,6 @@
-    {!! Form::open(['route' => 'users-test.store', 'method' => 'POST', 'id' => 'ajaxSubmitSecond']) !!}
+    {{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page ut-form">
+{!! Form::open(['route' => 'users-test.store', 'method' => 'POST', 'id' => 'ajaxSubmitSecond']) !!}
     <input type="hidden" id="url" value="{{ route('users-test.index') }}" />
 
     <div class="row">
@@ -121,6 +123,7 @@
         </div>
     </div>
     {!! Form::close() !!}
+</div>
 
     <script>
         $(document).ready(function() {

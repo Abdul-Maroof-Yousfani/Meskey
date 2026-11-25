@@ -1,17 +1,21 @@
+{{-- tkf-page: mobile form UI (mobile-ui.css section 7 + 9 modal). Desktop same. --}}
+<div class="tkf-page ut-form">
 {!! Form::open([
     'route' => ['users-test.assign.save', $user->id],
     'method' => 'POST',
     'id' => 'ajaxSubmit',
 ]) !!}
-<input type="hidden" id="url" value="{{ route('users-test.index') }}" />
+{{-- Save ke baad isi user ka edit page dobara khule (list par nahi), taake Assigned Companies table update dikhe --}}
+<input type="hidden" id="url" value="{{ route('users-test.edit', $user->id) }}" />
 
 <div class="row align-items-center mb-2">
-    <div class="col-8">
+    <div class="col-12 col-md-8">
         <h6 class="header-heading-sepration mb-0">
             Company Detail
         </h6>
     </div>
-    <div class="col-4 text-right">
+    {{-- Audit Logs: mobile par chhupa (company card ke 3-dots me mojood hai) --}}
+    <div class="col-4 text-right hide-mobile">
         @canAccess('user-list')
         <button type="button" class="btn btn-sm btn-info"
             onclick="openModalAndDonotCloseLastModal(this,'{{ route('users-test.company-audit-logs', ['userId' => $user->id, 'companyId' => $companyId]) }}','Audit Logs: {{ $companies->firstWhere('id', $companyId)?->name ?? 'Company' }}', false, '55%')"
@@ -249,6 +253,7 @@
 </div>
 
 {!! Form::close() !!}
+</div>
 
 {{--
 <script>
@@ -420,7 +425,7 @@
             initSelect2();
         });
 
-        $('body').on('click', '.remove-card', function () {
+        $('body').off('click.editAssign', '.remove-card').on('click.editAssign', '.remove-card', function () {
             if ($('#card-container .clonecard').length > 1) {
                 $(this).closest('.clonecard').remove();
                 reindexCards();
@@ -454,9 +459,11 @@
 </script> --}}
 
 <script>
-    let selectedArrivals = {!! json_encode($selectedArrivals ?? []) !!};
-    let selectedLocations = {!! json_encode($selectedLocations ?? []) !!};
-    let editCompanyId = {{ $companyId ?? 'null' }};
+    // "var" (let nahi): popup dobara khulne par ye script phir chalta hai. Top-level "let" dobara declare
+    // karne par SyntaxError aata tha -> poora script ruk jata tha aur locations load nahi hoti theen.
+    var selectedArrivals = {!! json_encode($selectedArrivals ?? []) !!};
+    var selectedLocations = {!! json_encode($selectedLocations ?? []) !!};
+    var editCompanyId = {{ $companyId ?? 'null' }};
 
     $(document).ready(function () {
 
@@ -544,21 +551,22 @@
             });
         }
 
+        // Handlers namespaced + pehle off: popup dobara khulne par double nahi lagte
         // Company change
-        $(document).on('change', '.company-select', function () {
+        $(document).off('change.editAssign', '.company-select').on('change.editAssign', '.company-select', function () {
             let card = $(this).closest('.clonecard');
             let companyId = $(this).val();
             loadCompanyLocations(card, companyId);
         });
 
         // Location change
-        $(document).on('change', '.location-select', function () {
+        $(document).off('change.editAssign', '.location-select').on('change.editAssign', '.location-select', function () {
             let card = $(this).closest('.clonecard');
             buildArrivalWrapperForCard(card);
         });
 
         // Add / Remove card
-        $('body').on('click', '.add-more', function () {
+        $('body').off('click.editAssign', '.add-more').on('click.editAssign', '.add-more', function () {
             let newCard = $('#card-container .clonecard:first').clone();
             newCard.find('.select2').remove();
             newCard.find('select').val(null).removeClass('select2-hidden-accessible').removeAttr(
@@ -571,7 +579,7 @@
             initSelect2();
         });
 
-        $('body').on('click', '.remove-card', function () {
+        $('body').off('click.editAssign', '.remove-card').on('click.editAssign', '.remove-card', function () {
             if ($('#card-container .clonecard').length > 1) {
                 $(this).closest('.clonecard').remove();
                 reindexCards();

@@ -18,6 +18,7 @@ use App\Models\Master\InspectionCompany;
 use App\Models\Master\FumigationCompany;
 use App\Models\Master\ClearingAgent;
 use App\Models\Master\Transporter;
+use App\Services\Export\ExportPackagingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -365,6 +366,16 @@ class ExportDeliveryOrderController extends Controller
             ], 422);
         }
 
+        // Each packaging must be in the Form-E's Job Order and within what it has left
+        $packagingError = ExportPackagingService::validateRows($formE, $request->packing_items);
+        if ($packagingError) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => $packagingError,
+            ], 422);
+        }
+
         $deliveryOrder = \Illuminate\Support\Facades\Cache::lock('export_do_generation', 10)->block(5, function () use ($request) {
             // Re-generate reference_no server-side to ensure uniqueness
             $datePart = Carbon::parse($request->dispatch_date)->format('Y-m-d');
@@ -435,6 +446,9 @@ class ExportDeliveryOrderController extends Controller
             return $deliveryOrder;
         });
 
+        // Stuffing always comes from the Export Order's packaging, whatever the form sends
+        $eoPackingItems = ExportOrder::with('packingItems')->find($request->export_order_id)?->packingItems ?? collect();
+
         foreach ($request->packing_items as $index => $itemData) {
             // Skip dummy row only
             if (empty($itemData['bag_product_id'])) {
@@ -452,7 +466,7 @@ class ExportDeliveryOrderController extends Controller
                 'total_bags' => $itemData['total_bags'] ?? 0,
                 'total_kgs' => $itemData['total_kgs'] ?? 0,
                 'metric_tons' => $itemData['metric_tons'] ?? 0,
-                'stuffing_in_container' => $itemData['stuffing_in_container'] ?? 0,
+                'stuffing_in_container' => ExportPackagingService::exportOrderStuffingForRow($eoPackingItems, $itemData),
                 'no_of_containers' => $itemData['no_of_containers'] ?? 0,
                 'brand_id' => $itemData['brand_id'] ?? null,
                 'bag_color_id' => $itemData['bag_color_id'] ?? null,
@@ -870,6 +884,16 @@ class ExportDeliveryOrderController extends Controller
                 ], 422);
             }
 
+            // Each packaging must be in the Form-E's Job Order and within what it has left
+            $packagingError = ExportPackagingService::validateRows($formE, $request->packing_items, (int) $id);
+            if ($packagingError) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $packagingError,
+                ], 422);
+            }
+
             $deliveryOrder->update([
                 'remarks' => $request->remarks,
                 'export_form_e_id' => $request->export_form_e_id,
@@ -921,6 +945,9 @@ class ExportDeliveryOrderController extends Controller
                     $existingItem->delete();
                 }
 
+                // Stuffing always comes from the Export Order's packaging, whatever the form sends
+                $eoPackingItems = ExportOrder::with('packingItems')->find($exportOrderId)?->packingItems ?? collect();
+
                 foreach ($request->packing_items as $index => $itemData) {
 
                     if (empty($itemData['bag_product_id'])) {
@@ -939,7 +966,7 @@ class ExportDeliveryOrderController extends Controller
                         'total_bags' => $itemData['total_bags'] ?? 0,
                         'total_kgs' => $itemData['total_kgs'] ?? 0,
                         'metric_tons' => $itemData['metric_tons'] ?? 0,
-                        'stuffing_in_container' => $itemData['stuffing_in_container'] ?? 0,
+                        'stuffing_in_container' => ExportPackagingService::exportOrderStuffingForRow($eoPackingItems, $itemData),
                         'no_of_containers' => $itemData['no_of_containers'] ?? 0,
                         'brand_id' => $itemData['brand_id'] ?? null,
                         'bag_color_id' => $itemData['bag_color_id'] ?? null,
@@ -1105,9 +1132,11 @@ class ExportDeliveryOrderController extends Controller
 
         return response()->json($data);
     }
-    public function getFormEUsage($id)
+    public function getFormEUsage(Request $request, $id)
     {
         $formE = ExportFormE::with('jobOrder')->findOrFail($id);
+        // On DO edit, that DO's own rows are not counted as used for its packagings
+        $exceptDoId = $request->filled('exclude_do_id') ? (int) $request->exclude_do_id : null;
         $totalAllowed = (float) $formE->input_quantity;
 
         $consumed = DeliveryOrder::with(['exportPackingItems'])
@@ -1124,7 +1153,9 @@ class ExportDeliveryOrderController extends Controller
             'consumed' => round($consumed, 2),
             'remaining' => round(max(0, $totalAllowed - $consumed), 2),
             // Form-E stores job_order_id, the DO dropdown works with the job order number
-            'job_order_no' => $formE->jobOrder?->job_order_no ?? ''
+            'job_order_no' => $formE->jobOrder?->job_order_no ?? '',
+            // Packagings of the Form-E's Job Order: the DO packing rows are built from these
+            'packagings' => ExportPackagingService::packagingsForFormE($formE, $exceptDoId),
         ]);
     }
 }

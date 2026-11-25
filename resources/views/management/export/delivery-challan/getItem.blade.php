@@ -34,6 +34,11 @@
             $grand_total_items_count += $do->exportPackingItems->count();
         }
 
+        // Loading slip line items: only the packagings loaded on this truck, weighbridge MT split by their KG
+        $slip_items = ($loading_slip?->items ?? collect())->filter(fn($si) => (int) $si->no_of_bags > 0)->keyBy('delivery_order_packing_item_id');
+        $slip_items_kg = (float) $slip_items->sum('kilogram');
+        $slip_items_bags = (int) $slip_items->sum('no_of_bags');
+
         $ticket_id = $loading_program_item->id;
         $sw_mt = round(((float) ($second_wb->net_weight ?? 0)) / 1000, 3);
         $truck_no = $loading_program_item->truck_number ?? 'N/A';
@@ -53,6 +58,11 @@
 
     @foreach ($packing_items as $packingItem)
         @php
+            $slip_item = $slip_items->get($packingItem->id);
+            // Slip has packaging lines and this packaging was not loaded on the truck
+            if ($slip_items->isNotEmpty() && !$slip_item) {
+                continue;
+            }
             $existingRow = $existingRows->get($packingItem->id);
             $bag_type_id = $packingItem->bag_type_id;
             $brand_id = $packingItem->brand_id;
@@ -65,15 +75,24 @@
                 ? round((float) $existingRow->rate, 2)
                 : round((float) ($eo_packing->rate ?? 0), 2);
             $row_key = 'T' . $ticket_id . 'P' . $packingItem->id;
-            $proportion = ($grand_total_mt > 0 && (float) $packingItem->metric_tons > 0)
-                ? ((float) $packingItem->metric_tons / $grand_total_mt)
-                : (1 / max($grand_total_items_count, 1));
+            if ($slip_item) {
+                // Share of this packaging in what was loaded on the truck
+                $proportion = $slip_items_kg > 0
+                    ? ((float) $slip_item->kilogram / $slip_items_kg)
+                    : ((int) $slip_item->no_of_bags / max($slip_items_bags, 1));
+            } else {
+                $proportion = ($grand_total_mt > 0 && (float) $packingItem->metric_tons > 0)
+                    ? ((float) $packingItem->metric_tons / $grand_total_mt)
+                    : (1 / max($grand_total_items_count, 1));
+            }
             $initial_qty = $existingRow
                 ? round((float) $existingRow->qty, 3)
                 : round($sw_mt * $proportion, 3);
             $initial_bags = $existingRow
                 ? (int) $existingRow->no_of_bags
-                : ($bag_size > 0 ? (int) round(($initial_qty * 1000) / $bag_size) : 0);
+                : ($slip_item
+                    ? (int) $slip_item->no_of_bags
+                    : ($bag_size > 0 ? (int) round(($initial_qty * 1000) / $bag_size) : 0));
 
             // Fetch Labour Rate
             $category_id = $delivery_order->exportOrder?->product?->category_id;

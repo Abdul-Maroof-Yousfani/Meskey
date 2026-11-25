@@ -764,7 +764,16 @@ class BillOfLadingController extends Controller
         // Get Export Order associated with this packing item through Delivery Order
         $exportOrder = $packingItem->deliveryOrder?->exportOrder;
         
-        if ($exportOrder) {
+        // Export Order row of this exact packaging: bags per MT differ between packagings (e.g. 50kg vs 25kg)
+        $packagingKey = \App\Services\Export\ExportPackagingService::keyOfPackingItem($packingItem);
+        $eoPackingItem = $exportOrder
+            ? $exportOrder->packingItems->first(fn($p) => \App\Services\Export\ExportPackagingService::keyOfPackingItem($p) === $packagingKey)
+            : null;
+
+        if ($eoPackingItem && (float) $eoPackingItem->metric_tons > 0) {
+            $sourceMetricTons = (float) $eoPackingItem->metric_tons;
+            $sourceCount = (float) ($eoPackingItem->{$field} ?? 0);
+        } elseif ($exportOrder) {
             // Use EO-based ratio for accurate distribution across multiple DOs
             $eoPackingItems = $exportOrder->packingItems;
             $sourceMetricTons = (float) $eoPackingItems->sum('metric_tons');

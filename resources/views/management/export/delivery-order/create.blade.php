@@ -420,9 +420,25 @@
                 Packing Details
             </h6>
 
+            <!-- Packagings removed from this DO (still in the Form-E's Job Order) can be added back -->
+            <div id="addBackPackagingBar" class="alert alert-secondary py-2 align-items-center" style="display:none;">
+                <span class="mr-2 font-weight-bold text-nowrap">Add packaging back:</span>
+                <select id="addBackPackagingSelect" class="form-control form-control-sm mr-2" style="max-width: 480px;"></select>
+                <button type="button" class="btn btn-sm btn-success text-nowrap" id="addBackPackagingBtn">
+                    <i class="ft-plus"></i> Add back
+                </button>
+            </div>
+
             <div id="packingItems">
                 <!-- Template for clone, kept visually hidden until populated -->
                 <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto" style="display:none;" id="dummyPackingRow">
+                    <!-- Packaging header: Job Order balance + remove (a DO can carry only some of the packagings) -->
+                    <div class="col-md-12 d-flex justify-content-between align-items-center mb-2">
+                        <span class="packaging-balance-label text-muted small"></span>
+                        <button type="button" class="btn btn-sm btn-danger remove-packing-row" title="Remove this packaging from the Delivery Order">
+                            <i class="ft-trash font-medium-1"></i> 
+                        </button>
+                    </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Brand:</label>
@@ -546,7 +562,8 @@
                     <div class="col-md-1 col-stuffing">
                         <div class="form-group">
                             <label>Stuffing (MT):</label>
-                            <input type="number" name="packing_items[0][stuffing_in_container]" value="0" class="form-control stuffing" step="0.001" min="0">
+                            {{-- Stuffing is the Export Order's value and does not change on the DO --}}
+                            <input type="number" name="packing_items[0][stuffing_in_container]" value="0" class="form-control stuffing" step="0.001" min="0" readonly>
                         </div>
                     </div>
                     <div class="col-md-2 col-containers">
@@ -995,9 +1012,34 @@
         var currentFormETotalMt = 0;
         var currentFormEConsumedMt = 0;
 
+        // Packagings of the selected Form-E's Job Order (null = no Form-E selected)
+        var currentFormEPackagings = null;
+        var currentFormEHasJobOrder = false;
+        // Export Order packing autofill: only used for older Form-Es that have no Job Order
+        var lastEoPackingAutofill = [];
+
+        function floor3(n) {
+            return Math.floor((n + 1e-9) * 1000) / 1000;
+        }
+
         function applyFormEQtyToPackingRows(remainingMt) {
             var $rows = $('#packingItems').find('.packing-item:not(#dummyPackingRow):visible');
             if ($rows.length === 0 || remainingMt <= 0) return;
+
+            // Job Order packagings: each row starts at what its packaging has left,
+            // scaled down together when that is more than the Form-E has left
+            var capped = $rows.filter(function() { return $(this).attr('data-max-mt') !== undefined; });
+            if (capped.length === $rows.length) {
+                var totalMax = 0;
+                $rows.each(function() { totalMax += parseFloat($(this).attr('data-max-mt')) || 0; });
+                var factor = totalMax > remainingMt && totalMax > 0 ? remainingMt / totalMax : 1;
+                $rows.each(function() {
+                    var maxMt = parseFloat($(this).attr('data-max-mt')) || 0;
+                    $(this).find('.metric-tons').val(floor3(maxMt * factor).toFixed(3)).trigger('input');
+                });
+                checkCapacity();
+                return;
+            }
 
             if ($rows.length === 1) {
                 $rows.first().find('.metric-tons').val(remainingMt.toFixed(3)).trigger('input');
@@ -1056,6 +1098,10 @@
 
         $('#export_order_id').on('change', function() {
             var orderId = $(this).val();
+            // Packagings of the previous Export Order's Form-E no longer apply
+            currentFormEPackagings = null;
+            currentFormEHasJobOrder = false;
+            currentFormERemainingMt = 0;
             if (!orderId) {
                 // Clear inputs if nothing selected
                 $('[data-name]').val('');
@@ -1187,12 +1233,8 @@
                             lockIfAutofilled('#carton_supplier', response.data.autofill.carton_supplier);
                             lockIfAutofilled('#fumigation_dosage', response.data.autofill.fumigation_dosage);
                             lockIfAutofilled('#fumigation_ref_no', response.data.autofill.fumigation_ref_no);
-                        // After packing rows are added, apply Form-E qty (overrides EO qty)
-                        if (currentFormERemainingMt > 0) {
-                            applyFormEQtyToPackingRows(currentFormERemainingMt);
-                        }
-
-                        checkCapacity();
+                        // Packing rows come from the selected Form-E's Job Order
+                        renderPackingRows();
                     }
                 },
                 error: function(err) {
@@ -1233,8 +1275,11 @@
                 currentFormERemainingMt = 0;
                 currentFormETotalMt = 0;
                 currentFormEConsumedMt = 0;
+                currentFormEPackagings = null;
+                currentFormEHasJobOrder = false;
                 $('#qty_info_alert').hide();
                 releaseFormEJobOrder();
+                renderPackingRows();
                 return;
             }
 
@@ -1259,8 +1304,10 @@
                             releaseFormEJobOrder();
                         }
 
-                        // Apply Form-E qty to any already-loaded packing rows
-                        applyFormEQtyToPackingRows(currentFormERemainingMt);
+                        // Packing rows = packagings of this Form-E's Job Order
+                        currentFormEHasJobOrder = !!response.job_order_no;
+                        currentFormEPackagings = response.packagings || [];
+                        renderPackingRows();
                     }
                 },
                 error: function(err) {
@@ -1350,34 +1397,171 @@
             $('[data-name="payment_days"]').val(data.payment_days);
             // $('[data-name="currency_rate"]').val(data.currency_rate);
 
-            // Packing items
+            // Packing rows are built from the Form-E's Job Order (renderPackingRows).
+            // The Export Order rows are kept only for older Form-Es that have no Job Order.
             $('#packingItemsWrapper').show();
-            if (packingItemsAuto && packingItemsAuto.length > 0) {
-                addPackingRowsFromExportOrder(packingItemsAuto);
-                togglePackingTypeColumns();
-                // Extra / Empty bags DO ke bags ke hisaab se + commission
-                $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
-                    recalcRowBags($(this));
-                });
-                recalcDOCommission();
-            } else {
-                $('#packingItems').find('.packing-item:not(#dummyPackingRow)').remove();
-                if ($('#packingItems').find('tbody.empty-placeholder').length === 0) {
-                    $('#packingItems').append('<div class="text-center text-muted empty-placeholder p-4">No packing items found in Export Order</div>');
-                }
-            }
+            lastEoPackingAutofill = packingItemsAuto || [];
         }
 
-        function addPackingRowsFromExportOrder(items) {
+        function showPackingPlaceholder(message) {
+            $('#packingItems').find('.packing-item:not(#dummyPackingRow)').remove();
+            $('#packingItems').find('.empty-placeholder').remove();
+            $('#packingItems').append('<div class="text-center text-muted empty-placeholder p-4">' + message + '</div>');
+            refreshAddBackBar();
+            checkCapacity();
+            recalcDOCommission();
+        }
+
+        // Builds the packing rows for the selected Form-E:
+        // its Job Order's packagings that still have quantity left (older Form-Es without a Job Order: Export Order rows)
+        function renderPackingRows() {
+            if (currentFormEPackagings === null) {
+                showPackingPlaceholder('Select a Form-E to load its packing items');
+                return;
+            }
+
+            var items;
+            if (currentFormEHasJobOrder) {
+                items = currentFormEPackagings.filter(function(p) { return (parseFloat(p.remaining_mt) || 0) > 0.001; });
+                if (items.length === 0) {
+                    showPackingPlaceholder(currentFormEPackagings.length
+                        ? "All packagings of this Form-E's Job Order are already used in other Delivery Orders"
+                        : "No packing items found in this Form-E's Job Order");
+                    return;
+                }
+            } else {
+                items = lastEoPackingAutofill;
+                if (!items || items.length === 0) {
+                    showPackingPlaceholder('No packing items found in Export Order');
+                    return;
+                }
+            }
+
+            addPackingRowsFromExportOrder(items);
+            togglePackingTypeColumns();
+            // Extra / Empty bags DO ke bags ke hisaab se
+            $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
+                recalcRowBags($(this));
+            });
+            refreshRemoveButtons();
+            if (currentFormERemainingMt > 0) {
+                applyFormEQtyToPackingRows(currentFormERemainingMt);
+            }
+            checkCapacity();
+            recalcDOCommission();
+        }
+
+        var packingRowSeq;
+
+        function refreshRemoveButtons() {
+            var $rows = $('#packingItems').find('.packing-item:not(#dummyPackingRow)');
+            $rows.find('.remove-packing-row').toggle($rows.length > 1);
+            refreshAddBackBar();
+        }
+
+        // Packagings of the Form-E's Job Order that still have quantity but are not on this DO (removed ones)
+        function packagingsNotOnDO() {
+            if (!currentFormEHasJobOrder || !currentFormEPackagings) return [];
+            var onDO = {};
+            $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
+                var key = $(this).attr('data-packaging-key');
+                if (key) onDO[key] = true;
+            });
+            return currentFormEPackagings.filter(function(p) {
+                return !onDO[p.packaging_key] && (parseFloat(p.remaining_mt) || 0) > 0.001;
+            });
+        }
+
+        function refreshAddBackBar() {
+            var available = packagingsNotOnDO();
+            var $select = $('#addBackPackagingSelect');
+            $select.empty();
+            available.forEach(function(p) {
+                var text = (p.bag_type_name || 'Packaging') + ' ' + (parseFloat(p.bag_size) || 0) + 'kg'
+                    + (p.brand_name ? ' (' + p.brand_name + ')' : '')
+                    + ' - Available ' + (parseFloat(p.remaining_mt) || 0).toFixed(3) + ' MT';
+                $select.append(new Option(text, p.packaging_key));
+            });
+            $('#addBackPackagingBar').css('display', available.length > 0 ? 'flex' : 'none');
+        }
+
+        // Add a removed packaging back to this DO. Its qty starts at what the Form-E has left
+        // (not more than the packaging's Job Order balance); the other rows are not changed.
+        $(document).off('click.exportDOCreate', '#addBackPackagingBtn').on('click.exportDOCreate', '#addBackPackagingBtn', function() {
+            var key = $('#addBackPackagingSelect').val();
+            var packaging = packagingsNotOnDO().find(function(p) { return p.packaging_key === key; });
+            if (!packaging) return;
+
+            var onDOMt = 0;
+            $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
+                onDOMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            });
+            var formELeft = Math.max(0, currentFormERemainingMt - onDOMt);
+            var startMt = floor3(Math.min(parseFloat(packaging.remaining_mt) || 0, formELeft));
+
+            addPackingRowsFromExportOrder([$.extend({}, packaging, { metric_tons: startMt })], true);
+            var $row = $('#packingItems').find('.packing-item:not(#dummyPackingRow)').last();
+            togglePackingTypeColumns();
+            $row.find('.metric-tons').val(startMt.toFixed(3)).trigger('input');
+            recalcRowBags($row);
+            refreshRemoveButtons();
+            checkCapacity();
+            recalcDOCommission();
+        });
+
+        // Remove a packaging from this Delivery Order (it stays available for the next DO)
+        $(document).off('click.exportDOCreate', '.remove-packing-row').on('click.exportDOCreate', '.remove-packing-row', function() {
+            var $rows = $('#packingItems').find('.packing-item:not(#dummyPackingRow)');
+            if ($rows.length <= 1) {
+                alert('A Delivery Order needs at least one packaging.');
+                return;
+            }
+            $(this).closest('.packing-item').remove();
+            refreshRemoveButtons();
+            // Quantities of the remaining packagings are not changed: the user corrects them
+            checkCapacity();
+            recalcDOCommission();
+        });
+
+        // Save: quantity errors (Form-E balance / Job Order per packaging) are shown here and the
+        // form is not sent. Bound on the form so it runs before the common #ajaxSubmit handler.
+        $('#ajaxSubmit').off('submit.doQtyCheck').on('submit.doQtyCheck', function(e) {
+            var errors = checkCapacity();
+            if (errors.length) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Quantity Error',
+                    html: errors.map(function(m) { return '<div class="text-left mb-1">' + $('<div>').text(m).html() + '</div>'; }).join(''),
+                    confirmButtonColor: '#D95000',
+                });
+                return false;
+            }
+        });
+
+        // append = true: add rows after the existing ones (packaging added back), else replace all rows
+        function addPackingRowsFromExportOrder(items, append) {
             let container = $('#packingItems');
             let templateRow = $('#dummyPackingRow').clone();
-            
-            // Remove existing rows except template
-            container.find('.packing-item:not(#dummyPackingRow)').remove();
 
-            items.forEach(function(item, index) {
+            if (!append) {
+                // Remove existing rows except template
+                container.find('.packing-item:not(#dummyPackingRow)').remove();
+                packingRowSeq = 0;
+            }
+            packingRowSeq = packingRowSeq || 0;
+            container.find('.empty-placeholder').remove();
+
+            items.forEach(function(item) {
+                // Unique row index for the input names, also for rows added later
+                let index = packingRowSeq++;
                 let row = templateRow.clone();
                 row.removeAttr('id');
+                if (item.packaging_key) {
+                    row.attr('data-packaging-key', item.packaging_key);
+                }
                 
                 // Destroy any existing Select2 instances in cloned item
                 row.find('select.select2').each(function () {
@@ -1417,7 +1601,9 @@
                 setDisabledSelectValue(`select[name="packing_items[0][brand_id]"]`, item.brand_id);
                 
                 let bagProductSelect = row.find(`select[name="packing_items[0][bag_product_id]"]`);
-                let mappedId = findOptionIdByName(item.bag_type_name, bagProductSelect);
+                // Exact bag type id first: the server matches the packaging by it
+                let hasExactBagType = item.bag_product_id && bagProductSelect.find('option').filter(function() { return $(this).val() == item.bag_product_id; }).length > 0;
+                let mappedId = hasExactBagType ? item.bag_product_id : findOptionIdByName(item.bag_type_name, bagProductSelect);
                 if (mappedId) {
                     setDisabledSelectValue(`select[name="packing_items[0][bag_product_id]"]`, mappedId);
                 } else {
@@ -1445,7 +1631,17 @@
                 row.attr('data-eo-amount', parseFloat(item.eo_amount) || 0);
                 row.attr('data-empty-pct', parseFloat(item.empty_bags_percentage) || 0);
 
-
+                // Job Order packaging: the DO row cannot go above what it has left
+                if (item.remaining_mt !== undefined && item.remaining_mt !== null) {
+                    let remainingMt = parseFloat(item.remaining_mt) || 0;
+                    row.attr('data-max-mt', remainingMt);
+                    row.find('.packaging-balance-label').html(
+                        '<strong>' + $('<div>').text(item.bag_type_name || 'Packaging').html() + ' ' + (parseFloat(item.bag_size) || 0) + 'kg</strong>'
+                        + ' &nbsp;|&nbsp; Job Order: ' + (parseFloat(item.allowed_mt) || 0).toFixed(3) + ' MT'
+                        + ' &nbsp;|&nbsp; Other DOs: ' + (parseFloat(item.used_mt) || 0).toFixed(3) + ' MT'
+                        + ' &nbsp;|&nbsp; Available: <span class="text-success font-weight-bold">' + remainingMt.toFixed(3) + ' MT</span>'
+                    );
+                }
 
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
@@ -1577,13 +1773,8 @@
                         containers = Math.ceil(metricTons / stuffing);
                         item.find('.containers').val(containers);
                     }
-                } else if (source.hasClass('containers')) {
-                    // When manual container edit, stuffing should update
-                    if (containers > 0) {
-                        stuffing = metricTons / containers;
-                        item.find('.stuffing').val(stuffing.toFixed(3));
-                    }
                 }
+                // Containers edited by hand: stuffing stays the Export Order's value (no recalculation)
             } else {
                 item.find('.stuffing, .containers').val(0);
             }
@@ -1713,16 +1904,42 @@
         $('#lbl_current_request_mt').text(currentRequest.toFixed(3));
         $('#lbl_remaining_mt').text(balance.toFixed(3));
 
+        // Each packaging: not more than its Job Order has left
+        let packagingErrors = [];
+        $('#packingItems').find('.packing-item:not(#dummyPackingRow)').each(function() {
+            let maxAttr = $(this).attr('data-max-mt');
+            let $mt = $(this).find('.metric-tons');
+            if (maxAttr === undefined) {
+                $mt.removeClass('is-invalid');
+                return;
+            }
+            let maxMt = parseFloat(maxAttr) || 0;
+            let mt = parseFloat($mt.val()) || 0;
+            if (mt > maxMt + 0.001) {
+                $mt.addClass('is-invalid');
+                let name = $(this).find('.packaging-balance-label strong').text() || 'Packaging';
+                packagingErrors.push(`${name}: Qty (${mt.toFixed(3)} MT) is more than the Job Order quantity available for it (${maxMt.toFixed(3)} MT).`);
+            } else {
+                $mt.removeClass('is-invalid');
+            }
+        });
+
+        let errors = [];
         if (balance < -0.001) {
             $('#lbl_remaining_mt').removeClass('text-success').addClass('text-danger');
-            let errMsg = `Total Metric Tons (${currentRequest.toFixed(3)}) exceeds the remaining capacity of Export Order (${remaining.toFixed(3)} MT).`;
-            $('#qty_error_msg').html(`<i class="fa fa-exclamation-triangle mr-2"></i> ERROR: ${errMsg}`).slideDown();
-            $('.submitbutton').attr('disabled', true);
+            errors.push(`Total Metric Tons (${currentRequest.toFixed(3)}) exceeds the remaining capacity of Export Form-E (${remaining.toFixed(3)} MT).`);
         } else {
             $('#lbl_remaining_mt').removeClass('text-danger').addClass('text-success');
-            $('#qty_error_msg').slideUp();
-            $('.submitbutton').attr('disabled', false);
         }
+        errors = errors.concat(packagingErrors);
+
+        // Errors are shown here; Save stays clickable and stops with these errors (submit.doQtyCheck)
+        if (errors.length) {
+            $('#qty_error_msg').html(errors.map(e => `<div><i class="fa fa-exclamation-triangle mr-2"></i> ERROR: ${e}</div>`).join('')).slideDown();
+        } else {
+            $('#qty_error_msg').slideUp();
+        }
+        return errors;
     }
 
     function togglePackingTypeColumns() {
