@@ -4,6 +4,10 @@
 {{-- tkf-page tkf-2col tkf-view: mobile par form card jaisa, 2 columns (mobile-ui.css section 7). Desktop same. --}}
 <div class="view-only tkf-page tkf-2col tkf-view">
     <div class="d-flex justify-content-end mb-2">
+        {{-- Print: isi view ka data table (Field | Value) me print (poPrintView, neeche script) --}}
+        <button type="button" class="btn btn-sm btn-outline-primary mr-2" onclick="poPrintView(this)">
+            <i class="ft-printer mr-1"></i> Print
+        </button>
         <button type="button" class="btn btn-sm btn-outline-info" onclick="openModal(this,'{{ route('raw-material.purchase-order.audit-logs', $arrivalPurchaseOrder->id) }}','Audit Logs: Contract #{{ $arrivalPurchaseOrder->contract_no }}', false, '55%')">
             <i class="fa fa-history mr-1"></i> Audit Logs
         </button>
@@ -413,6 +417,104 @@
 <x-approval-status-special :model="$arrivalPurchaseOrder" :list-refresh="route('raw-material.get.purchase-order')" />
 
 <script>
+    // ===== Print: view me jo dikh raha hai (har section + field) wahi table me =====
+    // window par (var / function) taake popup dobara khulne par redeclare error na aaye
+    window.poPrintView = function (btn) {
+        var root = btn.closest('.view-only');
+        if (!root) return;
+
+        var esc = function (t) {
+            return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        };
+        var clean = function (t) { return (t || '').replace(/\s+/g, ' ').trim(); };
+
+        // ek form-group ki value (select = chuna hua naam, radio = chuna hua option, "from to to" jaisa input-group)
+        var fieldValue = function (group) {
+            var radios = group.querySelectorAll('input[type="radio"]');
+            if (radios.length) {
+                var checked = group.querySelector('input[type="radio"]:checked');
+                var lbl = checked ? group.querySelector('label[for="' + checked.id + '"]') : null;
+                return lbl ? clean(lbl.textContent) : '';
+            }
+            var parts = [];
+            group.querySelectorAll('input, select, textarea, .input-group-text').forEach(function (el) {
+                if (el.matches('input[type="hidden"], input[type="checkbox"]')) return;
+                if (el.classList.contains('input-group-text')) { parts.push(clean(el.textContent)); return; }
+                if (el.tagName === 'SELECT') {
+                    var opt = el.options[el.selectedIndex];
+                    parts.push(opt && opt.value !== '' ? clean(opt.text) : '');
+                    return;
+                }
+                parts.push(clean(el.value));
+            });
+            return clean(parts.join(' '));
+        };
+
+        // sections: heading (h6) ke neeche wale fields
+        var sections = [];
+        var current = { title: 'Contract', rows: [] };
+        sections.push(current);
+        root.querySelectorAll('h6.header-heading-sepration, .form-group').forEach(function (el) {
+            if (el.closest('.bottom-button-bar')) return;
+            if (el.matches('h6')) {
+                current = { title: clean(el.textContent).replace(/:$/, ''), rows: [] };
+                sections.push(current);
+                return;
+            }
+            var label = el.querySelector('label:not(.custom-control-label)');
+            if (!label) return;
+            var name = clean(label.textContent).replace(/:$/, '').replace(/\s*\(Optional\)$/i, '');
+            var value = fieldValue(el);
+            current.rows.push([name, value === '' ? '-' : value]);
+        });
+
+        // har section: 2 field ek line (Field | Value | Field | Value)
+        var body = '';
+        sections.forEach(function (sec) {
+            if (!sec.rows.length) return;
+            body += '<tr class="sec"><th colspan="4">' + esc(sec.title) + '</th></tr>';
+            for (var i = 0; i < sec.rows.length; i += 2) {
+                var a = sec.rows[i], b = sec.rows[i + 1];
+                var wide = !b && (a[1].length > 40);
+                body += '<tr><td class="k">' + esc(a[0]) + '</td><td' + (wide ? ' colspan="3"' : '') + '>' + esc(a[1]) + '</td>' +
+                    (b ? '<td class="k">' + esc(b[0]) + '</td><td>' + esc(b[1]) + '</td>' : (wide ? '' : '<td class="k"></td><td></td>')) + '</tr>';
+            }
+        });
+
+        var html = '<!doctype html><html><head><meta charset="utf-8"><title>Purchase Order - Contract #{{ $arrivalPurchaseOrder->contract_no }}</title>' +
+            '<style>' +
+            '@page{size:A4;margin:12mm}' +
+            'body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#222;margin:0}' +
+            '.head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #27489a;padding-bottom:8px;margin-bottom:12px}' +
+            '.head h1{font-size:18px;margin:0;color:#27489a}.head .meta{text-align:right;font-size:11px;color:#555}' +
+            'table{width:100%;border-collapse:collapse;table-layout:fixed}' +
+            'td,th{border:1px solid #c9ced8;padding:6px 8px;vertical-align:top;word-wrap:break-word}' +
+            'td.k{width:18%;background:#f4f6fa;font-weight:bold;color:#444}' +
+            'tr.sec th{background:#27489a;color:#fff;text-align:left;font-size:12.5px;padding:7px 8px}' +
+            'tr{page-break-inside:avoid}' +
+            '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+            '</style></head><body>' +
+            '<div class="head"><div><h1>Purchase Order</h1><div>Contract # <b>{{ $arrivalPurchaseOrder->contract_no }}</b></div></div>' +
+            '<div class="meta">{{ getCurrentCompany()->name ?? '' }}<br>Printed: ' + esc(new Date().toLocaleString()) + '</div></div>' +
+            '<table>' + body + '</table></body></html>';
+
+        // chhupa iframe: popup blocker ka masla nahi
+        var frame = document.createElement('iframe');
+        frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+        document.body.appendChild(frame);
+        var doc = frame.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+        setTimeout(function () {
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+            setTimeout(function () { frame.remove(); }, 1000);
+        }, 250);
+    };
+
     $(document).ready(function () {
         $('.view-only .form-control').attr('disabled', true);
         $('.view-only .custom-control-input').attr('disabled', true);

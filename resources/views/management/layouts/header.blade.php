@@ -294,6 +294,28 @@
                         @endif
 
 
+                        {{-- Full screen: mobile / tablet (< 992px). Desktop wala upar (d-lg-block) hai.
+                             Click theme ka .apptogglefullscreen handler (app-sidebar.js, screenfull) chalata hai.
+                             iPhone Safari full screen support nahi karta -> wahan button chhupa (neeche script). --}}
+                        <li class="nav-item d-flex d-lg-none align-items-center mr-2 mobile-fullscreen-item">
+                            <a class="nav-link apptogglefullscreen header-icon-btn" href="javascript:;"
+                                title="Full screen" aria-label="Full screen"><i class="ft-maximize"></i></a>
+                            <script>
+                                // browser full screen support na kare (iPhone Safari) to button mat dikhao
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    var el = document.documentElement;
+                                    var ok = document.fullscreenEnabled || document.webkitFullscreenEnabled ||
+                                        el.requestFullscreen || el.webkitRequestFullscreen;
+                                    if (window.screenfull) ok = window.screenfull.isEnabled;
+                                    if (!ok) {
+                                        document.querySelectorAll('.mobile-fullscreen-item').forEach(function (li) {
+                                            li.style.setProperty('display', 'none', 'important');
+                                        });
+                                    }
+                                });
+                            </script>
+                        </li>
+
                         <li class="nav-item d-flex align-items-center mr-2">
                             <input type="checkbox" class="d-none" id="color-switch-1"
                                 {{ Cookie::get('layout') === 'dark' ? 'checked' : '' }}>

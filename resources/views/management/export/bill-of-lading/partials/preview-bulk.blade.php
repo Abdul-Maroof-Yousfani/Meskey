@@ -143,7 +143,8 @@
                         <div>BAG TYPE: {{ strtoupper((string) ($row['bag_type'] ?? 'N/A')) }}</div>
                         <div>NO. OF BAGS: {{ number_format((float) ($row['no_of_bags'] ?? 0)) }}</div>
                     </td>
-                    <td>{{ $formatNumber($row['quantity_mt'] ?? 0, 2) }}</td>
+                    {{-- Net = sirf maal (weighbridge - boriyon ka wazan); purane BL me net_weight_kg = weighbridge --}}
+                    <td>{{ $formatNumber((($row['net_weight_kg'] ?? (($row['quantity_mt'] ?? 0) * 1000)) / 1000), 2) }}</td>
                     <td>{{ $formatNumber((($row['gross_weight_kg'] ?? 0) / 1000), 2) }}</td>
                 </tr>
             @empty
@@ -153,7 +154,7 @@
             @endforelse
             <tr>
                 <td colspan="2" class="bol-right bol-strong">Total</td>
-                <td class="bol-strong">{{ $formatNumber($totals['quantity_mt'] ?? 0, 2) }}</td>
+                <td class="bol-strong">{{ $formatNumber((($totals['net_weight_kg'] ?? (($totals['quantity_mt'] ?? 0) * 1000)) / 1000), 2) }}</td>
                 <td class="bol-strong">{{ $formatNumber((($totals['gross_weight_kg'] ?? 0) / 1000), 2) }}</td>
             </tr>
         </tbody>

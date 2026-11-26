@@ -615,16 +615,20 @@ class BillOfLadingController extends Controller
     {
         $productName = $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A');
 
-        $rows = $deliveryChallans->flatMap(function ($challan) {
+        $allChallanData = $deliveryChallans->flatMap(function ($challan) {
             return $challan->delivery_challan_data;
-        })->groupBy(function ($item) {
+        });
+        // har truck (ticket) ki kul qty: purane slips (line items ke baghair) ka total empty/extra rows me baantne ke liye
+        $ticketQty = $allChallanData->groupBy('ticket_id')->map(fn($rows) => (float) $rows->sum('qty'));
+
+        $rows = $allChallanData->groupBy(function ($item) {
             $packingText = $this->normalizePackingText($item->bag_size);
             return implode('|', [
                 (string) ($item->brand_id ?? ''),
                 $packingText,
                 (string) ($item->bag_type ?? ''),
             ]);
-        })->values()->map(function ($items, $index) use ($productName) {
+        })->values()->map(function ($items, $index) use ($productName, $ticketQty) {
             $first = $items->first();
             $packingText = $this->normalizePackingText($first->bag_size);
             $packingKg = $this->parsePackingKg($packingText);
@@ -645,18 +649,26 @@ class BillOfLadingController extends Controller
             if ($containerCount <= 0) {
                 $containerCount = (int) round((float) ($first->deliveryOrderData?->no_of_containers ?? 0));
             }
-            $netWeightKg = round($quantityMt * 1000, 2);
-            $extraBags = (float) $items->sum(function ($item) {
-                return $this->getProRatedBagCount($item, 'extra_bags');
+            // Delivery Challan qty = second weighbridge ka net (truck - first weighbridge - baaki items):
+            // is me maal + saari boriyon ka wazan dono hain -> yahi GROSS weight hai (client ki definition)
+            $weighbridgeKg = round($quantityMt * 1000, 2);
+            // Truck me asal kitne empty / extra bags gaye (loading slip); na mile to purana pro-rata hisaab
+            $extraBags = (float) $items->sum(function ($item) use ($ticketQty) {
+                return $this->getLoadedBagCount($item, 'extra_bags', $ticketQty)
+                    ?? $this->getProRatedBagCount($item, 'extra_bags');
             });
-            $emptyBags = (float) $items->sum(function ($item) {
-                return $this->getProRatedBagCount($item, 'empty_bags');
+            $emptyBags = (float) $items->sum(function ($item) use ($ticketQty) {
+                return $this->getLoadedBagCount($item, 'empty_bags', $ticketQty)
+                    ?? $this->getProRatedBagCount($item, 'empty_bags');
             });
             $emptyBagWeightGram = (float) ($first->deliveryOrderData->min_weight_empty_bags ?? 0);
             $emptyBagWeightKg = $emptyBagWeightGram / 1000;
 
             $grossBags = $noOfBags + $extraBags + $emptyBags;
-            $grossWeightKg = round($netWeightKg + ($grossBags * $emptyBagWeightKg), 2);
+            // Gross = weighbridge wala wazan, jaisa hai
+            // Net   = Gross - (empty + extra bags) ka wazan (client: bhari boriyon ka wazan minus nahi)
+            $grossWeightKg = $weighbridgeKg;
+            $netWeightKg = round(max(0, $weighbridgeKg - (($emptyBags + $extraBags) * $emptyBagWeightKg)), 2);
             $containerPackingDescription = 'PACKED IN ';
 
             if (strtoupper($bagConditionName) !== 'N/A') {
@@ -752,6 +764,36 @@ class BillOfLadingController extends Controller
     protected function parsePackingKg(string $packingText): float
     {
         return (float) preg_replace('/[^0-9.]/', '', $packingText);
+    }
+
+    /**
+     * Is challan row (ek truck + ek packaging) ke saath asal me kitne empty / extra bags gaye:
+     * truck ke export loading slip se.
+     *  - slip ki line items hon: isi DO packing row wali line ka count
+     *  - purana slip (line items nahi): slip ka total, truck ki rows me qty ke hisaab se
+     * Slip hi na mile to null (caller purana pro-rata hisaab lagata hai).
+     */
+    protected function getLoadedBagCount($deliveryChallanData, string $field, Collection $ticketQty): ?float
+    {
+        $slip = $deliveryChallanData->loadingProgramItem?->exportLoadingSlip;
+        if (!$slip) {
+            return null;
+        }
+
+        $slipItems = $slip->items;
+        if ($slipItems->isNotEmpty()) {
+            $line = $slipItems->firstWhere('delivery_order_packing_item_id', $deliveryChallanData->do_data_id);
+            return (float) ($line->{$field} ?? 0);
+        }
+
+        $total = (float) ($slip->{$field} ?? 0);
+        $truckQty = (float) ($ticketQty[$deliveryChallanData->ticket_id] ?? 0);
+        $rowQty = (float) ($deliveryChallanData->qty ?? 0);
+        if ($total <= 0 || $truckQty <= 0) {
+            return $total > 0 ? $total : 0.0;
+        }
+
+        return round($total * ($rowQty / $truckQty), 2);
     }
 
     protected function getProRatedBagCount($deliveryChallanData, string $field): float

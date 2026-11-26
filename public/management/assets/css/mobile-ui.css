@@ -517,6 +517,14 @@ body.layout-dark .m-applied-clear-all:active {
         padding-bottom: 0 !important;
     }
 
+    /* hide-mobile sheet me bhi chhupa rahe: upar wali ".d-flex { display:flex !important }" zyada specific
+       thi -> "d-flex hide-mobile" wala desktop Search button sheet me "Show results" ke saath dikh jata tha */
+    .m-sheet-body form .hide-mobile,
+    .m-sheet-body form .d-flex.hide-mobile,
+    .m-sheet-body form .row > .hide-mobile {
+        display: none !important;
+    }
+
     .m-sheet-body form .row > [class*="col"],
     .m-sheet-body form .row > div,
     .m-sheet-body form .d-flex > [class*="col"],
@@ -560,6 +568,12 @@ body.layout-dark .m-applied-clear-all:active {
         border-radius: 12px !important;
         display: flex !important;
         align-items: center !important;
+    }
+
+    /* multiple select2 (jaise Location filter) bhi baaki filters jaisa: 46px, 12px kone */
+    body .m-sheet-body .select2-container .select2-selection--multiple {
+        min-height: 46px !important;
+        border-radius: 12px !important;
     }
 
     /* text/arrow ki vertical alignment section 8 (global) karta hai */
@@ -3407,6 +3421,71 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
         border: 1px solid #e0e0e0;
         border-radius: 8px;
         background-color: #fff;
+    }
+
+    /* ---- select2 (multiple) - single jaisa box (pehle theme ka sharp default aata tha) ----
+       Desktop wala design: section 19. Filter sheet me 46px / 12px kone: section 2 (m-sheet-body). */
+    body .select2-container--default .select2-selection--multiple {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 3px 8px;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        background-color: #fff;
+    }
+
+    body .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* chips: halka neela (theme ka gehra neela nahi) */
+    body .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__choice,
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 7px !important;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #27489a !important;
+        background: rgba(39, 72, 154, .1) !important;
+    }
+
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice__display {
+        color: #27489a !important;
+    }
+
+    body .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #27489a !important;
+        opacity: .6;
+    }
+
+    /* search / placeholder text */
+    body .select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+        height: 30px;
+        margin: 0 !important;
+        font-size: 15px;
+    }
+
+    body .select2-container--default.select2-container--focus .select2-selection--multiple,
+    body .select2-container--default.select2-container--open .select2-selection--multiple {
+        border-color: #27489a !important;
+        box-shadow: 0 0 0 3px rgba(39, 72, 154, .12);
+        outline: 0;
+    }
+
+    body .select2-container--default.select2-container--disabled .select2-selection--multiple {
+        background-color: #f5f6fa;
+    }
+
+    body.layout-dark .select2-container--default .select2-selection--multiple {
+        border-color: #34343c !important;
+        background-color: transparent;
     }
 
     /* ---- general mobile text/date inputs ---- */

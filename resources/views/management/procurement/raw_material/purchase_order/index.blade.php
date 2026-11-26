@@ -184,7 +184,26 @@
 
 @section('script')
     <script>
+        // Export CSV: pehle Concise / Detail poochho
+        //  Concise = pehle jaisi file; Detail = "Other Condition" ki har cheez alag column me
         function exportCSV() {
+            Swal.fire({
+                title: 'Export CSV',
+                text: 'Which format do you want to export?',
+                icon: 'question',
+                showDenyButton: true,
+                showCloseButton: true,
+                confirmButtonText: '<i class="ft-list mr-1"></i> Concise',
+                denyButtonText: '<i class="ft-grid mr-1"></i> Detail',
+                confirmButtonColor: '#27489a',
+                denyButtonColor: '#28a745',
+            }).then(function (result) {
+                if (result.isConfirmed) runExportCSV('concise');
+                else if (result.isDenied) runExportCSV('detail');
+            });
+        }
+
+        function runExportCSV(exportType) {
             // Show processing SweetAlert
             Swal.fire({
                 title: 'Processing Export...',
@@ -214,6 +233,7 @@
                 }
             });
 
+            params.type = exportType;
             const queryString = new URLSearchParams(params).toString();
 
             // Use AJAX to download file
@@ -229,7 +249,7 @@
 
                     // Get filename from headers
                     const disposition = xhr.getResponseHeader('content-disposition');
-                    let filename = 'purchase-orders-' + new Date().toISOString().split('T')[0] + '.csv';
+                    let filename = 'purchase-orders-' + (exportType === 'detail' ? 'detail-' : '') + new Date().toISOString().split('T')[0] + '.csv';
 
                     if (disposition && disposition.indexOf('filename=') !== -1) {
                         filename = disposition.split('filename=')[1].replace(/["']/g, '');
@@ -275,7 +295,7 @@
                         confirmButtonText: 'Try Again'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            exportCSV();
+                            runExportCSV(exportType);
                         }
                     });
                 }

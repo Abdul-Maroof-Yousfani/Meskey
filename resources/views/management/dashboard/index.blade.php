@@ -811,6 +811,17 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             color: #26499b;
         }
 
+        /* card icon (desktop dark): light grey dabba hata kar mobile dark jaisa halka tint
+           (mobile wala neeche @media (max-width: 767.98px) me hai) */
+        body.layout-dark .card-icon {
+            background: rgba(90, 130, 230, .14);
+            color: #9db4f0;
+        }
+
+        body.layout-dark .dashboard-card.bg-danger-light .card-icon { background: rgba(229, 72, 77, .16); }
+        body.layout-dark .dashboard-card.bg-warning-light .card-icon { background: rgba(245, 158, 11, .16); }
+        body.layout-dark .dashboard-card.bg-success-light .card-icon { background: rgba(34, 160, 90, .16); }
+
         body.layout-dark .empty-card {
             background: #2d2d2d;
             border-color: #404040;

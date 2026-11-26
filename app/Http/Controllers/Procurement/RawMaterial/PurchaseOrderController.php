@@ -708,7 +708,9 @@ class PurchaseOrderController extends Controller
             }
 
             // Generate CSV content
-            $csvContent = $this->generateCsvContent($purchaseOrders);
+            // type=detail: "Other Condition" ki har cheez apne alag column me; warna (concise) pehle jaisa
+            $detailed = $request->input('type') === 'detail';
+            $csvContent = $this->generateCsvContent($purchaseOrders, $detailed);
 
             // Generate filename
             // $filename = 'purchase-orders-' . date('Y-m-d') . '.csv';
@@ -793,10 +795,29 @@ class PurchaseOrderController extends Controller
         // Clean up any double underscores
         $filename = preg_replace('/_+/', '_', $filename);
 
+        if ($request->input('type') === 'detail') {
+            $filename .= '-detail';
+        }
+
         return $filename . '.csv';
     }
 
-    private function generateCsvContent($purchaseOrders)
+    /** Detail export: "Other Condition" ki jagah ye alag columns (isi tarteeb me) */
+    private const OTHER_CONDITION_DETAIL_HEADERS = [
+        'Sauda Type',
+        'Calculation Type',
+        'Replacement',
+        'Supplier Commission',
+        'Broker 1',
+        'Broker 1 Commission (%)',
+        'Broker 2',
+        'Broker 2 Commission (%)',
+        'Broker 3',
+        'Broker 3 Commission (%)',
+        'Remarks',
+    ];
+
+    private function generateCsvContent($purchaseOrders, bool $detailed = false)
     {
         $output = fopen('php://temp', 'r+');
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
@@ -841,11 +862,17 @@ class PurchaseOrderController extends Controller
             // 'Created At',
             // 'Location'
         ];
+        if ($detailed) {
+            $headers = $this->replaceOtherCondition($headers, self::OTHER_CONDITION_DETAIL_HEADERS);
+        }
         fputcsv($output, $headers);
 
         foreach ($purchaseOrders as $row) {
-            // dd($this->mapPurchaseOrderData($row));
-            fputcsv($output, $this->mapPurchaseOrderData($row));
+            $data = $this->mapPurchaseOrderData($row);
+            if ($detailed) {
+                $data = $this->replaceOtherCondition($data, $this->otherConditionDetail($row));
+            }
+            fputcsv($output, $data);
         }
 
         rewind($output);
@@ -961,6 +988,42 @@ class PurchaseOrderController extends Controller
 
         $query->where('purchase_type', 'regular')->latest();
         return $query->get();
+    }
+
+    /** "Other Condition" column (index 14) ki jagah diye gaye columns rakh do */
+    private function replaceOtherCondition(array $columns, array $replacement): array
+    {
+        $index = 14; // headers / mapPurchaseOrderData me 'Other Condition' ki jagah
+        array_splice($columns, $index, 1, $replacement);
+        return $columns;
+    }
+
+    /** "Other Condition" wala data, har cheez alag (OTHER_CONDITION_DETAIL_HEADERS ki tarteeb me) */
+    private function otherConditionDetail($row): array
+    {
+        $brokers = [];
+        foreach ([
+            ['broker_one_id', 'broker_one_name', 'broker', 'broker_one_commission'],
+            ['broker_two_id', 'broker_two_name', 'brokerTwo', 'broker_two_commission'],
+            ['broker_three_id', 'broker_three_name', 'brokerThree', 'broker_three_commission'],
+        ] as [$idField, $nameField, $relation, $commissionField]) {
+            if (isset($row->{$idField})) {
+                $brokers[] = $row->{$nameField} ?: ($row->{$relation}->name ?? 'N/A');
+                $brokers[] = $row->{$commissionField} ?? '';
+            } else {
+                $brokers[] = '';
+                $brokers[] = '';
+            }
+        }
+
+        return array_merge([
+            $row->saudaType->name ?? '',
+            $row->calculation_type ? ucfirst($row->calculation_type) . ' Wise' : '',
+            $row->is_replacement == 1 ? 'Yes' : 'No',
+            $row->supplier_commission ?? 0,
+        ], $brokers, [
+            $row->remarks ?? '',
+        ]);
     }
 
     private function mapPurchaseOrderData($row)
