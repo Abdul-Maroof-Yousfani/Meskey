@@ -751,7 +751,7 @@ $(document).ready(function() {
             reindexPackingItems();
             calculateOverallTotals();
         } else {
-            alert('At least one packing item is required.');
+            Swal.fire('Warning', 'At least one packing item is required.', 'warning');
         }
     });
     function reindexPackingItems() {

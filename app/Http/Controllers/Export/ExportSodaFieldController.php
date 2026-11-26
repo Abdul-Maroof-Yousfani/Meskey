@@ -405,7 +405,7 @@ class ExportSodaFieldController extends Controller
 
         $sodaToQuotation = [];
         ExportSodaField::whereIn('quotation_id', $ids)
-            ->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'))
+            ->where(fn ($q) => $q->where('am_approval_status', 'approved'))
             ->pluck('quotation_id', 'id')
             ->each(function ($qid, $sodaId) use (&$sodaToQuotation) {
                 $sodaToQuotation[$sodaId] = $qid;
@@ -414,7 +414,7 @@ class ExportSodaFieldController extends Controller
         $legacy = $quotations->filter(fn ($q) => $q->export_soda_id && !isset($sodaToQuotation[$q->export_soda_id]));
         if ($legacy->isNotEmpty()) {
             $valid = ExportSodaField::whereIn('id', $legacy->pluck('export_soda_id'))
-                ->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'))
+                ->where(fn ($q) => $q->where('am_approval_status', 'approved'))
                 ->pluck('id')->flip();
             foreach ($legacy as $q) {
                 if (isset($valid[$q->export_soda_id])) {

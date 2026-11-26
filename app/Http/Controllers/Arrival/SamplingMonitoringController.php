@@ -9,6 +9,7 @@ use App\Models\Arrival\{ArrivalSamplingRequest, ArrivalSamplingResult, ArrivalSa
 use App\Models\SaudaType;
 use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\ProductSlab;
+use App\Models\Master\CompanyLocation;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
@@ -19,7 +20,8 @@ class SamplingMonitoringController extends Controller
      */
     public function index()
     {
-        return view('management.arrival.sampling_monitoring.index');
+        $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->orderBy('name')->get();
+        return view('management.arrival.sampling_monitoring.index', compact('companyLocations'));
     }
 
     /**
@@ -69,6 +71,11 @@ class SamplingMonitoringController extends Controller
             })
             ->whereHas('arrivalTicket', function ($query) {
                 $query->whereIn('location_id', getUserCurrentCompanyLocations());
+            })
+            ->when($request->filled('location_ids'), function ($q) use ($request) {
+                return $q->whereHas('arrivalTicket', function ($query) use ($request) {
+                    $query->whereIn('location_id', array_filter((array) $request->location_ids));
+                });
             })
 
             ->when($request->filled('approval_status_filter'), function ($q) use ($request) {

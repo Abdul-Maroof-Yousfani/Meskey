@@ -41,6 +41,16 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-2 text-left">
+                                                <label for="location_ids" class="form-label">Location</label>
+                                                <select class="form-control select2-filter" id="location_ids" name="location_ids[]" multiple data-placeholder="Select Location(s)">
+                                                    @foreach ($companyLocations as $location)
+                                                        <option value="{{ $location->id }}" {{ in_array($location->id, (array) request('location_ids', [])) ? 'selected' : '' }}>
+                                                            {{ $location->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2 text-left">
                                                 <label for="from_date" class="form-label">Sampling Type</label>
                                                 <select class="form-control" name="sampling_type">
                                                     <option value="">All</option>
@@ -107,6 +117,10 @@
 @section('script')
     <script>
         $(document).ready(function () {
+            $('.select2-filter').select2({
+                width: '100%'
+            });
+
             // Filter sirf Search / Show results / Enter par (change par nahi) - scripts.js filterationCommon_withbtn
             const runListFilter = filterationCommon_withbtn(`{{ route('get.sampling-monitoring') }}`);
             window.filterRunners = window.filterRunners || {};

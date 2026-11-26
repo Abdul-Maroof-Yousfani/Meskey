@@ -4336,12 +4336,14 @@ body.layout-dark .noti-loadmore-spinner { border-color: rgba(90, 130, 230, .2); 
    14. Dashboard box -> side modal list (dl-mobile / dl-cards)
    Views: dashboard/snippets/list_data.blade.php, sales_list_data.blade.php (+ partials/mobile-card)
    Mobile: Blade se bane tkc cards (Arrival Ticket list jaise; styling section 6) + search.
-   Desktop: DataTables table pehle jaisa (.dl-cards), cards chhupe.
+   Desktop: cards chhupe. Table (.dl-cards) ka desktop design: style.css ("Dashboard box side list - DESKTOP").
    ##################################################################### */
 @media (min-width: 768px) {
     .dl-mobile {
         display: none !important;
     }
+
+    /* desktop design (table / search / badges): style.css -> "Dashboard box side list - DESKTOP" */
 }
 
 @media (max-width: 767.98px) {
