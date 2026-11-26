@@ -27,7 +27,7 @@
                     </a>
                 </div>
             </div>
-            <div class="row mt-5">
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">

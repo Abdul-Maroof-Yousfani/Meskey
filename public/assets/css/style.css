@@ -755,21 +755,53 @@ body.drawer-opened {
   font-size: 13px;
 }
 
-/* Bigger toggle switch */
-.lock-arrival-switch .custom-control-label::before {
+/* Bigger toggle switch
+   Theme (bootstrap-extended.css) ke ".custom-switch input[type='checkbox'] ~ label:after" rules
+   (left -2.9rem / checked par -3.5rem, track top 0) zyada specific the -> on karne par knob track
+   se bahar / beech me atak jata tha, aur mobile-ui.css ka blue green ko daba deta tha.
+   Is liye yahan track + knob ki poori jagah khud tay hai (.custom-switch + input[type] se zyada specific). */
+.lock-arrival-switch.custom-switch {
+  padding-left: 46px;
+  min-height: 22px;
+}
+
+.lock-arrival-switch.custom-switch input[type='checkbox'] ~ .custom-control-label {
+  min-height: 22px;
+  cursor: pointer;
+}
+
+.lock-arrival-switch.custom-switch input[type='checkbox'] ~ .custom-control-label::before {
+  top: 0;
+  left: -46px;
   width: 42px;
   height: 22px;
   border-radius: 22px;
+  background-color: #e9ecef;
+  border: 1px solid #adb5bd;
 }
 
-.lock-arrival-switch .custom-control-label::after {
+.lock-arrival-switch.custom-switch input[type='checkbox'] ~ .custom-control-label::after {
+  top: 2px;
+  left: -44px;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  top: calc(0.25rem + 2px);
-  left: calc(-2.25rem + 2px);
+  background-color: #adb5bd;
+  transform: none;
+  transition: transform .2s ease, background-color .2s ease;
 }
 
-.lock-arrival-switch .custom-control-input:checked~.custom-control-label::after {
+.lock-arrival-switch.custom-switch input[type='checkbox']:checked ~ .custom-control-label::before {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.lock-arrival-switch.custom-switch input[type='checkbox']:checked ~ .custom-control-label::after {
+  left: -44px;
+  background-color: #fff !important;
   transform: translateX(20px);
+}
+
+.lock-arrival-switch.custom-switch input[type='checkbox']:focus ~ .custom-control-label::before {
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, .2);
 }
