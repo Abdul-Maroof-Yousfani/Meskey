@@ -134,10 +134,24 @@
             row.classList.add('mph-sticky');
         }
 
+        // Foran chalao (header aur page header dono is waqt DOM me hain): loading ke dauran
+        // (baaki content chhupa, sirf app-bar dikhta hai) navbar aur header ke beech gap na rahe.
+        // DOMContentLoaded / load par dobara naapo (layout tab badalta hai).
+        fitHead();
         if (document.readyState === 'loading') {
+            // Kai pages (jaise arrival/ticket) ye partial apni mph-head row se PEHLE include karte hain:
+            // abhi row bani hi nahi. Row DOM me aate hi (parse ke dauran) foran chipkao, load ka intezar nahi.
+            if (!document.querySelector('.mph-head') && window.MutationObserver) {
+                var waitRow = new MutationObserver(function () {
+                    if (document.querySelector('.mph-head')) {
+                        waitRow.disconnect();
+                        fitHead();
+                    }
+                });
+                waitRow.observe(document.documentElement, { childList: true, subtree: true });
+                document.addEventListener('DOMContentLoaded', function () { waitRow.disconnect(); });
+            }
             document.addEventListener('DOMContentLoaded', fitHead);
-        } else {
-            fitHead();
         }
         // load par theme (app.js) header ko "fixed-top" karti hai -> layout badalta hai.
         // Ye listener theme se pehle chalta hai, is liye theme ke baad dobara naapo.

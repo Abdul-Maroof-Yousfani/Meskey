@@ -278,11 +278,12 @@
             <td class="bolc-weight-box">
                 <div class="metric">
                     <div><span class="bolc-label">Gross Weight</span></div>
-                    <div>{{ $formatNumber(($preview['gross_weight_mt'] ?? (($totals['gross_weight_kg'] ?? 0) / 1000)), 3) }}</div>
+                    {{-- Unit KGS hai: MT ko 1000 se zarb (MT na ho to totals ka kg) --}}
+                    <div>{{ $formatNumber(isset($preview['gross_weight_mt']) ? ((float) $preview['gross_weight_mt'] * 1000) : ($totals['gross_weight_kg'] ?? 0), 2) }}</div>
                     <div>KGS</div>
                     <br><br>
                     <div><span class="bolc-label">Net Weight</span></div>
-                    <div>{{ $formatNumber(($preview['net_weight_mt'] ?? (($totals['net_weight_kg'] ?? 0) / 1000)), 3) }}</div>
+                    <div>{{ $formatNumber(isset($preview['net_weight_mt']) ? ((float) $preview['net_weight_mt'] * 1000) : ($totals['net_weight_kg'] ?? 0), 2) }}</div>
                     <div>KGS</div>
                 </div>
             </td>

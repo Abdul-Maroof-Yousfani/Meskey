@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Services\Export\ExportPackagingService;
 
 class BillOfLadingController extends Controller
 {
@@ -643,9 +644,16 @@ class BillOfLadingController extends Controller
             $noOfBags = (int) round($items->sum(function ($item) {
                 return (float) ($item->no_of_bags ?? 0);
             }));
-            $containerCount = (int) round($items->sum(function ($item) {
-                return (float) ($item->deliveryOrderData?->no_of_containers ?? 0);
-            }));
+            // Containers = jo asal me gaye: har truck (ticket / loading program item) me EK container hota hai.
+            // DO ke kul containers nahi: DO me 2 hon aur abhi sirf 1 truck ka DC select ho to 1 hi aana chahiye.
+            // (container_number se nahi ginte: ghalti se do trucks par ek hi number likha ho to 1 gin leta)
+            $containerCount = $items->pluck('ticket_id')->filter()->unique()->count();
+            if ($containerCount <= 0) {
+                // purana data (truck / ticket na mile): DO packing ke containers, har packing EK dafa
+                $containerCount = (int) round($items->unique('do_data_id')->sum(function ($item) {
+                    return (float) ($item->deliveryOrderData?->no_of_containers ?? 0);
+                }));
+            }
             if ($containerCount <= 0) {
                 $containerCount = (int) round((float) ($first->deliveryOrderData?->no_of_containers ?? 0));
             }
@@ -654,11 +662,11 @@ class BillOfLadingController extends Controller
             $weighbridgeKg = round($quantityMt * 1000, 2);
             // Truck me asal kitne empty / extra bags gaye (loading slip); na mile to purana pro-rata hisaab
             $extraBags = (float) $items->sum(function ($item) use ($ticketQty) {
-                return $this->getLoadedBagCount($item, 'extra_bags', $ticketQty)
+                return ExportPackagingService::loadedBagCount($item, 'extra_bags', $ticketQty)
                     ?? $this->getProRatedBagCount($item, 'extra_bags');
             });
             $emptyBags = (float) $items->sum(function ($item) use ($ticketQty) {
-                return $this->getLoadedBagCount($item, 'empty_bags', $ticketQty)
+                return ExportPackagingService::loadedBagCount($item, 'empty_bags', $ticketQty)
                     ?? $this->getProRatedBagCount($item, 'empty_bags');
             });
             $emptyBagWeightGram = (float) ($first->deliveryOrderData->min_weight_empty_bags ?? 0);
@@ -764,36 +772,6 @@ class BillOfLadingController extends Controller
     protected function parsePackingKg(string $packingText): float
     {
         return (float) preg_replace('/[^0-9.]/', '', $packingText);
-    }
-
-    /**
-     * Is challan row (ek truck + ek packaging) ke saath asal me kitne empty / extra bags gaye:
-     * truck ke export loading slip se.
-     *  - slip ki line items hon: isi DO packing row wali line ka count
-     *  - purana slip (line items nahi): slip ka total, truck ki rows me qty ke hisaab se
-     * Slip hi na mile to null (caller purana pro-rata hisaab lagata hai).
-     */
-    protected function getLoadedBagCount($deliveryChallanData, string $field, Collection $ticketQty): ?float
-    {
-        $slip = $deliveryChallanData->loadingProgramItem?->exportLoadingSlip;
-        if (!$slip) {
-            return null;
-        }
-
-        $slipItems = $slip->items;
-        if ($slipItems->isNotEmpty()) {
-            $line = $slipItems->firstWhere('delivery_order_packing_item_id', $deliveryChallanData->do_data_id);
-            return (float) ($line->{$field} ?? 0);
-        }
-
-        $total = (float) ($slip->{$field} ?? 0);
-        $truckQty = (float) ($ticketQty[$deliveryChallanData->ticket_id] ?? 0);
-        $rowQty = (float) ($deliveryChallanData->qty ?? 0);
-        if ($total <= 0 || $truckQty <= 0) {
-            return $total > 0 ? $total : 0.0;
-        }
-
-        return round($total * ($rowQty / $truckQty), 2);
     }
 
     protected function getProRatedBagCount($deliveryChallanData, string $field): float

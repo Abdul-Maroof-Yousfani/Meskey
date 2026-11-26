@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Services\Export\ExportPackagingService;
 
 class CommercialInvoiceController extends Controller
 {
@@ -523,9 +524,13 @@ class CommercialInvoiceController extends Controller
     {
         $visualName = $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A');
         $originalName = $exportOrder->product?->name ?: $visualName;
-        $rows = $deliveryChallans->flatMap(function ($challan) {
+        $allChallanData = $deliveryChallans->flatMap(function ($challan) {
             return $challan->delivery_challan_data;
-        })->groupBy(function ($item) {
+        });
+        // har truck (ticket) ki kul qty: purane slips ka total empty/extra bags rows me baantne ke liye
+        $ticketQty = $allChallanData->groupBy('ticket_id')->map(fn($rows) => (float) $rows->sum('qty'));
+
+        $rows = $allChallanData->groupBy(function ($item) {
             $packingText = $this->normalizePackingText($item->bag_size ?? $item->deliveryOrderData?->bag_size);
             $rate = number_format((float) ($item->rate ?? 0), 4, '.', '');
 
@@ -535,7 +540,7 @@ class CommercialInvoiceController extends Controller
                 (string) ($item->bag_type ?? $item->deliveryOrderData?->bag_type_id ?? ''),
                 $rate,
             ]);
-        })->values()->map(function ($items) use ($visualName, $originalName, $exportOrder) {
+        })->values()->map(function ($items) use ($visualName, $originalName, $exportOrder, $ticketQty) {
             $first = $items->first();
             $deliveryOrderData = $first->deliveryOrderData;
             $packingText = $this->normalizePackingText($first->bag_size ?? $deliveryOrderData?->bag_size);
@@ -544,25 +549,32 @@ class CommercialInvoiceController extends Controller
             $brandName = $brandId ? (getBrandById($brandId)?->name ?? 'N/A') : 'N/A';
             $bagTypeCode = $first->bag_type ?? $deliveryOrderData?->bag_type_id;
             $bagTypeName = $bagTypeCode ? bag_type_name($bagTypeCode) : 'N/A';
-            $quantityMt = round((float) $items->sum('qty'), 3);
+            // Delivery Challan qty = second weighbridge ka wazan (maal + saari boriyan) = GROSS
+            $weighbridgeKg = round((float) $items->sum('qty') * 1000, 2);
             $noOfBags = (int) round($items->sum(function ($item) {
                 return (float) ($item->no_of_bags ?? 0);
             }));
             $ratePerTon = round((float) ($first->rate ?? 0), 2);
-            $amount = round((float) $items->sum(function ($item) {
-                return ((float) ($item->qty ?? 0)) * ((float) ($item->rate ?? 0));
-            }), 2);
-            $netWeightKg = round($quantityMt * 1000, 2);
-            $extraBags = (float) $items->sum(function ($item) {
-                return $this->getProRatedBagCount($item, 'extra_bags');
+            // Truck me asal kitne empty / extra bags gaye (loading slip); na mile to purana pro-rata hisaab
+            $extraBags = (float) $items->sum(function ($item) use ($ticketQty) {
+                return ExportPackagingService::loadedBagCount($item, 'extra_bags', $ticketQty)
+                    ?? $this->getProRatedBagCount($item, 'extra_bags');
             });
-            $emptyBags = (float) $items->sum(function ($item) {
-                return $this->getProRatedBagCount($item, 'empty_bags');
+            $emptyBags = (float) $items->sum(function ($item) use ($ticketQty) {
+                return ExportPackagingService::loadedBagCount($item, 'empty_bags', $ticketQty)
+                    ?? $this->getProRatedBagCount($item, 'empty_bags');
             });
             $emptyBagWeightGram = (float) ($deliveryOrderData->min_weight_empty_bags ?? 0);
             $emptyBagWeightKg = $emptyBagWeightGram / 1000;
             $grossBags = $noOfBags + $extraBags + $emptyBags;
-            $grossWeightKg = round($netWeightKg + ($grossBags * $emptyBagWeightKg), 2);
+
+            // Gross = weighbridge wala wazan, jaisa hai
+            // Net / Quantity = Gross - (empty + extra bags) ka wazan (bhari boriyon ka wazan minus nahi)
+            $grossWeightKg = $weighbridgeKg;
+            $netWeightKg = round(max(0, $weighbridgeKg - (($emptyBags + $extraBags) * $emptyBagWeightKg)), 2);
+            $quantityMt = round($netWeightKg / 1000, 3);
+            // Amount = (empty / extra bags nikal kar) quantity x rate; group ka rate ek hi hota hai
+            $amount = round($quantityMt * (float) ($first->rate ?? 0), 2);
             $masterPackingText = $this->resolveMasterPackingTextFromDo($items);
 
             $descriptionLines = collect([

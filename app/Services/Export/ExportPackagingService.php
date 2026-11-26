@@ -314,4 +314,36 @@ class ExportPackagingService
 
         return trim($name . ' ' . rtrim(rtrim(number_format((float) $bagSize, 2), '0'), '.') . 'kg');
     }
+
+    /**
+     * Delivery Challan ki ek row (ek truck + ek packaging) ke saath asal me kitne empty / extra bags gaye:
+     * truck ke export loading slip se. (Bill of Lading + Commercial Invoice)
+     *  - slip ki line items hon: isi DO packing row wali line ka count
+     *  - purana slip (line items nahi): slip ka total, truck ki rows me qty ke hisaab se
+     * Slip hi na mile to null (caller purana pro-rata hisaab lagata hai).
+     *
+     * @param  Collection  $ticketQty  ticket_id => us truck ki in challans me kul qty (MT)
+     */
+    public static function loadedBagCount($deliveryChallanData, string $field, Collection $ticketQty): ?float
+    {
+        $slip = $deliveryChallanData->loadingProgramItem?->exportLoadingSlip;
+        if (!$slip) {
+            return null;
+        }
+
+        $slipItems = $slip->items;
+        if ($slipItems->isNotEmpty()) {
+            $line = $slipItems->firstWhere('delivery_order_packing_item_id', $deliveryChallanData->do_data_id);
+            return (float) ($line->{$field} ?? 0);
+        }
+
+        $total = (float) ($slip->{$field} ?? 0);
+        $truckQty = (float) ($ticketQty[$deliveryChallanData->ticket_id] ?? 0);
+        $rowQty = (float) ($deliveryChallanData->qty ?? 0);
+        if ($total <= 0 || $truckQty <= 0) {
+            return $total > 0 ? $total : 0.0;
+        }
+
+        return round($total * ($rowQty / $truckQty), 2);
+    }
 }
