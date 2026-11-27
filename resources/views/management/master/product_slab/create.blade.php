@@ -23,7 +23,7 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label>Reference Slab: <small class="text-muted">(Optional - Details clone karne ke liye)</small></label>
+                <label>Reference Slab: <small class="text-muted">(Optional - to clone details)</small></label>
                 <select class="form-control select2" id="reference_slab_id">
                     <option value="">Select Reference Slab</option>
                     @foreach ($referenceSlabs as $slab)

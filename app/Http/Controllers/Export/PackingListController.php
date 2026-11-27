@@ -347,10 +347,12 @@ class PackingListController extends CommercialInvoiceController
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
+            // Sirf approved Commercial Invoice: CI dropdown bhi sirf approved dikhata hai (warna EO aata, list khaali)
             ->whereHas('commercialInvoices', function ($query) use ($takenInvoiceIds) {
-                $query->when(!empty($takenInvoiceIds), function ($subQuery) use ($takenInvoiceIds) {
-                    $subQuery->whereNotIn('id', $takenInvoiceIds);
-                });
+                $query->where('am_approval_status', 'approved')
+                    ->when(!empty($takenInvoiceIds), function ($subQuery) use ($takenInvoiceIds) {
+                        $subQuery->whereNotIn('id', $takenInvoiceIds);
+                    });
             })
             ->latest()
             ->get();
@@ -401,7 +403,8 @@ class PackingListController extends CommercialInvoiceController
 
         $rows = collect($ciGoodsSummary['rows'] ?? [])->values()->map(function ($row, $index) use ($packingMetaRows, $packingMetaByKey) {
 
-            $packingMeta = $packingMetaRows[$index] ?? $packingMetaByKey[$this->makePackingMetaKeyFromSummaryRow($row)] ?? [
+            // pehle brand|size|type key se milao; index sirf fallback (index se ghalat packing row mil jati thi)
+            $packingMeta = $packingMetaByKey[$this->makePackingMetaKeyFromSummaryRow($row)] ?? $packingMetaRows[$index] ?? [
                 'bag_condition' => 'N/A',
                 'bag_type' => (string) ($row['bag_type'] ?? 'N/A'),
                 'empty_bag_weight_gram' => 0,
@@ -440,6 +443,7 @@ class PackingListController extends CommercialInvoiceController
                 'shipping_marks' => 'N/M',
                 'bags' => (int) round((float) ($row['no_of_bags'] ?? 0)),
                 'container_number' => 'ATTACHED SHEET',
+                'container_count' => $rowContainerCount,
                 'description_lines' => array_filter($descriptionLines),
                 'net_weight_mt' => round(((float) ($row['net_weight_kg'] ?? 0)) / 1000, 3),
                 'gross_weight_mt' => round(((float) ($row['gross_weight_kg'] ?? 0)) / 1000, 3),
@@ -450,7 +454,11 @@ class PackingListController extends CommercialInvoiceController
         $totalNetWeightMt = round(((float) ($ciGoodsSummary['totals']['net_weight_kg'] ?? 0)) / 1000, 3);
         $totalGrossWeightMt = round(((float) ($ciGoodsSummary['totals']['gross_weight_kg'] ?? 0)) / 1000, 3);
         $totalBags = (int) round(collect($ciGoodsSummary['rows'] ?? [])->sum('no_of_bags'));
-        $containerCount = $this->resolveContainerCountFromExportOrder($commercialInvoice->exportOrder);
+        // asal me gaye containers (is invoice ke DCs ke trucks), poore EO ke planned containers nahi
+        $containerCount = (int) ($ciGoodsSummary['totals']['container_count'] ?? 0);
+        if ($containerCount <= 0) {
+            $containerCount = (int) collect($rows)->sum('container_count');
+        }
         $buyerBlock = collect([
             $ciPreview['customer_name'] ?? null,
             $ciPreview['customer_address'] ?? null,
@@ -568,13 +576,13 @@ class PackingListController extends CommercialInvoiceController
         ]);
     }
 
-    protected function resolveContainerCountFromExportOrder(?ExportOrder $exportOrder): int
-    {
-        return (int) round(collect($this->buildPackingMetaRowsFromExportOrder($exportOrder))->sum('container_count'));
-    }
-
     protected function resolveContainerCountForSummaryRow(array $row, array $packingMeta): int
     {
+        // asal trucks (DC ke tickets) mile to wahi; warna EO packing ka hisaab
+        if ((int) ($row['container_count'] ?? 0) > 0) {
+            return (int) $row['container_count'];
+        }
+
         $containerCount = (float) ($packingMeta['container_count'] ?? 0);
 
         if ($containerCount > 0) {

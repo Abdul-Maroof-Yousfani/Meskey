@@ -64,7 +64,7 @@ class StoreProductionInputAnalysisRequest extends FormRequest
         $validator->after(function ($validator) {
             $total = collect($this->input('other_products', []))->sum(fn($row) => (float) ($row['percentage'] ?? 0));
             if ($total > 100) {
-                $validator->errors()->add('other_products', 'Other Products ka total percent 100 se zyada nahi ho sakta.');
+                $validator->errors()->add('other_products', 'The total percent of Other Products cannot be more than 100.');
             }
         });
     }

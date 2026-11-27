@@ -290,10 +290,12 @@ class ShipmentAdviseController extends PackingListController
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
+            // Sirf approved Packing List: PL dropdown bhi sirf approved dikhata hai (warna EO aata, list khaali)
             ->whereHas('packingLists', function ($query) use ($takenIds) {
-                $query->when(!empty($takenIds), function ($subQuery) use ($takenIds) {
-                    $subQuery->whereNotIn('id', $takenIds);
-                });
+                $query->where('am_approval_status', 'approved')
+                    ->when(!empty($takenIds), function ($subQuery) use ($takenIds) {
+                        $subQuery->whereNotIn('id', $takenIds);
+                    });
             })
             ->latest()
             ->get();

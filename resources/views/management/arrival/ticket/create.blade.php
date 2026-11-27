@@ -717,7 +717,7 @@
                     // Location change par cancel hui request ko ignore karo, naya loading chal raha hai
                     if (status === 'abort') return;
                     $('#arrival_purchase_order_id').empty().append('<option value="">N/A</option>');
-                    toastr.error('Contracts load nahi ho sakay, dobara location select karein.');
+                    toastr.error('Could not load contracts. Please select the location again.');
                 }).always(function (data, status) {
                     if (status === 'abort') return;
                     if (contractsToast) {

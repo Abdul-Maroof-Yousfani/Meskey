@@ -95,7 +95,7 @@ class ExportSodaFieldController extends Controller
                 $used = $this->usedQtyByQuotation(collect([$quotation]))[$quotation->id] ?? 0;
                 if ((float) $quotation->quotation_qty - $used <= 0) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'quotation_id' => 'Is quotation ki poori quantity (' . (float) $quotation->quotation_qty . ' MT) ke sauda ban chuke hain. Naya sauda nahi ban sakta.',
+                        'quotation_id' => 'Soda has already been created for the full quantity of this quotation (' . (float) $quotation->quotation_qty . ' MT). A new soda cannot be created.',
                     ]);
                 }
             }

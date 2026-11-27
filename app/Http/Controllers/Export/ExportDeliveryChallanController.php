@@ -697,7 +697,12 @@ class ExportDeliveryChallanController extends Controller
         }
 
         $loadingSlipLabour = $ticket->exportLoadingSlip?->labour ?? null;
-        $transporterId = $deliveryOrder->transporter_id ?? $ticket->transporter_id ?? $loadingProgram->transporter_id ?? null;
+        // Pehle is TRUCK ka transporter (loading program row) - DO me kai transporters ho sakte hain,
+        // truck asal me jis ka tha wahi DC me aaye. Truck par na ho tab DO / program wala.
+        // String: JS select ki option values string hain (jQuery val([6]) "6" se match nahi karta)
+        $transporterId = $ticket->transporter_id
+            ? (string) $ticket->transporter_id
+            : ($deliveryOrder->transporter_id ?? $loadingProgram->transporter_id ?? null);
 
         return response()->json([
             'success' => true,
@@ -819,7 +824,7 @@ class ExportDeliveryChallanController extends Controller
 
         if ($totalQty > $availableQtyMt + 0.001) {
             return [
-                'error' => "Total QTY ({$totalQty} MT) 2nd Weighbridge quantity ({$availableQtyMt} MT) se zyada hai.",
+                'error' => "Total QTY ({$totalQty} MT) is more than the 2nd Weighbridge quantity ({$availableQtyMt} MT).",
                 'items' => [],
                 'total_qty' => 0,
             ];

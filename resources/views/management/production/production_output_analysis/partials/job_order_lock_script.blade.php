@@ -220,7 +220,7 @@
                 .fail(function (xhr, status) {
                     if (status === 'abort') return;
                     loadedJobOrderId = null;
-                    if (window.toastr) toastr.error('Job Order ki details load nahi ho sakin.');
+                    if (window.toastr) toastr.error('Could not load Job Order details.');
                 });
         }
 

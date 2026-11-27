@@ -310,8 +310,11 @@ class CommercialInvoiceController extends Controller
             ->whereNotIn('id', function($q) {
                 $q->select('export_order_id')->from('export_order_addendums');
             })
+            // Sirf approved BL: BL dropdown (getBillOfLadingsByExportOrder) bhi sirf approved dikhata hai,
+            // warna EO dropdown me aata tha magar BL list khaali (pending BL)
             ->whereHas('billOfLadings', function ($query) use ($takenBolIds) {
-                $query->whereNotIn('id', $takenBolIds);
+                $query->whereNotIn('id', $takenBolIds)
+                    ->where('am_approval_status', 'approved');
             })
             ->latest()
             ->get();
@@ -598,6 +601,8 @@ class CommercialInvoiceController extends Controller
                 'net_weight_kg' => $netWeightKg,
                 'gross_weight_kg' => $grossWeightKg,
                 'gross_bags' => round($grossBags, 2),
+                // asal me gaye containers = is row ke alag trucks (ticket)
+                'container_count' => $items->pluck('ticket_id')->filter()->unique()->count(),
                 'master_packing_text' => $masterPackingText,
                 'description_lines' => $descriptionLines,
                 'marks_numbers' => strtoupper($brandName),
@@ -617,6 +622,8 @@ class CommercialInvoiceController extends Controller
                 'gross_weight_kg' => round(collect($rows)->sum('gross_weight_kg'), 2),
                 'gross_bags' => round(collect($rows)->sum('gross_bags'), 2),
                 'amount' => round(collect($rows)->sum('amount'), 2),
+                // ek truck me do packings hon to bhi ek hi container gina jaye
+                'container_count' => $allChallanData->pluck('ticket_id')->filter()->unique()->count(),
             ],
         ];
     }

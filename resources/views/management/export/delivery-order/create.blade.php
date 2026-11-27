@@ -77,7 +77,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Financial Instrument No: <span class="text-danger">*</span></label>
-                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control" readonly placeholder="Form-E select karein">
+                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control" readonly placeholder="Select Form-E">
                     </div>
                 </div>
             </div>

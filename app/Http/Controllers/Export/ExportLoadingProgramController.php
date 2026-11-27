@@ -374,13 +374,9 @@ class ExportLoadingProgramController extends Controller
         $arrivalLocations = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get()->map(fn($l) => ['id' => $l->id, 'text' => $l->name]);
         $subArrivalLocations = ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get()->map(fn($l) => ['id' => $l->id, 'text' => $l->name]);
 
-        $doBalanceQty = $loadingProgram->deliveryOrders->sum(function($do) {
-            return get_second_weighbridge_balance_by_delivery_order($do->id);
-        });
-
-        // Add already-saved items' qty back (they are part of the same LP being edited)
-        $existingItemsQty = $loadingProgram->loadingProgramItems->sum('qty');
-        $doBalanceQty = $doBalanceQty + $existingItemsQty;
+        // Editable rows ke liye balance: DO ka maal - jo nikal chuka - doosre programs ke trucks jo abhi
+        // nikle nahi - is program ke locked trucks jo abhi nikle nahi (form sirf editable rows jodta hai)
+        $doBalanceQty = $this->programEditableBalance($loadingProgram);
 
         $sBillNo = $loadingProgram->s_bill_no ?: $loadingProgram->loadingProgramItems->first()?->s_bill_no;
 
@@ -440,6 +436,21 @@ class ExportLoadingProgramController extends Controller
                 return response()->json(['errors' => $truckErrors], 422);
             }
 
+            // Qty DO ke baqi maal se zyada na ho (doosre programs me plan ho chuke trucks bhi minus).
+            // Locked rows (first weighbridge ho chuka) ka qty badalta nahi - wo balance me pehle se minus hain.
+            $lockedItemIds = LoadingProgramItem::where('loading_program_id', $loadingProgram->id)
+                ->whereHas('exportFirstWeighbridge')->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $editableQty = round(collect($request->loading_program_items)
+                ->reject(fn ($item) => !empty($item['id']) && in_array((int) $item['id'], $lockedItemIds, true))
+                ->sum(fn ($item) => (float) ($item['qty'] ?? 0)), 3);
+            $editableBalance = $this->programEditableBalance($loadingProgram);
+            if ($editableQty > $editableBalance + 0.0005) {
+                DB::rollBack();
+                $message = 'Total Qty ' . number_format($editableQty, 3) . ' MT exceeds DO Balance '
+                    . number_format($editableBalance, 3) . ' MT (trucks already planned in other Loading Programs are included).';
+                return response()->json(['message' => $message, 'errors' => ['loading_program_items' => [$message]]], 422);
+            }
+
             $submittedItemIds = collect($request->loading_program_items)->pluck('id')->filter()->toArray();
 
             // 1. Delete items not in request
@@ -491,6 +502,75 @@ class ExportLoadingProgramController extends Controller
         }
 
         return response()->json(['success' => 'Loading Program completed successfully.'], 200);
+    }
+
+    /**
+     * Loading program trucks jo abhi second weighbridge se NAHI guzre (plan hue, maal abhi nikla nahi):
+     * [delivery_order_id => qty MT]. $exceptProgramId wala program nahi ginta (edit me apna program).
+     * Guzar chuke trucks yahan nahi aate - un ka asal wazan second weighbridge balance me minus ho chuka hai.
+     */
+    private function pendingPlannedQtyByDo($doIds, ?int $exceptProgramId = null): \Illuminate\Support\Collection
+    {
+        $doIds = collect($doIds)->filter()->unique()->values();
+        if ($doIds->isEmpty()) {
+            return collect();
+        }
+
+        return LoadingProgramItem::whereIn('delivery_order_id', $doIds)
+            ->when($exceptProgramId, fn ($q) => $q->where('loading_program_id', '!=', $exceptProgramId))
+            ->whereIn('loading_program_id', LoadingProgram::withoutGlobalScopes()->select('id'))
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('loading_slips as ls')
+                    ->join('sales_second_weighbridges as sw', 'sw.loading_slip_id', '=', 'ls.id')
+                    ->whereColumn('ls.loading_program_item_id', 'loading_program_items.id');
+            })
+            ->get(['delivery_order_id', 'qty'])
+            ->groupBy('delivery_order_id')
+            ->map(fn ($rows) => (float) $rows->sum('qty'));
+    }
+
+    /**
+     * DO me naye loading program ke liye kitna maal baqi hai (MT):
+     * second weighbridge balance (DO qty - jo nikal chuka) - doosre programs ke trucks jo abhi nikle nahi.
+     * Misal: 100 MT DO, 4 truck x 25 plan -> 0 (dropdown me nahi). Trucks guzre aur ek me sirf 10 MT
+     * nikla -> 15 MT baqi -> DO wapis dropdown me.
+     */
+    private function doLoadingBalance(int $deliveryOrderId, ?int $exceptProgramId = null): float
+    {
+        $pending = (float) $this->pendingPlannedQtyByDo([$deliveryOrderId], $exceptProgramId)->get($deliveryOrderId, 0);
+
+        // Nikle trucks ke net me boriyon (empty/extra) ka wazan bhi hai - wo maal nahi. Second weighbridge
+        // bhi isay wapis jorta hai; warna 25 MT plan ka truck 25.05 nikla aur baqi truck ka 25 MT plan
+        // "24.95 balance" se zyada ho kar ruk jata.
+        $weighedBagsMt = export_weighed_bags_weight_kg([$deliveryOrderId]) / 1000;
+
+        return max(0, round(get_second_weighbridge_balance_by_delivery_order($deliveryOrderId) + $weighedBagsMt - $pending, 3));
+    }
+
+    /**
+     * Program ki NAYI / editable rows (jin ka first weighbridge nahi hua) me kitna qty daal sakte hain (MT):
+     * program ke DOs ka loading balance - is program ke locked rows (first weighbridge ho chuka) jo abhi
+     * second weighbridge se nahi guzre.
+     */
+    private function programEditableBalance(LoadingProgram $loadingProgram): float
+    {
+        $doIds = $loadingProgram->deliveryOrders()->pluck('delivery_order.id')
+            ->push($loadingProgram->delivery_order_id)->filter()->unique()->values();
+
+        $balance = $doIds->sum(fn ($doId) => $this->doLoadingBalance((int) $doId, $loadingProgram->id));
+
+        $lockedPendingQty = (float) LoadingProgramItem::where('loading_program_id', $loadingProgram->id)
+            ->whereHas('exportFirstWeighbridge')
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('loading_slips as ls')
+                    ->join('sales_second_weighbridges as sw', 'sw.loading_slip_id', '=', 'ls.id')
+                    ->whereColumn('ls.loading_program_item_id', 'loading_program_items.id');
+            })
+            ->sum('qty');
+
+        return max(0, round($balance - $lockedPendingQty, 3));
     }
 
     /**
@@ -567,10 +647,11 @@ class ExportLoadingProgramController extends Controller
             return null;
         }
 
-        // EO ki saari logistics (ek EO ke against multiple) ke trucks jud kar; rejected logistic ke trucks nahi
+        // EO ki saari logistics (ek EO ke against multiple) ke trucks jud kar - SIRF approved logistic ke.
+        // Pending / rejected logistic ke trucks nahi gine jate: jab tak logistic approve na ho, loading program nahi banta
         $allowedTrucks = \App\Models\Sales\LogisticsItem::whereHas('logistics', function ($q) use ($exportOrderIds) {
             $q->whereIn('export_order_id', $exportOrderIds)
-                ->where(fn ($sq) => $sq->whereNull('am_approval_status')->orWhere('am_approval_status', '!=', 'rejected'));
+                ->where('am_approval_status', 'approved');
         })
             ->whereNotNull('transporter_id')
             ->get()
@@ -611,15 +692,24 @@ class ExportLoadingProgramController extends Controller
             $availability = $this->truckAvailabilityForExportOrders([$eo->id], $exceptProgramId);
             $eoNo = $eo->voucher_no ?? ('#' . $eo->id);
 
+            // Logistic bani hai magar abhi approve nahi hui (pending) -> alag message
+            $hasPendingLogistics = \App\Models\Sales\Logistics::where('export_order_id', $eo->id)
+                ->where(fn ($q) => $q->whereNull('am_approval_status')->orWhere('am_approval_status', 'pending'))
+                ->exists();
+
             if ($availability === null) {
-                $errors[] = "Export Order {$eoNo} has no Logistics with transporter trucks. Please create a Logistics first.";
+                $errors[] = $hasPendingLogistics
+                    ? "Export Order {$eoNo}: its Logistics is pending approval. Loading Program can be created only after the Logistics is approved."
+                    : "Export Order {$eoNo} has no approved Logistics with transporter trucks. Please create a Logistics first.";
                 continue;
             }
 
             $available = $availability->sum('available');
             if ($available <= 0) {
                 $allowed = $availability->sum('allowed');
-                $errors[] = "Export Order {$eoNo}: all {$allowed} truck(s) of its Logistics are already used in other Loading Programs. Please create a new Logistics first.";
+                $errors[] = $hasPendingLogistics
+                    ? "Export Order {$eoNo}: all {$allowed} truck(s) of its approved Logistics are already used in other Loading Programs. Its new Logistics is pending approval - Loading Program can be created after it is approved."
+                    : "Export Order {$eoNo}: all {$allowed} truck(s) of its Logistics are already used in other Loading Programs. Please create a new Logistics first.";
             }
         }
 
@@ -744,12 +834,13 @@ class ExportLoadingProgramController extends Controller
             $linkedDoIds = LoadingProgramItem::where('loading_program_id', $lpId)->pluck('delivery_order_id')->unique()->toArray();
         }
 
-        $DeliveryOrders = $DeliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds) {
+        $DeliveryOrders = $DeliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds, $lpId) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
-            return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
-        });
+            // doosre loading programs ke trucks (jo abhi second weighbridge se nahi guzre) bhi minus
+            return $this->doLoadingBalance((int) $deliveryOrder->id, $lpId ? (int) $lpId : null) <= 0;
+        })->values(); // keys 0 se: JSON array rahe + view me pehla DO tab ($index 0) active ho
 
         // Fetch location names for UI display
         $DeliveryOrders = $DeliveryOrders->map(function ($deliveryOrder) {
@@ -783,7 +874,7 @@ class ExportLoadingProgramController extends Controller
         return response()->json([
             'success' => true,
             'html' => $html,
-            'delivery_orders' => $DeliveryOrders,
+            'delivery_orders' => $DeliveryOrders->values(), // values(): reject ke baad keys 0 se (warna JSON object ban kar JS dropdown khaali)
             'export_orders' => $ExportOrders, // Added full EO data
             'export_order_data' => $exportOrderData,
             'transporters_map' => [],
@@ -813,11 +904,12 @@ class ExportLoadingProgramController extends Controller
             $linkedDoIds = LoadingProgramItem::where('loading_program_id', $lpId)->pluck('delivery_order_id')->unique()->toArray();
         }
 
-        $deliveryOrders = $deliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds) {
+        $deliveryOrders = $deliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds, $lpId) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
-            return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
+            // doosre loading programs ke trucks (jo abhi second weighbridge se nahi guzre) bhi minus
+            return $this->doLoadingBalance((int) $deliveryOrder->id, $lpId ? (int) $lpId : null) <= 0;
         });
 
         $deliveryOrders = $deliveryOrders->map(function ($deliveryOrder) {
@@ -868,13 +960,14 @@ class ExportLoadingProgramController extends Controller
                 ->toArray();
         }
 
-        $deliveryOrders = $deliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds) {
+        $deliveryOrders = $deliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds, $lpId) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
 
-            return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
-        });
+            // doosre loading programs ke trucks (jo abhi second weighbridge se nahi guzre) bhi minus
+            return $this->doLoadingBalance((int) $deliveryOrder->id, $lpId ? (int) $lpId : null) <= 0;
+        })->values(); // keys 0 se (JSON array + view ka $index)
 
         $deliveryOrders = $deliveryOrders->map(function ($deliveryOrder) {
             $locationIds = explode(',', $deliveryOrder->location_id);
@@ -896,7 +989,7 @@ class ExportLoadingProgramController extends Controller
 
         return response()->json([
             'success' => true,
-            'delivery_orders' => $deliveryOrders,
+            'delivery_orders' => $deliveryOrders->values(), // values(): JSON array hi rahe
         ]);
     }
 

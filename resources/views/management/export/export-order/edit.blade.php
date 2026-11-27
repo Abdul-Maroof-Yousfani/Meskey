@@ -46,7 +46,7 @@
                     <div>
                         <i class="ft-alert-triangle text-warning font-medium-3 mr-1"></i>
                         <strong class="text-dark">Export Order Status: Approved (Locked)</strong>
-                        <span class="text-muted ml-2">Sab fields read-only / block kar di gayi hain. Aap yahan Contract Status update kar sakte hain.</span>
+                        <span class="text-muted ml-2">All fields are read-only / locked. You can update the Contract Status here.</span>
                     </div>
                     <div>
                         @if($exportOrder->cancel)
@@ -70,14 +70,14 @@
                         <div class="col-md-8" id="cancel_reason_wrapper" style="{{ $currentStatus === 'cancel' ? '' : 'display: none;' }}">
                             <div class="form-group mb-0">
                                 <label class="font-weight-bold">Cancel Reason: <span class="text-danger">*</span></label>
-                                <textarea name="cancel_reason" id="cancel_reason_input" class="form-control" rows="2" placeholder="Order cancel karne ki wajah likhein...">{{ old('cancel_reason', $exportOrder->cancel_reason) }}</textarea>
+                                <textarea name="cancel_reason" id="cancel_reason_input" class="form-control" rows="2" placeholder="Enter the reason for cancelling this order...">{{ old('cancel_reason', $exportOrder->cancel_reason) }}</textarea>
                             </div>
                         </div>
                         <div class="col-md-8" id="continue_reason_wrapper" style="{{ ($currentStatus === 'continue' && $wasCancelled) ? '' : 'display: none;' }}">
                             <div class="form-group mb-0">
                                 <label class="font-weight-bold">Continue Reason: <span class="text-danger">*</span></label>
-                                <textarea name="continue_reason" id="continue_reason_input" class="form-control" rows="2" placeholder="Pehle cancel shuda order ko dubara continue / open karne ki wajah likhein...">{{ old('continue_reason', $exportOrder->continue_reason) }}</textarea>
-                                <small class="text-info"><i class="ft-info mr-1"></i>Yeh order pehle cancel ho chuka tha. Dubara continue karne ke liye reason likhein.</small>
+                                <textarea name="continue_reason" id="continue_reason_input" class="form-control" rows="2" placeholder="Enter the reason for continuing / reopening this previously cancelled order...">{{ old('continue_reason', $exportOrder->continue_reason) }}</textarea>
+                                <small class="text-info"><i class="ft-info mr-1"></i>This order was cancelled earlier. Enter a reason to continue it again.</small>
                             </div>
                         </div>
                     </div>

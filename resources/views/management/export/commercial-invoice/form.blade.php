@@ -219,7 +219,7 @@
 
             },
             error: function(xhr) {
-                var msg = 'Preview load nahi ho saka.';
+                var msg = 'Could not load the preview.';
                 if (xhr.responseJSON) {
                     msg = xhr.responseJSON.message || xhr.responseJSON.error || msg;
                 }

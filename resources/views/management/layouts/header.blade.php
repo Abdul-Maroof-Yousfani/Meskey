@@ -182,7 +182,7 @@
                                     <div class="sl-fill"></div>
                                     <span class="sl-text">Slide to logout</span>
                                     <div class="sl-knob" role="button" tabindex="0"
-                                        aria-label="Slide to logout (ya Enter dabayein)">
+                                        aria-label="Slide to logout (or press Enter)">
                                         <i class="ft-log-out"></i>
                                     </div>
                                 </div>
@@ -745,7 +745,7 @@
                     },
                     error: function() {
                         if (typeof toastr !== 'undefined') {
-                            toastr.error('Mazeed notifications load nahi ho sakin.');
+                            toastr.error('Could not load more notifications.');
                         }
                     },
                     complete: function() {
@@ -796,7 +796,7 @@
                     },
                     error: function() {
                         if (typeof toastr !== 'undefined') {
-                            toastr.error('Notifications load nahi ho sakin. Dobara try karein.');
+                            toastr.error('Could not load notifications. Please try again.');
                         }
                     },
                     complete: function() {
@@ -843,7 +843,7 @@
                     error: function() {
                         hideAppLoader();
                         if (typeof toastr !== 'undefined') {
-                            toastr.error('Mark as read nahi ho saka. Dobara try karein.');
+                            toastr.error('Could not mark as read. Please try again.');
                         }
                     }
                 });
