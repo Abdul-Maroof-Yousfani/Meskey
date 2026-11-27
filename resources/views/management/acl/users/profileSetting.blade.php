@@ -642,9 +642,11 @@
             transition: color .2s;
         }
 
+        /* !important: mobile-ui.css section 19 (body .form-control:not(...) -> height 40 / padding 8px 12px)
+           zyada specific hai, warna left padding khatam ho kar text icon ke upar aa jata hai */
         .ps-input .form-control {
-            height: 50px;
-            padding: 0 46px 0 44px;
+            height: 50px !important;
+            padding: 0 46px 0 44px !important;
             border-radius: 14px;
             border: 1.5px solid var(--ps-border);
             background: var(--ps-input);
