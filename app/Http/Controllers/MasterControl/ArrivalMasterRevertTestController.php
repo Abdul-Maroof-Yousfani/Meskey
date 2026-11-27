@@ -41,15 +41,7 @@ class ArrivalMasterRevertTestController extends Controller
 
 
 
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
-            ->where('purchase_type', 'regular')
-            ->where("am_approval_status", "approved")
-            ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
-                $q->where('company_location_id', $userLocation?->id);
-            })
-            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
-            ->orderByDesc('id')
-            ->get();
+        // (yahan pehle ek contracts query thi jiska result neeche collect() se overwrite ho jata tha - bekaar memory, hata di)
 
 
         $bagTypes = BagType::all();
@@ -152,7 +144,13 @@ class ArrivalMasterRevertTestController extends Controller
 
 
 
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
+            // relations eager load: warna har contract par 4 alag queries (N+1) -> bade product/location par memory exhaust
+            $arrivalPurchaseOrders = ArrivalPurchaseOrder::with([
+                'product:id,name',
+                'supplier:id,name',
+                'createdByUser:id,name',
+                'saudaType:id,name',
+            ])->when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
                 $q->where('product_id', $arrivalTicket->qc_product);
             })
                 ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
