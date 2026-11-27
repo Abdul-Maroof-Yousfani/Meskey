@@ -257,11 +257,11 @@ class ExportDeliveryOrderController extends Controller
         $logisticsTransporters = $logisticsTransporters->unique('id')->values();
 
         // Fetch C-Freight details
-        $cFreight = \App\Models\Export\CFreight::with(['rates' => function($q) {
-            $q->where('is_approved', 1);
-        }])->where('export_order_id', $id)->first();
+        // Sirf Booked Sea Freight (vessel details booking ke baad hi aati hain)
+        $cFreight = $this->bookedSeaFreight($id);
 
         $cFreightAutofill = [
+            'sea_freight_booked' => (bool) $cFreight,
             'vessel_name' => $cFreight ? $cFreight->vessel_name : '',
             'vessel_eta' => $cFreight ? $cFreight->eta : '',
             'vessel_etd' => $cFreight ? $cFreight->etd : '',
@@ -292,8 +292,42 @@ class ExportDeliveryOrderController extends Controller
         ]);
     }
 
+    /**
+     * EO ki Booked Sea Freight (C-Freight) - DO isi ke bina nahi ban sakta.
+     */
+    protected function bookedSeaFreight($exportOrderId): ?\App\Models\Export\CFreight
+    {
+        if (!$exportOrderId) {
+            return null;
+        }
+
+        return \App\Models\Export\CFreight::with(['rates' => function ($q) {
+            $q->where('is_approved', 1);
+        }])
+            ->where('export_order_id', $exportOrderId)
+            ->where('status', 'Booked')
+            ->latest('id')
+            ->first();
+    }
+
     public function store(Request $request)
     {
+        // Sea Freight required: vessel details sirf Booked Sea Freight se aati hain (readonly fields)
+        $seaFreight = $this->bookedSeaFreight($request->export_order_id);
+        if ($request->filled('export_order_id') && !$seaFreight) {
+            return response()->json([
+                'status' => 422,
+                'errors' => ['export_order_id' => ['Sea Freight is not booked for this Export Order. Please book the Sea Freight first.']],
+            ], 422);
+        }
+        if ($seaFreight) {
+            $request->merge([
+                'vessel_name' => $seaFreight->vessel_name,
+                'vessel_etd' => $seaFreight->etd,
+                'vessel_eta' => $seaFreight->eta,
+            ]);
+        }
+
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'export_order_id' => 'required|exists:export_orders,id',
             'buyer_id' => 'required|exists:customers,id',

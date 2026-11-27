@@ -623,23 +623,26 @@
     <div class="row form-mar mt-3">
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Logistics & Shipment Details</h6>
+            <div id="sea_freight_alert" class="alert alert-danger py-2" style="display:none;">
+                Sea Freight is not booked for this Export Order. Vessel details come from the booked Sea Freight, so book it first.
+            </div>
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Vessel Name: <span class="text-danger">*</span></label>
-                        <input type="text" name="vessel_name" id="vessel_name" class="form-control">
+                        <input type="text" name="vessel_name" id="vessel_name" class="form-control" readonly placeholder="From Sea Freight">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Vessel ETD: <span class="text-danger">*</span></label>
-                        <input type="date" name="vessel_etd" id="vessel_etd" class="form-control">
+                        <input type="date" name="vessel_etd" id="vessel_etd" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Vessel ETA: <span class="text-danger">*</span></label>
-                        <input type="date" name="vessel_eta" id="vessel_eta" class="form-control">
+                        <input type="date" name="vessel_eta" id="vessel_eta" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -1173,17 +1176,19 @@
                             // If a Form-E was already selected, keep its job order locked
                             applyFormEJobOrder();
 
-                            if(response.data.autofill.vessel_name) $('#vessel_name').val(response.data.autofill.vessel_name);
-                            if(response.data.autofill.vessel_eta) $('#vessel_eta').val(response.data.autofill.vessel_eta);
-                            if(response.data.autofill.vessel_etd) $('#vessel_etd').val(response.data.autofill.vessel_etd);
+                            // Vessel details sirf Booked Sea Freight se (readonly); pichle EO ki value na reh jaye
+                            $('#vessel_name').val(response.data.autofill.vessel_name || '');
+                            $('#vessel_eta').val(response.data.autofill.vessel_eta || '');
+                            $('#vessel_etd').val(response.data.autofill.vessel_etd || '');
+                            $('#sea_freight_alert').toggle(!response.data.autofill.sea_freight_booked);
+                            if (!response.data.autofill.sea_freight_booked) {
+                                toastr.error('Sea Freight is not booked for this Export Order. Please book the Sea Freight first.');
+                            }
                             if(response.data.autofill.shipping_line) $('#shipping_line').val(response.data.autofill.shipping_line);
                             if(response.data.autofill.estimated_payment_date) $('#estimated_payment_date').val(response.data.autofill.estimated_payment_date);
                             if(response.data.autofill.freight_amount) $('#freight_amount').val(response.data.autofill.freight_amount);
 
                             // Lock these only when the export order filled them
-                            lockIfAutofilled('#vessel_name', response.data.autofill.vessel_name);
-                            lockIfAutofilled('#vessel_eta', response.data.autofill.vessel_eta);
-                            lockIfAutofilled('#vessel_etd', response.data.autofill.vessel_etd);
                             lockIfAutofilled('#shipping_line', response.data.autofill.shipping_line);
                             lockIfAutofilled('#estimated_payment_date', response.data.autofill.estimated_payment_date);
                             lockIfAutofilled('#freight_amount', response.data.autofill.freight_amount);
