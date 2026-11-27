@@ -39,24 +39,7 @@ class ArrivalMasterRevertController extends Controller
 
         $arrivalTicket = ArrivalTicket::findOrFail($id);
 
-        $targetLocationId = $arrivalTicket->location_id ?? $userLocation?->id;
-
-
-        $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
-            ->where("am_approval_status", "approved")
-
-            ->where('purchase_type', 'regular')
-            ->where(function ($q) use ($targetLocationId, $arrivalTicket) {
-                if ($targetLocationId) {
-                    $q->where('company_location_id', $targetLocationId);
-                }
-                if ($arrivalTicket->arrival_purchase_order_id) {
-                    $q->orWhere('id', $arrivalTicket->arrival_purchase_order_id);
-                }
-            })
-            ->orderByDesc('id')
-            ->get();
-
+        // (yahan pehle ek contracts query thi jiska result neeche collect() se overwrite ho jata tha - bekaar memory, hata di)
 
         $bagTypes = BagType::all();
         $bagConditions = BagCondition::all();
@@ -155,7 +138,13 @@ class ArrivalMasterRevertController extends Controller
 
 
 
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
+            // relations eager load: warna har contract par 4 alag queries (N+1) -> bade product/location par memory exhaust
+            $arrivalPurchaseOrders = ArrivalPurchaseOrder::with([
+                'product:id,name',
+                'supplier:id,name',
+                'createdByUser:id,name',
+                'saudaType:id,name',
+            ])->when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
                 $q->where('product_id', $arrivalTicket->qc_product);
             })
                 ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
